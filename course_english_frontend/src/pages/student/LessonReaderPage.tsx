@@ -1,38 +1,38 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CenterFocusStrongOutlinedIcon from "@mui/icons-material/CenterFocusStrongOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
-import ViewListOutlinedIcon from "@mui/icons-material/ViewListOutlined";
-import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { Alert, Box, Button, CircularProgress, Link } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { LessonBlockReader } from "../../student/components/LessonBlockReader";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { LessonReaderTocMobile, LessonReaderTocSidebar } from "../../student/components/LessonReaderToc";
-import { LessonReaderUpNext } from "../../student/components/LessonReaderUpNext";
 import { useLessonReaderScroll } from "../../student/hooks/useLessonReaderScroll";
 import { findNextPublishedLesson } from "../../student/lessonNavigation";
 import { getLessonProgress, saveLessonProgress } from "../../student/lessonProgressStorage";
+import { ExercisePlayer } from "../../student/lessonPlayer/exercise/ExercisePlayer";
+import { LessonPlayerTabs } from "../../student/lessonPlayer/LessonPlayerTabs";
+import { StudyPanel } from "../../student/lessonPlayer/StudyPanel";
 import {
-  estimateReadingMinutes,
-  getBlockCssModifier,
-  getBlockTocTitle,
-  getBlockTypeLabel,
-  getLessonBlockDomId,
-} from "../../student/lessonReaderUtils";
+  defaultLessonPlayerTab,
+  filterBlocksForTab,
+  lessonHasPracticeTab,
+  lessonHasStudyTab,
+  type LessonPlayerTab,
+} from "../../shared/lesson/blockTypes";
 import {
   apiGetLessonDetail,
   type LessonAssetRecord,
-  type LessonBlockRecord,
   type LessonDetailRecord,
   type LessonRecord,
 } from "../../shared/api/lesson";
 import type { ApiResponse } from "../../shared/api/types";
 import { paths } from "../../shared/constants/paths";
 import "../../styles/lesson-reader.css";
+import "../../styles/lesson-player.css";
 
 export function LessonReaderPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lesson, setLesson] = useState<LessonDetailRecord | null>(null);
@@ -72,12 +72,42 @@ export function LessonReaderPage() {
   }, [lesson?.blocks]);
 
   const assets: LessonAssetRecord[] = lesson?.assets ?? [];
-  const readingMin = useMemo(() => estimateReadingMinutes(blocks), [blocks]);
-  const hasBlocks = blocks.length > 0;
+  const showStudy = lessonHasStudyTab(blocks);
+  const showPractice = lessonHasPracticeTab(blocks);
+  const hasPracticeOnly = showPractice && !showStudy;
+
+  const tabFromUrl = searchParams.get("tab");
+  const activeTab: LessonPlayerTab = useMemo(() => {
+    if (tabFromUrl === "practice" && showPractice) return "practice";
+    if (tabFromUrl === "study" && showStudy) return "study";
+    return defaultLessonPlayerTab(blocks);
+  }, [tabFromUrl, showPractice, showStudy, blocks]);
+
+  const setActiveTab = useCallback(
+    (tab: LessonPlayerTab) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", tab);
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
+
+  useEffect(() => {
+    if (!lesson || loading) return;
+    if (tabFromUrl === "practice" && !showPractice) setActiveTab("study");
+    if (tabFromUrl === "study" && !showStudy && showPractice) setActiveTab("practice");
+  }, [lesson, loading, tabFromUrl, showPractice, showStudy, setActiveTab]);
+
+  const studyBlocks = useMemo(() => filterBlocksForTab(blocks, "study"), [blocks]);
+  const practiceBlocks = useMemo(() => filterBlocksForTab(blocks, "practice"), [blocks]);
+  const scrollBlocks = activeTab === "study" ? studyBlocks : [];
+  const hasScrollBlocks = scrollBlocks.length > 0;
 
   const persistProgress = useCallback(
     (activeBlockId: string | null, scrollPercent: number) => {
-      if (!lesson?.id || !activeBlockId) return;
+      if (!lesson?.id || !activeBlockId || activeTab !== "study") return;
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
       saveTimer.current = window.setTimeout(() => {
         saveLessonProgress({
@@ -89,12 +119,12 @@ export function LessonReaderPage() {
         });
       }, 400);
     },
-    [lesson],
+    [lesson, activeTab],
   );
 
   const { scrollProgress, activeBlockId, scrollToBlock } = useLessonReaderScroll({
-    blocks,
-    enabled: hasBlocks && !loading,
+    blocks: scrollBlocks,
+    enabled: hasScrollBlocks && !loading && activeTab === "study",
     onProgress: persistProgress,
   });
 
@@ -104,6 +134,7 @@ export function LessonReaderPage() {
   );
 
   const showResume =
+    activeTab === "study" &&
     !resumeDismissed &&
     savedProgress &&
     savedProgress.lastBlockId &&
@@ -118,15 +149,15 @@ export function LessonReaderPage() {
   }, [focusMode]);
 
   useEffect(() => {
-    if (!lesson?.id || !hasBlocks) return;
+    if (!lesson?.id || !hasScrollBlocks || activeTab !== "study") return;
     saveLessonProgress({
       lessonId: lesson.id,
       lessonTitle: lesson.title,
       subjectName: lesson.subjectName,
-      lastBlockId: blocks[0]?.id ?? "",
+      lastBlockId: studyBlocks[0]?.id ?? "",
       scrollPercent: 0,
     });
-  }, [lesson?.id, lesson?.title, lesson?.subjectName, hasBlocks, blocks]);
+  }, [lesson?.id, lesson?.title, lesson?.subjectName, hasScrollBlocks, studyBlocks, activeTab]);
 
   if (loading) {
     return (
@@ -146,10 +177,12 @@ export function LessonReaderPage() {
 
   const isDraft = lesson.status !== "PUBLISHED";
   const listPath = `/${paths.STUDENT}/${paths.STUDENT_LESSONS}`;
+  const showToc = activeTab === "study" && hasScrollBlocks;
 
   const layoutClass = [
     "lesson-reader-layout",
-    hasBlocks ? "lesson-reader-layout--with-toc" : "",
+    showToc ? "lesson-reader-layout--with-toc" : "",
+    activeTab === "practice" ? "lesson-reader-layout--practice" : "",
     focusMode ? "lesson-reader-layout--focus" : "",
   ]
     .filter(Boolean)
@@ -158,9 +191,9 @@ export function LessonReaderPage() {
   return (
     <>
       <div className={layoutClass}>
-        {hasBlocks ? (
+        {showToc ? (
           <LessonReaderTocSidebar
-            blocks={blocks}
+            blocks={studyBlocks}
             activeBlockId={activeBlockId}
             scrollProgress={scrollProgress}
             onSelect={scrollToBlock}
@@ -180,16 +213,18 @@ export function LessonReaderPage() {
               <ArrowBackIcon sx={{ fontSize: 18 }} />
               Danh sách bài học
             </Link>
-            <Button
-              size="small"
-              variant={focusMode ? "contained" : "outlined"}
-              className={focusMode ? "student-btn-teal" : "student-btn-teal-outlined"}
-              startIcon={<CenterFocusStrongOutlinedIcon />}
-              onClick={() => setFocusMode((v) => !v)}
-              sx={{ textTransform: "none", borderRadius: "999px", ml: "auto" }}
-            >
-              {focusMode ? "Thoát focus" : "Chế độ tập trung"}
-            </Button>
+            {activeTab === "study" ? (
+              <Button
+                size="small"
+                variant={focusMode ? "contained" : "outlined"}
+                className={focusMode ? "student-btn-teal" : "student-btn-teal-outlined"}
+                startIcon={<CenterFocusStrongOutlinedIcon />}
+                onClick={() => setFocusMode((v) => !v)}
+                sx={{ textTransform: "none", borderRadius: "999px", ml: "auto" }}
+              >
+                {focusMode ? "Thoát focus" : "Chế độ tập trung"}
+              </Button>
+            ) : null}
           </Box>
 
           {showResume ? (
@@ -219,7 +254,7 @@ export function LessonReaderPage() {
           <header className="lesson-reader-hero">
             <div className="lesson-reader-hero-eyebrow">
               <MenuBookOutlinedIcon sx={{ fontSize: 16 }} />
-              Bài học
+              {hasPracticeOnly ? "Bài tập" : "Bài học"}
               {lesson.subjectName ? (
                 <>
                   <span aria-hidden>·</span>
@@ -231,55 +266,28 @@ export function LessonReaderPage() {
             {lesson.summary ? <p className="lesson-reader-hero-summary">{lesson.summary}</p> : null}
           </header>
 
-          {hasBlocks ? (
-            <div className="lesson-reader-meta" role="status">
-              <span>
-                <ViewListOutlinedIcon sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
-                <strong>{blocks.length}</strong> phần nội dung
-              </span>
-              <span>
-                <ScheduleOutlinedIcon sx={{ fontSize: 16, verticalAlign: "text-bottom", mr: 0.5 }} />
-                Khoảng <strong>{readingMin}</strong> phút đọc
-              </span>
-            </div>
-          ) : null}
+          <LessonPlayerTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            showStudy={showStudy}
+            showPractice={showPractice}
+          />
 
-          {blocks.length === 0 ? (
-            <Alert severity="info">Bài học chưa có nội dung. Giáo viên cần thêm block và publish.</Alert>
+          {activeTab === "study" ? (
+            <StudyPanel
+              studyBlocks={studyBlocks}
+              assets={assets}
+              activeBlockId={activeBlockId}
+              nextLesson={nextLesson}
+            />
           ) : (
-            <div className="lesson-reader-blocks">
-              {blocks.map((block: LessonBlockRecord, index) => (
-                <section
-                  key={block.id}
-                  id={getLessonBlockDomId(block.id)}
-                  className={`lesson-reader-block ${getBlockCssModifier(block.blockType)} ${
-                    block.id === activeBlockId ? "is-active-section" : ""
-                  }`.trim()}
-                  aria-labelledby={`block-label-${block.id}`}
-                >
-                  <div className="lesson-reader-block-head">
-                    <span className="lesson-reader-block-index" aria-hidden>
-                      {index + 1}
-                    </span>
-                    <div>
-                      <span id={`block-label-${block.id}`} className="lesson-reader-block-label">
-                        {getBlockTocTitle(block, index)}
-                      </span>
-                      <span className="lesson-reader-block-type">{getBlockTypeLabel(block.blockType)}</span>
-                    </div>
-                  </div>
-                  <LessonBlockReader block={block} assets={assets} variant="reader" />
-                </section>
-              ))}
-            </div>
+            <ExercisePlayer lessonId={lesson.id} lessonTitle={lesson.title} practiceBlocks={practiceBlocks} />
           )}
-
-          {nextLesson ? <LessonReaderUpNext nextLesson={nextLesson} /> : null}
         </article>
       </div>
 
-      {hasBlocks ? (
-        <LessonReaderTocMobile blocks={blocks} activeBlockId={activeBlockId} onSelect={scrollToBlock} />
+      {showToc ? (
+        <LessonReaderTocMobile blocks={studyBlocks} activeBlockId={activeBlockId} onSelect={scrollToBlock} />
       ) : null}
     </>
   );

@@ -65,7 +65,7 @@ export function StudentSidebar({ mobileOpen, onToggleSidebar }: StudentSidebarPr
           return (
             <ListItemButton
               key={item.to}
-              className={`student-nav-item${active ? " is-active" : ""}`}
+              className={`student-nav-item${active ? " active" : ""}`}
               onClick={() => {
                 navigate(item.to);
                 onToggleSidebar();
@@ -96,11 +96,19 @@ export function StudentSidebar({ mobileOpen, onToggleSidebar }: StudentSidebarPr
       </Drawer>
       <Drawer
         variant="permanent"
+        open
+        className="student-sidebar-drawer"
         sx={{
           display: { xs: "none", md: "block" },
-          "& .MuiDrawer-paper": { ...drawerPaperSx, borderRight: "1px solid var(--eng-outline-variant)" },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            ...drawerPaperSx,
+            position: "relative",
+            height: "100vh",
+            borderRight: "1px solid var(--eng-outline-variant)",
+          },
         }}
-        open
       >
         {drawerContent}
       </Drawer>

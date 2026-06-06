@@ -1,11 +1,11 @@
 -- =============================================================================
 -- Cell Architecture — LMS demo seed
--- Database: cell_architecture (MySQL)
--- Chay: mysql -u root -p cell_architecture < seed_lms_demo.sql
+-- Database: course_english (MySQL)
+-- Chay: mysql -u root -p course_english < seed_lms_demo.sql
 -- Mat khau tat ca tai khoan: 123456
 -- =============================================================================
 
-USE `cell_architecture`;
+USE `course_english`;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;

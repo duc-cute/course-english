@@ -1,178 +1,205 @@
-I'm designing an EdTech platform for English learning (Grade 1 - Grade 9).
+# Context
 
-I want the Lesson architecture to be highly scalable, maintainable and extensible.
+I am building an English Learning Platform for students from Grade 1 to Grade 9.
 
-IMPORTANT:
-
-A Lesson is NOT a simple content page.
-
-A Lesson is a sequence of Learning Blocks.
-
-The system should support adding new learning activities in the future without changing the core database structure.
-
-Think of Duolingo, Quizlet, Khan Academy and modern LMS platforms.
-
-==================================================
-
-Hierarchy:
+The platform follows this structure:
 
 Course
-└── Unit
-└── Lesson
-└── Learning Blocks
+→ Unit
+→ Lesson
+→ Learning Blocks
 
-==================================================
+A Lesson is not a static page.
 
-A Learning Block is the smallest renderable unit.
+A Lesson is composed of multiple Learning Blocks such as:
+
+- Text
+- Image
+- Video
+- Audio
+- Vocabulary
+- Grammar
+- Quiz
+- Flashcard
+- Matching
+- Listening
+- Speaking
+- Reading
+- Summary
+
+The system must be scalable and maintainable because new activity types will be added in the future.
+
+---
+
+# Lesson Authoring Strategy
+
+The platform supports FOUR different content creation methods.
+
+## Method 1 - Manual Builder
+
+Teachers manually create questions.
 
 Example:
 
-Lesson: Fruits
+Question:
+Apple means?
 
-1. Vocabulary Introduction
-2. Flashcards
-3. Match Word To Image
-4. Missing Letter Exercise
-5. Listen And Choose
-6. Grammar Tip
-7. Quiz
-8. Summary
+A. Orange
+B. Apple
+C. Banana
+D. Grape
 
-==================================================
+Correct answer:
+B
 
-Current block categories:
+Advantages:
 
-CONTENT BLOCKS
+- Flexible
+- Supports all question types
 
-- TEXT
-- IMAGE
-- VIDEO
-- AUDIO
-- PDF
+Disadvantages:
 
-TEACHING BLOCKS
+- Time consuming
+- Difficult for large datasets
 
-- VOCABULARY
-- GRAMMAR_RULE
-- CALLOUT
-- SUMMARY
+---
 
-VOCABULARY PRACTICE BLOCKS
+## Method 2 - Import Builder
 
-- FLASHCARD
-- MATCH_WORD
-- MATCH_IMAGE
-- SPELLING
-- REORDER_LETTERS
-- LISTEN_CHOOSE
-- LISTEN_TYPE
-- MEMORY_GAME
-- WORD_SEARCH
+Teachers upload Excel or CSV files.
 
-GRAMMAR PRACTICE BLOCKS
+Example:
 
-- FILL_BLANK
-- MULTIPLE_CHOICE
-- TRUE_FALSE
-- REORDER_SENTENCE
-- ERROR_DETECTION
+| Word   | Meaning   |
+| ------ | --------- |
+| Apple  | Quả táo   |
+| Banana | Quả chuối |
 
-READING BLOCKS
+The system imports and converts data into questions automatically.
 
-- READING_PASSAGE
-- READING_QUESTION
+Advantages:
 
-LISTENING BLOCKS
+- Fast content creation
+- Bulk operations
 
-- LISTENING_QUESTION
-- LISTENING_FILL_BLANK
+Disadvantages:
 
-SPEAKING BLOCKS
+- Still generates individual questions
 
-- SPEAKING_REPEAT
-- SPEAKING_READ
-- SPEAKING_CONVERSATION
+---
 
-ASSESSMENT BLOCKS
+## Method 3 - Question Bank
 
-- QUIZ
-- MINI_TEST
+Questions are stored centrally.
 
-==================================================
+Question Bank
+├── Vocabulary
+├── Grammar
+├── Reading
+└── Listening
 
-I need you to:
+Teachers create lessons by selecting questions from the bank.
 
-1. Design the complete Lesson architecture.
-2. Design database entities.
-3. Design JSON schema for LessonBlock.
-4. Explain how to render blocks dynamically on React.
-5. Explain how teachers can build lessons visually using drag and drop.
-6. Ensure new block types can be added without database changes.
-7. Review the architecture from a Senior EdTech Architect perspective.
-8. Point out weaknesses and suggest improvements.
+Example:
 
-Output should include:
+Lesson A:
+Q1, Q2, Q3
 
-- Architecture diagram
-- ERD
-- JSON examples
-- Frontend rendering strategy
-- Backend API design
-- Future scalability considerations
+Lesson B:
+Q1, Q5, Q7
 
-Lesson
-│
-├── VOCABULARY
-│ ├── Apple
-│ ├── Banana
-│ └── Orange
-│
-├── FLASHCARD
-│
-├── MATCH_IMAGE
-│
-├── SPELLING
-│
-├── LISTEN_CHOOSE
-│
-├── QUIZ
-│
-└── SUMMARY
+Advantages:
 
-{
-"id": "lesson_1",
-"title": "Fruits",
-"blocks": [
-{
-"id": "block_1",
-"type": "VOCABULARY",
-"order": 1,
-"data": {
-"words": [
-{
-"word": "Apple",
-"meaning": "Quả táo",
-"image": "...",
-"audio": "..."
-}
-]
-}
-},
-{
-"id": "block_2",
-"type": "FLASHCARD",
-"order": 2,
-"data": {
-"sourceVocabularySetId": "vocab_1"
-}
-},
-{
-"id": "block_3",
-"type": "MATCH_IMAGE",
-"order": 3,
-"data": {
-"questions": []
-}
-}
-]
-}
+- Reusable
+- Easy maintenance
+- Centralized management
+
+If a question is updated, all lessons using that question are updated automatically.
+
+---
+
+## Method 4 - Vocabulary Set + Activity Generator
+
+This is the strategic EdTech approach.
+
+Teachers DO NOT create individual questions.
+
+Teachers only create knowledge assets.
+
+Example:
+
+Vocabulary Set:
+
+Apple = Quả táo
+Banana = Quả chuối
+Orange = Quả cam
+
+The system automatically generates learning activities from the vocabulary set.
+
+Examples:
+
+Flashcards
+
+Match Word
+
+Match Image
+
+Multiple Choice
+
+Missing Letters
+
+Reorder Letters
+
+Listening Practice
+
+Speaking Practice
+
+Review Quiz
+
+Advantages:
+
+- Massive content generation
+- Reduced teacher workload
+- Better scalability
+
+This approach is similar to modern language-learning products.
+
+---
+
+# My Goals
+
+Analyze these four authoring strategies.
+
+Provide:
+
+1. Recommended architecture.
+2. Database design.
+3. Entity relationships.
+4. UI/UX flow for teachers.
+5. Scalability analysis.
+6. Pros and cons of each method.
+7. Recommended MVP roadmap.
+8. How these four methods can coexist in a single system.
+9. Whether Question Bank and Vocabulary Set should be separate modules or integrated.
+10. Long-term architecture for an EdTech platform serving 10,000+ students.
+
+Act as:
+
+- Senior Product Architect
+- Senior EdTech Architect
+- Senior LMS Designer
+
+Output diagrams, workflows, database suggestions, and implementation recommendations.
+
+---
+
+# Tiến độ triển khai
+
+> Checklist chi tiết + nhật ký: **[docs/LESSON_AUTHORING_PROGRESS.md](./docs/LESSON_AUTHORING_PROGRESS.md)**
+
+| Phase | Nội dung | Trạng thái |
+|-------|----------|------------|
+| 1A | Manual Builder — form EXERCISE_SET | ✅ Xong |
+| 1B | Import Builder — CSV trong Admin | ✅ Xong |
+| 2 | Question Bank | 📋 Tiếp theo |
+| 3 | Vocab Set + Activity Generator | 📋 Chưa bắt đầu |

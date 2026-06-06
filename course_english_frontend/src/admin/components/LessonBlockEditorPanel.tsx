@@ -11,6 +11,7 @@ import {
 } from "../../pages/admin/manageUserUiStyles";
 import { LessonImageUpload } from "./LessonImageUpload";
 import { LessonRichTextEditor } from "./LessonRichTextEditor";
+import { ExerciseSetEditor } from "./exercise/ExerciseSetEditor";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -141,6 +142,18 @@ export function LessonBlockEditorPanel({
           </Button>
         </Box>
       </Box>
+    );
+  }
+
+  if (block.blockType === "EXERCISE_SET") {
+    return (
+      <ExerciseSetEditor
+        payloadJson={draft.payloadJson ?? "{}"}
+        saving={saving}
+        error={error}
+        onSave={saveBlock}
+        onCancel={onCancel}
+      />
     );
   }
 

@@ -7,5 +7,7 @@ public enum LessonBlockTypeEnum {
     AUDIO,
     CALLOUT,
     SUMMARY,
-    QUESTION_REF
+    QUESTION_REF,
+    /** Gom nhiều câu luyện tập (MCQ, matching…) — payload questions[] */
+    EXERCISE_SET
 }

@@ -9,6 +9,7 @@ const BLOCK_LABELS: Record<LessonBlockType, string> = {
   CALLOUT: "Ghi chú",
   SUMMARY: "Tóm tắt",
   QUESTION_REF: "Câu hỏi",
+  EXERCISE_SET: "Bài tập",
 };
 
 export function getBlockTypeLabel(type: LessonBlockType): string {

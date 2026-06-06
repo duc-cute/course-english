@@ -28,6 +28,10 @@ import {
   LessonBlockPreview,
 } from "../../admin/components";
 import {
+  buildExerciseSetPayloadJson,
+  createDefaultExerciseSetPayload,
+} from "../../shared/lesson/exercisePayload";
+import {
   apiCreateLessonBlock,
   apiDeleteLessonBlock,
   apiGetLessonDetail,
@@ -57,6 +61,7 @@ import {
 const BLOCK_TYPE_OPTIONS: { value: LessonBlockType; label: string }[] = [
   { value: "TEXT", label: "Đoạn văn" },
   { value: "IMAGE", label: "Ảnh minh họa" },
+  { value: "EXERCISE_SET", label: "Bài tập (MCQ — EXERCISE_SET)" },
 ];
 
 function blockTypeLabel(type: LessonBlockType) {
@@ -126,6 +131,8 @@ export function LessonEditorPage() {
         return stringifyBlockPayload({ html: "<p>Nhập nội dung bài học tại đây...</p>" });
       case "IMAGE":
         return stringifyBlockPayload({ assetId: "", caption: "" });
+      case "EXERCISE_SET":
+        return buildExerciseSetPayloadJson(createDefaultExerciseSetPayload());
       default:
         return "{}";
     }
@@ -276,8 +283,8 @@ export function LessonEditorPage() {
       <Box sx={{ display: "grid", gap: 1, width: "100%" }}>
         {blocks.length === 0 && !loading ? (
           <Alert severity="info">
-            Chưa có khối nội dung. Thêm ít nhất một <strong>đoạn văn</strong> và một <strong>mô hình 3D</strong> trước
-            khi publish.
+            Chưa có khối nội dung. Bấm <strong>+ Thêm khối</strong> (đoạn văn / ảnh / bài tập) hoặc import SQL/CSV
+            (xem <code>course_english_backend/import_exercise_block_attach.sql</code>).
           </Alert>
         ) : null}
         {blocks.map((block, index) => {
@@ -351,7 +358,12 @@ export function LessonEditorPage() {
                   <LessonBlockPreview block={block} assets={assets ?? []} />
                 </Box>
               ) : (
-                <Box sx={{ px: 1.25, pb: 1.25 }}>
+                <Box
+                  sx={{
+                    px: block.blockType === "EXERCISE_SET" ? 0 : 1.25,
+                    pb: block.blockType === "EXERCISE_SET" ? 0 : 1.25,
+                  }}
+                >
                   <LessonBlockEditorPanel
                     block={block}
                     lessonId={lessonId}

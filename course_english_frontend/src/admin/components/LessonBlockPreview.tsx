@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/lesson";
 import { parseBlockPayload } from "../../shared/api/lesson";
+import { parseExerciseSetPayload } from "../../student/lessonPlayer/exercise/parseExerciseSet";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -51,6 +52,30 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
         />
         {payload.caption ? (
           <Typography sx={{ fontSize: 12, color: "#5F5E5A", mt: 0.75 }}>{payload.caption}</Typography>
+        ) : null}
+      </Box>
+    );
+  }
+
+  if (block.blockType === "EXERCISE_SET") {
+    const payload = parseExerciseSetPayload(block.payloadJson);
+    const mcqCount = payload.questions.filter((q) => q.type === "MULTIPLE_CHOICE").length;
+    const firstMcq = payload.questions.find((q) => q.type === "MULTIPLE_CHOICE");
+    return (
+      <Box>
+        <Typography sx={{ fontSize: 13, color: "#333" }}>
+          <strong>{payload.title || "Bài tập"}</strong>
+          {payload.instruction ? ` — ${payload.instruction}` : ""}
+          <br />
+          <span style={{ color: "#5F5E5A" }}>
+            {mcqCount} câu MCQ
+            {payload.passScorePercent !== undefined ? ` · Đạt ${payload.passScorePercent}%` : ""}
+          </span>
+        </Typography>
+        {firstMcq && firstMcq.type === "MULTIPLE_CHOICE" ? (
+          <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
+            VD: {firstMcq.prompt.text || "(chưa có câu hỏi)"}
+          </Typography>
         ) : null}
       </Box>
     );

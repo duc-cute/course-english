@@ -10,7 +10,8 @@ export type LessonBlockType =
   | "AUDIO"
   | "CALLOUT"
   | "SUMMARY"
-  | "QUESTION_REF";
+  | "QUESTION_REF"
+  | "EXERCISE_SET";
 
 export type LessonAssetType = "IMAGE" | "FILE" | "VIDEO" | "LINK";
 
