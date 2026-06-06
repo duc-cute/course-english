@@ -1,0 +1,16 @@
+export const paths = {
+  LOGIN: "login",
+  REGISTER: "register",
+  ADMIN: "admin",
+  STUDENT: "student",
+  STUDENT_LESSONS: "lessons",
+  STUDENT_LESSON_READ: "lessons/:lessonId",
+  MANAGE_USER: "manage-user",
+  MANAGE_ROLE: "manage-role",
+  MANAGE_CLASSROOM: "manage-classroom",
+  MANAGE_SUBJECT: "manage-subject",
+  MANAGE_ENROLLMENT: "manage-enrollment",
+  MANAGE_LESSON: "manage-lesson",
+  LESSON_EDITOR: "manage-lesson/:lessonId/edit",
+  REVIEW_DOC: "review-doc",
+} as const;

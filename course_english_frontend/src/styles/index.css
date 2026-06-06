@@ -1,0 +1,27 @@
+@import "../styles.css";
+@import "./admin-layout.css";
+@import "./admin-dashboard.css";
+@import "./manage-user.css";
+
+:root {
+  --ac-primary: #004ac6;
+  --ac-primary-fixed: #dbe1ff;
+  --ac-primary-fixed-dim: #b4c5ff;
+  --ac-primary-container: #2563eb;
+  --ac-secondary: #006c49;
+  --ac-secondary-fixed: #6ffbbe;
+  --ac-secondary-container: #6cf8bb;
+  --ac-on-secondary-container: #00714d;
+  --ac-on-secondary-fixed: #002113;
+  --ac-tertiary-fixed: #ffddb8;
+  --ac-on-tertiary-fixed-variant: #653e00;
+  --ac-background: #f8f9ff;
+  --ac-surface: #f8f9ff;
+  --ac-surface-container-lowest: #ffffff;
+  --ac-surface-container-low: #eff4ff;
+  --ac-surface-container-high: #dce9ff;
+  --ac-on-surface: #0b1c30;
+  --ac-on-surface-variant: #434655;
+  --ac-outline: #737686;
+  --ac-outline-variant: #c3c6d7;
+}

@@ -1,0 +1,23 @@
+/* Course English — student theme â€” student learning zone (stitch_cell_studio_product_audit) */
+
+.student-layout-root {
+  --eng-teal: #4f46e5;
+  --eng-teal-dark: #3730a3;
+  --eng-teal-container: #e0e7ff;
+  --eng-teal-glow: rgba(79, 70, 229, 0.12);
+  --eng-neuro-grey: #f8fafc;
+  --eng-surface: #f7f9fb;
+  --eng-on-surface: #191c1e;
+  --eng-on-surface-variant: #3d4947;
+  --eng-outline-variant: #bcc9c6;
+  --eng-interactive-purple: #7c3aed;
+  --eng-interactive-purple-dim: #ede9fe;
+  --eng-knowledge-orange: #f97316;
+  --eng-glass-bg: rgba(248, 250, 252, 0.72);
+  --eng-glass-stroke: rgba(255, 255, 255, 0.45);
+  --eng-reading-size: 1.125rem;
+  --eng-reading-lh: 1.7;
+  --eng-reading-max: 720px;
+  --eng-radius-lg: 16px;
+  --eng-radius-xl: 24px;
+}

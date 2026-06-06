@@ -1,0 +1,151 @@
+        <section class="tab-panel" data-panel="learning" role="tabpanel">
+          <div class="hero" style="margin-bottom:24px;padding-bottom:18px">
+            <span class="eyebrow">Module 2.3 · Ưu tiên cao nhất</span>
+            <h1 style="font-size:2rem">Learning Content</h1>
+            <p>Checklist chi tiết theo <code>promt.md</code> — tick để theo dõi tiến độ (lưu trên trình duyệt).</p>
+          </div>
+
+          <div class="progress-panel" id="lc-progress-panel">
+            <div class="progress-head">
+              <strong>Tiến độ Learning Content</strong>
+              <span class="progress-pct" id="lc-progress-pct">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="lc-progress-fill" style="width:0%"></div></div>
+            <p class="progress-note">Đã hoàn thành <span id="lc-progress-count">0</span> / <span id="lc-progress-total">0</span> hạng mục ·
+              <button type="button" class="link-btn" id="lc-reset-defaults">Đặt lại theo code hiện tại</button> ·
+              <button type="button" class="link-btn" id="lc-clear-all">Xóa tất cả tick</button>
+            </p>
+          </div>
+
+          <div class="callout">
+            <div>
+              <strong>Quy ước:</strong> ☑ = đã xong (team) · Mặc định tick sẵn các mục P0 đã có trong repo.
+              Mở tab <strong>Product Review</strong> cho luồng tổng; tab này chỉ tập trung nội dung bài học.
+            </div>
+          </div>
+
+          <h2 class="section" id="lc-foundation">A. Nền tảng Lesson &amp; CMS</h2>
+          <ul class="checklist" data-group="lc-foundation">
+            <li><label><input type="checkbox" data-check-id="lc.f.be.lesson-crud" data-default="1" /><span>BE: CRUD <code>Lesson</code>, search, publish/unpublish</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.be.blocks" data-default="1" /><span>BE: CRUD <code>LessonBlock</code> + reorder</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.be.assets" data-default="1" /><span>BE: <code>LessonAsset</code> + upload file</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.ad.list" data-default="1" /><span>Admin: <code>ManageLessonPage</code> danh sách + tìm kiếm</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.ad.editor" data-default="1" /><span>Admin: <code>LessonEditorPage</code> — thêm/sửa/xóa/sắp xếp block</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.st.reader" data-default="1" /><span>Student: <code>LessonReaderPage</code> đọc bài publish</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.st.toc" data-default="1" /><span>Student: TOC + scroll spy theo heading TEXT</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.st.continue" data-default="1" /><span>Student: Continue learning (<code>lessonProgressStorage</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.st.focus" data-default="1" /><span>Student: Focus mode + in bài</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.enroll-filter" /><span>P1: Lọc bài theo <code>Enrollment</code> (chỉ lớp đã ghi danh)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.progress-api" /><span>P1: API <code>lesson-progress</code> (server thay localStorage)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-text">B. Rich text — đọc &amp; grammar (TEXT)</h2>
+          <ul class="checklist" data-group="lc-text">
+            <li><label><input type="checkbox" data-check-id="lc.t.enum" data-default="1" /><span>Enum <code>TEXT</code> (BE + FE types)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.t.editor-add" data-default="1" /><span>Admin: thêm block TEXT trong editor</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.t.richtext" data-default="1" /><span>Admin: <code>LessonRichTextEditor</code> (soạn HTML)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.t.preview" data-default="1" /><span>Admin: preview TEXT trong <code>LessonBlockPreview</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.t.reader" data-default="1" /><span>Student: render HTML trong reader</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.t.sanitize" /><span>P1: <code>DOMPurify</code> sanitize trước khi render</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.t.reading-time" /><span>P1: Ước lượng thời gian đọc (WPM) trên header bài</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.t.passage-layout" /><span>P1: Typography passage (line-height, max-width đọc)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-image">C. Images (IMAGE)</h2>
+          <ul class="checklist" data-group="lc-image">
+            <li><label><input type="checkbox" data-check-id="lc.i.enum" data-default="1" /><span>Enum <code>IMAGE</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.i.upload" data-default="1" /><span>Admin: <code>LessonImageUpload</code> + gắn assetId</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.i.caption" data-default="1" /><span>Payload: <code>caption</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.i.reader" data-default="1" /><span>Student: figure + caption overlay</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.i.lazy" data-default="1" /><span>Student: <code>loading="lazy"</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.i.webp" /><span>P1: Nén / WebP khi upload</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.i.alt" /><span>P1: Alt text bắt buộc (a11y)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-video">D. Video (VIDEO)</h2>
+          <ul class="checklist" data-group="lc-video">
+            <li><label><input type="checkbox" data-check-id="lc.v.enum" data-default="1" /><span>Enum <code>VIDEO</code> (BE)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.v.editor-add" /><span>Admin: thêm block VIDEO trong editor (dropdown)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.v.upload-url" /><span>Admin: upload file HOẶC URL YouTube/Vimeo</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.v.preview-admin" /><span>Admin: preview video trong editor</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.v.player" /><span>Student: HTML5 / embed player thật</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.v.caption-track" /><span>P1: Phụ đề (subtitle) optional</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.v.no-autoplay-mobile" /><span>P1: Không autoplay trên mobile (tiết kiệm data)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.v.checkpoint" /><span>P1: Checkpoint “đã xem ≥90%” mới qua block tiếp</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-audio">E. Audio / Listening (AUDIO) — trọng tâm promt</h2>
+          <ul class="checklist" data-group="lc-audio">
+            <li><label><input type="checkbox" data-check-id="lc.a.enum" data-default="1" /><span>Enum <code>AUDIO</code> (BE)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.editor-add" /><span>Admin: thêm block AUDIO trong editor</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.upload" /><span>Admin: upload MP3/WAV + <code>LessonAsset</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.transcript-field" /><span>Admin: field <code>transcript</code> trong payload</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.player-basic" /><span>Student: audio player (play/pause, thanh tiến độ)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.speed" /><span>Student: tốc độ 0.75× / 1× / 1.25×</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.transcript-toggle" /><span>Student: bật/tắt transcript</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.listen-count" /><span>P1: Đếm số lần nghe (analytics)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.a.listening-quiz" /><span>P2: Gắn câu listening ngay sau audio block</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-pdf">F. PDF &amp; file đính kèm</h2>
+          <ul class="checklist" data-group="lc-pdf">
+            <li><label><input type="checkbox" data-check-id="lc.p.asset-file" data-default="1" /><span><code>LessonAsset</code> type FILE / LINK</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.p.upload" data-default="1" /><span>Upload PDF qua FileController</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.p.block-ref" /><span>Block TEXT/IMAGE link tới PDF asset</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.p.embed" /><span>Student: embed PDF viewer HOẶC nút tải</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.p.no-pdf-only" /><span>Rule: không cho bài chỉ PDF (anti PDF viewer)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-vocab">G. Vocabulary (promt)</h2>
+          <ul class="checklist" data-group="lc-vocab">
+            <li><label><input type="checkbox" data-check-id="lc.g.inline-highlight" /><span>P1: Highlight từ khóa trong TEXT (data-term)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.glossary-popup" /><span>P1: Popup định nghĩa khi click từ</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.warmup-block" /><span>P1: Block “Word list” đầu bài (TEXT có list)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.vocab-set" /><span>V2: Entity <code>VocabularySet</code> theo Subject</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.flashcard" /><span>V2: Flashcard SRS ôn từ</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.audio-per-word" /><span>V2: Audio phát âm từng từ</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-grammar">H. Grammar — CALLOUT (promt: Grammar)</h2>
+          <ul class="checklist" data-group="lc-grammar">
+            <li><label><input type="checkbox" data-check-id="lc.h.enum" data-default="1" /><span>Enum <code>CALLOUT</code> (BE)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.editor-add" /><span>Admin: thêm block CALLOUT</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.variants" /><span>Payload <code>variant</code>: tip | warning | definition | grammar-rule</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.form" /><span>Admin: form HTML ngắn + chọn variant</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.reader-style" /><span>Student: UI callout (màu/icon theo variant)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.rule-box" /><span>P1: Template “Grammar rule” + ví dụ minh họa</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-summary">I. Key takeaways — SUMMARY</h2>
+          <ul class="checklist" data-group="lc-summary">
+            <li><label><input type="checkbox" data-check-id="lc.s.enum" data-default="1" /><span>Enum <code>SUMMARY</code> (BE)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.s.editor-add" /><span>Admin: thêm block SUMMARY</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.s.items-payload" /><span>Payload <code>items: string[]</code> (bullet editor)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.s.reader" /><span>Student: UI “Key takeaways” (teal box)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.s.end-lesson" /><span>P1: SUMMARY luôn ở cuối bài (publish rule gợi ý)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-inline-quiz">J. Quick check trong bài (QUESTION_REF → QUIZ)</h2>
+          <ul class="checklist" data-group="lc-quiz-inline">
+            <li><label><input type="checkbox" data-check-id="lc.q.enum" data-default="1" /><span>Enum <code>QUESTION_REF</code> (placeholder)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.q.reader-stub" data-default="1" /><span>Student: stub “Phase P2”</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.q.inline-mcq" /><span>P2: 1–3 câu MCQ inline + auto-grade</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.q.explanation" /><span>P2: Giải thích sau khi trả lời</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.q.pass-rule" /><span>P2: Rule hoàn thành bài (≥80% đúng)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="lc-cross">K. Chất lượng &amp; vận hành chéo</h2>
+          <ul class="checklist" data-group="lc-cross">
+            <li><label><input type="checkbox" data-check-id="lc.k.preview-all" data-default="1" /><span>Admin preview mọi block đã hỗ trợ</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.k.block-labels" data-default="1" /><span>Nhãn block trong TOC reader (<code>lessonReaderUtils</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.k.template" /><span>P1: Template bài mẫu (Daily routines) 1-click</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.k.skill-tag" /><span>P2: Gắn <code>Skill</code> (Reading/Listening) lên lesson</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.k.grade-level-ui" /><span>V2: Nhãn Grade 1–9 trên course UI</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.k.mobile-qa" /><span>P1: QA mobile reader (375px)</span></label></li>
+          </ul>
+
+          <footer class="page-foot">
+            Checklist lưu tại <code>localStorage</code> key <code>course-english.review.checks.v1</code>.
+            Cập nhật mặc định khi merge P0/P1.
+          </footer>
+        </section>

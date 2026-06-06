@@ -1,0 +1,41 @@
+{
+  "name": "course-english-frontend",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -b",
+    "preview": "vite preview",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/material": "^7.3.4",
+    "@reduxjs/toolkit": "^2.9.0",
+    "axios": "^1.13.2",
+    "lucide-react": "^0.552.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.65.0",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.15.1",
+    "react-spinners": "^0.17.0",
+    "react-toastify": "^11.0.5",
+    "redux-persist": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "playwright-core": "^1.59.1",
+    "pngjs": "^7.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.2"
+  }
+}

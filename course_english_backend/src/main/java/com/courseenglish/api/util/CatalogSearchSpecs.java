@@ -1,0 +1,194 @@
+package com.courseenglish.api.util;
+
+import com.courseenglish.api.domain.*;
+import com.courseenglish.api.domain.request.*;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import org.springframework.data.jpa.domain.Specification;
+
+public final class CatalogSearchSpecs {
+    private CatalogSearchSpecs() {
+    }
+
+    public static Specification<User> userSearch(ReqSearchUserDTO req) {
+        return and(
+                keywordLike(req.getKeyword(), "name", "email"),
+                roleNameEquals(req.getRoleName())
+        );
+    }
+
+    public static Specification<Role> roleSearch(ReqSearchRoleDTO req) {
+        return keywordLike(req.getKeyword(), "name", "code");
+    }
+
+    public static Specification<Classroom> classroomSearch(ReqSearchClassroomDTO req) {
+        return keywordLike(req.getKeyword(), "name", "code");
+    }
+
+    public static Specification<Subject> subjectSearch(ReqSearchSubjectDTO req) {
+        return and(
+                subjectKeywordLike(req.getKeyword()),
+                classroomIdEquals(req.getClassroomId())
+        );
+    }
+
+    public static Specification<Enrollment> enrollmentSearch(ReqSearchEnrollmentDTO req) {
+        return and(
+                enrollmentKeywordLike(req.getKeyword()),
+                enrollmentClassroomIdEquals(req.getClassroomId()),
+                enrollmentStudentIdEquals(req.getStudentId()),
+                statusEquals(req.getStatus())
+        );
+    }
+
+    public static Specification<Lesson> lessonSearch(ReqSearchLessonDTO req) {
+        return and(
+                lessonKeywordLike(req.getKeyword()),
+                lessonSubjectIdEquals(req.getSubjectId()),
+                lessonStatusEquals(req.getStatus())
+        );
+    }
+
+    private static Specification<Lesson> lessonKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> {
+            Join<Lesson, Subject> subjectJoin = root.join("subject", JoinType.LEFT);
+            return cb.or(
+                    cb.like(cb.lower(root.get("title")), pattern),
+                    cb.like(cb.lower(root.get("summary")), pattern),
+                    cb.like(cb.lower(subjectJoin.get("name")), pattern)
+            );
+        };
+    }
+
+    private static Specification<Lesson> lessonSubjectIdEquals(java.util.UUID subjectId) {
+        if (subjectId == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            Join<Lesson, Subject> subjectJoin = root.join("subject", JoinType.INNER);
+            return cb.equal(subjectJoin.get("id"), subjectId);
+        };
+    }
+
+    private static Specification<Lesson> lessonStatusEquals(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("status")), normalized);
+    }
+
+    private static Specification<User> roleNameEquals(String roleName) {
+        if (roleName == null || roleName.isBlank()) {
+            return null;
+        }
+        String normalized = roleName.trim();
+        return (root, query, cb) -> {
+            query.distinct(true);
+            Join<User, Role> rolesJoin = root.join("roles", JoinType.INNER);
+            return cb.equal(rolesJoin.get("name"), normalized);
+        };
+    }
+
+    private static Specification<Subject> subjectKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> {
+            Join<Subject, Classroom> classroomJoin = root.join("classroom", JoinType.LEFT);
+            return cb.or(
+                    cb.like(cb.lower(root.get("name")), pattern),
+                    cb.like(cb.lower(classroomJoin.get("name")), pattern)
+            );
+        };
+    }
+
+    private static Specification<Subject> classroomIdEquals(java.util.UUID classroomId) {
+        if (classroomId == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            Join<Subject, Classroom> classroomJoin = root.join("classroom", JoinType.INNER);
+            return cb.equal(classroomJoin.get("id"), classroomId);
+        };
+    }
+
+    private static Specification<Enrollment> enrollmentKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> {
+            query.distinct(true);
+            Join<Enrollment, Classroom> classroomJoin = root.join("classroom", JoinType.LEFT);
+            Join<Enrollment, User> studentJoin = root.join("student", JoinType.LEFT);
+            return cb.or(
+                    cb.like(cb.lower(classroomJoin.get("name")), pattern),
+                    cb.like(cb.lower(studentJoin.get("name")), pattern),
+                    cb.like(cb.lower(studentJoin.get("email")), pattern)
+            );
+        };
+    }
+
+    private static Specification<Enrollment> enrollmentClassroomIdEquals(java.util.UUID classroomId) {
+        if (classroomId == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            Join<Enrollment, Classroom> classroomJoin = root.join("classroom", JoinType.INNER);
+            return cb.equal(classroomJoin.get("id"), classroomId);
+        };
+    }
+
+    private static Specification<Enrollment> enrollmentStudentIdEquals(java.util.UUID studentId) {
+        if (studentId == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            Join<Enrollment, User> studentJoin = root.join("student", JoinType.INNER);
+            return cb.equal(studentJoin.get("id"), studentId);
+        };
+    }
+
+    private static Specification<Enrollment> statusEquals(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("status")), normalized);
+    }
+
+    private static <T> Specification<T> keywordLike(String keyword, String... fields) {
+        if (keyword == null || keyword.isBlank() || fields == null || fields.length == 0) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> {
+            var predicates = new jakarta.persistence.criteria.Predicate[fields.length];
+            for (int i = 0; i < fields.length; i++) {
+                predicates[i] = cb.like(cb.lower(root.get(fields[i])), pattern);
+            }
+            return cb.or(predicates);
+        };
+    }
+
+    @SafeVarargs
+    private static <T> Specification<T> and(Specification<T>... specs) {
+        Specification<T> combined = null;
+        if (specs == null) {
+            return null;
+        }
+        for (Specification<T> spec : specs) {
+            if (spec == null) {
+                continue;
+            }
+            combined = combined == null ? spec : combined.and(spec);
+        }
+        return combined;
+    }
+}
