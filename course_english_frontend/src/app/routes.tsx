@@ -11,6 +11,7 @@ import { ManageLessonPage } from "../pages/admin/ManageLessonPage";
 import { LessonEditorPage } from "../pages/admin/LessonEditorPage";
 import { ManageUserPage } from "../pages/admin/ManageUserPage";
 import { ReviewDocPage } from "../pages/admin/ReviewDocPage";
+import { ManageQuestionsPage } from "../pages/admin/ManageQuestionsPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { StudentHomePage } from "../pages/student/StudentHomePage";
@@ -99,6 +100,10 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.MANAGE_LESSON,
         element: <ManageLessonPage />,
+      },
+      {
+        path: paths.MANAGE_QUESTIONS,
+        element: <ManageQuestionsPage />,
       },
       {
         path: "manage-lesson/:lessonId/edit",

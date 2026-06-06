@@ -11,6 +11,7 @@ export const paths = {
   MANAGE_SUBJECT: "manage-subject",
   MANAGE_ENROLLMENT: "manage-enrollment",
   MANAGE_LESSON: "manage-lesson",
+  MANAGE_QUESTIONS: "questions",
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",
 } as const;

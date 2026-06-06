@@ -1,0 +1,68 @@
+package com.courseenglish.api.controller;
+
+import com.courseenglish.api.domain.request.ReqQuestionDTO;
+import com.courseenglish.api.domain.request.ReqSearchQuestionDTO;
+import com.courseenglish.api.domain.response.ResQuestionCategoryDTO;
+import com.courseenglish.api.domain.response.ResQuestionDTO;
+import com.courseenglish.api.domain.response.ResultPaginationDTO;
+import com.courseenglish.api.service.QuestionService;
+import com.courseenglish.api.util.annotation.ApiMessage;
+import com.courseenglish.api.util.error.IdInvalidException;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/questions")
+public class QuestionController {
+
+    private final QuestionService questionService;
+
+    public QuestionController(QuestionService questionService) {
+        this.questionService = questionService;
+    }
+
+    @PostMapping("/search")
+    @ApiMessage("Search questions in bank")
+    public ResponseEntity<ResultPaginationDTO> search(@RequestBody(required = false) ReqSearchQuestionDTO req) {
+        return ResponseEntity.ok(questionService.search(req));
+    }
+
+    @GetMapping("/categories")
+    @ApiMessage("List question categories")
+    public ResponseEntity<List<ResQuestionCategoryDTO>> listCategories() {
+        return ResponseEntity.ok(questionService.listCategories());
+    }
+
+    @GetMapping("/{id}")
+    @ApiMessage("Get question by id")
+    public ResponseEntity<ResQuestionDTO> getById(@PathVariable UUID id) throws IdInvalidException {
+        return ResponseEntity.ok(questionService.getById(id));
+    }
+
+    @PostMapping("")
+    @ApiMessage("Create question")
+    public ResponseEntity<ResQuestionDTO> create(@Valid @RequestBody ReqQuestionDTO request)
+            throws IdInvalidException {
+        return ResponseEntity.status(HttpStatus.CREATED).body(questionService.create(request));
+    }
+
+    @PutMapping("/{id}")
+    @ApiMessage("Update question")
+    public ResponseEntity<ResQuestionDTO> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReqQuestionDTO request) throws IdInvalidException {
+        return ResponseEntity.ok(questionService.update(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @ApiMessage("Delete question")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) throws IdInvalidException {
+        questionService.delete(id);
+        return ResponseEntity.ok(null);
+    }
+}

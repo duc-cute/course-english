@@ -32,6 +32,10 @@ import {
   createDefaultExerciseSetPayload,
 } from "../../shared/lesson/exercisePayload";
 import {
+  buildQuestionRefPayloadJson,
+  createDefaultQuestionRefPayload,
+} from "../../shared/lesson/questionRefPayload";
+import {
   apiCreateLessonBlock,
   apiDeleteLessonBlock,
   apiGetLessonDetail,
@@ -61,7 +65,8 @@ import {
 const BLOCK_TYPE_OPTIONS: { value: LessonBlockType; label: string }[] = [
   { value: "TEXT", label: "Đoạn văn" },
   { value: "IMAGE", label: "Ảnh minh họa" },
-  { value: "EXERCISE_SET", label: "Bài tập (MCQ — EXERCISE_SET)" },
+  { value: "EXERCISE_SET", label: "Bài tập (soạn / import)" },
+  { value: "QUESTION_REF", label: "Bài tập (ngân hàng câu)" },
 ];
 
 function blockTypeLabel(type: LessonBlockType) {
@@ -133,6 +138,8 @@ export function LessonEditorPage() {
         return stringifyBlockPayload({ assetId: "", caption: "" });
       case "EXERCISE_SET":
         return buildExerciseSetPayloadJson(createDefaultExerciseSetPayload());
+      case "QUESTION_REF":
+        return buildQuestionRefPayloadJson(createDefaultQuestionRefPayload());
       default:
         return "{}";
     }
@@ -360,8 +367,8 @@ export function LessonEditorPage() {
               ) : (
                 <Box
                   sx={{
-                    px: block.blockType === "EXERCISE_SET" ? 0 : 1.25,
-                    pb: block.blockType === "EXERCISE_SET" ? 0 : 1.25,
+                    px: block.blockType === "EXERCISE_SET" || block.blockType === "QUESTION_REF" ? 0 : 1.25,
+                    pb: block.blockType === "EXERCISE_SET" || block.blockType === "QUESTION_REF" ? 0 : 1.25,
                   }}
                 >
                   <LessonBlockEditorPanel

@@ -20,6 +20,7 @@ import com.courseenglish.api.repository.SubjectRepository;
 import com.courseenglish.api.service.LessonAssetService;
 import com.courseenglish.api.service.LessonBlockService;
 import com.courseenglish.api.service.LessonService;
+import com.courseenglish.api.service.QuestionRefResolverService;
 import com.courseenglish.api.util.constant.LessonStatusEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 
@@ -31,18 +32,21 @@ public class LessonServiceImpl implements LessonService {
     private final LessonBlockRepository lessonBlockRepository;
     private final LessonBlockService lessonBlockService;
     private final LessonAssetService lessonAssetService;
+    private final QuestionRefResolverService questionRefResolverService;
 
     public LessonServiceImpl(
             LessonRepository lessonRepository,
             SubjectRepository subjectRepository,
             LessonBlockRepository lessonBlockRepository,
             LessonBlockService lessonBlockService,
-            LessonAssetService lessonAssetService) {
+            LessonAssetService lessonAssetService,
+            QuestionRefResolverService questionRefResolverService) {
         this.lessonRepository = lessonRepository;
         this.subjectRepository = subjectRepository;
         this.lessonBlockRepository = lessonBlockRepository;
         this.lessonBlockService = lessonBlockService;
         this.lessonAssetService = lessonAssetService;
+        this.questionRefResolverService = questionRefResolverService;
     }
 
     @Override
@@ -82,7 +86,9 @@ public class LessonServiceImpl implements LessonService {
 
         ResLessonDetailDTO detail = new ResLessonDetailDTO();
         copyLessonFields(lesson, detail);
-        detail.setBlocks(lessonBlockService.listByLessonId(id));
+        var blocks = lessonBlockService.listByLessonId(id);
+        questionRefResolverService.resolve(blocks);
+        detail.setBlocks(blocks);
         detail.setAssets(lessonAssetService.listByLessonId(id));
         return detail;
     }

@@ -3,6 +3,7 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import EmojiPeopleOutlinedIcon from "@mui/icons-material/EmojiPeopleOutlined";
@@ -73,6 +74,11 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         label: "Quản lý bài học",
         icon: <ArticleOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.MANAGE_LESSON}`,
+      },
+      {
+        label: "Thư viện câu hỏi",
+        icon: <QuizOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.MANAGE_QUESTIONS}`,
       },
       {
         label: "Quản lý phân lớp",

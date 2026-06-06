@@ -12,6 +12,7 @@ import {
 import { LessonImageUpload } from "./LessonImageUpload";
 import { LessonRichTextEditor } from "./LessonRichTextEditor";
 import { ExerciseSetEditor } from "./exercise/ExerciseSetEditor";
+import { QuestionRefEditor } from "./question/QuestionRefEditor";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -148,6 +149,18 @@ export function LessonBlockEditorPanel({
   if (block.blockType === "EXERCISE_SET") {
     return (
       <ExerciseSetEditor
+        payloadJson={draft.payloadJson ?? "{}"}
+        saving={saving}
+        error={error}
+        onSave={saveBlock}
+        onCancel={onCancel}
+      />
+    );
+  }
+
+  if (block.blockType === "QUESTION_REF") {
+    return (
+      <QuestionRefEditor
         payloadJson={draft.payloadJson ?? "{}"}
         saving={saving}
         error={error}

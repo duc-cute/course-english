@@ -32,6 +32,8 @@ export type LessonBlockRecord = {
   blockType: LessonBlockType;
   displayOrder: number;
   payloadJson?: string;
+  /** QUESTION_REF — câu resolve từ bank (GET /lessons/{id}/detail) */
+  resolvedQuestionsJson?: string;
 };
 
 export type LessonAssetRecord = {

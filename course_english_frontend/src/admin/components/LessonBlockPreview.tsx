@@ -2,6 +2,7 @@ import { Box, Typography } from "@mui/material";
 import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/lesson";
 import { parseBlockPayload } from "../../shared/api/lesson";
 import { parseExerciseSetPayload } from "../../student/lessonPlayer/exercise/parseExerciseSet";
+import { parseQuestionRefPayload, parseResolvedQuestions } from "../../student/lessonPlayer/exercise/parseQuestionRef";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -77,6 +78,23 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
             VD: {firstMcq.prompt.text || "(chưa có câu hỏi)"}
           </Typography>
         ) : null}
+      </Box>
+    );
+  }
+
+  if (block.blockType === "QUESTION_REF") {
+    const payload = parseQuestionRefPayload(block.payloadJson);
+    const resolved = parseResolvedQuestions(block.resolvedQuestionsJson);
+    return (
+      <Box>
+        <Typography sx={{ fontSize: 13, color: "#333" }}>
+          <strong>{payload.title || "Bài tập (ngân hàng)"}</strong>
+          {payload.instruction ? ` — ${payload.instruction}` : ""}
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: "#5F5E5A", mt: 0.25 }}>
+          {payload.refs.length} câu tham chiếu
+          {resolved.length > 0 ? ` · ${resolved.length} câu resolve` : ""}
+        </Typography>
       </Box>
     );
   }

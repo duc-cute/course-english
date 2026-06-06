@@ -49,6 +49,52 @@ public final class CatalogSearchSpecs {
         );
     }
 
+    public static Specification<Question> questionSearch(ReqSearchQuestionDTO req) {
+        return and(
+                questionKeywordLike(req.getKeyword()),
+                questionCategoryIdEquals(req.getCategoryId()),
+                questionTypeEquals(req.getQuestionType()),
+                questionStatusEquals(req.getStatus())
+        );
+    }
+
+    private static Specification<Question> questionKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("promptText")), pattern),
+                cb.like(cb.lower(root.get("explanation")), pattern)
+        );
+    }
+
+    private static Specification<Question> questionCategoryIdEquals(java.util.UUID categoryId) {
+        if (categoryId == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            Join<Question, QuestionCategory> categoryJoin = root.join("category", JoinType.INNER);
+            return cb.equal(categoryJoin.get("id"), categoryId);
+        };
+    }
+
+    private static Specification<Question> questionTypeEquals(String questionType) {
+        if (questionType == null || questionType.isBlank()) {
+            return null;
+        }
+        String normalized = questionType.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("questionType")), normalized);
+    }
+
+    private static Specification<Question> questionStatusEquals(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("status")), normalized);
+    }
+
     private static Specification<Lesson> lessonKeywordLike(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return null;

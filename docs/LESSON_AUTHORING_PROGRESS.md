@@ -12,7 +12,7 @@
 |---|-------------|------------|------------|
 | **1** | **Manual Builder** | GV soạn câu hỏi bằng form trong Admin | ✅ **XONG** |
 | **2** | **Import Builder** | Upload CSV/Excel → tạo `EXERCISE_SET` | ✅ **XONG** (CSV + Excel) |
-| 3 | Question Bank | Ngân hàng câu hỏi + `QUESTION_REF` | 📋 Chưa bắt đầu |
+| 3 | Question Bank | Ngân hàng câu hỏi + `QUESTION_REF` | 🟡 **Đang làm** (core xong, còn import + seed) |
 | 4 | Vocab Set + Generator | Bộ từ → auto sinh activities | 📋 Chưa bắt đầu |
 
 ---
@@ -174,42 +174,47 @@ File mẫu: `course_english_backend/docs/import/vocab_daily_words_questions.csv`
 
 ### 2.1 Database (BE) — tuần 1
 
+> Thiết kế chi tiết: **[QUESTION_BANK_DB_DESIGN.md](./QUESTION_BANK_DB_DESIGN.md)**
+
 ```text
 question_categories (id, name, slug, parent_id)
-questions           (id, category_id, type, prompt_json, explanation, status, ...)
-question_choices    (id, question_id, choice_id, text, is_correct, display_order)
-lesson_block_question_refs (block_id, question_id, display_order)  -- optional nếu dùng refs[] trong payload
+questions           (id, category_id, question_type, prompt_text, explanation, status, content_json, …)
+question_choices    (id, question_id, choice_key, choice_text, is_correct, display_order)
+QUESTION_REF payload → refs[] (UUID[]) trong lesson_blocks.payload_json — không bảng junction MVP
 ```
 
-- [ ] Migration SQL `002_question_bank.sql`
-- [ ] JPA entities + repository
-- [ ] `QuestionService` CRUD + soft delete
+- [x] Thiết kế schema + tài liệu
+- [x] Migration SQL `002_question_bank.sql`
+- [x] JPA entities + repository
+- [x] `QuestionService` CRUD + soft delete
 
 ### 2.2 API (BE) — tuần 1–2
 
 | Endpoint | Mô tả |
 |----------|--------|
-| `GET /questions` | List + filter category, type, search |
-| `GET /questions/{id}` | Chi tiết |
+| `POST /questions/search` | List + filter category, type, search |
+| `GET /questions/categories` | Danh mục (Vocabulary, Grammar, …) |
+| `GET /questions/{id}` | Chi tiết + choices |
 | `POST /questions` | Tạo MCQ |
 | `PUT /questions/{id}` | Sửa |
 | `DELETE /questions/{id}` | Xóa mềm |
 | `POST /questions/import` | Import CSV/Excel → bank (tái dùng parser FE logic port sang Java) |
 
-- [ ] Resolve `QUESTION_REF` trong `GET /lessons/{id}/detail` (merge refs → `questions[]` cho player)
+- [x] CRUD API `/questions` (MCQ + validate)
+- [x] Resolve `QUESTION_REF` trong `GET /lessons/{id}/detail` → `resolvedQuestionsJson`
 
 ### 2.3 Admin UI — tuần 2–3
 
-- [ ] Trang **Thư viện câu hỏi** (`/admin/questions`)
-- [ ] Filter: Vocabulary / Grammar / Reading / Listening
-- [ ] Form soạn MCQ (tái dùng `McqQuestionCanvas` logic)
+- [x] Trang **Thư viện câu hỏi** (`/admin/questions`)
+- [x] Filter: danh mục + trạng thái + keyword
+- [x] Form soạn MCQ (tái dùng `McqQuestionCanvas`)
 - [ ] Import CSV/Excel vào bank (không gắn lesson)
 
 ### 2.4 Lesson Editor — tuần 3
 
-- [ ] Block type `QUESTION_REF` trong "+ Thêm khối"
-- [ ] Picker: chọn nhiều câu từ bank → lưu `refs[]` trong payload hoặc bảng ref
-- [ ] `ExercisePlayer` flatten `QUESTION_REF` blocks (hiện đang bỏ qua)
+- [x] Block type `QUESTION_REF` trong "+ Thêm khối"
+- [x] Picker: chọn câu từ bank → lưu `refs[]` trong payload
+- [x] `flattenExerciseBlocks` hỗ trợ `QUESTION_REF` + `resolvedQuestionsJson`
 
 ### 2.5 Kiểm thử E2E
 
@@ -250,11 +255,19 @@ Chưa bắt đầu. Xem [`promt.md`](../promt.md) § Method 4.
 | 2025-06-06 | Drag-drop list câu | `@dnd-kit` thay nút ↑↓ |
 | 2025-06-06 | Phase 1B Import CSV | Dialog preview + ghi đè/merge |
 | 2025-06-06 | Import Excel + mẫu | `xlsx`, tải `mau_import_bai_tap_mcq.xlsx` (5 câu mẫu) |
+| 2025-06-06 | Phase 2.1 DB + BE CRUD | Migration `002`, entities, `/api/v1/questions` |
+| 2025-06-06 | Resolve QUESTION_REF + Admin UI | `resolvedQuestionsJson`, `/admin/questions`, picker lesson |
+| 2025-06-06 | Fix sửa câu bank | `replaceChoices` — xóa hẳn choices cũ khi update (tránh UK trùng) |
 
 ---
 
 ## Bước tiếp theo (session kế)
 
-**Phase 2 — Question Bank** (bắt đầu từ BE migration + CRUD API).
+**Phase 2 — còn lại:**
 
-Phase 1 ✅ — Manual form · drag-drop list · Import CSV/Excel · Lesson Player MCQ.
+1. `seed_question_bank_demo.sql` — câu mẫu + lesson `QUESTION_REF` demo
+2. Import CSV/Excel vào **bank** (Admin, không gắn lesson)
+3. E2E: sửa câu trong bank → 2 lesson dùng ref đều đổi sau F5
+4. (Tuỳ chọn) `POST /questions/import` API
+
+Phase 1 ✅ · Phase 2 core ✅ (DB, CRUD, `/admin/questions`, `QUESTION_REF`, player resolve).

@@ -1,5 +1,6 @@
 import type { LessonBlockRecord } from "../../../shared/api/lesson";
 import { parseExerciseSetPayload } from "./parseExerciseSet";
+import { parseQuestionRefPayload, parseResolvedQuestions } from "./parseQuestionRef";
 import type { ExerciseQuestion, ExerciseSetPayload } from "./types";
 
 export type FlatExerciseItem = {
@@ -15,18 +16,35 @@ export function flattenExerciseBlocks(blocks: LessonBlockRecord[]): FlatExercise
   const items: FlatExerciseItem[] = [];
 
   for (const block of blocks) {
-    if (block.blockType !== "EXERCISE_SET") continue;
-    const payload: ExerciseSetPayload = parseExerciseSetPayload(block.payloadJson);
-    payload.questions.forEach((question, index) => {
-      items.push({
-        blockId: block.id,
-        blockTitle: payload.title,
-        instruction: payload.instruction,
-        question,
-        questionIndexInBlock: index,
-        questionsInBlock: payload.questions.length,
+    if (block.blockType === "EXERCISE_SET") {
+      const payload: ExerciseSetPayload = parseExerciseSetPayload(block.payloadJson);
+      payload.questions.forEach((question, index) => {
+        items.push({
+          blockId: block.id,
+          blockTitle: payload.title,
+          instruction: payload.instruction,
+          question,
+          questionIndexInBlock: index,
+          questionsInBlock: payload.questions.length,
+        });
       });
-    });
+      continue;
+    }
+
+    if (block.blockType === "QUESTION_REF") {
+      const payload = parseQuestionRefPayload(block.payloadJson);
+      const questions: ExerciseQuestion[] = parseResolvedQuestions(block.resolvedQuestionsJson);
+      questions.forEach((question, index) => {
+        items.push({
+          blockId: block.id,
+          blockTitle: payload.title,
+          instruction: payload.instruction,
+          question,
+          questionIndexInBlock: index,
+          questionsInBlock: questions.length,
+        });
+      });
+    }
   }
 
   return items;
