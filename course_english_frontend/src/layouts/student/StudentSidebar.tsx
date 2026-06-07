@@ -1,5 +1,6 @@
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
+import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import {
   Box,
@@ -43,6 +44,11 @@ export function StudentSidebar({ mobileOpen, onToggleSidebar }: StudentSidebarPr
         label: "Bài học",
         icon: <ArticleOutlinedIcon />,
         to: `/${paths.STUDENT}/${paths.STUDENT_LESSONS}`,
+      },
+      {
+        label: "Hướng dẫn sử dụng",
+        icon: <HelpOutlineOutlinedIcon />,
+        to: `/${paths.STUDENT}/${paths.USAGE_GUIDE}`,
       },
     ],
     [],

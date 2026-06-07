@@ -1,6 +1,6 @@
 # Tiến độ Lesson Authoring
 
-> Cập nhật: **2025-06-06**  
+> Cập nhật: **2025-06-07**  
 > Tham chiếu kiến trúc: [`promt.md`](../promt.md)  
 > Làm **lần lượt** — không nhảy phase.
 
@@ -12,28 +12,30 @@
 |---|-------------|------------|------------|
 | **1** | **Manual Builder** | GV soạn câu hỏi bằng form trong Admin | ✅ **XONG** |
 | **2** | **Import Builder** | Upload CSV/Excel → tạo `EXERCISE_SET` | ✅ **XONG** (CSV + Excel) |
-| 3 | Question Bank | Ngân hàng câu hỏi + `QUESTION_REF` | 🟡 **Đang làm** (core xong, còn import + seed) |
-| 4 | Vocab Set + Generator | Bộ từ → auto sinh activities | 📋 Chưa bắt đầu |
+| 3 | Question Bank | Ngân hàng câu hỏi + `QUESTION_REF` | ✅ **XONG** (import FE; API import tuỳ chọn sau) |
+| 4 | Vocab Set + Generator | Bộ từ → auto sinh activities | ✅ **XONG** (3.1–3.4 MVP) |
 
 ---
 
 ## Nền tảng đã có (không cần làm lại)
 
 - [x] `Lesson` → `LessonBlock[]` + `payload_json`
-- [x] Block types: TEXT, IMAGE, EXERCISE_SET (+ enum khác chưa editor)
-- [x] Admin: soạn TEXT, IMAGE
-- [x] Admin: EXERCISE_SET qua **raw JSON** (tạm — sẽ thay bằng form)
+- [x] Block types: TEXT, IMAGE, EXERCISE_SET, QUESTION_REF (+ enum khác chưa editor)
+- [x] Admin: soạn TEXT, IMAGE, EXERCISE_SET (form), QUESTION_REF (picker bank)
+- [x] Admin: **Thư viện câu hỏi** `/admin/questions` — CRUD + import CSV/Excel
 - [x] Student: tab Bài học / Bài tập
-- [x] Student: `ExercisePlayer` MCQ stepped
+- [x] Student: `ExercisePlayer` MCQ stepped (`EXERCISE_SET` + `QUESTION_REF` resolve)
+- [x] Student: màn **kết quả bài tập** + **xem lại bài làm** (theo `Design/noti_result_lesson/`)
+- [x] Student: shuffle câu/đáp án, `passScorePercent`, giải thích từng câu, session `localStorage` (F5 giữ tiến độ)
 - [x] Script CLI: `csv_to_exercise_sql.py` → SQL thủ công
-- [x] Seed demo: `seed_lesson_vocab_demo.sql`
+- [x] Seed demo: `seed_lesson_vocab_demo.sql`, `seed_question_bank_demo.sql`
 
 ### Gap còn lại (sửa song song hoặc sau)
 
 - [ ] CALLOUT, SUMMARY, VIDEO, AUDIO — editor + reader
-- [ ] `shuffleQuestions`, `shuffleOptions`, `passScorePercent` trong player
-- [ ] MATCHING question UI (student)
-- [ ] Progress/attempt API (localStorage only)
+- [x] `shuffleQuestions`, `shuffleOptions`, `passScorePercent` trong player
+- [x] MATCHING question UI (student)
+- [ ] Progress/attempt API (hiện chỉ `localStorage` — đã lưu đáp án, thời gian, hoàn thành)
 - [ ] Publish validation (BE)
 
 ---
@@ -168,9 +170,10 @@ File mẫu: `course_english_backend/docs/import/vocab_daily_words_questions.csv`
 
 ---
 
-## Phase 2 — Question Bank (Method 3) 📋 TIẾP THEO
+## Phase 2 — Question Bank (Method 3) ✅
 
-> **Mục tiêu:** Câu hỏi lưu tập trung — sửa 1 chỗ → mọi lesson dùng ref đều cập nhật.
+> **Mục tiêu:** Câu hỏi lưu tập trung — sửa 1 chỗ → mọi lesson dùng ref đều cập nhật.  
+> **Trạng thái:** Core **xong**. Còn E2E manual + polish tuỳ chọn (xem cuối section).
 
 ### 2.1 Database (BE) — tuần 1
 
@@ -198,7 +201,7 @@ QUESTION_REF payload → refs[] (UUID[]) trong lesson_blocks.payload_json — kh
 | `POST /questions` | Tạo MCQ |
 | `PUT /questions/{id}` | Sửa |
 | `DELETE /questions/{id}` | Xóa mềm |
-| `POST /questions/import` | Import CSV/Excel → bank (tái dùng parser FE logic port sang Java) |
+| `POST /questions/import` | Import CSV/Excel → bank (batch BE) — **tuỳ chọn** |
 
 - [x] CRUD API `/questions` (MCQ + validate)
 - [x] Resolve `QUESTION_REF` trong `GET /lessons/{id}/detail` → `resolvedQuestionsJson`
@@ -208,7 +211,7 @@ QUESTION_REF payload → refs[] (UUID[]) trong lesson_blocks.payload_json — kh
 - [x] Trang **Thư viện câu hỏi** (`/admin/questions`)
 - [x] Filter: danh mục + trạng thái + keyword
 - [x] Form soạn MCQ (tái dùng `McqQuestionCanvas`)
-- [ ] Import CSV/Excel vào bank (không gắn lesson)
+- [x] Import CSV/Excel vào bank (Admin `/admin/questions`, không gắn lesson)
 
 ### 2.4 Lesson Editor — tuần 3
 
@@ -218,29 +221,160 @@ QUESTION_REF payload → refs[] (UUID[]) trong lesson_blocks.payload_json — kh
 
 ### 2.5 Kiểm thử E2E
 
-- [ ] Tạo 10 câu trong bank → gắn 5 câu vào lesson A, 3 câu vào lesson B (có overlap)
-- [ ] Sửa 1 câu trong bank → cả 2 lesson hiển thị đáp án mới sau F5
-- [ ] HS làm bài tab Bài tập bình thường
+- [x] Seed: `seed_question_bank_demo.sql` — 5 câu + Lesson A/B QUESTION_REF overlap
+- [ ] Chạy seed → HS làm Lesson A & B tab Bài tập
+- [ ] Sửa câu `apple` trong bank → F5 cả 2 lesson hiển thị đáp án mới
+- [ ] Import CSV vào bank → picker lesson thấy câu PUBLISHED
 
-### Thứ tự implement đề xuất (session)
+### File deliverable Phase 2
+
+| Vai trò | Đường dẫn |
+|---------|-----------|
+| Migration DB | `course_english_backend/migrations/002_question_bank.sql` |
+| Thiết kế DB | `docs/QUESTION_BANK_DB_DESIGN.md` |
+| Seed demo overlap | `course_english_backend/seed_question_bank_demo.sql` |
+| API CRUD | `QuestionController.java`, `QuestionServiceImpl.java` |
+| Resolve refs | `QuestionRefResolverService.java` |
+| Admin library | `pages/admin/ManageQuestionsPage.tsx` |
+| Import bank | `QuestionBankImportDialog.tsx`, `questionBankImport.ts` |
+| QUESTION_REF editor | `QuestionRefEditor.tsx`, `QuestionBankPickerDialog.tsx` |
+| Player flatten | `flattenExerciseBlocks.ts`, `parseQuestionRef.ts` |
+
+### Polish Phase 2 (tuỳ chọn — không chặn Phase 3)
+
+- [ ] `POST /questions/import` API batch (hiện import FE gọi `POST /questions` lặp)
+- [ ] Drag-drop sắp xếp `refs[]` trong `QuestionRefEditor`
+- [ ] Hiển thị preview câu (prompt) trong list refs sau reload (fetch bank)
+
+### Thứ tự implement (đã xong)
 
 ```
-1. BE migration + Question CRUD API
-2. Admin Question Library page
-3. QUESTION_REF picker trong ExerciseSetEditor / LessonEditor
-4. Resolve refs ở lesson detail + flattenExerciseBlocks
+1. BE migration + Question CRUD API          ✅
+2. Admin Question Library page               ✅
+3. QUESTION_REF picker trong LessonEditor    ✅
+4. Resolve refs ở lesson detail + player     ✅
+5. Import bank CSV/Excel + seed demo         ✅
 ```
 
 ---
 
-## Phase 3 — Vocab Set + Generator (Method 4) 📋
+## Phase 2.6 — Student Exercise Player polish ✅
 
-Chưa bắt đầu. Xem [`promt.md`](../promt.md) § Method 4.
+> **Mục tiêu:** Hoàn thiện luồng làm bài → kết quả → xem lại → điều hướng bài tiếp.  
+> Tham chiếu UI: [`Design/noti_result_lesson/`](../Design/noti_result_lesson/) (`code.html` chưa đạt · `code2.html` đạt).
 
-- [ ] DB: `vocabulary_sets`, `vocabulary_items`
-- [ ] Import CSV Word | Meaning
-- [ ] `VocabActivityGenerator` (MCQ, Flashcard, Match…)
-- [ ] Block `VOCABULARY_SET` / `GENERATED_ACTIVITY`
+### Deliverable
+
+Sau khi làm hết câu, học sinh thấy:
+- Layout 2 cột: **sidebar thống kê** (vòng tròn đúng/sai, điểm %, thời gian) + **khu chúc mừng / động viên**
+- Nút **Xem lại bài làm** — danh sách từng câu, đáp án đã chọn, đáp án đúng, giải thích
+- Nút **Làm lại** — xóa session, shuffle lại (nếu bật)
+- Nút **Bài tiếp theo** — `findNextPublishedLesson` (fallback tab Bài học hoặc danh sách)
+- **Quay lại danh sách** — gọn trong sidebar (không trùng toolbar trang)
+
+### Checklist implement
+
+#### 1. Luồng player
+
+- [x] Phase stepped: `answer` → `feedback` (KIỂM TRA / GIẢI THÍCH / LÀM TIẾP) → `done` → `review`
+- [x] `prepareExercisePlan` — shuffle câu theo block, shuffle đáp án, `passScorePercent` có trọng số
+- [x] Highlight đáp án đúng/sai sau KIỂM TRA (`MultipleChoiceQuestion`)
+
+#### 2. Session (localStorage)
+
+- [x] `exerciseSessionStorage.ts` — `questionIdsOrder`, `choiceOrders`, `answers` (+ `selectedChoiceId`), `startedAt`, `elapsedMs`
+- [x] F5 giữ thứ tự câu/đáp án và trạng thái hoàn thành
+
+#### 3. Màn kết quả
+
+- [x] `ExerciseResultScreen.tsx` — UI đạt/chưa đạt, mascot, thống kê, CTA
+- [x] `ExerciseReviewScreen.tsx` — xem lại toàn bộ câu
+- [x] `exerciseResultUtils.ts` — format thời gian, ghi chú `QUESTION_REF`
+- [x] `lesson-player.css` — layout result/review, ẩn hero + tab khi xem kết quả (`LessonReaderPage`)
+
+#### 4. Kiểm thử E2E (manual)
+
+- [ ] Làm bài 8 câu → XEM KẾT QUẢ → sidebar đúng số đúng/sai/%
+- [ ] Xem lại bài làm → từng câu hiển thị lựa chọn + giải thích
+- [ ] Bài tiếp theo → mở lesson kế (`displayOrder` cùng môn)
+- [ ] F5 trên màn kết quả → vẫn ở màn kết quả
+
+### File deliverable Phase 2.6
+
+| Vai trò | Đường dẫn |
+|---------|-----------|
+| Player chính | `exercise/ExercisePlayer.tsx` |
+| Màn kết quả | `exercise/ExerciseResultScreen.tsx` |
+| Xem lại | `exercise/ExerciseReviewScreen.tsx` |
+| Chuẩn bị câu/shuffle | `exercise/prepareExerciseItems.ts`, `exercise/exerciseShuffle.ts` |
+| Session | `exerciseSessionStorage.ts` |
+| Trang đọc lesson | `pages/student/LessonReaderPage.tsx` |
+| CSS | `styles/lesson-player.css` |
+| Mock UI | `Design/noti_result_lesson/code.html`, `code2.html` |
+
+### Tiêu chí xong Phase 2.6
+
+- HS hoàn thành bài tập có **phản hồi trực quan** (không chỉ card icon đơn giản)
+- Có thể **ôn lại** từng câu sau khi nộp
+- **Bài tiếp theo** hoạt động giống footer Up Next ở tab Bài học
+- Không cần API mới (session vẫn `localStorage`)
+
+---
+
+## Phase 3 — Vocab Set + Generator (Method 4) 🚧
+
+> **Mục tiêu:** GV chỉ nhập **bộ từ** (Word | Meaning) → hệ thống **tự sinh** activities (MCQ, flashcard, match…).  
+> Tham chiếu: [`promt.md`](../promt.md) § Method 4 · [`VOCABULARY_SET_DB_DESIGN.md`](./VOCABULARY_SET_DB_DESIGN.md)
+
+### 3.1 Database (BE) ✅
+
+```text
+vocabulary_sets    (id, title, subject_id?, description, status, …)
+vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, …)
+```
+
+- [x] Thiết kế schema + tài liệu `VOCABULARY_SET_DB_DESIGN.md`
+- [x] Migration `003_vocabulary_sets.sql`
+- [x] Entities + CRUD API `/vocabulary-sets`
+
+### 3.2 Import & Admin UI ✅ (MVP)
+
+- [x] Import CSV `word_en, meaning_vi` — `vocabImport.ts`
+- [x] Trang Admin **Bộ từ vựng** (`/admin/vocabulary-sets`)
+- [x] Form thêm/sửa từ, preview danh sách
+
+### 3.3 Activity Generator (core) ✅ (MCQ MVP)
+
+- [x] `vocabActivityGenerator.ts` — EN → VI MCQ (distractor từ cùng bộ)
+- [x] Nút **Sinh MCQ** → preview/copy JSON `EXERCISE_SET`
+- [ ] Push thẳng vào Lesson Editor (wizard gắn block) — tuỳ chọn sau
+
+### 3.4 Gắn vào Lesson ✅ (MVP list)
+
+- [x] Block `VOCABULARY` — ref `vocabularySetId`, BE resolve `resolvedVocabularyJson`
+- [x] Wizard **+ Bộ từ vào bài** — VOCABULARY + EXERCISE_SET MCQ một lần
+- [x] HS tab Bài học — `VocabularyBlock` danh sách từ (list)
+- [ ] Flashcard (`presentation: flashcard`) — P2.4b
+
+### File deliverable Phase 3 (MVP)
+
+| Vai trò | Đường dẫn |
+|---------|-----------|
+| Migration | `migrations/003_vocabulary_sets.sql` |
+| Seed demo | `seed_vocabulary_set_demo.sql` |
+| BE API | `VocabularySetController.java`, `VocabularySetServiceImpl.java` |
+| Admin page | `ManageVocabularySetsPage.tsx` |
+| Generator | `vocabActivityGenerator.ts` |
+| Import | `vocabImport.ts`, `VocabularyImportDialog.tsx` |
+
+### Thứ tự implement (session)
+
+```
+1. DB migration + VocabularySet CRUD API          ✅
+2. Admin trang quản lý bộ từ + import CSV       ✅
+3. Generator MVP: sinh MCQ → copy JSON          ✅
+4. Block lesson + student player                  ✅
+```
 
 ---
 
@@ -258,16 +392,40 @@ Chưa bắt đầu. Xem [`promt.md`](../promt.md) § Method 4.
 | 2025-06-06 | Phase 2.1 DB + BE CRUD | Migration `002`, entities, `/api/v1/questions` |
 | 2025-06-06 | Resolve QUESTION_REF + Admin UI | `resolvedQuestionsJson`, `/admin/questions`, picker lesson |
 | 2025-06-06 | Fix sửa câu bank | `replaceChoices` — xóa hẳn choices cũ khi update (tránh UK trùng) |
+| 2025-06-07 | Phase 2 hoàn tất | Import bank CSV/Excel + `seed_question_bank_demo.sql` |
+| 2025-06-07 | Phase 3 MVP | Vocab sets CRUD + Admin + MCQ generator |
+| 2025-06-07 | Phase 2.6 Student player | Shuffle, passScore, giải thích, session F5 |
+| 2025-06-07 | Màn kết quả bài tập | `ExerciseResultScreen` + `ExerciseReviewScreen` theo mock `noti_result_lesson` |
+| 2025-06-07 | Polish UI kết quả | Bỏ nav trùng, bỏ thanh thưởng, **Bài tiếp theo** → `findNextPublishedLesson` |
 
 ---
 
 ## Bước tiếp theo (session kế)
 
-**Phase 2 — còn lại:**
+### Ưu tiên 1 — Phase 3.4 Gắn lesson
 
-1. `seed_question_bank_demo.sql` — câu mẫu + lesson `QUESTION_REF` demo
-2. Import CSV/Excel vào **bank** (Admin, không gắn lesson)
-3. E2E: sửa câu trong bank → 2 lesson dùng ref đều đổi sau F5
-4. (Tuỳ chọn) `POST /questions/import` API
+1. Block `VOCABULARY` trong Lesson Editor (picker bộ từ → tab Bài học)
+2. Wizard **Sinh MCQ → tạo EXERCISE_SET** trực tiếp trong lesson (không copy JSON thủ công)
+3. `VocabularyBlock.tsx` — học sinh xem danh sách từ
 
-Phase 1 ✅ · Phase 2 core ✅ (DB, CRUD, `/admin/questions`, `QUESTION_REF`, player resolve).
+### Ưu tiên 2 — Chạy demo
+
+4. `mysql … < migrations/003_vocabulary_sets.sql`
+5. `mysql … < seed_vocabulary_set_demo.sql`
+6. Admin `/admin/vocabulary-sets` → Sinh MCQ → dán vào lesson → HS làm bài
+
+### Song song
+
+- Commit Phase 2.6 + Phase 3 MVP
+- E2E manual Phase 2.6 (kết quả + review + bài tiếp)
+- E2E Phase 2 checklist bank (nếu chưa chạy seed overlap)
+
+### Tuỳ chọn sau (không chặn Phase 3.4)
+
+- [ ] Thời gian làm bài chính xác hơn khi restore session đang làm dở
+- [ ] Mascot asset local (thay URL Google tạm)
+- [ ] `POST /lesson-attempts` — lưu điểm server
+
+---
+
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · **Phase 2.6 ✅** · Phase 3 Method 4 ✅ (bộ từ + MCQ + VOCABULARY block) · Flashcard / MATCHING generator 📋

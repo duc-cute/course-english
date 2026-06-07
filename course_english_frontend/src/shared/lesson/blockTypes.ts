@@ -11,6 +11,7 @@ export const STUDY_BLOCK_TYPES: ReadonlySet<LessonBlockType> = new Set([
   "AUDIO",
   "CALLOUT",
   "SUMMARY",
+  "VOCABULARY",
 ]);
 
 /** Block hiển thị tab Bài tập (tương tác / chấm điểm) */

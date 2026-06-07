@@ -211,4 +211,4 @@ mysql -u root -p course_english < course_english_backend/migrations/002_question
 - [x] JPA: `QuestionCategory`, `Question`, `QuestionChoice`
 - [x] Repository + `QuestionService` CRUD
 - [x] Enum `QuestionTypeEnum`, `QuestionStatusEnum`
-- [ ] `seed_question_bank_demo.sql` — câu mẫu + block QUESTION_REF demo
+- [x] `seed_question_bank_demo.sql` — câu mẫu + block QUESTION_REF demo (Lesson A/B overlap)

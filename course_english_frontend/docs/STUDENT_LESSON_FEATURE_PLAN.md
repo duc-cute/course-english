@@ -12,9 +12,10 @@ UI Phase 1 đã áp dụng token teal/glass, mục lục, typography đọc, car
 | Danh sách bài publish + search | ✓ | Filter môn, sort, thumbnail |
 | Đọc bài + mục lục + scroll spy | ✓ | Progress lưu server |
 | Block TEXT / IMAGE / CELL_VIEWER / CELL_STEP | ✓ | VIDEO, QUIZ |
+| Tab Bài tập — MCQ stepped + kết quả + xem lại | ✓ | MATCHING, attempt API server |
 | 3D | Panel Co-pilot (≥1440px) + sheet mobile | Hotspot sync payload |
-| Tiến độ | % scroll + localStorage | % block server |
-| Tiếp tục học / Up Next | ✓ (local + cùng môn) | Gợi ý theo lớp |
+| Tiến độ | % scroll + localStorage (bài tập: session local) | % block server |
+| Tiếp tục học / Up Next | ✓ (local + cùng môn; CTA từ màn kết quả bài tập) | Gợi ý theo lớp |
 
 ---
 
@@ -44,6 +45,15 @@ UI Phase 1 đã áp dụng token teal/glass, mục lục, typography đọc, car
 
 - [x] **Up Next:** `findNextPublishedLesson` — cùng `subjectId`, `displayOrder`
 - [x] Footer glass card `LessonReaderUpNext`
+- [x] **Bài tiếp theo** từ màn kết quả bài tập (`ExerciseResultScreen`)
+
+### A5. Bài tập (Exercise) — ✅ Done (MCQ MVP)
+
+- [x] `ExercisePlayer` — stepped MCQ, shuffle, `passScorePercent`, giải thích
+- [x] `ExerciseResultScreen` — thống kê + chúc mừng/động viên (mock `Design/noti_result_lesson/`)
+- [x] `ExerciseReviewScreen` — xem lại đáp án từng câu
+- [x] Session `localStorage` — giữ tiến độ / kết quả khi F5
+- [ ] MATCHING · attempt lưu server
 
 ### A4. Trải nghiệm đọc — ✅ Done (trừ hotspot payload)
 

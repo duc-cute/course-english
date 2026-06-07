@@ -27,6 +27,8 @@ import {
   LessonBlockEditorPanel,
   LessonBlockPreview,
 } from "../../admin/components";
+import { VocabAttachToLessonWizard } from "../../admin/components/vocabulary/VocabAttachToLessonWizard";
+import { VocabularySetPickerDialog } from "../../admin/components/vocabulary/VocabularySetPickerDialog";
 import {
   buildExerciseSetPayloadJson,
   createDefaultExerciseSetPayload,
@@ -35,6 +37,7 @@ import {
   buildQuestionRefPayloadJson,
   createDefaultQuestionRefPayload,
 } from "../../shared/lesson/questionRefPayload";
+import { buildVocabularyPayloadJson } from "../../shared/lesson/vocabularyPayload";
 import {
   apiCreateLessonBlock,
   apiDeleteLessonBlock,
@@ -49,6 +52,7 @@ import {
 } from "../../shared/api/lesson";
 import type { ApiResponse } from "../../shared/api/types";
 import { paths } from "../../shared/constants/paths";
+import { apiGetVocabularySetById, type VocabularyItemRecord, type VocabularySetRecord } from "../../shared/api/vocabularySet";
 import {
   muBtnSmOutlined,
   muBtnSmPrimary,
@@ -65,6 +69,7 @@ import {
 const BLOCK_TYPE_OPTIONS: { value: LessonBlockType; label: string }[] = [
   { value: "TEXT", label: "Đoạn văn" },
   { value: "IMAGE", label: "Ảnh minh họa" },
+  { value: "VOCABULARY", label: "Từ vựng (cần chọn bộ từ sau)" },
   { value: "EXERCISE_SET", label: "Bài tập (soạn / import)" },
   { value: "QUESTION_REF", label: "Bài tập (ngân hàng câu)" },
 ];
@@ -87,6 +92,12 @@ export function LessonEditorPage() {
   const [newBlockType, setNewBlockType] = useState<LessonBlockType>("TEXT");
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
   const [openDeleteBlock, setOpenDeleteBlock] = useState<LessonBlockRecord | null>(null);
+  const [openVocabPicker, setOpenVocabPicker] = useState(false);
+  const [vocabAttachDraft, setVocabAttachDraft] = useState<{
+    setId: string;
+    setTitle: string;
+    items: VocabularyItemRecord[];
+  } | null>(null);
 
   const loadDetail = useCallback(async () => {
     if (!lessonId) return;
@@ -140,8 +151,36 @@ export function LessonEditorPage() {
         return buildExerciseSetPayloadJson(createDefaultExerciseSetPayload());
       case "QUESTION_REF":
         return buildQuestionRefPayloadJson(createDefaultQuestionRefPayload());
+      case "VOCABULARY":
+        return buildVocabularyPayloadJson({
+          vocabularySetId: "",
+          title: "Từ vựng mới",
+          instruction: "Đọc và ghi nhớ từng từ",
+          presentation: "list",
+          showPhonetic: true,
+        });
       default:
         return "{}";
+    }
+  };
+
+  const handleVocabSetPicked = async (set: VocabularySetRecord) => {
+    setOpenVocabPicker(false);
+    setError("");
+    try {
+      const response = (await apiGetVocabularySetById(set.id)) as ApiResponse<VocabularySetRecord>;
+      const detail = response?.result ?? response?.data ?? set;
+      if (!detail.items?.length) {
+        setError("Bộ từ không có mục nào.");
+        return;
+      }
+      setVocabAttachDraft({
+        setId: detail.id,
+        setTitle: detail.title,
+        items: detail.items,
+      });
+    } catch (err) {
+      setError((err as { message?: string })?.message || "Không thể tải bộ từ.");
     }
   };
 
@@ -251,6 +290,14 @@ export function LessonEditorPage() {
             <Button size="small" variant="contained" sx={muBtnSmPrimary} onClick={() => setOpenAddBlock(true)}>
               + Thêm khối
             </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              sx={muBtnSmOutlined}
+              onClick={() => setOpenVocabPicker(true)}
+            >
+              + Bộ từ vào bài
+            </Button>
             {lesson.status === "PUBLISHED" ? (
               <Button
                 size="small"
@@ -290,8 +337,8 @@ export function LessonEditorPage() {
       <Box sx={{ display: "grid", gap: 1, width: "100%" }}>
         {blocks.length === 0 && !loading ? (
           <Alert severity="info">
-            Chưa có khối nội dung. Bấm <strong>+ Thêm khối</strong> (đoạn văn / ảnh / bài tập) hoặc import SQL/CSV
-            (xem <code>course_english_backend/import_exercise_block_attach.sql</code>).
+            Chưa có khối nội dung. Bấm <strong>+ Thêm khối</strong> hoặc{" "}
+            <strong>+ Bộ từ vào bài</strong> để thêm từ vựng và bài tập MCQ.
           </Alert>
         ) : null}
         {blocks.map((block, index) => {
@@ -436,6 +483,29 @@ export function LessonEditorPage() {
         onConfirm={() => void deleteBlock()}
         loading={submitting}
       />
+
+      <VocabularySetPickerDialog
+        open={openVocabPicker}
+        onClose={() => setOpenVocabPicker(false)}
+        onSelect={(set) => void handleVocabSetPicked(set)}
+      />
+
+      {vocabAttachDraft && lessonId ? (
+        <VocabAttachToLessonWizard
+          open
+          lessonId={lessonId}
+          lessonTitle={lesson?.title}
+          setId={vocabAttachDraft.setId}
+          setTitle={vocabAttachDraft.setTitle}
+          items={vocabAttachDraft.items}
+          onClose={() => setVocabAttachDraft(null)}
+          onAttached={() => {
+            setVocabAttachDraft(null);
+            void loadDetail();
+            setMessage("Đã thêm khối từ bộ từ — kiểm tra tab Bài học / Bài tập bên dưới.");
+          }}
+        />
+      ) : null}
     </Box>
   );
 }

@@ -141,3 +141,15 @@ html:has(.student-layout-root) #root {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
+
+.student-layout-main--lesson-reader {
+  padding-top: 12px !important;
+  padding-bottom: 16px !important;
+}
+
+@media (min-width: 900px) {
+  .student-layout-main--lesson-reader {
+    padding-top: 16px !important;
+    padding-bottom: 20px !important;
+  }
+}

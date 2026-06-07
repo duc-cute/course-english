@@ -13,6 +13,7 @@ import { LessonImageUpload } from "./LessonImageUpload";
 import { LessonRichTextEditor } from "./LessonRichTextEditor";
 import { ExerciseSetEditor } from "./exercise/ExerciseSetEditor";
 import { QuestionRefEditor } from "./question/QuestionRefEditor";
+import { VocabularyBlockEditor } from "./vocabulary/VocabularyBlockEditor";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -162,6 +163,19 @@ export function LessonBlockEditorPanel({
     return (
       <QuestionRefEditor
         payloadJson={draft.payloadJson ?? "{}"}
+        saving={saving}
+        error={error}
+        onSave={saveBlock}
+        onCancel={onCancel}
+      />
+    );
+  }
+
+  if (block.blockType === "VOCABULARY") {
+    return (
+      <VocabularyBlockEditor
+        payloadJson={draft.payloadJson ?? "{}"}
+        resolvedVocabularyJson={block.resolvedVocabularyJson}
         saving={saving}
         error={error}
         onSave={saveBlock}

@@ -74,8 +74,10 @@ mysql -u root -p course_english < course_english_backend/seed_lms_demo.sql
 # Cách A — tạo lesson + block (UUID cố định)
 mysql -u root -p course_english < course_english_backend/seed_lesson_vocab_demo.sql
 
-# (Nếu lỗi 1265 block_type) chạy migration một lần:
+# (Nếu lỗi 1265 block_type — ENUM cũ) chạy migration một lần:
 mysql -u root -p course_english < course_english_backend/migrations/001_block_type_varchar.sql
+# Hoặc khi thêm VOCABULARY / block type mới:
+mysql -u root -p course_english < course_english_backend/migrations/004_vocabulary_block.sql
 
 # Cách B — lesson đã tạo trên Admin (0 khối): gắn EXERCISE_SET theo tên bài
 mysql -u root -p course_english < course_english_backend/import_exercise_block_attach.sql

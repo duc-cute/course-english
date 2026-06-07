@@ -16,4 +16,6 @@ public class ResLessonBlockDTO {
     private String payloadJson;
     /** QUESTION_REF: câu hỏi resolve từ bank — chỉ có ở GET /lessons/{id}/detail */
     private String resolvedQuestionsJson;
+    /** VOCABULARY: mục từ resolve từ vocabulary_sets — chỉ có ở GET /lessons/{id}/detail */
+    private String resolvedVocabularyJson;
 }

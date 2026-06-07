@@ -35,6 +35,8 @@ export type MatchingQuestion = {
   type: "MATCHING";
   prompt?: ExercisePrompt;
   pairs: MatchingPair[];
+  /** Thứ tự cột phải sau shuffle — gán lúc prepare */
+  rightDisplayOrder?: string[];
   explanation?: string;
 };
 

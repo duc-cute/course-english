@@ -16,6 +16,7 @@ import {
 } from "../../../pages/admin/manageUserUiStyles";
 import {
   buildExerciseSetPayloadJson,
+  createEmptyMatchingQuestion,
   createEmptyMcqQuestion,
   generateQuestionId,
   validateExerciseSetPayload,
@@ -24,11 +25,13 @@ import { parseExerciseSetPayload } from "../../../student/lessonPlayer/exercise/
 import type {
   ExerciseQuestion,
   ExerciseSetPayload,
+  MatchingQuestion,
   MultipleChoiceQuestion,
 } from "../../../student/lessonPlayer/exercise/types";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
 import { ExerciseSetSettings } from "./ExerciseSetSettings";
+import { MatchingQuestionCanvas } from "./MatchingQuestionCanvas";
 import { McqQuestionCanvas } from "./McqQuestionCanvas";
 import { QuestionListPanel } from "./QuestionListPanel";
 
@@ -40,14 +43,13 @@ type ExerciseSetEditorProps = {
   onCancel: () => void;
 };
 
-function splitQuestions(questions: ExerciseQuestion[]) {
-  const mcq: MultipleChoiceQuestion[] = [];
-  const other: ExerciseQuestion[] = [];
-  for (const q of questions) {
-    if (q.type === "MULTIPLE_CHOICE") mcq.push(q);
-    else other.push(q);
-  }
-  return { mcq, other };
+function isEditableQuestion(q: ExerciseQuestion): boolean {
+  return q.type === "MULTIPLE_CHOICE" || q.type === "MATCHING";
+}
+
+function normalizeQuestions(questions: ExerciseQuestion[]): ExerciseQuestion[] {
+  const editable = questions.filter(isEditableQuestion);
+  return editable.length ? editable : [createEmptyMcqQuestion("q1")];
 }
 
 export function ExerciseSetEditor({
@@ -61,10 +63,6 @@ export function ExerciseSetEditor({
     () => parseExerciseSetPayload(payloadJson),
     [payloadJson],
   );
-  const initial = useMemo(
-    () => splitQuestions(parsed.questions),
-    [parsed.questions],
-  );
 
   const [settings, setSettings] = useState<
     Omit<ExerciseSetPayload, "questions">
@@ -76,11 +74,8 @@ export function ExerciseSetEditor({
     shuffleOptions: parsed.shuffleOptions,
     passScorePercent: parsed.passScorePercent,
   }));
-  const [mcqQuestions, setMcqQuestions] = useState<MultipleChoiceQuestion[]>(
-    () => (initial.mcq.length ? initial.mcq : [createEmptyMcqQuestion("q1")]),
-  );
-  const [preservedOther, setPreservedOther] = useState<ExerciseQuestion[]>(
-    () => initial.other,
+  const [questions, setQuestions] = useState<ExerciseQuestion[]>(() =>
+    normalizeQuestions(parsed.questions),
   );
   const [activeIndex, setActiveIndex] = useState(0);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -89,7 +84,6 @@ export function ExerciseSetEditor({
 
   useEffect(() => {
     const next = parseExerciseSetPayload(payloadJson);
-    const split = splitQuestions(next.questions);
     setSettings({
       title: next.title,
       instruction: next.instruction,
@@ -98,37 +92,37 @@ export function ExerciseSetEditor({
       shuffleOptions: next.shuffleOptions,
       passScorePercent: next.passScorePercent,
     });
-    setMcqQuestions(
-      split.mcq.length ? split.mcq : [createEmptyMcqQuestion("q1")],
-    );
-    setPreservedOther(split.other);
+    setQuestions(normalizeQuestions(next.questions));
     setActiveIndex(0);
     setValidationErrors([]);
   }, [payloadJson]);
 
   const buildPayload = (): ExerciseSetPayload => ({
     ...settings,
-    questions: [...mcqQuestions, ...preservedOther],
+    questions,
   });
 
   const updateSettings = (patch: Partial<ExerciseSetPayload>) => {
     setSettings((s) => ({ ...s, ...patch }));
   };
 
-  const updateQuestion = (index: number, next: MultipleChoiceQuestion) => {
-    setMcqQuestions((list) => list.map((q, i) => (i === index ? next : q)));
+  const updateQuestion = (index: number, next: ExerciseQuestion) => {
+    setQuestions((list) => list.map((q, i) => (i === index ? next : q)));
   };
 
-  const addQuestion = () => {
-    setMcqQuestions((list) => {
-      const next = [...list, createEmptyMcqQuestion()];
+  const addQuestion = (type: "MULTIPLE_CHOICE" | "MATCHING") => {
+    setQuestions((list) => {
+      const next =
+        type === "MATCHING"
+          ? [...list, createEmptyMatchingQuestion()]
+          : [...list, createEmptyMcqQuestion()];
       setActiveIndex(next.length - 1);
       return next;
     });
   };
 
   const deleteQuestion = (index: number) => {
-    setMcqQuestions((list) => {
+    setQuestions((list) => {
       const next = list.filter((_, i) => i !== index);
       setActiveIndex((prev) => Math.min(prev, Math.max(0, next.length - 1)));
       return next.length ? next : [createEmptyMcqQuestion()];
@@ -136,26 +130,29 @@ export function ExerciseSetEditor({
   };
 
   const duplicateQuestion = (index: number) => {
-    setMcqQuestions((list) => {
+    setQuestions((list) => {
       const source = list[index];
-      const copy: MultipleChoiceQuestion = {
-        ...source,
-        id: generateQuestionId(),
-        prompt: { ...source.prompt },
-        choices: source.choices.map((c) => ({ ...c })),
-      };
-      const next = [
-        ...list.slice(0, index + 1),
-        copy,
-        ...list.slice(index + 1),
-      ];
+      const copy: ExerciseQuestion =
+        source.type === "MATCHING"
+          ? {
+              ...(source as MatchingQuestion),
+              id: generateQuestionId(),
+              pairs: (source as MatchingQuestion).pairs.map((p) => ({ ...p })),
+            }
+          : {
+              ...(source as MultipleChoiceQuestion),
+              id: generateQuestionId(),
+              prompt: { ...(source as MultipleChoiceQuestion).prompt },
+              choices: (source as MultipleChoiceQuestion).choices.map((c) => ({ ...c })),
+            };
+      const next = [...list.slice(0, index + 1), copy, ...list.slice(index + 1)];
       setActiveIndex(index + 1);
       return next;
     });
   };
 
   const reorderQuestions = (fromIndex: number, toIndex: number) => {
-    setMcqQuestions((list) => {
+    setQuestions((list) => {
       const activeId = list[activeIndex]?.id;
       const next = arrayMove(list, fromIndex, toIndex);
       const newActiveIndex = activeId ? next.findIndex((q) => q.id === activeId) : activeIndex;
@@ -165,7 +162,6 @@ export function ExerciseSetEditor({
   };
 
   const applyImportedPayload = (next: ExerciseSetPayload) => {
-    const split = splitQuestions(next.questions);
     setSettings({
       title: next.title,
       instruction: next.instruction,
@@ -174,8 +170,7 @@ export function ExerciseSetEditor({
       shuffleOptions: next.shuffleOptions,
       passScorePercent: next.passScorePercent,
     });
-    setMcqQuestions(split.mcq.length ? split.mcq : [createEmptyMcqQuestion("q1")]);
-    setPreservedOther(split.other);
+    setQuestions(normalizeQuestions(next.questions));
     setActiveIndex(0);
     setValidationErrors([]);
   };
@@ -191,7 +186,7 @@ export function ExerciseSetEditor({
     await onSave(buildExerciseSetPayloadJson(payload));
   };
 
-  const activeQuestion = mcqQuestions[activeIndex];
+  const activeQuestion = questions[activeIndex];
 
   return (
     <Box sx={{ display: "grid", gap: 0, pt: 0 }}>
@@ -218,29 +213,23 @@ export function ExerciseSetEditor({
         </AccordionDetails>
       </Accordion>
 
-      {preservedOther.length > 0 ? (
-        <Alert severity="info" sx={{ fontSize: 12, py: 0.25, borderRadius: 0 }}>
-          Giữ nguyên {preservedOther.length} câu loại khác (Matching, …) khi
-          lưu.
-        </Alert>
-      ) : null}
-
       <Box
         sx={{
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
           border: "1px solid #ECEAE3",
-          borderTop: preservedOther.length ? undefined : "none",
-          borderRadius: preservedOther.length ? 0 : "0 0 10px 10px",
+          borderTop: "none",
+          borderRadius: "0 0 10px 10px",
           overflow: "hidden",
           bgcolor: "#fff",
         }}
       >
         <QuestionListPanel
-          questions={mcqQuestions}
+          questions={questions}
           activeIndex={activeIndex}
           onSelect={setActiveIndex}
-          onAdd={addQuestion}
+          onAddMcq={() => addQuestion("MULTIPLE_CHOICE")}
+          onAddMatching={() => addQuestion("MATCHING")}
           onReorder={reorderQuestions}
         />
 
@@ -253,18 +242,27 @@ export function ExerciseSetEditor({
             overflowY: "auto",
           }}
         >
-          {activeQuestion ? (
+          {activeQuestion?.type === "MULTIPLE_CHOICE" ? (
             <McqQuestionCanvas
-              question={activeQuestion}
+              question={activeQuestion as MultipleChoiceQuestion}
               index={activeIndex}
-              canDelete={mcqQuestions.length > 1}
+              canDelete={questions.length > 1}
+              onChange={(next) => updateQuestion(activeIndex, next)}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "MATCHING" ? (
+            <MatchingQuestionCanvas
+              question={activeQuestion as MatchingQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
               onChange={(next) => updateQuestion(activeIndex, next)}
               onDelete={() => deleteQuestion(activeIndex)}
               onDuplicate={() => duplicateQuestion(activeIndex)}
             />
           ) : (
             <Typography
-              sx={{ fontSize: 13, color: "#888780", fontStyle: "italic" }}
+              sx={{ fontSize: 13, color: "#888780", fontStyle: "italic", p: 2 }}
             >
               Chọn hoặc thêm câu hỏi bên trái.
             </Typography>
@@ -273,7 +271,7 @@ export function ExerciseSetEditor({
       </Box>
 
       <ExerciseAuthoringFooter
-        questionCount={mcqQuestions.length}
+        questionCount={questions.length}
         onImportExcel={() => {
           setImportFormat("excel");
           setImportOpen(true);

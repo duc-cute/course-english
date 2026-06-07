@@ -1,5 +1,9 @@
 import type { LessonBlockRecord, LessonBlockType } from "../shared/api/lesson";
 import { parseBlockPayload } from "../shared/api/lesson";
+import {
+  parseResolvedVocabularyItems,
+  parseVocabularyBlockPayload,
+} from "../shared/lesson/vocabularyPayload";
 
 const BLOCK_LABELS: Record<LessonBlockType, string> = {
   TEXT: "Nội dung",
@@ -8,6 +12,7 @@ const BLOCK_LABELS: Record<LessonBlockType, string> = {
   AUDIO: "Nghe",
   CALLOUT: "Ghi chú",
   SUMMARY: "Tóm tắt",
+  VOCABULARY: "Từ vựng",
   QUESTION_REF: "Câu hỏi",
   EXERCISE_SET: "Bài tập",
 };
@@ -20,6 +25,7 @@ export function getBlockCssModifier(type: LessonBlockType): string {
   if (type === "TEXT") return "lesson-reader-block--text";
   if (type === "IMAGE") return "lesson-reader-block--media";
   if (type === "AUDIO" || type === "VIDEO") return "lesson-reader-block--media";
+  if (type === "VOCABULARY") return "lesson-reader-block--vocabulary";
   return "";
 }
 
@@ -28,6 +34,11 @@ function stripHtml(text: string): string {
 }
 
 export function getBlockTocTitle(block: LessonBlockRecord, index: number): string {
+  if (block.blockType === "VOCABULARY") {
+    const payload = parseVocabularyBlockPayload(block.payloadJson);
+    if (payload.title?.trim()) return payload.title.trim();
+    if (payload.vocabularySetTitle?.trim()) return payload.vocabularySetTitle.trim();
+  }
   if (block.blockType === "TEXT") {
     const payload = parseBlockPayload<{ html?: string }>(block.payloadJson);
     const html = payload.html ?? "";
@@ -57,12 +68,19 @@ export function getLessonReaderProTip(blocks: LessonBlockRecord[]): string {
 
 export function estimateReadingMinutes(blocks: LessonBlockRecord[]): number {
   let words = 0;
+  let vocabItems = 0;
   for (const block of blocks) {
+    if (block.blockType === "VOCABULARY") {
+      vocabItems += parseResolvedVocabularyItems(block.resolvedVocabularyJson).length;
+      continue;
+    }
     if (block.blockType !== "TEXT") continue;
     const payload = parseBlockPayload<{ html?: string }>(block.payloadJson);
     const text = (payload.html ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     words += text ? text.split(" ").length : 0;
   }
-  if (words === 0) return 1;
-  return Math.max(1, Math.ceil(words / 180));
+  if (words === 0 && vocabItems === 0) return 1;
+  const fromText = words > 0 ? Math.ceil(words / 180) : 0;
+  const fromVocab = vocabItems > 0 ? Math.max(1, Math.ceil(vocabItems * 0.5)) : 0;
+  return Math.max(1, fromText + fromVocab);
 }

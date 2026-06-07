@@ -200,6 +200,6 @@ Output diagrams, workflows, database suggestions, and implementation recommendat
 | Phase | Nội dung | Trạng thái |
 |-------|----------|------------|
 | 1A | Manual Builder — form EXERCISE_SET | ✅ Xong |
-| 1B | Import Builder — CSV trong Admin | ✅ Xong |
-| 2 | Question Bank | 📋 Tiếp theo |
-| 3 | Vocab Set + Activity Generator | 📋 Chưa bắt đầu |
+| 1B | Import Builder — CSV/Excel trong Admin | ✅ Xong |
+| 2 | Question Bank + QUESTION_REF | ✅ Xong |
+| 3 | Vocab Set + Activity Generator | 📋 Tiếp theo |

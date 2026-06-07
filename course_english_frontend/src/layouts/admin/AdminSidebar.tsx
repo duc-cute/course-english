@@ -2,13 +2,14 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import EmojiPeopleOutlinedIcon from "@mui/icons-material/EmojiPeopleOutlined";
-import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import SecurityIcon from "@mui/icons-material/Security";
+import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import {
   Avatar,
   Box,
@@ -81,9 +82,19 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         to: `/${paths.ADMIN}/${paths.MANAGE_QUESTIONS}`,
       },
       {
+        label: "Bộ từ vựng",
+        icon: <LibraryBooksOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_SETS}`,
+      },
+      {
         label: "Quản lý phân lớp",
         icon: <GroupAddOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.MANAGE_ENROLLMENT}`,
+      },
+      {
+        label: "Hướng dẫn sử dụng",
+        icon: <HelpOutlineOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.USAGE_GUIDE}`,
       },
       {
         label: "Duyệt tài liệu",

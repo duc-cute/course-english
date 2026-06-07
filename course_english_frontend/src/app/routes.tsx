@@ -12,11 +12,14 @@ import { LessonEditorPage } from "../pages/admin/LessonEditorPage";
 import { ManageUserPage } from "../pages/admin/ManageUserPage";
 import { ReviewDocPage } from "../pages/admin/ReviewDocPage";
 import { ManageQuestionsPage } from "../pages/admin/ManageQuestionsPage";
+import { ManageVocabularySetsPage } from "../pages/admin/ManageVocabularySetsPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { StudentHomePage } from "../pages/student/StudentHomePage";
 import { StudentLessonListPage } from "../pages/student/StudentLessonListPage";
+import { StudentUsageGuidePage } from "../pages/student/StudentUsageGuidePage";
 import { LessonReaderPage } from "../pages/student/LessonReaderPage";
+import { TeacherUsageGuidePage } from "../pages/admin/TeacherUsageGuidePage";
 
 const LazyAdminLayout = lazy(async () => {
   const module = await import("../layouts/admin/AdminLayout");
@@ -63,6 +66,10 @@ export const appRouter = createBrowserRouter([
         path: `${paths.STUDENT_LESSONS}/:lessonId`,
         element: <LessonReaderPage />,
       },
+      {
+        path: paths.USAGE_GUIDE,
+        element: <StudentUsageGuidePage />,
+      },
     ],
   },
   {
@@ -106,12 +113,20 @@ export const appRouter = createBrowserRouter([
         element: <ManageQuestionsPage />,
       },
       {
+        path: paths.MANAGE_VOCABULARY_SETS,
+        element: <ManageVocabularySetsPage />,
+      },
+      {
         path: "manage-lesson/:lessonId/edit",
         element: <LessonEditorPage />,
       },
       {
         path: paths.REVIEW_DOC,
         element: <ReviewDocPage />,
+      },
+      {
+        path: paths.USAGE_GUIDE,
+        element: <TeacherUsageGuidePage />,
       },
     ],
   },

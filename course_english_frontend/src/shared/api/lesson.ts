@@ -10,6 +10,7 @@ export type LessonBlockType =
   | "AUDIO"
   | "CALLOUT"
   | "SUMMARY"
+  | "VOCABULARY"
   | "QUESTION_REF"
   | "EXERCISE_SET";
 
@@ -34,6 +35,8 @@ export type LessonBlockRecord = {
   payloadJson?: string;
   /** QUESTION_REF — câu resolve từ bank (GET /lessons/{id}/detail) */
   resolvedQuestionsJson?: string;
+  /** VOCABULARY — mục từ resolve từ vocabulary_sets (GET /lessons/{id}/detail) */
+  resolvedVocabularyJson?: string;
 };
 
 export type LessonAssetRecord = {

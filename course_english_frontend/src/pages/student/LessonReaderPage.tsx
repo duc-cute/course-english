@@ -25,6 +25,7 @@ import {
   type LessonRecord,
 } from "../../shared/api/lesson";
 import type { ApiResponse } from "../../shared/api/types";
+import { STUDENT_SCROLL_ROOT_ID } from "../../shared/constants/scrollRoots";
 import { paths } from "../../shared/constants/paths";
 import "../../styles/lesson-reader.css";
 import "../../styles/lesson-player.css";
@@ -39,6 +40,7 @@ export function LessonReaderPage() {
   const [nextLesson, setNextLesson] = useState<LessonRecord | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [resumeDismissed, setResumeDismissed] = useState(false);
+  const [exerciseView, setExerciseView] = useState<"exercise" | "result" | "review">("exercise");
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -85,6 +87,7 @@ export function LessonReaderPage() {
 
   const setActiveTab = useCallback(
     (tab: LessonPlayerTab) => {
+      setExerciseView("exercise");
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         next.set("tab", tab);
@@ -116,6 +119,7 @@ export function LessonReaderPage() {
           subjectName: lesson.subjectName,
           lastBlockId: activeBlockId,
           scrollPercent,
+          lastTab: "study",
         });
       }, 400);
     },
@@ -149,6 +153,13 @@ export function LessonReaderPage() {
   }, [focusMode]);
 
   useEffect(() => {
+    const main = document.getElementById(STUDENT_SCROLL_ROOT_ID);
+    if (!main) return;
+    main.classList.add("student-layout-main--lesson-reader");
+    return () => main.classList.remove("student-layout-main--lesson-reader");
+  }, []);
+
+  useEffect(() => {
     if (!lesson?.id || !hasScrollBlocks || activeTab !== "study") return;
     saveLessonProgress({
       lessonId: lesson.id,
@@ -156,8 +167,34 @@ export function LessonReaderPage() {
       subjectName: lesson.subjectName,
       lastBlockId: studyBlocks[0]?.id ?? "",
       scrollPercent: 0,
+      lastTab: "study",
     });
   }, [lesson?.id, lesson?.title, lesson?.subjectName, hasScrollBlocks, studyBlocks, activeTab]);
+
+  useEffect(() => {
+    if (!lesson?.id || loading) return;
+    const existing = getLessonProgress(lesson.id);
+    saveLessonProgress({
+      lessonId: lesson.id,
+      lessonTitle: lesson.title,
+      subjectName: lesson.subjectName,
+      lastBlockId: existing?.lastBlockId ?? studyBlocks[0]?.id ?? "",
+      scrollPercent: existing?.scrollPercent ?? 0,
+      lastTab: activeTab,
+    });
+  }, [lesson?.id, lesson?.title, lesson?.subjectName, activeTab, loading, studyBlocks]);
+
+  const handleContinueAfterExercise = useCallback(() => {
+    if (nextLesson) {
+      navigate(`/${paths.STUDENT}/${paths.STUDENT_LESSONS}/${nextLesson.id}`);
+      return;
+    }
+    if (showStudy) {
+      setActiveTab("study");
+      return;
+    }
+    navigate(`/${paths.STUDENT}/${paths.STUDENT_LESSONS}`);
+  }, [nextLesson, showStudy, navigate, setActiveTab]);
 
   if (loading) {
     return (
@@ -178,11 +215,14 @@ export function LessonReaderPage() {
   const isDraft = lesson.status !== "PUBLISHED";
   const listPath = `/${paths.STUDENT}/${paths.STUDENT_LESSONS}`;
   const showToc = activeTab === "study" && hasScrollBlocks;
+  const showResultLayout = activeTab === "practice" && exerciseView !== "exercise";
 
   const layoutClass = [
     "lesson-reader-layout",
     showToc ? "lesson-reader-layout--with-toc" : "",
     activeTab === "practice" ? "lesson-reader-layout--practice" : "",
+    showResultLayout ? "lesson-reader-layout--result" : "",
+    hasPracticeOnly ? "lesson-reader-layout--practice-only" : "",
     focusMode ? "lesson-reader-layout--focus" : "",
   ]
     .filter(Boolean)
@@ -201,31 +241,33 @@ export function LessonReaderPage() {
         ) : null}
 
         <article className="lesson-reader-main">
-          <Box className="lesson-reader-toolbar" sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", mb: 1 }}>
-            <Link
-              component="button"
-              type="button"
-              className="lesson-reader-back"
-              underline="none"
-              onClick={() => navigate(listPath)}
-              sx={{ border: "none", background: "none", cursor: "pointer", font: "inherit", mb: 0 }}
-            >
-              <ArrowBackIcon sx={{ fontSize: 18 }} />
-              Danh sách bài học
-            </Link>
-            {activeTab === "study" ? (
-              <Button
-                size="small"
-                variant={focusMode ? "contained" : "outlined"}
-                className={focusMode ? "student-btn-teal" : "student-btn-teal-outlined"}
-                startIcon={<CenterFocusStrongOutlinedIcon />}
-                onClick={() => setFocusMode((v) => !v)}
-                sx={{ textTransform: "none", borderRadius: "999px", ml: "auto" }}
+          {!showResultLayout ? (
+            <Box className="lesson-reader-toolbar" sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", mb: 1 }}>
+              <Link
+                component="button"
+                type="button"
+                className="lesson-reader-back"
+                underline="none"
+                onClick={() => navigate(listPath)}
+                sx={{ border: "none", background: "none", cursor: "pointer", font: "inherit", mb: 0 }}
               >
-                {focusMode ? "Thoát focus" : "Chế độ tập trung"}
-              </Button>
-            ) : null}
-          </Box>
+                <ArrowBackIcon sx={{ fontSize: 18 }} />
+                Danh sách bài học
+              </Link>
+              {activeTab === "study" ? (
+                <Button
+                  size="small"
+                  variant={focusMode ? "contained" : "outlined"}
+                  className={focusMode ? "student-btn-teal" : "student-btn-teal-outlined"}
+                  startIcon={<CenterFocusStrongOutlinedIcon />}
+                  onClick={() => setFocusMode((v) => !v)}
+                  sx={{ textTransform: "none", borderRadius: "999px", ml: "auto" }}
+                >
+                  {focusMode ? "Thoát focus" : "Chế độ tập trung"}
+                </Button>
+              ) : null}
+            </Box>
+          ) : null}
 
           {showResume ? (
             <Alert
@@ -251,27 +293,31 @@ export function LessonReaderPage() {
             </Alert>
           ) : null}
 
-          <header className="lesson-reader-hero">
-            <div className="lesson-reader-hero-eyebrow">
-              <MenuBookOutlinedIcon sx={{ fontSize: 16 }} />
-              {hasPracticeOnly ? "Bài tập" : "Bài học"}
-              {lesson.subjectName ? (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="lesson-reader-hero-subject">{lesson.subjectName}</span>
-                </>
-              ) : null}
-            </div>
-            <h1 className="lesson-reader-hero-title">{lesson.title}</h1>
-            {lesson.summary ? <p className="lesson-reader-hero-summary">{lesson.summary}</p> : null}
-          </header>
+          {!showResultLayout ? (
+            <header className="lesson-reader-hero">
+              <div className="lesson-reader-hero-eyebrow">
+                <MenuBookOutlinedIcon sx={{ fontSize: 16 }} />
+                {hasPracticeOnly ? "Bài tập" : "Bài học"}
+                {lesson.subjectName ? (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="lesson-reader-hero-subject">{lesson.subjectName}</span>
+                  </>
+                ) : null}
+              </div>
+              <h1 className="lesson-reader-hero-title">{lesson.title}</h1>
+              {lesson.summary ? <p className="lesson-reader-hero-summary">{lesson.summary}</p> : null}
+            </header>
+          ) : null}
 
-          <LessonPlayerTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            showStudy={showStudy}
-            showPractice={showPractice}
-          />
+          {!showResultLayout ? (
+            <LessonPlayerTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              showStudy={showStudy}
+              showPractice={showPractice}
+            />
+          ) : null}
 
           {activeTab === "study" ? (
             <StudyPanel
@@ -281,7 +327,16 @@ export function LessonReaderPage() {
               nextLesson={nextLesson}
             />
           ) : (
-            <ExercisePlayer lessonId={lesson.id} lessonTitle={lesson.title} practiceBlocks={practiceBlocks} />
+            <ExercisePlayer
+              lessonId={lesson.id}
+              lessonTitle={lesson.title}
+              subjectName={lesson.subjectName}
+              practiceBlocks={practiceBlocks}
+              nextLessonTitle={nextLesson?.title}
+              onViewChange={setExerciseView}
+              onContinueStudy={handleContinueAfterExercise}
+              onBackToLessons={() => navigate(listPath)}
+            />
           )}
         </article>
       </div>

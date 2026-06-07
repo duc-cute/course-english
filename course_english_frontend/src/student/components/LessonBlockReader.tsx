@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/lesson";
 import { parseBlockPayload } from "../../shared/api/lesson";
+import { VocabularyBlock } from "../lessonPlayer/vocabulary/VocabularyBlock";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -67,6 +68,10 @@ export function LessonBlockReader({ block, assets, variant = "preview" }: Lesson
         ) : null}
       </Box>
     );
+  }
+
+  if (block.blockType === "VOCABULARY") {
+    return <VocabularyBlock block={block} />;
   }
 
   if (block.blockType === "VIDEO" || block.blockType === "AUDIO") {

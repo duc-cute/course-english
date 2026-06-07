@@ -19,6 +19,9 @@ export function getAdminPageTitle(pathname: string): string {
     [`${adminRoot}/manage-lesson`]: "Quản lý bài học",
     [`${adminRoot}/${paths.MANAGE_ENROLLMENT}`]: "Quản lý phân lớp",
     [`${adminRoot}/${paths.REVIEW_DOC}`]: "Review & định hướng",
+    [`${adminRoot}/${paths.MANAGE_QUESTIONS}`]: "Thư viện câu hỏi",
+    [`${adminRoot}/${paths.MANAGE_VOCABULARY_SETS}`]: "Bộ từ vựng",
+    [`${adminRoot}/${paths.USAGE_GUIDE}`]: "Hướng dẫn sử dụng",
   };
   return map[pathname] ?? "Course English Admin";
 }

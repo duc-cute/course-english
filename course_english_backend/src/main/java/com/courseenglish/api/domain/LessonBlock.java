@@ -24,7 +24,7 @@ public class LessonBlock extends BaseObject {
     private UUID lessonId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "block_type", nullable = false, length = 30)
+    @Column(name = "block_type", nullable = false, length = 64)
     private LessonBlockTypeEnum blockType;
 
     @Column(name = "display_order", nullable = false)

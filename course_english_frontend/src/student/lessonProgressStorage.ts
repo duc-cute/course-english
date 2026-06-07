@@ -1,3 +1,5 @@
+import type { LessonPlayerTab } from "../shared/lesson/blockTypes";
+
 const STORAGE_KEY = "course-english.lessonProgress.v1";
 
 export type LessonProgressEntry = {
@@ -6,6 +8,8 @@ export type LessonProgressEntry = {
   subjectName?: string;
   lastBlockId: string;
   scrollPercent: number;
+  /** Tab cuối cùng học sinh mở — dùng cho Tiếp tục học */
+  lastTab?: LessonPlayerTab;
   updatedAt: string;
 };
 

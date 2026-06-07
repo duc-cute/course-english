@@ -16,6 +16,7 @@ export function MultipleChoiceQuestion({
   onSelect,
 }: MultipleChoiceQuestionProps) {
   const promptText = question.prompt.text;
+  const answeredWrong = showResult && selectedId !== question.correctChoiceId;
 
   return (
     <div className="exercise-mcq">
@@ -25,10 +26,16 @@ export function MultipleChoiceQuestion({
           const isSelected = selectedId === choice.id;
           const isCorrect = choice.id === question.correctChoiceId;
           let stateClass = "";
-          if (showResult && isSelected && isCorrect) stateClass = " is-correct";
-          else if (showResult && isSelected && !isCorrect) stateClass = " is-wrong";
-          else if (showResult && !isSelected && isCorrect) stateClass = " is-reveal-correct";
-          else if (isSelected) stateClass = " is-selected";
+
+          if (showResult) {
+            if (isCorrect && (isSelected || answeredWrong)) {
+              stateClass = " is-correct";
+            } else if (isSelected && !isCorrect) {
+              stateClass = " is-wrong";
+            }
+          } else if (isSelected) {
+            stateClass = " is-selected";
+          }
 
           return (
             <button

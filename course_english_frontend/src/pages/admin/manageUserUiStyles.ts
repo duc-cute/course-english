@@ -74,6 +74,11 @@ export const muBtnSmPrimary = {
     background: "linear-gradient(135deg, #1a6bb5 0%, #0a3a6a 100%)",
     boxShadow: "none",
   },
+  "&.Mui-disabled": {
+    color: "rgba(255, 255, 255, 0.92) !important",
+    background: "linear-gradient(135deg, #7eb3e0 0%, #5a8fb8 100%) !important",
+    opacity: 0.72,
+  },
 };
 
 export const muBtnSmOutlined = {

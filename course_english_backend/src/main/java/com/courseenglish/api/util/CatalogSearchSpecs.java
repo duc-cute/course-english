@@ -58,6 +58,32 @@ public final class CatalogSearchSpecs {
         );
     }
 
+    public static Specification<VocabularySet> vocabularySetSearch(ReqSearchVocabularySetDTO req) {
+        return and(
+                vocabularySetKeywordLike(req.getKeyword()),
+                vocabularySetStatusEquals(req.getStatus())
+        );
+    }
+
+    private static Specification<VocabularySet> vocabularySetKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("title")), pattern),
+                cb.like(cb.lower(root.get("description")), pattern)
+        );
+    }
+
+    private static Specification<VocabularySet> vocabularySetStatusEquals(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("status")), normalized);
+    }
+
     private static Specification<Question> questionKeywordLike(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return null;

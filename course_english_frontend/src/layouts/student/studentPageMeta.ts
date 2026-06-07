@@ -9,6 +9,7 @@ export function getStudentPageTitle(pathname: string): string {
   const map: Record<string, string> = {
     [studentRoot]: "Trang chủ học tập",
     [`${studentRoot}/${paths.STUDENT_LESSONS}`]: "Bài học",
+    [`${studentRoot}/${paths.USAGE_GUIDE}`]: "Hướng dẫn sử dụng",
   };
   return map[pathname] ?? "Học tập";
 }

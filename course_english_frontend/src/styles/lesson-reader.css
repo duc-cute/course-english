@@ -260,8 +260,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 20px;
-  padding: 8px 12px 8px 8px;
+  margin-bottom: 0;
+  padding: 6px 10px 6px 6px;
   border-radius: 999px;
   color: var(--eng-on-surface-variant, #3d4947);
   text-decoration: none;
@@ -338,6 +338,31 @@
   line-height: var(--eng-reading-lh, 1.7);
   color: var(--eng-on-surface-variant, #3d4947);
   max-width: 65ch;
+}
+
+/* Bài tập — gọn hơn để giảm cuộn */
+.lesson-reader-layout--practice .lesson-reader-hero {
+  margin-bottom: 16px;
+  padding: 16px 18px 14px;
+}
+
+.lesson-reader-layout--practice .lesson-reader-hero-title {
+  margin-bottom: 8px;
+  font-size: clamp(1.25rem, 3vw, 1.625rem);
+}
+
+.lesson-reader-layout--practice-only .lesson-reader-hero {
+  margin-bottom: 12px;
+  padding: 14px 16px 12px;
+}
+
+.lesson-reader-layout--practice-only .lesson-reader-hero-eyebrow {
+  margin-bottom: 8px;
+}
+
+.lesson-reader-layout--practice-only .lesson-reader-hero-summary {
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 .lesson-reader-meta {
@@ -751,6 +776,57 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* --- Vocabulary block (tab Bài học) --- */
+.lesson-reader-block--vocabulary .vocabulary-block-instruction {
+  margin: 0 0 14px;
+  font-size: 0.9375rem;
+  color: var(--eng-on-surface-variant, #5f6b6a);
+}
+
+.vocabulary-block-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.vocabulary-block-item {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(13, 148, 136, 0.14);
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), #fff);
+}
+
+.vocabulary-block-word {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.vocabulary-block-word-en {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--eng-on-surface, #1a2423);
+  letter-spacing: -0.02em;
+}
+
+.vocabulary-block-phonetic {
+  font-size: 0.8125rem;
+  color: var(--eng-on-surface-variant, #7a8584);
+  font-style: italic;
+}
+
+.vocabulary-block-meaning {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--eng-teal-dark, #0f766e);
+  font-weight: 600;
 }
 
 /* Print */

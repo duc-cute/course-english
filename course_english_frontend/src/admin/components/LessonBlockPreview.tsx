@@ -3,6 +3,10 @@ import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/less
 import { parseBlockPayload } from "../../shared/api/lesson";
 import { parseExerciseSetPayload } from "../../student/lessonPlayer/exercise/parseExerciseSet";
 import { parseQuestionRefPayload, parseResolvedQuestions } from "../../student/lessonPlayer/exercise/parseQuestionRef";
+import {
+  parseResolvedVocabularyItems,
+  parseVocabularyBlockPayload,
+} from "../../shared/lesson/vocabularyPayload";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -61,7 +65,12 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
   if (block.blockType === "EXERCISE_SET") {
     const payload = parseExerciseSetPayload(block.payloadJson);
     const mcqCount = payload.questions.filter((q) => q.type === "MULTIPLE_CHOICE").length;
+    const matchingCount = payload.questions.filter((q) => q.type === "MATCHING").length;
     const firstMcq = payload.questions.find((q) => q.type === "MULTIPLE_CHOICE");
+    const questionParts = [
+      mcqCount ? `${mcqCount} MCQ` : "",
+      matchingCount ? `${matchingCount} ghép cặp` : "",
+    ].filter(Boolean);
     return (
       <Box>
         <Typography sx={{ fontSize: 13, color: "#333" }}>
@@ -69,7 +78,7 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
           {payload.instruction ? ` — ${payload.instruction}` : ""}
           <br />
           <span style={{ color: "#5F5E5A" }}>
-            {mcqCount} câu MCQ
+            {questionParts.join(" · ") || "0 câu"}
             {payload.passScorePercent !== undefined ? ` · Đạt ${payload.passScorePercent}%` : ""}
           </span>
         </Typography>
@@ -78,6 +87,27 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
             VD: {firstMcq.prompt.text || "(chưa có câu hỏi)"}
           </Typography>
         ) : null}
+      </Box>
+    );
+  }
+
+  if (block.blockType === "VOCABULARY") {
+    const payload = parseVocabularyBlockPayload(block.payloadJson);
+    const items = parseResolvedVocabularyItems(block.resolvedVocabularyJson);
+    const previewWords = items
+      .slice(0, 3)
+      .map((i) => i.wordEn)
+      .join(", ");
+    return (
+      <Box>
+        <Typography sx={{ fontSize: 13, color: "#333" }}>
+          <strong>{payload.title || payload.vocabularySetTitle || "Từ vựng"}</strong>
+          {payload.instruction ? ` — ${payload.instruction}` : ""}
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: "#5F5E5A", mt: 0.25 }}>
+          {items.length > 0 ? `${items.length} từ` : "Chưa resolve (publish bộ từ?)"}
+          {previewWords ? ` · ${previewWords}${items.length > 3 ? "…" : ""}` : ""}
+        </Typography>
       </Box>
     );
   }

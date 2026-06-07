@@ -20,6 +20,10 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
 import { QuestionBankForm } from "../../admin/components/question/QuestionBankForm";
 import {
+  QuestionBankImportDialog,
+  type QuestionBankImportFormat,
+} from "../../admin/components/question/QuestionBankImportDialog";
+import {
   muBtnSmOutlined,
   muCatalogTableShell,
   muDialogFooter,
@@ -79,6 +83,7 @@ export function ManageQuestionsPage() {
   const [formError, setFormError] = useState("");
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState<QuestionRecord | null>(null);
+  const [importFormat, setImportFormat] = useState<QuestionBankImportFormat | null>(null);
 
   useEffect(() => {
     void apiGetQuestionCategories().then((res) => {
@@ -253,6 +258,15 @@ export function ManageQuestionsPage() {
         }
       />
 
+      <Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap" }}>
+        <Button size="small" variant="outlined" sx={muBtnSmOutlined} onClick={() => setImportFormat("excel")}>
+          Import Excel
+        </Button>
+        <Button size="small" variant="outlined" sx={muBtnSmOutlined} onClick={() => setImportFormat("csv")}>
+          Import CSV
+        </Button>
+      </Box>
+
       {error ? (
         <Alert severity="error" sx={{ mb: 1 }} onClose={() => setError("")}>
           {error}
@@ -391,6 +405,15 @@ export function ManageQuestionsPage() {
         onConfirm={() => void deleteRow()}
         loading={submitting}
       />
+
+      {importFormat ? (
+        <QuestionBankImportDialog
+          open
+          format={importFormat}
+          onClose={() => setImportFormat(null)}
+          onImported={() => void fetchData()}
+        />
+      ) : null}
     </Box>
   );
 }

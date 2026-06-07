@@ -18,6 +18,8 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import LinkIcon from "@mui/icons-material/Link";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
@@ -28,22 +30,24 @@ import {
 } from "@mui/material";
 import { useMemo, useState } from "react";
 import {
-  getMcqQuestionSummary,
-  validateMcqQuestion,
+  getQuestionSummary,
+  getQuestionTypeLabel,
+  validateQuestion,
 } from "../../../shared/lesson/exercisePayload";
-import type { MultipleChoiceQuestion } from "../../../student/lessonPlayer/exercise/types";
+import type { ExerciseQuestion } from "../../../student/lessonPlayer/exercise/types";
 import { muBtnSmPrimary, muTextFieldSx } from "../../../pages/admin/manageUserUiStyles";
 
 type QuestionListPanelProps = {
-  questions: MultipleChoiceQuestion[];
+  questions: ExerciseQuestion[];
   activeIndex: number;
   onSelect: (index: number) => void;
-  onAdd: () => void;
+  onAddMcq: () => void;
+  onAddMatching: () => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
 };
 
 type SortableQuestionItemProps = {
-  question: MultipleChoiceQuestion;
+  question: ExerciseQuestion;
   index: number;
   active: boolean;
   dragDisabled: boolean;
@@ -66,8 +70,10 @@ function SortableQuestionItem({
     isDragging,
   } = useSortable({ id: question.id, disabled: dragDisabled });
 
-  const valid = validateMcqQuestion(question).valid;
-  const summary = getMcqQuestionSummary(question);
+  const valid = validateQuestion(question).valid;
+  const summary = getQuestionSummary(question);
+  const typeLabel = getQuestionTypeLabel(question);
+  const TypeIcon = question.type === "MATCHING" ? LinkIcon : QuizOutlinedIcon;
 
   return (
     <Box
@@ -121,17 +127,35 @@ function SortableQuestionItem({
         <DragIndicatorIcon sx={{ fontSize: 18 }} />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography
-          sx={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.04em",
-            color: active ? "#0C447C" : "#888780",
-            mb: 0.25,
-          }}
-        >
-          CÂU {index + 1}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
+          <Typography
+            sx={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              color: active ? "#0C447C" : "#888780",
+            }}
+          >
+            CÂU {index + 1}
+          </Typography>
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.25,
+              fontSize: 9,
+              fontWeight: 700,
+              color: "#0C447C",
+              bgcolor: "rgba(12, 68, 124, 0.08)",
+              px: 0.75,
+              py: 0.125,
+              borderRadius: "4px",
+            }}
+          >
+            <TypeIcon sx={{ fontSize: 11 }} />
+            {typeLabel}
+          </Box>
+        </Box>
         <Typography
           sx={{
             fontSize: 13,
@@ -158,7 +182,8 @@ export function QuestionListPanel({
   questions,
   activeIndex,
   onSelect,
-  onAdd,
+  onAddMcq,
+  onAddMatching,
   onReorder,
 }: QuestionListPanelProps) {
   const [search, setSearch] = useState("");
@@ -174,7 +199,7 @@ export function QuestionListPanel({
     if (!q) return questions.map((question, index) => ({ question, index }));
     return questions
       .map((question, index) => ({ question, index }))
-      .filter(({ question }) => getMcqQuestionSummary(question).toLowerCase().includes(q));
+      .filter(({ question }) => getQuestionSummary(question).toLowerCase().includes(q));
   }, [questions, search]);
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -253,7 +278,7 @@ export function QuestionListPanel({
         </SortableContext>
       </DndContext>
 
-      <Box sx={{ p: 1.25, borderTop: "1px solid #ECEAE3", bgcolor: "#fff" }}>
+      <Box sx={{ p: 1.25, borderTop: "1px solid #ECEAE3", bgcolor: "#fff", display: "grid", gap: 0.75 }}>
         <Button
           fullWidth
           variant="contained"
@@ -265,9 +290,26 @@ export function QuestionListPanel({
             fontSize: 13,
             fontWeight: 600,
           }}
-          onClick={onAdd}
+          onClick={onAddMcq}
         >
-          Thêm câu
+          Thêm trắc nghiệm
+        </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<LinkIcon />}
+          sx={{
+            py: 1,
+            borderRadius: "10px",
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: "none",
+            borderColor: "#0C447C",
+            color: "#0C447C",
+          }}
+          onClick={onAddMatching}
+        >
+          Thêm ghép cặp
         </Button>
       </Box>
     </Box>

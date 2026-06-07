@@ -10,6 +10,7 @@ type LessonPlayerTabsProps = {
 export function LessonPlayerTabs({ activeTab, onTabChange, showStudy, showPractice }: LessonPlayerTabsProps) {
   if (!showStudy && !showPractice) return null;
   if (showStudy && !showPractice) return null;
+  if (!showStudy && showPractice) return null;
 
   return (
     <div className="lesson-player-tabs" role="tablist" aria-label="Chế độ bài học">

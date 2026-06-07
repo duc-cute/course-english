@@ -1,6 +1,8 @@
 import { stringifyBlockPayload } from "../api/lesson";
 import type {
+  ExerciseQuestion,
   ExerciseSetPayload,
+  MatchingQuestion,
   MultipleChoiceQuestion,
 } from "../../student/lessonPlayer/exercise/types";
 
@@ -9,6 +11,20 @@ let questionIdSeq = 0;
 export function generateQuestionId(): string {
   questionIdSeq += 1;
   return `q${Date.now()}_${questionIdSeq}`;
+}
+
+export function createEmptyMatchingQuestion(id?: string): MatchingQuestion {
+  return {
+    id: id ?? generateQuestionId(),
+    type: "MATCHING",
+    prompt: { text: "Ghép từ tiếng Anh với nghĩa tiếng Việt", lang: "vi" },
+    pairs: [
+      { left: "", right: "" },
+      { left: "", right: "" },
+      { left: "", right: "" },
+    ],
+    explanation: "",
+  };
 }
 
 export function createEmptyMcqQuestion(id?: string): MultipleChoiceQuestion {
@@ -63,6 +79,42 @@ export function getMcqQuestionSummary(question: MultipleChoiceQuestion): string 
   return text || "(Chưa có nội dung)";
 }
 
+export function getMatchingQuestionSummary(question: MatchingQuestion): string {
+  const prompt = question.prompt?.text?.trim();
+  if (prompt) return prompt;
+  const first = question.pairs.find((p) => p.left.trim())?.left.trim();
+  if (first) return `Ghép cặp: ${first}…`;
+  return "(Ghép cặp — chưa có từ)";
+}
+
+export function getQuestionSummary(question: ExerciseQuestion): string {
+  if (question.type === "MULTIPLE_CHOICE") return getMcqQuestionSummary(question);
+  if (question.type === "MATCHING") return getMatchingQuestionSummary(question);
+  return `(${question.type})`;
+}
+
+export function getQuestionTypeLabel(question: ExerciseQuestion): string {
+  if (question.type === "MULTIPLE_CHOICE") return "Trắc nghiệm";
+  if (question.type === "MATCHING") return "Ghép cặp";
+  return question.type;
+}
+
+export function validateMatchingQuestion(question: MatchingQuestion): ExerciseSetValidation {
+  const errors: string[] = [];
+  if (question.pairs.length < 2) {
+    errors.push("Cần ít nhất 2 cặp từ.");
+  }
+  const hasEmpty = question.pairs.some((p) => !p.left.trim() || !p.right.trim());
+  if (hasEmpty) {
+    errors.push("Mỗi cặp cần đủ từ tiếng Anh và nghĩa tiếng Việt.");
+  }
+  const lefts = question.pairs.map((p) => p.left.trim().toLowerCase()).filter(Boolean);
+  if (new Set(lefts).size !== lefts.length) {
+    errors.push("Từ tiếng Anh bên trái không được trùng.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
 export function validateMcqQuestion(question: MultipleChoiceQuestion): ExerciseSetValidation {
   const errors: string[] = [];
   if (!question.prompt.text.trim()) {
@@ -77,6 +129,12 @@ export function validateMcqQuestion(question: MultipleChoiceQuestion): ExerciseS
   return { valid: errors.length === 0, errors };
 }
 
+export function validateQuestion(question: ExerciseQuestion): ExerciseSetValidation {
+  if (question.type === "MULTIPLE_CHOICE") return validateMcqQuestion(question);
+  if (question.type === "MATCHING") return validateMatchingQuestion(question);
+  return { valid: false, errors: ["Loại câu chưa hỗ trợ trong editor."] };
+}
+
 export function validateExerciseSetPayload(payload: ExerciseSetPayload): ExerciseSetValidation {
   const errors: string[] = [];
 
@@ -84,23 +142,17 @@ export function validateExerciseSetPayload(payload: ExerciseSetPayload): Exercis
     errors.push("Tiêu đề bài tập không được để trống.");
   }
 
-  const mcqQuestions = payload.questions.filter((q) => q.type === "MULTIPLE_CHOICE");
-  if (!mcqQuestions.length) {
-    errors.push("Cần ít nhất 1 câu trắc nghiệm (MCQ).");
+  const editableQuestions = payload.questions.filter(
+    (q) => q.type === "MULTIPLE_CHOICE" || q.type === "MATCHING",
+  );
+  if (!editableQuestions.length) {
+    errors.push("Cần ít nhất 1 câu (trắc nghiệm hoặc ghép cặp).");
   }
 
-  mcqQuestions.forEach((q, index) => {
+  editableQuestions.forEach((q, index) => {
     const n = index + 1;
-    if (!q.prompt.text.trim()) {
-      errors.push(`Câu ${n}: nội dung câu hỏi không được để trống.`);
-    }
-    const hasEmptyChoice = q.choices.some((c) => !c.text.trim());
-    if (hasEmptyChoice) {
-      errors.push(`Câu ${n}: tất cả đáp án phải có nội dung.`);
-    }
-    if (!q.choices.some((c) => c.id === q.correctChoiceId)) {
-      errors.push(`Câu ${n}: chưa chọn đáp án đúng.`);
-    }
+    const result = validateQuestion(q);
+    result.errors.forEach((msg) => errors.push(`Câu ${n}: ${msg}`));
   });
 
   if (payload.passScorePercent !== undefined) {
@@ -121,14 +173,29 @@ function cleanMcqQuestion(q: MultipleChoiceQuestion): MultipleChoiceQuestion {
   };
 }
 
+function cleanMatchingQuestion(q: MatchingQuestion): MatchingQuestion {
+  return {
+    ...q,
+    prompt: q.prompt?.text?.trim()
+      ? { ...q.prompt, text: q.prompt.text.trim() }
+      : undefined,
+    pairs: q.pairs
+      .map((p) => ({ left: p.left.trim(), right: p.right.trim() }))
+      .filter((p) => p.left && p.right),
+    explanation: q.explanation?.trim() || undefined,
+  };
+}
+
 export function buildExerciseSetPayload(payload: ExerciseSetPayload): ExerciseSetPayload {
   return {
     ...payload,
     title: payload.title?.trim(),
     instruction: payload.instruction?.trim() || undefined,
-    questions: payload.questions.map((q) =>
-      q.type === "MULTIPLE_CHOICE" ? cleanMcqQuestion(q) : q,
-    ),
+    questions: payload.questions.map((q) => {
+      if (q.type === "MULTIPLE_CHOICE") return cleanMcqQuestion(q);
+      if (q.type === "MATCHING") return cleanMatchingQuestion(q);
+      return q;
+    }),
   };
 }
 
