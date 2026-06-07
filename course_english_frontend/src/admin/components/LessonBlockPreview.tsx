@@ -105,6 +105,7 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
           {payload.instruction ? ` — ${payload.instruction}` : ""}
         </Typography>
         <Typography sx={{ fontSize: 12, color: "#5F5E5A", mt: 0.25 }}>
+          {payload.presentation === "flashcard" ? "Flashcard · " : "Danh sách · "}
           {items.length > 0 ? `${items.length} từ` : "Chưa resolve (publish bộ từ?)"}
           {previewWords ? ` · ${previewWords}${items.length > 3 ? "…" : ""}` : ""}
         </Typography>

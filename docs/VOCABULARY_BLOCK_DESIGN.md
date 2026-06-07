@@ -110,10 +110,11 @@ STUDY_BLOCK_TYPES.add("VOCABULARY");
 - Card từng item: `word_en` (lớn) + `meaning_vi` + phonetic (nếu bật).
 - Optional: nút 🔊 phát audio (phase sau, cần `audio_asset_id`).
 
-**Phase 2 — `flashcard`**
+**Phase 2 — `flashcard`** ✅
 
 - Một thẻ / màn: mặt trước EN, tap flip → VI.
 - Nút Trước / Sau, progress `3 / 12`.
+- UX: không nút Lật thẻ riêng, không nhãn Tiếng Anh/Việt.
 
 ### `StudyPanel.tsx`
 
@@ -126,8 +127,8 @@ STUDY_BLOCK_TYPES.add("VOCABULARY");
 | Activity | Output | Giai đoạn |
 |----------|--------|-----------|
 | MCQ EN→VI | `EXERCISE_SET` | ✅ Đã có |
-| MATCHING | `EXERCISE_SET` question type MATCHING | Có thể thêm vào `vocabActivityGenerator` |
-| Flashcard | Block `VOCABULARY` presentation=flashcard | Ưu tiên 2b |
+| MATCHING | `EXERCISE_SET` question type MATCHING | ✅ `generateMatchingFromVocabItems` + wizard |
+| Flashcard | Block `VOCABULARY` presentation=flashcard | ✅ `VocabularyFlashcard.tsx` |
 
 ---
 

@@ -1,4 +1,8 @@
-import type { ExerciseSetPayload, MultipleChoiceQuestion } from "../../student/lessonPlayer/exercise/types";
+import type {
+  ExerciseSetPayload,
+  MatchingQuestion,
+  MultipleChoiceQuestion,
+} from "../../student/lessonPlayer/exercise/types";
 
 export type VocabItemInput = {
   id?: string;
@@ -19,8 +23,23 @@ export type McqGenerationResult = {
   warnings: string[];
 };
 
+export type MatchingGenerationOptions = {
+  title?: string;
+  instruction?: string;
+  passScorePercent?: number;
+  /** Chia thành nhiều câu ghép cặp nếu bộ từ lớn (mặc định 8 cặp/câu) */
+  pairsPerQuestion?: number;
+};
+
+export type MatchingGenerationResult = {
+  payload: ExerciseSetPayload;
+  warnings: string[];
+};
+
 const CHOICE_IDS = ["a", "b", "c", "d"] as const;
 const MIN_ITEMS_FOR_MCQ = 4;
+const MIN_ITEMS_FOR_MATCHING = 2;
+const DEFAULT_PAIRS_PER_QUESTION = 8;
 
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
@@ -112,6 +131,95 @@ export function generateMcqFromVocabItems(
 
   if (items.length < 6) {
     warnings.push("Bộ từ ít — đáp án nhiễu sẽ lặp lại giữa các câu.");
+  }
+
+  return { payload, warnings };
+}
+
+export function validateVocabSetForMatching(items: VocabItemInput[]): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  if (items.length < MIN_ITEMS_FOR_MATCHING) {
+    errors.push(`Cần ít nhất ${MIN_ITEMS_FOR_MATCHING} từ để sinh bài ghép cặp.`);
+  }
+
+  const words = new Set<string>();
+  for (const item of items) {
+    if (!item.wordEn.trim() || !item.meaningVi.trim()) {
+      errors.push("Mỗi dòng cần đủ word_en và meaning_vi.");
+      break;
+    }
+    const key = normalizeWord(item.wordEn);
+    if (words.has(key)) {
+      errors.push("Có từ tiếng Anh trùng nhau — không thể ghép cặp.");
+      break;
+    }
+    words.add(key);
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+function chunkItems<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+function createMatchingQuestionFromItems(
+  chunk: VocabItemInput[],
+  index: number,
+  setTitle: string,
+): MatchingQuestion {
+  return {
+    id: `vocab-matching-${index + 1}`,
+    type: "MATCHING",
+    prompt: {
+      text: chunk.length < 8 ? "Ghép từ tiếng Anh với nghĩa tiếng Việt" : `${setTitle} — phần ${index + 1}`,
+      lang: "vi",
+    },
+    pairs: chunk.map((item) => ({
+      left: item.wordEn.trim(),
+      right: item.meaningVi.trim(),
+    })),
+    explanation: "Ghép đúng từ tiếng Anh với nghĩa tiếng Việt tương ứng.",
+  };
+}
+
+export function generateMatchingFromVocabItems(
+  items: VocabItemInput[],
+  options: MatchingGenerationOptions = {},
+): MatchingGenerationResult {
+  const validation = validateVocabSetForMatching(items);
+  if (!validation.valid) {
+    throw new Error(validation.errors.join(" "));
+  }
+
+  const warnings: string[] = [];
+  const normalizedItems = items.map((item) => ({
+    ...item,
+    wordEn: item.wordEn.trim(),
+    meaningVi: item.meaningVi.trim(),
+  }));
+
+  const pairsPerQuestion = options.pairsPerQuestion ?? DEFAULT_PAIRS_PER_QUESTION;
+  const chunks = chunkItems(normalizedItems, pairsPerQuestion);
+  const setTitle = options.title?.replace(/\s*—\s*Ghép cặp$/i, "") ?? "Bộ từ";
+  const questions = chunks.map((chunk, index) => createMatchingQuestionFromItems(chunk, index, setTitle));
+
+  const payload: ExerciseSetPayload = {
+    title: options.title ?? "Bài tập ghép cặp",
+    instruction: options.instruction ?? "Ghép từ tiếng Anh với nghĩa tiếng Việt",
+    presentation: "stepped",
+    shuffleQuestions: false,
+    shuffleOptions: true,
+    passScorePercent: options.passScorePercent ?? 80,
+    questions,
+  };
+
+  if (chunks.length > 1) {
+    warnings.push(`Bộ từ ${items.length} mục — chia thành ${chunks.length} câu ghép cặp.`);
   }
 
   return { payload, warnings };

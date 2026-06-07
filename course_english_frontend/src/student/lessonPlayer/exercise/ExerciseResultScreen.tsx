@@ -223,14 +223,31 @@ export function ExerciseResultScreen({
             ) : null}
 
             <div className="exercise-result-actions">
-              <button type="button" className="exercise-result-btn exercise-result-btn--outline" onClick={onReview}>
-                <VisibilityOutlinedIcon sx={{ fontSize: 20 }} />
-                Xem lại bài làm
-              </button>
-              <button type="button" className="exercise-result-btn exercise-result-btn--outline" onClick={onRetry}>
-                <ReplayOutlinedIcon sx={{ fontSize: 20 }} />
-                Làm lại
-              </button>
+              <div className="exercise-result-actions-secondary">
+                <button
+                  type="button"
+                  className="exercise-result-btn exercise-result-btn--secondary"
+                  onClick={onReview}
+                >
+                  <span className="exercise-result-btn-icon" aria-hidden>
+                    <VisibilityOutlinedIcon sx={{ fontSize: 22 }} />
+                  </span>
+                  <span className="exercise-result-btn-text">
+                    <span className="exercise-result-btn-text-short">Xem lại</span>
+                    <span className="exercise-result-btn-text-full">Xem lại bài làm</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="exercise-result-btn exercise-result-btn--secondary"
+                  onClick={onRetry}
+                >
+                  <span className="exercise-result-btn-icon" aria-hidden>
+                    <ReplayOutlinedIcon sx={{ fontSize: 22 }} />
+                  </span>
+                  <span className="exercise-result-btn-text">Làm lại</span>
+                </button>
+              </div>
               {onContinueStudy ? (
                 <button
                   type="button"
@@ -238,12 +255,16 @@ export function ExerciseResultScreen({
                   onClick={onContinueStudy}
                 >
                   <span className="exercise-result-btn-label">
-                    {nextLessonTitle ? "Bài tiếp theo" : "Học tiếp bài học"}
+                    <span className="exercise-result-btn-title">
+                      {nextLessonTitle ? "Bài tiếp theo" : "Học tiếp bài học"}
+                    </span>
                     {nextLessonTitle ? (
                       <span className="exercise-result-btn-sub">{nextLessonTitle}</span>
                     ) : null}
                   </span>
-                  <ArrowForwardIcon sx={{ fontSize: 20, flexShrink: 0 }} />
+                  <span className="exercise-result-btn-arrow" aria-hidden>
+                    <ArrowForwardIcon sx={{ fontSize: 22 }} />
+                  </span>
                 </button>
               ) : null}
             </div>

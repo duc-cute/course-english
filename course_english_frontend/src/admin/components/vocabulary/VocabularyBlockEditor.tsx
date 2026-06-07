@@ -1,5 +1,17 @@
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
-import { Alert, Box, Button, FormControlLabel, Switch, TextField, Typography } from "@mui/material";
+import StyleOutlinedIcon from "@mui/icons-material/StyleOutlined";
+import ViewListOutlinedIcon from "@mui/icons-material/ViewListOutlined";
+import {
+  Alert,
+  Box,
+  Button,
+  FormControlLabel,
+  Switch,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import { useMemo, useState } from "react";
 import {
   muBtnSmPrimary,
@@ -113,6 +125,30 @@ export function VocabularyBlockEditor({
         value={draft.instruction ?? ""}
         onChange={(e) => setDraft((d) => ({ ...d, instruction: e.target.value }))}
       />
+
+      <Box>
+        <Typography sx={{ fontSize: 12, fontWeight: 600, mb: 0.75, color: "text.secondary" }}>
+          Cách hiển thị (học sinh)
+        </Typography>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={draft.presentation ?? "list"}
+          onChange={(_, value: "list" | "flashcard" | null) => {
+            if (value) setDraft((d) => ({ ...d, presentation: value }));
+          }}
+          sx={{ "& .MuiToggleButton-root": { textTransform: "none", gap: 0.5, px: 1.5 } }}
+        >
+          <ToggleButton value="list">
+            <ViewListOutlinedIcon sx={{ fontSize: 18 }} />
+            Danh sách
+          </ToggleButton>
+          <ToggleButton value="flashcard">
+            <StyleOutlinedIcon sx={{ fontSize: 18 }} />
+            Flashcard
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
       <FormControlLabel
         control={

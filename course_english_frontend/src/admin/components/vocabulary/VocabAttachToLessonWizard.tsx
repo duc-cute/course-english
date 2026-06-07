@@ -1,3 +1,4 @@
+import LinkIcon from "@mui/icons-material/Link";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import {
@@ -28,7 +29,10 @@ import {
   buildVocabularyPayloadJson,
   createDefaultVocabularyPayload,
 } from "../../../shared/lesson/vocabularyPayload";
-import { generateMcqFromVocabItems } from "../../../shared/lesson/vocabActivityGenerator";
+import {
+  generateMatchingFromVocabItems,
+  generateMcqFromVocabItems,
+} from "../../../shared/lesson/vocabActivityGenerator";
 import type { VocabularyItemRecord } from "../../../shared/api/vocabularySet";
 
 type VocabAttachToLessonWizardProps = {
@@ -53,22 +57,30 @@ export function VocabAttachToLessonWizard({
   onAttached,
 }: VocabAttachToLessonWizardProps) {
   const [includeVocabulary, setIncludeVocabulary] = useState(true);
-  const [includeExercise, setIncludeExercise] = useState(true);
+  const [includeMcq, setIncludeMcq] = useState(true);
+  const [includeMatching, setIncludeMatching] = useState(false);
   const [vocabTitle, setVocabTitle] = useState("");
   const [exerciseTitle, setExerciseTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const mcqGeneration = useMemo(() => {
-    if (!includeExercise) return { error: null as string | null, questionCount: 0 };
-    try {
-      const inputs = items.map((item) => ({
+  const vocabInputs = useMemo(
+    () =>
+      items.map((item) => ({
         id: item.id,
         wordEn: item.wordEn,
         meaningVi: item.meaningVi,
-      }));
-      const result = generateMcqFromVocabItems(inputs, {
-        title: exerciseTitle.trim() || `${setTitle} — MCQ`,
+      })),
+    [items],
+  );
+
+  const exerciseBase = exerciseTitle.trim() || setTitle;
+
+  const mcqGeneration = useMemo(() => {
+    if (!includeMcq) return { error: null as string | null, questionCount: 0, payloadJson: "", warnings: [] as string[] };
+    try {
+      const result = generateMcqFromVocabItems(vocabInputs, {
+        title: includeMatching ? `${exerciseBase} — MCQ` : exerciseTitle.trim() || `${setTitle} — MCQ`,
         instruction: "Chọn nghĩa tiếng Việt đúng",
         shuffleOptions: true,
       });
@@ -86,18 +98,45 @@ export function VocabAttachToLessonWizard({
         warnings: [] as string[],
       };
     }
-  }, [includeExercise, items, setTitle, exerciseTitle]);
+  }, [includeMcq, includeMatching, vocabInputs, setTitle, exerciseTitle, exerciseBase]);
+
+  const matchingGeneration = useMemo(() => {
+    if (!includeMatching) return { error: null as string | null, questionCount: 0, payloadJson: "", warnings: [] as string[] };
+    try {
+      const result = generateMatchingFromVocabItems(vocabInputs, {
+        title: includeMcq ? `${exerciseBase} — Ghép cặp` : exerciseTitle.trim() || `${setTitle} — Ghép cặp`,
+        instruction: "Ghép từ tiếng Anh với nghĩa tiếng Việt",
+      });
+      return {
+        error: null,
+        questionCount: result.payload.questions.length,
+        payloadJson: buildExerciseSetPayloadJson(result.payload),
+        warnings: result.warnings,
+      };
+    } catch (err) {
+      return {
+        error: (err as { message?: string })?.message ?? "Không thể sinh ghép cặp.",
+        questionCount: 0,
+        payloadJson: "",
+        warnings: [] as string[],
+      };
+    }
+  }, [includeMatching, includeMcq, vocabInputs, setTitle, exerciseTitle, exerciseBase]);
 
   const resolvedVocabTitle = vocabTitle.trim() || setTitle;
-  const resolvedExerciseTitle = exerciseTitle.trim() || `${setTitle} — MCQ`;
+  const includeExercise = includeMcq || includeMatching;
 
   const handleAttach = async () => {
     if (!includeVocabulary && !includeExercise) {
       setError("Chọn ít nhất một loại khối.");
       return;
     }
-    if (includeExercise && mcqGeneration.error) {
+    if (includeMcq && mcqGeneration.error) {
       setError(mcqGeneration.error);
+      return;
+    }
+    if (includeMatching && matchingGeneration.error) {
+      setError(matchingGeneration.error);
       return;
     }
 
@@ -112,10 +151,16 @@ export function VocabAttachToLessonWizard({
           payloadJson: buildVocabularyPayloadJson(payload),
         });
       }
-      if (includeExercise && mcqGeneration.payloadJson) {
+      if (includeMcq && mcqGeneration.payloadJson) {
         await apiCreateLessonBlock(lessonId, {
           blockType: "EXERCISE_SET",
           payloadJson: mcqGeneration.payloadJson,
+        });
+      }
+      if (includeMatching && matchingGeneration.payloadJson) {
+        await apiCreateLessonBlock(lessonId, {
+          blockType: "EXERCISE_SET",
+          payloadJson: matchingGeneration.payloadJson,
         });
       }
       onAttached();
@@ -126,6 +171,8 @@ export function VocabAttachToLessonWizard({
       setSubmitting(false);
     }
   };
+
+  const allWarnings = [...(mcqGeneration.warnings ?? []), ...(matchingGeneration.warnings ?? [])];
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: muDialogPaper }}>
@@ -166,45 +213,78 @@ export function VocabAttachToLessonWizard({
           />
         ) : null}
 
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: "text.secondary", mt: 0.5 }}>
+          Bài tập — tab <strong>Bài tập</strong>
+        </Typography>
+
         <FormControlLabel
           control={
-            <Checkbox
-              checked={includeExercise}
-              onChange={(e) => setIncludeExercise(e.target.checked)}
-            />
+            <Checkbox checked={includeMcq} onChange={(e) => setIncludeMcq(e.target.checked)} />
           }
           label={
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
               <QuizOutlinedIcon sx={{ fontSize: 18, color: "#0C447C" }} />
-              Bài tập MCQ — tab <strong>Bài tập</strong>
+              Trắc nghiệm MCQ (cần ≥ 4 từ)
             </Box>
           }
         />
-        {includeExercise ? (
-          <>
-            <TextField
-              label="Tiêu đề khối bài tập"
-              size="small"
-              fullWidth
-              sx={muTextFieldSx}
-              value={exerciseTitle}
-              onChange={(e) => setExerciseTitle(e.target.value)}
-              placeholder={`${setTitle} — MCQ`}
-            />
-            {mcqGeneration.error ? (
-              <Alert severity="warning">{mcqGeneration.error}</Alert>
-            ) : (
-              <Alert severity="info" sx={{ fontSize: 13 }}>
-                Sẽ sinh <strong>{mcqGeneration.questionCount}</strong> câu MCQ.
-              </Alert>
-            )}
-            {mcqGeneration.warnings?.map((w) => (
-              <Alert key={w} severity="warning" sx={{ fontSize: 12 }}>
-                {w}
-              </Alert>
-            ))}
-          </>
+        {includeMcq ? (
+          mcqGeneration.error ? (
+            <Alert severity="warning">{mcqGeneration.error}</Alert>
+          ) : (
+            <Alert severity="info" sx={{ fontSize: 13 }}>
+              Sẽ sinh <strong>{mcqGeneration.questionCount}</strong> câu MCQ.
+            </Alert>
+          )
         ) : null}
+
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={includeMatching}
+              onChange={(e) => setIncludeMatching(e.target.checked)}
+            />
+          }
+          label={
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <LinkIcon sx={{ fontSize: 18, color: "#0C447C" }} />
+              Ghép cặp MATCHING (cần ≥ 2 từ)
+            </Box>
+          }
+        />
+        {includeMatching ? (
+          matchingGeneration.error ? (
+            <Alert severity="warning">{matchingGeneration.error}</Alert>
+          ) : (
+            <Alert severity="info" sx={{ fontSize: 13 }}>
+              Sẽ sinh <strong>{matchingGeneration.questionCount}</strong> câu ghép cặp
+              {items.length > 8 ? ` (${items.length} từ, tối đa 8 cặp/câu)` : ""}.
+            </Alert>
+          )
+        ) : null}
+
+        {includeExercise ? (
+          <TextField
+            label="Tiêu đề khối bài tập"
+            size="small"
+            fullWidth
+            sx={muTextFieldSx}
+            value={exerciseTitle}
+            onChange={(e) => setExerciseTitle(e.target.value)}
+            placeholder={includeMcq && includeMatching ? setTitle : includeMatching ? `${setTitle} — Ghép cặp` : `${setTitle} — MCQ`}
+            helperText={
+              includeMcq && includeMatching
+                ? "Dùng làm tiền tố — hệ thống thêm “— MCQ” / “— Ghép cặp”"
+                : undefined
+            }
+          />
+        ) : null}
+
+        {allWarnings.map((w) => (
+          <Alert key={w} severity="warning" sx={{ fontSize: 12 }}>
+            {w}
+          </Alert>
+        ))}
 
         {error ? <Alert severity="error">{error}</Alert> : null}
       </DialogContent>

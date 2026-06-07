@@ -1,6 +1,6 @@
 # Tiến độ Lesson Authoring
 
-> Cập nhật: **2025-06-07**  
+> Cập nhật: **2026-06-06**  
 > Tham chiếu kiến trúc: [`promt.md`](../promt.md)  
 > Làm **lần lượt** — không nhảy phase.
 
@@ -13,7 +13,7 @@
 | **1** | **Manual Builder** | GV soạn câu hỏi bằng form trong Admin | ✅ **XONG** |
 | **2** | **Import Builder** | Upload CSV/Excel → tạo `EXERCISE_SET` | ✅ **XONG** (CSV + Excel) |
 | 3 | Question Bank | Ngân hàng câu hỏi + `QUESTION_REF` | ✅ **XONG** (import FE; API import tuỳ chọn sau) |
-| 4 | Vocab Set + Generator | Bộ từ → auto sinh activities | ✅ **XONG** (3.1–3.4 MVP) |
+| 4 | Vocab Set + Generator | Bộ từ → auto sinh activities | ✅ **XONG** (3.1–3.4 + flashcard + MATCHING gen) |
 
 ---
 
@@ -26,6 +26,7 @@
 - [x] Student: tab Bài học / Bài tập
 - [x] Student: `ExercisePlayer` MCQ stepped (`EXERCISE_SET` + `QUESTION_REF` resolve)
 - [x] Student: màn **kết quả bài tập** + **xem lại bài làm** (theo `Design/noti_result_lesson/`)
+- [x] Student: màn kết quả — **3 nút CTA mobile** (tile Xem lại/Làm lại + primary full-width)
 - [x] Student: shuffle câu/đáp án, `passScorePercent`, giải thích từng câu, session `localStorage` (F5 giữ tiến độ)
 - [x] Script CLI: `csv_to_exercise_sql.py` → SQL thủ công
 - [x] Seed demo: `seed_lesson_vocab_demo.sql`, `seed_question_bank_demo.sql`
@@ -34,7 +35,9 @@
 
 - [ ] CALLOUT, SUMMARY, VIDEO, AUDIO — editor + reader
 - [x] `shuffleQuestions`, `shuffleOptions`, `passScorePercent` trong player
-- [x] MATCHING question UI (student)
+- [x] MATCHING question UI (student) + Admin editor ghép cặp
+- [x] MATCHING generator từ bộ từ (`vocabActivityGenerator`)
+- [x] VOCABULARY flashcard (`presentation: flashcard`)
 - [ ] Progress/attempt API (hiện chỉ `localStorage` — đã lưu đáp án, thời gian, hoàn thành)
 - [ ] Publish validation (BE)
 
@@ -321,7 +324,7 @@ Sau khi làm hết câu, học sinh thấy:
 
 ---
 
-## Phase 3 — Vocab Set + Generator (Method 4) 🚧
+## Phase 3 — Vocab Set + Generator (Method 4) ✅
 
 > **Mục tiêu:** GV chỉ nhập **bộ từ** (Word | Meaning) → hệ thống **tự sinh** activities (MCQ, flashcard, match…).  
 > Tham chiếu: [`promt.md`](../promt.md) § Method 4 · [`VOCABULARY_SET_DB_DESIGN.md`](./VOCABULARY_SET_DB_DESIGN.md)
@@ -346,15 +349,17 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 ### 3.3 Activity Generator (core) ✅ (MCQ MVP)
 
 - [x] `vocabActivityGenerator.ts` — EN → VI MCQ (distractor từ cùng bộ)
+- [x] `generateMatchingFromVocabItems()` — ghép cặp (chia 8 cặp/câu nếu bộ lớn)
 - [x] Nút **Sinh MCQ** → preview/copy JSON `EXERCISE_SET`
-- [ ] Push thẳng vào Lesson Editor (wizard gắn block) — tuỳ chọn sau
+- [x] Wizard **+ Bộ từ vào bài** — VOCABULARY + MCQ + MATCHING (tick riêng)
 
-### 3.4 Gắn vào Lesson ✅ (MVP list)
+### 3.4 Gắn vào Lesson ✅
 
 - [x] Block `VOCABULARY` — ref `vocabularySetId`, BE resolve `resolvedVocabularyJson`
-- [x] Wizard **+ Bộ từ vào bài** — VOCABULARY + EXERCISE_SET MCQ một lần
-- [x] HS tab Bài học — `VocabularyBlock` danh sách từ (list)
-- [ ] Flashcard (`presentation: flashcard`) — P2.4b
+- [x] Migration `004_vocabulary_block.sql` — `block_type VARCHAR(64)` (fix ENUM)
+- [x] Admin `VocabularyBlockEditor` — picker bộ từ, toggle **Danh sách / Flashcard**
+- [x] HS tab Bài học — `VocabularyBlock` list + `VocabularyFlashcard` (tap lật thẻ, Trước/Sau)
+- [x] UX flashcard: bỏ nút Lật thẻ, bỏ nhãn Tiếng Anh/Việt
 
 ### File deliverable Phase 3 (MVP)
 
@@ -364,7 +369,10 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 | Seed demo | `seed_vocabulary_set_demo.sql` |
 | BE API | `VocabularySetController.java`, `VocabularySetServiceImpl.java` |
 | Admin page | `ManageVocabularySetsPage.tsx` |
-| Generator | `vocabActivityGenerator.ts` |
+| Generator | `vocabActivityGenerator.ts` (MCQ + MATCHING) |
+| VOCABULARY block | `VocabularyBlock.tsx`, `VocabularyFlashcard.tsx`, `vocabularyPayload.ts` |
+| BE resolve | `VocabularyBlockResolverService.java`, `migrations/004_vocabulary_block.sql` |
+| Wizard gắn lesson | `VocabAttachToLessonWizard.tsx` |
 | Import | `vocabImport.ts`, `VocabularyImportDialog.tsx` |
 
 ### Thứ tự implement (session)
@@ -397,35 +405,64 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 | 2025-06-07 | Phase 2.6 Student player | Shuffle, passScore, giải thích, session F5 |
 | 2025-06-07 | Màn kết quả bài tập | `ExerciseResultScreen` + `ExerciseReviewScreen` theo mock `noti_result_lesson` |
 | 2025-06-07 | Polish UI kết quả | Bỏ nav trùng, bỏ thanh thưởng, **Bài tiếp theo** → `findNextPublishedLesson` |
+| 2026-06-06 | Commit lớn P1+P2 | VOCABULARY block, MATCHING player+editor, session restore fix, Continue Learning `lastTab` |
+| 2026-06-06 | Ưu tiên A | Flashcard HS, MATCHING generator, wizard MCQ+MATCHING, admin presentation picker |
+| 2026-06-06 | UX polish | Flashcard gọn (tap lật, bỏ nhãn/nút Lật thẻ); màn kết quả — 3 nút mobile tile layout |
 
 ---
 
-## Bước tiếp theo (session kế)
+## Bước tiếp theo (session kế — ưu tiên)
 
-### Ưu tiên 1 — Phase 3.4 Gắn lesson
+### Ưu tiên B — Progress server (`POST /lesson-attempts`)
 
-1. Block `VOCABULARY` trong Lesson Editor (picker bộ từ → tab Bài học)
-2. Wizard **Sinh MCQ → tạo EXERCISE_SET** trực tiếp trong lesson (không copy JSON thủ công)
-3. `VocabularyBlock.tsx` — học sinh xem danh sách từ
+1. BE: bảng `lesson_attempts` (user, lesson, score, elapsed, completed_at)
+2. API lưu/đọc attempt sau khi HS nộp bài
+3. FE: gửi attempt thay/và song song `localStorage`
+4. Dashboard GV / thống kê HS (tuỳ chọn sau)
 
-### Ưu tiên 2 — Chạy demo
+### Ưu tiên C — Block types còn thiếu
 
-4. `mysql … < migrations/003_vocabulary_sets.sql`
-5. `mysql … < seed_vocabulary_set_demo.sql`
-6. Admin `/admin/vocabulary-sets` → Sinh MCQ → dán vào lesson → HS làm bài
+- [ ] CALLOUT, SUMMARY — editor + reader tab Bài học
+- [ ] VIDEO, AUDIO — cần asset pipeline (upload + player)
 
-### Song song
+### E2E manual (nên chạy trước khi làm B)
 
-- Commit Phase 2.6 + Phase 3 MVP
-- E2E manual Phase 2.6 (kết quả + review + bài tiếp)
-- E2E Phase 2 checklist bank (nếu chưa chạy seed overlap)
+| # | Kịch bản | Trạng thái |
+|---|----------|------------|
+| 1 | Chạy `003` + `004` migration nếu DB cũ còn ENUM `block_type` | ⬜ |
+| 2 | Admin: bộ từ 5+ mục → **+ Bộ từ vào bài** (VOCABULARY + MCQ + MATCHING) → Publish | ⬜ |
+| 3 | HS tab Bài học: flashcard lật thẻ, Trước/Sau | ⬜ |
+| 4 | HS tab Bài tập: MCQ + ghép cặp, kết quả, Xem lại, Bài tiếp theo | ⬜ |
+| 5 | Sửa `meaning_vi` trong Admin → F5 HS thấy cập nhật (live resolve) | ⬜ |
+| 6 | Continue Learning card → mở đúng tab `?tab=practice` | ⬜ |
+| 7 | Bank overlap seed: sửa câu `apple` → 2 lesson cập nhật | ⬜ |
 
-### Tuỳ chọn sau (không chặn Phase 3.4)
+### Polish tuỳ chọn (không chặn)
 
 - [ ] Thời gian làm bài chính xác hơn khi restore session đang làm dở
 - [ ] Mascot asset local (thay URL Google tạm)
-- [ ] `POST /lesson-attempts` — lưu điểm server
+- [ ] Audio phát âm từ vựng (`audio_asset_id`)
+- [ ] `POST /questions/import` API batch (bank)
+- [ ] Publish validation (BE) — chặn lesson thiếu block / bộ từ trống
+
+### Lệnh DB nhanh (demo)
+
+```bash
+mysql -u … -p … < course_english_backend/migrations/003_vocabulary_sets.sql
+mysql -u … -p … < course_english_backend/migrations/004_vocabulary_block.sql
+mysql -u … -p … < course_english_backend/seed_vocabulary_set_demo.sql
+```
+
+### Workflow GV chuẩn (Method 4)
+
+```
+/admin/vocabulary-sets → Publish bộ từ
+→ Lesson Editor → + Bộ từ vào bài → tick VOCABULARY + MCQ (+ MATCHING)
+→ Sửa khối từ vựng: chọn Flashcard nếu cần
+→ Publish lesson
+→ HS: tab Bài học (flashcard/list) · tab Bài tập (MCQ/MATCHING)
+```
 
 ---
 
-**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · **Phase 2.6 ✅** · Phase 3 Method 4 ✅ (bộ từ + MCQ + VOCABULARY block) · Flashcard / MATCHING generator 📋
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · **Phase 3 Method 4 ✅** (bộ từ + MCQ + MATCHING gen + VOCABULARY list/flashcard) · **Tiếp theo: Ưu tiên B (attempt API) hoặc E2E manual**

@@ -4,6 +4,7 @@ import {
   parseResolvedVocabularyItems,
   parseVocabularyBlockPayload,
 } from "../../../shared/lesson/vocabularyPayload";
+import { VocabularyFlashcard } from "./VocabularyFlashcard";
 
 type VocabularyBlockProps = {
   block: LessonBlockRecord;
@@ -31,25 +32,31 @@ export function VocabularyBlock({ block }: VocabularyBlockProps) {
     );
   }
 
+  const isFlashcard = payload.presentation === "flashcard";
+
   return (
-    <div className="vocabulary-block">
+    <div className={`vocabulary-block${isFlashcard ? " vocabulary-block--flashcard" : ""}`}>
       {payload.instruction ? (
         <p className="vocabulary-block-instruction">{payload.instruction}</p>
       ) : null}
 
-      <ul className="vocabulary-block-list">
-        {items.map((item, index) => (
-          <li key={item.id ?? `${item.wordEn}-${index}`} className="vocabulary-block-item">
-            <div className="vocabulary-block-word">
-              <span className="vocabulary-block-word-en">{item.wordEn}</span>
-              {showPhonetic && item.phonetic ? (
-                <span className="vocabulary-block-phonetic">{item.phonetic}</span>
-              ) : null}
-            </div>
-            <p className="vocabulary-block-meaning">{item.meaningVi}</p>
-          </li>
-        ))}
-      </ul>
+      {isFlashcard ? (
+        <VocabularyFlashcard items={items} showPhonetic={showPhonetic} />
+      ) : (
+        <ul className="vocabulary-block-list">
+          {items.map((item, index) => (
+            <li key={item.id ?? `${item.wordEn}-${index}`} className="vocabulary-block-item">
+              <div className="vocabulary-block-word">
+                <span className="vocabulary-block-word-en">{item.wordEn}</span>
+                {showPhonetic && item.phonetic ? (
+                  <span className="vocabulary-block-phonetic">{item.phonetic}</span>
+                ) : null}
+              </div>
+              <p className="vocabulary-block-meaning">{item.meaningVi}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
