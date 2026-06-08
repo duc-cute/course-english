@@ -45,6 +45,60 @@
   margin-bottom: 12px;
 }
 
+/* Practice attempt banner (tab Bài tập) */
+.practice-attempt-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(13, 148, 136, 0.18);
+  background: rgba(240, 253, 250, 0.9);
+  font-size: 0.875rem;
+  color: var(--eng-on-surface-variant, #5f6b6a);
+}
+
+.practice-attempt-banner--pass {
+  border-color: rgba(22, 163, 74, 0.25);
+  background: rgba(220, 252, 231, 0.65);
+}
+
+.practice-attempt-banner-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.practice-attempt-banner-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.practice-attempt-banner-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(13, 148, 136, 0.3);
+  background: #fff;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--eng-teal-dark, #0f766e);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.practice-attempt-banner-review:hover {
+  background: #f0fdfa;
+}
+
 /* --- Exercise player --- */
 .exercise-player {
   padding: 4px 0 20px;

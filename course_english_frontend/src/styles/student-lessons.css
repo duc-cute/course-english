@@ -149,6 +149,27 @@
   border: none !important;
 }
 
+.student-chip-passed {
+  height: 22px !important;
+  font-size: 0.6875rem !important;
+  font-weight: 700 !important;
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border: none !important;
+}
+
+.student-chip-passed .MuiChip-icon {
+  color: #16a34a !important;
+}
+
+.student-chip-score {
+  height: 22px !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  border-color: rgba(13, 148, 136, 0.35) !important;
+  color: var(--eng-teal-dark, #0f766e) !important;
+}
+
 .student-chip-purple {
   height: 22px !important;
   font-size: 0.6875rem !important;

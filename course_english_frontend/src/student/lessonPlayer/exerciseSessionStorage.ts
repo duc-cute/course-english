@@ -20,6 +20,8 @@ export type ExerciseSessionSnapshot = {
   answers?: Record<string, ExerciseAnswerSnapshot>;
   startedAt?: number;
   elapsedMs?: number;
+  /** Đã POST attempt lên server — tránh gửi trùng khi F5 màn kết quả */
+  serverAttemptSynced?: boolean;
 };
 
 function storageKey(lessonId: string): string {

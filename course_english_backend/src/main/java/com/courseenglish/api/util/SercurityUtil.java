@@ -17,7 +17,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class SercurityUtil {
@@ -89,6 +91,28 @@ public class SercurityUtil {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         return Optional.ofNullable(extractPrincipal(securityContext.getAuthentication()));
 
+    }
+
+    /** UUID từ JWT claim `duccute.id` (access token sau login). */
+    @SuppressWarnings("unchecked")
+    public static Optional<UUID> getCurrentUserId() {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return Optional.empty();
+        }
+        Object claim = jwt.getClaim("duccute");
+        if (claim instanceof Map<?, ?> map) {
+            Object id = map.get("id");
+            if (id != null) {
+                try {
+                    return Optional.of(UUID.fromString(id.toString()));
+                } catch (IllegalArgumentException ignored) {
+                    return Optional.empty();
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private static String extractPrincipal(Authentication authentication) {

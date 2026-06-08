@@ -1,4 +1,5 @@
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SearchIcon from "@mui/icons-material/Search";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import {
@@ -14,8 +15,14 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContinueLearningCard } from "../../student/components/ContinueLearningCard";
-import { getContinueLearning } from "../../student/lessonProgressStorage";
+import type { LessonProgressEntry } from "../../student/lessonProgressStorage";
+import { resolveContinueLearning } from "../../student/lessonProgressSync";
 import { apiGetLessons, type LessonRecord, type LessonsPaginationResult } from "../../shared/api/lesson";
+import {
+  apiGetLessonPracticeSummary,
+  isPracticePassed,
+  type LessonPracticeSummaryItem,
+} from "../../shared/api/lessonPracticeAttempt";
 import type { ApiResponse } from "../../shared/api/types";
 import { paths } from "../../shared/constants/paths";
 import "../../styles/student-lessons.css";
@@ -27,7 +34,14 @@ export function StudentLessonListPage() {
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [searchText, setSearchText] = useState("");
-  const continueProgress = useMemo(() => getContinueLearning(), []);
+  const [practiceSummary, setPracticeSummary] = useState<Record<string, LessonPracticeSummaryItem>>(
+    {},
+  );
+  const [continueProgress, setContinueProgress] = useState<LessonProgressEntry | null>(null);
+
+  useEffect(() => {
+    void resolveContinueLearning().then(setContinueProgress);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -46,6 +60,14 @@ export function StudentLessonListPage() {
       const raw = response?.data?.result ?? response?.result;
       const items = Array.isArray(raw) ? raw : (raw as LessonsPaginationResult | undefined)?.result ?? [];
       setRows(items);
+
+      const ids = items.map((l) => l.id).filter(Boolean);
+      const summary = await apiGetLessonPracticeSummary(ids);
+      const map: Record<string, LessonPracticeSummaryItem> = {};
+      for (const row of summary) {
+        map[row.lessonId] = row;
+      }
+      setPracticeSummary(map);
     } catch (err) {
       setError((err as { message?: string })?.message || "Không thể tải danh sách bài học.");
     } finally {
@@ -111,7 +133,12 @@ export function StudentLessonListPage() {
         </div>
       ) : (
         <div className="student-lesson-list">
-          {rows.map((lesson) => (
+          {rows.map((lesson) => {
+            const summaryItem = practiceSummary[lesson.id];
+            const practicePassed = isPracticePassed(summaryItem?.best);
+            const latest = summaryItem?.latest;
+
+            return (
             <article key={lesson.id} className="student-lesson-card">
               <CardActionArea
                 onClick={() => navigate(`/${paths.STUDENT}/${paths.STUDENT_LESSONS}/${lesson.id}`)}
@@ -127,6 +154,22 @@ export function StudentLessonListPage() {
                       {lesson.blockCount != null && lesson.blockCount > 0 ? (
                         <Chip className="student-chip-teal" label={`${lesson.blockCount} phần`} size="small" variant="outlined" />
                       ) : null}
+                      {practicePassed ? (
+                        <Chip
+                          className="student-chip-passed"
+                          icon={<CheckCircleIcon sx={{ fontSize: "16px !important" }} />}
+                          label="Đã đạt"
+                          size="small"
+                        />
+                      ) : null}
+                      {!practicePassed && latest ? (
+                        <Chip
+                          className="student-chip-score"
+                          label={`${latest.scorePercent}%`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : null}
                     </Box>
                     {lesson.summary ? (
                       <Typography className="student-lesson-card-summary" sx={{ mt: 1.25 }}>
@@ -138,7 +181,8 @@ export function StudentLessonListPage() {
                 </Box>
               </CardActionArea>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

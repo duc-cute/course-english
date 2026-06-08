@@ -8,12 +8,19 @@ import {
   saveExerciseSession,
   type ExerciseAnswerSnapshot,
 } from "../exerciseSessionStorage";
+import {
+  apiCreateLessonPracticeAttempt,
+  apiGetLatestLessonPracticeAttempt,
+  type LessonPracticeAttemptRecord,
+} from "../../../shared/api/lessonPracticeAttempt";
+import { buildStructuredSnapshot, parseAttemptSnapshot } from "../../../shared/lesson/attemptSnapshot";
 import { ExerciseResultScreen } from "./ExerciseResultScreen";
 import { ExerciseReviewScreen } from "./ExerciseReviewScreen";
+import { PracticeAttemptBanner } from "./PracticeAttemptBanner";
 import { isMatchingComplete, scoreMatchingAnswer } from "./matchingUtils";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion";
-import { prepareExercisePlan } from "./prepareExerciseItems";
+import { prepareExercisePlan, type PreparedExerciseItem } from "./prepareExerciseItems";
 import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 import { QuestionProgressBar } from "./QuestionProgressBar";
 import type { MatchingQuestion as MatchingType, MultipleChoiceQuestion as McqType } from "./types";
@@ -48,6 +55,7 @@ export function ExercisePlayer({
   const [sessionSeed, setSessionSeed] = useState(0);
   const initializedRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
+  const attemptSubmitLockRef = useRef(false);
 
   const plan = useMemo(() => {
     const saved = getExerciseSession(lessonId);
@@ -75,6 +83,21 @@ export function ExercisePlayer({
   const [answers, setAnswers] = useState<Record<string, AnswerRecord>>({});
   const [showExplanation, setShowExplanation] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [serverLatestAttempt, setServerLatestAttempt] = useState<LessonPracticeAttemptRecord | null>(
+    null,
+  );
+  const [reviewItems, setReviewItems] = useState<PreparedExerciseItem[] | null>(null);
+  const [reviewAnswers, setReviewAnswers] = useState<Record<string, AnswerRecord> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void apiGetLatestLessonPracticeAttempt(lessonId).then((attempt) => {
+      if (!cancelled) setServerLatestAttempt(attempt);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [lessonId, sessionSeed]);
 
   useEffect(() => {
     initializedRef.current = false;
@@ -97,6 +120,9 @@ export function ExercisePlayer({
         setQuestionIndex(Math.max(0, total - 1));
         setPhase("done");
         setElapsedMs(saved.elapsedMs ?? 0);
+        if (saved.serverAttemptSynced) {
+          attemptSubmitLockRef.current = true;
+        }
       } else {
         const idx = Math.min(saved.questionIndex, total - 1);
         setQuestionIndex(idx);
@@ -169,9 +195,10 @@ export function ExercisePlayer({
       index: number,
       completed: boolean,
       nextAnswers: Record<string, AnswerRecord>,
-      extra?: { elapsedMs?: number },
+      extra?: { elapsedMs?: number; serverAttemptSynced?: boolean },
     ) => {
       const startedAt = ensureStartedAt();
+      const prev = getExerciseSession(lessonId);
       saveExerciseSession({
         lessonId,
         blockIds,
@@ -182,10 +209,84 @@ export function ExercisePlayer({
         answers: nextAnswers,
         startedAt,
         elapsedMs: extra?.elapsedMs,
+        serverAttemptSynced: extra?.serverAttemptSynced ?? prev?.serverAttemptSynced,
       });
     },
     [lessonId, blockIds, plan.questionIdsOrder, plan.choiceOrders, ensureStartedAt],
   );
+
+  const submitPracticeAttempt = useCallback(
+    async (
+      finalAnswers: Record<string, AnswerRecord>,
+      elapsed: number,
+      index: number,
+    ) => {
+      if (attemptSubmitLockRef.current || total === 0) return;
+
+      const correct = Object.values(finalAnswers).filter((a) => a.correct).length;
+      const pct = Math.round((correct / total) * 100);
+      const didPass = pct >= passScorePercent;
+
+      attemptSubmitLockRef.current = true;
+      try {
+        const attempt = await apiCreateLessonPracticeAttempt({
+          lessonId,
+          correctCount: correct,
+          totalCount: total,
+          scorePercent: pct,
+          passed: didPass,
+          passScorePercent,
+          elapsedMs: elapsed,
+          blockIds,
+          answersSnapshot: buildStructuredSnapshot(
+            finalAnswers,
+            plan.questionIdsOrder,
+            plan.choiceOrders,
+          ),
+        });
+        setServerLatestAttempt(attempt);
+        persistSession(index, true, finalAnswers, {
+          elapsedMs: elapsed,
+          serverAttemptSynced: true,
+        });
+      } catch {
+        attemptSubmitLockRef.current = false;
+      }
+    },
+    [
+      lessonId,
+      blockIds,
+      total,
+      passScorePercent,
+      persistSession,
+      plan.questionIdsOrder,
+      plan.choiceOrders,
+    ],
+  );
+
+  const handleReview = useCallback(() => {
+    if (Object.keys(answers).length > 0) {
+      setReviewItems(null);
+      setReviewAnswers(null);
+      setPhase("review");
+      return;
+    }
+    if (!serverLatestAttempt?.answersSnapshot) return;
+
+    const parsed = parseAttemptSnapshot(
+      serverLatestAttempt.answersSnapshot as Record<string, unknown>,
+    );
+    if (Object.keys(parsed.answers).length === 0) return;
+
+    const reviewPlan = prepareExercisePlan(
+      practiceBlocks,
+      parsed.questionIdsOrder,
+      parsed.choiceOrders,
+    );
+    setReviewItems(reviewPlan.items);
+    setReviewAnswers(parsed.answers);
+    setPhase("review");
+  }, [answers, serverLatestAttempt, practiceBlocks]);
 
   const handleCheck = () => {
     if (!current) return;
@@ -246,6 +347,7 @@ export function ExercisePlayer({
       setElapsedMs(elapsed);
       setPhase("done");
       persistSession(questionIndex, true, answers, { elapsedMs: elapsed });
+      void submitPracticeAttempt(answers, elapsed, questionIndex);
       return;
     }
     const next = questionIndex + 1;
@@ -262,6 +364,7 @@ export function ExercisePlayer({
     clearExerciseSession(lessonId);
     initializedRef.current = false;
     startedAtRef.current = null;
+    attemptSubmitLockRef.current = false;
     setQuestionIndex(0);
     setSelectedChoiceId(null);
     setMatchingSelections({});
@@ -270,6 +373,8 @@ export function ExercisePlayer({
     setAnswers({});
     setShowExplanation(false);
     setElapsedMs(0);
+    setReviewItems(null);
+    setReviewAnswers(null);
     setSessionSeed((s) => s + 1);
   };
 
@@ -293,12 +398,19 @@ export function ExercisePlayer({
   }
 
   if (phase === "review") {
+    const displayItems = reviewItems ?? items;
+    const displayAnswers = reviewAnswers ?? answers;
+    const backPhase = Object.keys(answers).length > 0 ? "done" : "answer";
     return (
       <ExerciseReviewScreen
         lessonTitle={lessonTitle}
-        items={items}
-        answers={answers}
-        onBack={() => setPhase("done")}
+        items={displayItems}
+        answers={displayAnswers}
+        onBack={() => {
+          setReviewItems(null);
+          setReviewAnswers(null);
+          setPhase(backPhase);
+        }}
       />
     );
   }
@@ -315,7 +427,7 @@ export function ExercisePlayer({
         elapsedMs={elapsedMs}
         passed={passed}
         nextLessonTitle={nextLessonTitle}
-        onReview={() => setPhase("review")}
+        onReview={handleReview}
         onRetry={handleRetry}
         onContinueStudy={onContinueStudy}
         onBackToLessons={onBackToLessons}
@@ -333,8 +445,14 @@ export function ExercisePlayer({
 
   const showFeedback = phase === "feedback";
 
+  const showServerBanner =
+    phase === "answer" || phase === "feedback";
+
   return (
     <div className="exercise-player">
+      {showServerBanner ? (
+        <PracticeAttemptBanner latest={serverLatestAttempt} onReview={handleReview} />
+      ) : null}
       <QuestionProgressBar current={questionIndex + 1} total={total} />
 
       <header className="exercise-player-head">

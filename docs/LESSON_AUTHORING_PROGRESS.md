@@ -39,6 +39,8 @@
 - [x] MATCHING generator từ bộ từ (`vocabActivityGenerator`)
 - [x] VOCABULARY flashcard (`presentation: flashcard`)
 - [ ] Progress/attempt API (hiện chỉ `localStorage` — đã lưu đáp án, thời gian, hoàn thành)
+- [x] **Practice attempt API** — POST + GET latest/best/list (`005_lesson_practice_attempts.sql`)
+- [x] Reading progress server (`lesson_reading_progress`) — `006_lesson_reading_progress.sql`, xem `LESSON_READING_PROGRESS.md`
 - [ ] Publish validation (BE)
 
 ---
@@ -407,18 +409,22 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 | 2025-06-07 | Polish UI kết quả | Bỏ nav trùng, bỏ thanh thưởng, **Bài tiếp theo** → `findNextPublishedLesson` |
 | 2026-06-06 | Commit lớn P1+P2 | VOCABULARY block, MATCHING player+editor, session restore fix, Continue Learning `lastTab` |
 | 2026-06-06 | Ưu tiên A | Flashcard HS, MATCHING generator, wizard MCQ+MATCHING, admin presentation picker |
-| 2026-06-06 | UX polish | Flashcard gọn (tap lật, bỏ nhãn/nút Lật thẻ); màn kết quả — 3 nút mobile tile layout |
+| 2026-06-06 | UX polish | Flashcard gọn; màn kết quả — 3 nút mobile tile layout |
+| 2026-06-06 | Ưu tiên B MVP | `lesson_practice_attempts` API + FE POST on submit + doc test cases |
 
 ---
 
 ## Bước tiếp theo (session kế — ưu tiên)
 
-### Ưu tiên B — Progress server (`POST /lesson-attempts`)
+### Ưu tiên B — Progress server ✅ (practice attempt MVP)
 
-1. BE: bảng `lesson_attempts` (user, lesson, score, elapsed, completed_at)
-2. API lưu/đọc attempt sau khi HS nộp bài
-3. FE: gửi attempt thay/và song song `localStorage`
-4. Dashboard GV / thống kê HS (tuỳ chọn sau)
+1. [x] BE: bảng `lesson_practice_attempts` + `answers_snapshot_json`
+2. [x] API POST + GET latest/best/list
+3. [x] FE: POST khi nộp bài (`ExercisePlayer`), chống duplicate F5
+4. [x] Reading progress sync (`lesson_reading_progress`)
+5. [ ] Badge ✓ danh sách bài + banner "Lần trước: X%"
+
+> Chi tiết + **test cases**: [`docs/LESSON_PRACTICE_ATTEMPT.md`](./LESSON_PRACTICE_ATTEMPT.md)
 
 ### Ưu tiên C — Block types còn thiếu
 
@@ -429,7 +435,10 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 
 | # | Kịch bản | Trạng thái |
 |---|----------|------------|
-| 1 | Chạy `003` + `004` migration nếu DB cũ còn ENUM `block_type` | ⬜ |
+| 1 | Chạy `005_lesson_practice_attempts.sql` | ⬜ |
+| 2 | HS nộp bài → POST 201, DB 1 row + snapshot | ⬜ |
+| 3 | Làm lại → 2 rows; F5 result → không POST trùng | ⬜ |
+| 4 | Chạy `003` + `004` migration nếu DB cũ còn ENUM `block_type` | ⬜ |
 | 2 | Admin: bộ từ 5+ mục → **+ Bộ từ vào bài** (VOCABULARY + MCQ + MATCHING) → Publish | ⬜ |
 | 3 | HS tab Bài học: flashcard lật thẻ, Trước/Sau | ⬜ |
 | 4 | HS tab Bài tập: MCQ + ghép cặp, kết quả, Xem lại, Bài tiếp theo | ⬜ |
@@ -465,4 +474,4 @@ mysql -u … -p … < course_english_backend/seed_vocabulary_set_demo.sql
 
 ---
 
-**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · **Phase 3 Method 4 ✅** (bộ từ + MCQ + MATCHING gen + VOCABULARY list/flashcard) · **Tiếp theo: Ưu tiên B (attempt API) hoặc E2E manual**
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · Phase 3 ✅ · **Practice attempt API ✅** · **Reading progress sync ✅** · Tiếp theo: CALLOUT/SUMMARY blocks / E2E manual

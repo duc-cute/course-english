@@ -7,7 +7,11 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { LessonReaderTocMobile, LessonReaderTocSidebar } from "../../student/components/LessonReaderToc";
 import { useLessonReaderScroll } from "../../student/hooks/useLessonReaderScroll";
 import { findNextPublishedLesson } from "../../student/lessonNavigation";
-import { getLessonProgress, saveLessonProgress } from "../../student/lessonProgressStorage";
+import { getLessonProgress } from "../../student/lessonProgressStorage";
+import {
+  hydrateLessonProgressForLesson,
+  syncLessonProgress,
+} from "../../student/lessonProgressSync";
 import { ExercisePlayer } from "../../student/lessonPlayer/exercise/ExercisePlayer";
 import { LessonPlayerTabs } from "../../student/lessonPlayer/LessonPlayerTabs";
 import { StudyPanel } from "../../student/lessonPlayer/StudyPanel";
@@ -41,6 +45,7 @@ export function LessonReaderPage() {
   const [focusMode, setFocusMode] = useState(false);
   const [resumeDismissed, setResumeDismissed] = useState(false);
   const [exerciseView, setExerciseView] = useState<"exercise" | "result" | "review">("exercise");
+  const [savedProgress, setSavedProgress] = useState<ReturnType<typeof getLessonProgress>>(null);
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -113,7 +118,7 @@ export function LessonReaderPage() {
       if (!lesson?.id || !activeBlockId || activeTab !== "study") return;
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
       saveTimer.current = window.setTimeout(() => {
-        saveLessonProgress({
+        syncLessonProgress({
           lessonId: lesson.id,
           lessonTitle: lesson.title,
           subjectName: lesson.subjectName,
@@ -132,10 +137,20 @@ export function LessonReaderPage() {
     onProgress: persistProgress,
   });
 
-  const savedProgress = useMemo(
-    () => (lessonId ? getLessonProgress(lessonId) : null),
-    [lessonId, lesson?.id],
-  );
+  useEffect(() => {
+    if (!lessonId) {
+      setSavedProgress(null);
+      return;
+    }
+    let cancelled = false;
+    setSavedProgress(getLessonProgress(lessonId));
+    void hydrateLessonProgressForLesson(lessonId).then((merged) => {
+      if (!cancelled) setSavedProgress(merged ?? getLessonProgress(lessonId));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [lessonId]);
 
   const showResume =
     activeTab === "study" &&
@@ -161,7 +176,7 @@ export function LessonReaderPage() {
 
   useEffect(() => {
     if (!lesson?.id || !hasScrollBlocks || activeTab !== "study") return;
-    saveLessonProgress({
+    syncLessonProgress({
       lessonId: lesson.id,
       lessonTitle: lesson.title,
       subjectName: lesson.subjectName,
@@ -174,7 +189,7 @@ export function LessonReaderPage() {
   useEffect(() => {
     if (!lesson?.id || loading) return;
     const existing = getLessonProgress(lesson.id);
-    saveLessonProgress({
+    syncLessonProgress({
       lessonId: lesson.id,
       lessonTitle: lesson.title,
       subjectName: lesson.subjectName,

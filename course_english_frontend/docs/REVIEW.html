@@ -581,6 +581,7 @@
           <li><a href="#redis-after-lesson">15. Hạ tầng V2 (sau Lesson)</a></li>
           <li class="sub"><a href="#infra-overview">15.1 Redis · RabbitMQ · Socket</a></li>
           <li class="sub"><a href="#redis-when">15.2 Redis cache</a></li>
+          <li class="sub"><a href="#redis-built-features">15.2b Redis — tính năng đã làm</a></li>
           <li class="sub"><a href="#rabbitmq-notify">15.3 RabbitMQ</a></li>
           <li class="sub"><a href="#websocket-notify">15.4 WebSocket</a></li>
           <li class="sub"><a href="#infra-flow">15.5 Luồng tích hợp</a></li>
@@ -616,8 +617,8 @@
             <code>course_english_*</code>.
           </p>
           <div class="meta">
-            <span class="badge ok">MVP: Auth + Lesson CMS + Reader</span>
-            <span class="badge warn">V2: Quiz + Assignment + Dashboard</span>
+            <span class="badge ok">MVP: Lesson Player + progress server</span>
+            <span class="badge warn">V2: Assignment + Redis scale</span>
             <span class="badge info">V3: Parent + AI + Adaptive</span>
             <span class="badge crit">Anti: PDF viewer + bài tập</span>
           </div>
@@ -723,8 +724,8 @@
 
         <h3 id="chk-quiz">2.4 Quiz System</h3>
         <ul class="checklist" data-group="mod-quiz">
-          <li><label><input type="checkbox" data-check-id="mod.quiz.bank" /><span>Question bank (V2)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.quiz.mcq" /><span>MCQ + T/F + auto-grade</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.bank" data-default="1" /><span>Question bank — CRUD + <code>QUESTION_REF</code> resolve</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.mcq" data-default="1" /><span>MCQ + T/F + auto-grade (<code>EXERCISE_SET</code>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.fill" /><span>Fill blank, Matching, Drag-drop</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.listen" /><span>Listening quiz</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.speak" /><span>Speaking (V3)</span></label></li>
@@ -740,8 +741,10 @@
 
         <h3 id="chk-progress">2.6 Progress</h3>
         <ul class="checklist" data-group="mod-progress">
-          <li><label><input type="checkbox" data-check-id="mod.prog.local" data-default="1" /><span>Lesson progress localStorage</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.prog.api" /><span>Progress API server (P1)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.prog.local" data-default="1" /><span>Lesson progress localStorage (cache nhanh)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.prog.api" data-default="1" /><span>Progress API server — đọc bài + practice attempts</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.prog.reading" data-default="1" /><span><code>lesson_reading_progress</code> — PUT/GET/continue</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.prog.practice" data-default="1" /><span><code>lesson_practice_attempts</code> — POST + summary batch</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.prog.streak" /><span>Streak (V2)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.prog.history" /><span>Learning history (V2)</span></label></li>
         </ul>
@@ -1016,8 +1019,8 @@ parent_student_links</code></pre>
           </tbody>
         </table>
         <p><strong>Routes FE:</strong> <code>/student</code>, <code>/student/lessons/:id</code>, <code>/admin/*</code>, <code>/login</code>, <code>/register</code>.</p>
-        <p><strong>Đã triển khai:</strong> Auth, CRUD classroom/subject/enrollment/lesson, <code>LessonBlock</code> + <code>payload_json</code>, editor/reader (TEXT/IMAGE), progress local.</p>
-        <p><strong>Gap so với <code>promt.md</code>:</strong> Chưa block tương tác (FLASHCARD, MATCH_IMAGE…), chưa registry render động, chưa progress theo block, enum <code>block_type</code> còn hẹp (7 loại).</p>
+        <p><strong>Đã triển khai:</strong> Auth, CRUD classroom/subject/enrollment/lesson, <code>LessonBlock</code> + <code>payload_json</code>, editor/reader (TEXT/IMAGE/VOCABULARY), Question Bank, <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (MCQ/MATCHING), flashcard, vocab generator; progress local + server (<code>lesson_reading_progress</code>, <code>lesson_practice_attempts</code>).</p>
+        <p><strong>Gap so với <code>promt.md</code>:</strong> CALLOUT/SUMMARY/VIDEO/AUDIO reader; syllabus sidebar; Assignment module; Redis/RabbitMQ (mục <a href="#redis-built-features">15.2b</a>).</p>
 
         <!-- 13 — Kiến trúc Lesson theo promt.md -->
         <h2 class="section" id="lessons-core">13. Kiến trúc Lesson — Learning Blocks (<code>promt.md</code>)</h2>
@@ -1062,9 +1065,9 @@ parent_student_links</code></pre>
           <thead><tr><th>Nhóm</th><th>Loại block (<code>promt.md</code>)</th><th>Phase</th><th>Code hiện tại</th></tr></thead>
           <tbody>
             <tr><td><strong>CONTENT</strong></td><td>TEXT, IMAGE, VIDEO, AUDIO, PDF</td><td>MVP–P1</td><td>TEXT ✓ IMAGE ✓; VIDEO/AUDIO enum, UI P1; PDF → <code>LessonAsset</code> FILE</td></tr>
-            <tr><td><strong>TEACHING</strong></td><td>VOCABULARY, GRAMMAR_RULE, CALLOUT, SUMMARY</td><td>P1–P2</td><td>CALLOUT/SUMMARY enum; VOCABULARY/GRAMMAR_RULE chưa</td></tr>
-            <tr><td><strong>VOCAB PRACTICE</strong></td><td>FLASHCARD, MATCH_WORD, MATCH_IMAGE, SPELLING, REORDER_LETTERS, LISTEN_CHOOSE, LISTEN_TYPE, MEMORY_GAME, WORD_SEARCH</td><td>V2</td><td>—</td></tr>
-            <tr><td><strong>GRAMMAR PRACTICE</strong></td><td>FILL_BLANK, MULTIPLE_CHOICE, TRUE_FALSE, REORDER_SENTENCE, ERROR_DETECTION</td><td>V2</td><td><code>QUESTION_REF</code> stub → tách block tương tác</td></tr>
+            <tr><td><strong>TEACHING</strong></td><td>VOCABULARY, GRAMMAR_RULE, CALLOUT, SUMMARY</td><td>P1–P2</td><td><code>VOCABULARY</code> ✓ (flashcard); CALLOUT/SUMMARY/GRAMMAR_RULE enum, UI chưa</td></tr>
+            <tr><td><strong>VOCAB PRACTICE</strong></td><td>FLASHCARD, MATCH_WORD, MATCH_IMAGE, …</td><td>V2</td><td>Flashcard trong <code>VOCABULARY</code>; MATCHING trong <code>EXERCISE_SET</code></td></tr>
+            <tr><td><strong>GRAMMAR PRACTICE</strong></td><td>FILL_BLANK, MULTIPLE_CHOICE, TRUE_FALSE, …</td><td>V2</td><td>MCQ/MATCHING trong <code>EXERCISE_SET</code>; Question Bank + <code>QUESTION_REF</code></td></tr>
             <tr><td><strong>READING</strong></td><td>READING_PASSAGE, READING_QUESTION</td><td>V2</td><td>≈ TEXT + câu hỏi riêng</td></tr>
             <tr><td><strong>LISTENING</strong></td><td>LISTENING_QUESTION, LISTENING_FILL_BLANK</td><td>V2</td><td>—</td></tr>
             <tr><td><strong>SPEAKING</strong></td><td>SPEAKING_REPEAT, SPEAKING_READ, SPEAKING_CONVERSATION</td><td>V3</td><td>—</td></tr>
@@ -1586,7 +1589,87 @@ POST /lessons/{id}/blocks/{blockId}/attempt  →  DB only</code></pre>
             <li>TTL dự phòng 6–24h; ưu tiên <strong>evict chủ động</strong> hơn TTL</li>
           </ul>
         </div>
-        <p><strong>Redis thêm sau (V2+):</strong> rate-limit submit; streak/XP; flashcard SRS; Redis pub/sub relay WebSocket khi nhiều BE instance (V3).</p>
+        <p><strong>Redis thêm sau (V2+):</strong> rate-limit submit; streak/XP; flashcard SRS; Redis pub/sub relay WebSocket khi nhiều BE instance (V3). Chi tiết theo tính năng đã code: <a href="#redis-built-features">15.2b</a>.</p>
+
+        <h3 id="redis-built-features">15.2b Redis — tính năng đã làm &amp; điểm nghẽn khi scale</h3>
+        <p class="lead">Các API/flow <strong>đã có trong repo</strong> (chưa bật Redis). Dưới ~1k HS MySQL + index đủ; khi traffic tăng hoặc nhiều HS cùng lớp mở bài, ưu tiên cache theo bảng sau.</p>
+        <table>
+          <thead><tr><th>Tính năng đã làm</th><th>API / flow</th><th>Vì sao chậm dần</th><th>Redis gợi ý</th><th>Ưu tiên</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Lesson detail</strong></td>
+              <td><code>GET /lessons/{id}/detail</code></td>
+              <td>Join lesson + blocks + assets; payload <code>EXERCISE_SET</code> lớn; nhiều HS cùng bài</td>
+              <td><code>lesson:detail:{id}</code> — evict khi publish/block/asset</td>
+              <td>★★★</td>
+            </tr>
+            <tr>
+              <td><strong>Danh sách bài publish</strong></td>
+              <td><code>GET /lessons</code> + search</td>
+              <td>List 50+ lesson mỗi lần vào trang; search lặp</td>
+              <td><code>lesson:search:{hash}</code> TTL ngắn; syllabus <code>subject:{id}:lessons</code></td>
+              <td>★★☆</td>
+            </tr>
+            <tr>
+              <td><strong>Practice summary batch</strong></td>
+              <td><code>POST /lesson-practice-attempts/summary</code></td>
+              <td>Mỗi vào list lesson = aggregate latest/best/count theo N lessonIds</td>
+              <td><code>practice:summary:{userId}:{hashIds}</code> TTL 2–5 phút; invalidate khi POST attempt</td>
+              <td>★★☆</td>
+            </tr>
+            <tr>
+              <td><strong>Tiếp tục học (server)</strong></td>
+              <td><code>GET /lesson-reading-progress/continue</code></td>
+              <td>Home + list gọi mỗi lần mount; <code>ORDER BY updated_at</code> per user</td>
+              <td><code>reading:continue:{userId}</code> write-through khi PUT progress</td>
+              <td>★★☆</td>
+            </tr>
+            <tr>
+              <td><strong>Đồng bộ scroll đọc</strong></td>
+              <td><code>PUT /lesson-reading-progress/{id}</code></td>
+              <td>Debounced nhưng vẫn upsert MySQL; lớp học đồng thời</td>
+              <td>Buffer Redis + flush batch (tuỳ chọn); hoặc chỉ cache GET, giữ PUT → DB</td>
+              <td>★☆☆</td>
+            </tr>
+            <tr>
+              <td><strong>Question Bank resolve</strong></td>
+              <td>Load <code>QUESTION_REF</code> trong lesson / editor</td>
+              <td>N+1 hoặc nhiều câu trong một <code>EXERCISE_SET</code></td>
+              <td><code>question:{id}</code> + batch MGET</td>
+              <td>★★☆</td>
+            </tr>
+            <tr>
+              <td><strong>Vocabulary set</strong></td>
+              <td>CRUD set + generator MCQ/MATCHING</td>
+              <td>Admin/lesson đọc lại cùng set + items</td>
+              <td><code>vocab:set:{id}</code> evict khi sửa item</td>
+              <td>★★☆</td>
+            </tr>
+            <tr>
+              <td><strong>Practice latest / review</strong></td>
+              <td><code>GET .../lessons/{id}/latest</code></td>
+              <td>Snapshot JSON lớn khi xem lại sau xóa local</td>
+              <td><code>practice:latest:{userId}:{lessonId}</code> TTL hoặc evict on POST</td>
+              <td>★☆☆</td>
+            </tr>
+            <tr>
+              <td><strong>Chống spam nộp bài</strong></td>
+              <td><code>POST /lesson-practice-attempts</code></td>
+              <td>Double-submit / bot</td>
+              <td>Rate limit sliding window <code>rl:attempt:{userId}</code></td>
+              <td>★☆☆</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="card info">
+          <h4>Thứ tự triển khai Redis (sau khi Lesson Player ổn định)</h4>
+          <ol>
+            <li><strong>Lesson detail + evict</strong> — lợi lớn nhất, read-heavy.</li>
+            <li><strong>Practice summary + continue reading</strong> — giảm query lặp trên trang HS.</li>
+            <li><strong>Question + Vocab set</strong> — khi lesson nhiều <code>QUESTION_REF</code> / vocab lớn.</li>
+            <li><strong>Rate limit + write buffer</strong> — khi có abuse hoặc metric DB write cao.</li>
+          </ol>
+        </div>
 
         <h3 id="rabbitmq-notify">15.3 RabbitMQ — email &amp; notification nền</h3>
         <p class="lead">Queue = <strong>thùng bỏ phiếu việc</strong> — API không <code>for</code> gửi email trong request; worker lấy phiếu ra xử lý (vẫn có <code>for</code>, nhưng <strong>sau</strong>, có retry).</p>
@@ -1686,6 +1769,10 @@ RabbitMQ → NotificationWorker
           <li><label><input type="checkbox" data-check-id="redis.config" /><span><code>RedisCacheConfig</code> + <code>@Cacheable</code> <code>getDetail()</code></span></label></li>
           <li><label><input type="checkbox" data-check-id="redis.evict" /><span>Evict khi publish / block / asset</span></label></li>
           <li><label><input type="checkbox" data-check-id="redis.syllabus" /><span>Cache syllabus theo Subject</span></label></li>
+          <li><label><input type="checkbox" data-check-id="redis.practice-summary" /><span>Cache <code>POST /lesson-practice-attempts/summary</code> per user</span></label></li>
+          <li><label><input type="checkbox" data-check-id="redis.reading-continue" /><span>Cache <code>GET /lesson-reading-progress/continue</code> write-through</span></label></li>
+          <li><label><input type="checkbox" data-check-id="redis.question-vocab" /><span>Cache <code>question:{id}</code> + <code>vocab:set:{id}</code></span></label></li>
+          <li><label><input type="checkbox" data-check-id="redis.rate-limit" /><span>Rate limit POST practice attempt</span></label></li>
         </ul>
         <p><strong>RabbitMQ</strong></p>
         <ul class="checklist" data-group="rabbitmq-v2">
@@ -1711,9 +1798,9 @@ RabbitMQ → NotificationWorker
           <strong>Draft → Publish → Assign → Submit → Grade</strong>.
         </p>
         <p>
-          <strong>Đã có:</strong> Unit → nhiều Lesson; <code>LessonBlock</code> + <code>payload_json</code>; reader TEXT/IMAGE.<br />
-          <strong>Đích:</strong> Tab Bài học / Bài tập; <code>EXERCISE_SET</code> + MCQ stepped; syllabus sidebar; bắt tay theo <a href="#lesson-impl-plan">13.10</a>.<br />
-          <strong>Sau Lesson:</strong> Hạ tầng V2 — Redis + RabbitMQ + WebSocket theo <a href="#redis-after-lesson">mục 15</a> (không chặn MVP).
+          <strong>Đã có:</strong> Lesson Player (tab Bài học/Bài tập), <code>EXERCISE_SET</code>, MCQ/MATCHING, vocab flashcard, progress server (đọc + practice).<br />
+          <strong>Đích tiếp:</strong> CALLOUT/SUMMARY/VIDEO/AUDIO; syllabus sidebar; Assignment V2 — <a href="#lesson-impl-plan">13.10</a>.<br />
+          <strong>Scale:</strong> Redis ưu tiên theo <a href="#redis-built-features">15.2b</a> khi &gt;1k HS hoặc DB đọc nặng.
         </p>
 
 
@@ -1753,10 +1840,12 @@ RabbitMQ → NotificationWorker
             <li><label><input type="checkbox" data-check-id="lc.f.ad.editor" data-default="1" /><span>Admin: <code>LessonEditorPage</code> — thêm/sửa/xóa/sắp xếp block</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.st.reader" data-default="1" /><span>Student: <code>LessonReaderPage</code> đọc bài publish</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.st.toc" data-default="1" /><span>Student: TOC + scroll spy theo heading TEXT</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.f.st.continue" data-default="1" /><span>Student: Continue learning (<code>lessonProgressStorage</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.st.continue" data-default="1" /><span>Student: Continue learning (local + <code>resolveContinueLearning</code>)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.st.focus" data-default="1" /><span>Student: Focus mode + in bài</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.enroll-filter" /><span>P1: Lọc bài theo <code>Enrollment</code> (chỉ lớp đã ghi danh)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.f.progress-api" /><span>P1: API <code>lesson-progress</code> (server thay localStorage)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.progress-api" data-default="1" /><span>API <code>lesson_reading_progress</code> — PUT/GET/continue (<code>006</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.practice-api" data-default="1" /><span>API <code>lesson_practice_attempts</code> — POST + summary batch (<code>005</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.progress-sync" data-default="1" /><span>FE <code>lessonProgressSync</code> — debounce PUT + merge <code>updatedAt</code></span></label></li>
           </ul>
 
           <h2 class="section" id="lc-text">B. Rich text — đọc &amp; grammar (TEXT)</h2>
@@ -1821,8 +1910,10 @@ RabbitMQ → NotificationWorker
             <li><label><input type="checkbox" data-check-id="lc.g.inline-highlight" /><span>P1: Highlight từ khóa trong TEXT (data-term)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.g.glossary-popup" /><span>P1: Popup định nghĩa khi click từ</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.g.warmup-block" /><span>P1: Block “Word list” đầu bài (TEXT có list)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.g.vocab-set" /><span>V2: Entity <code>VocabularySet</code> theo Subject</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.g.flashcard" /><span>V2: Flashcard SRS ôn từ</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.vocab-set" data-default="1" /><span>Entity <code>VocabularySet</code> + Admin CRUD</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.vocab-block" data-default="1" /><span>Block <code>VOCABULARY</code> + flashcard presentation</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.flashcard" data-default="1" /><span>Flashcard trong tab Bài học (chưa SRS)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.g.matching-gen" data-default="1" /><span>Generator MATCHING/MCQ từ bộ từ</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.g.audio-per-word" /><span>V2: Audio phát âm từng từ</span></label></li>
           </ul>
 
@@ -1869,9 +1960,9 @@ RabbitMQ → NotificationWorker
             <li><label><input type="checkbox" data-check-id="lc.pl.varchar" /><span>S0: <code>block_type</code> VARCHAR / mở enum Java</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.pl.zod" /><span>S0: Zod/schema validate <code>payload_json</code> theo type</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.pl.registry" /><span>S3: FE <code>BLOCK_REGISTRY</code> (Editor + Reader)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.pl.progress" /><span>S3: <code>lesson_block_progress</code> + API attempt</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.pl.vocab-block" /><span>S2: Block <code>VOCABULARY</code> + <code>GRAMMAR_RULE</code></span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.pl.flashcard" /><span>S4: <code>FLASHCARD</code> + <code>VocabularySet</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.pl.progress" data-default="1" /><span>Progress: <code>lesson_practice_attempts</code> + <code>lesson_reading_progress</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.pl.vocab-block" data-default="1" /><span>S2: Block <code>VOCABULARY</code> (+ flashcard)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.pl.flashcard" data-default="1" /><span>S4: Flashcard + <code>VocabularySet</code></span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.pl.match-image" /><span>S4: <code>MATCH_IMAGE</code> + auto-grade</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.pl.listen-choose" /><span>S4: <code>LISTEN_CHOOSE</code></span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.pl.fill-blank" /><span>S5: <code>FILL_BLANK</code>, <code>MULTIPLE_CHOICE</code></span></label></li>
@@ -1886,17 +1977,19 @@ RabbitMQ → NotificationWorker
           </div>
           <ul class="checklist" data-group="lc-player">
             <li><label><input type="checkbox" data-check-id="lc.plr.p0-doc" data-default="1" /><span>Phase 0: Doc + <code>blockTypes.ts</code> STUDY/PRACTICE</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.be-exercise-set" /><span>Phase 1 BE: <code>EXERCISE_SET</code> + validate payload</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.be-progress" /><span>Phase 1 BE: <code>lesson_block_progress</code> + attempt API</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.seed-demo" /><span>Seed lesson demo “Từ vựng 5 câu MCQ”</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.shell-tabs" /><span>Phase 2: <code>LessonPlayerPage</code> tab Bài học / Bài tập</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.filter-blocks" /><span>Phase 2: <code>filterBlocksForTab()</code></span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.exercise-player" /><span>Phase 3: <code>ExercisePlayer</code> + progress N/M</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.mcq" /><span>Phase 3: <code>MultipleChoiceQuestion</code> + KIỂM TRA</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.admin-editor" /><span>Phase 4: Admin editor <code>EXERCISE_SET</code></span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.e2e" /><span>E2E: GV soạn → publish → HS làm 5 câu</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.be-exercise-set" data-default="1" /><span>Phase 1 BE: <code>EXERCISE_SET</code> + validate payload</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.be-progress" data-default="1" /><span>Phase B: <code>lesson_practice_attempts</code> + structured snapshot</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.be-reading" data-default="1" /><span>Phase B3: <code>lesson_reading_progress</code> sync scroll/tab</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.seed-demo" data-default="1" /><span>Seed lesson / vocab demo</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.shell-tabs" data-default="1" /><span>Phase 2: tab Bài học / Bài tập (<code>LessonReaderPage</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.filter-blocks" data-default="1" /><span>Phase 2: <code>filterBlocksForTab()</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.exercise-player" data-default="1" /><span><code>ExercisePlayer</code> + progress N/M + result/review</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.mcq" data-default="1" /><span><code>MultipleChoiceQuestion</code> + KIỂM TRA</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.practice-banner" data-default="1" /><span>Banner “Lần trước” + badge điểm list lesson</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.admin-editor" data-default="1" /><span>Admin editor <code>EXERCISE_SET</code> + import CSV</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.e2e" /><span>E2E manual: GV soạn → publish → HS làm bài (doc T1–T10, R1–R5)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.plr.syllabus" /><span>Phase 5: <code>CourseSyllabusSidebar</code> (Unit → lessons)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.plr.matching" /><span>Phase 5: Câu <code>MATCHING</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.plr.matching" data-default="1" /><span>Câu <code>MATCHING</code> + generator từ vocab</span></label></li>
           </ul>
 
           <footer class="page-foot">

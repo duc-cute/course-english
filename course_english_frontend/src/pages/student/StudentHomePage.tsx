@@ -1,15 +1,20 @@
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import { Box, Button, CardContent, Typography } from "@mui/material";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ContinueLearningCard } from "../../student/components/ContinueLearningCard";
-import { getContinueLearning } from "../../student/lessonProgressStorage";
+import { resolveContinueLearning } from "../../student/lessonProgressSync";
+import type { LessonProgressEntry } from "../../student/lessonProgressStorage";
 import { paths } from "../../shared/constants/paths";
 import "../../styles/student-lessons.css";
 
 export function StudentHomePage() {
-  const continueProgress = useMemo(() => getContinueLearning(), []);
+  const [continueProgress, setContinueProgress] = useState<LessonProgressEntry | null>(null);
+
+  useEffect(() => {
+    void resolveContinueLearning().then(setContinueProgress);
+  }, []);
 
   return (
     <div className="student-page">
