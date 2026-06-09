@@ -233,6 +233,30 @@
   color: var(--eng-on-surface, #191c1e) !important;
 }
 
+.student-continue-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.student-continue-footer .student-continue-btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 520px) {
+  .student-continue-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .student-continue-footer .student-continue-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .student-empty-state {
   padding: 48px 24px;
   text-align: center;

@@ -18,12 +18,17 @@ import { ExerciseResultScreen } from "./ExerciseResultScreen";
 import { ExerciseReviewScreen } from "./ExerciseReviewScreen";
 import { PracticeAttemptBanner } from "./PracticeAttemptBanner";
 import { isMatchingComplete, scoreMatchingAnswer } from "./matchingUtils";
+import { ListenChooseQuestion } from "./ListenChooseQuestion";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion";
 import { prepareExercisePlan, type PreparedExerciseItem } from "./prepareExerciseItems";
 import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 import { QuestionProgressBar } from "./QuestionProgressBar";
-import type { MatchingQuestion as MatchingType, MultipleChoiceQuestion as McqType } from "./types";
+import type {
+  ListenChooseQuestion as ListenChooseType,
+  MatchingQuestion as MatchingType,
+  MultipleChoiceQuestion as McqType,
+} from "./types";
 
 type ExercisePlayerProps = {
   lessonId: string;
@@ -148,6 +153,10 @@ export function ExercisePlayer({
     current?.displayQuestion.type === "MULTIPLE_CHOICE"
       ? (current.displayQuestion as McqType)
       : null;
+  const currentListen =
+    current?.displayQuestion.type === "LISTEN_CHOOSE"
+      ? (current.displayQuestion as ListenChooseType)
+      : null;
   const currentMatching =
     current?.displayQuestion.type === "MATCHING"
       ? (current.displayQuestion as MatchingType)
@@ -156,7 +165,7 @@ export function ExercisePlayer({
   useEffect(() => {
     if (!current) return;
     const saved = answers[current.displayQuestion.id];
-    if (currentMcq) {
+    if (currentMcq || currentListen) {
       setSelectedChoiceId(saved?.selectedChoiceId ?? null);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
@@ -167,7 +176,7 @@ export function ExercisePlayer({
       setActiveMatchingLeft(null);
       setSelectedChoiceId(null);
     }
-  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentMatching, answers]);
+  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentMatching, answers]);
 
   useEffect(() => {
     if (phase === "done" || phase === "review") {
@@ -292,11 +301,12 @@ export function ExercisePlayer({
     if (!current) return;
     ensureStartedAt();
 
-    if (currentMcq && selectedChoiceId) {
-      const correct = selectedChoiceId === currentMcq.correctChoiceId;
+    const choiceQuestion = currentMcq ?? currentListen;
+    if (choiceQuestion && selectedChoiceId) {
+      const correct = selectedChoiceId === choiceQuestion.correctChoiceId;
       const nextAnswers = {
         ...answers,
-        [currentMcq.id]: { correct, selectedChoiceId },
+        [choiceQuestion.id]: { correct, selectedChoiceId },
       };
       setAnswers(nextAnswers);
       setShowExplanation(false);
@@ -378,13 +388,14 @@ export function ExercisePlayer({
     setSessionSeed((s) => s + 1);
   };
 
-  const canCheck = currentMcq
+  const canCheck = currentMcq || currentListen
     ? Boolean(selectedChoiceId)
     : currentMatching
       ? isMatchingComplete(currentMatching.pairs, matchingSelections)
       : false;
 
-  const currentExplanation = currentMcq?.explanation ?? currentMatching?.explanation;
+  const currentExplanation =
+    currentMcq?.explanation ?? currentListen?.explanation ?? currentMatching?.explanation;
 
   if (total === 0) {
     const hasPracticeBlocks = practiceBlocks.length > 0;
@@ -434,7 +445,7 @@ export function ExercisePlayer({
     );
   }
 
-  if (!current || (!currentMcq && !currentMatching)) {
+  if (!current || (!currentMcq && !currentListen && !currentMatching)) {
     return (
       <Alert severity="warning" sx={{ borderRadius: "14px" }}>
         Dạng câu <strong>{current?.displayQuestion.type ?? "unknown"}</strong> sẽ hỗ trợ ở bản tiếp theo.
@@ -469,6 +480,16 @@ export function ExercisePlayer({
       {currentMcq ? (
         <MultipleChoiceQuestion
           question={currentMcq}
+          selectedId={selectedChoiceId}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          onSelect={setSelectedChoiceId}
+        />
+      ) : null}
+
+      {currentListen ? (
+        <ListenChooseQuestion
+          question={currentListen}
           selectedId={selectedChoiceId}
           disabled={showFeedback}
           showResult={showFeedback}

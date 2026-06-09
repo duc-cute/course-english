@@ -329,13 +329,22 @@ mysql -u … -p course_english < course_english_backend/migrations/009_drop_voca
 
 ---
 
-## Phase 7 — Generator Listen And Choose (tương lai)
+## Phase 7 — Generator Listen And Choose ✅
 
-> Sau Phase 5 — dùng `audio_uk_url` / `audio_us_url` có sẵn.
+> Dùng `audio_uk_url` / `audio_us_url` từ enrich — snapshot URL vào payload bài tập.
 
-- [ ] `vocabActivityGenerator.ts` — thêm `LISTEN_CHOOSE`
-- [ ] Player HS — block nghe + chọn đáp án
-- [ ] Publish validation cho block type mới
+- [x] `vocabActivityGenerator.ts` — `generateListenChooseFromVocabItems`, `validateVocabSetForListenChoose`
+- [x] Player HS — `ListenChooseQuestion`, parse/prepare/score trong `ExercisePlayer`
+- [x] `ExerciseReviewScreen` — xem lại + replay audio + hiện từ sau chấm
+- [x] `exercisePayload.ts` — validate/summary/clean `LISTEN_CHOOSE`
+- [x] `LessonPublishValidator` — `isValidListenChoose` (audioUrl + choices + correctChoiceId)
+- [x] Admin — `VocabGenerateListenDialog`, wizard gắn lesson, nút 🎧 trên `ManageVocabularySetsPage`
+
+### Kiểm thử E2E (manual)
+
+- [x] Enrich bộ từ (≥ 4 từ có audio theo config) → Sinh bài nghe → Gắn lesson → Publish
+- [x] HS tab Bài tập: nghe audio, chọn nghĩa VI, xem lại đúng/sai
+- [x] Admin editor: block giữ câu Nghe chọn (không bị ghi đè MCQ trống)
 
 ---
 
@@ -347,9 +356,10 @@ mysql -u … -p course_english < course_english_backend/migrations/009_drop_voca
    · Nhập apple + Quả táo → hệ thống enrich IPA + audio
    · Hoặc "Chọn từ có sẵn" từ thư viện
 → Publish bộ từ
-→ Lesson Editor → + Bộ từ vào bài
+→ Lesson Editor → + Bộ từ vào bài (tuỳ chọn MCQ / Nghe chọn / Matching)
+→ Hoặc /admin/vocabulary-sets → 🎧 Sinh bài nghe → gắn lesson
 → Publish lesson
-→ HS: flashcard/list + 🔊 UK/US
+→ HS: flashcard/list + 🔊 UK/US; bài tập LISTEN_CHOOSE nghe + chọn nghĩa
 ```
 
 ---
@@ -384,7 +394,8 @@ mysql -u … -p course_english < course_english_backend/migrations/008_vocabular
 | 2026-06-08 | Phase 4 ✅ | Admin thư viện từ, picker, lookup blur, enrich cả bộ |
 | 2026-06-08 | Phase 5 ✅ | HS flashcard + list: IPA + 🔊 UK/US |
 | 2026-06-08 | Phase 6 ✅ | Gỡ `vocabulary_items`, migration `009`, cleanup BE |
+| 2026-06-08 | Phase 7 ✅ | LISTEN_CHOOSE generator + player + admin read-only editor; accent từ system config |
 
 ---
 
-**Tóm tắt:** Schema library ✅ · Dictionary ✅ · BE resolve ✅ · Admin UI ✅ · HS 🔊 ✅ · Legacy gỡ ✅ · **Tiếp theo: Phase 7 Listen And Choose · E2E manual**
+**Tóm tắt:** Schema library ✅ · Dictionary ✅ · BE resolve ✅ · Admin UI ✅ · HS 🔊 ✅ · Legacy gỡ ✅ · **LISTEN_CHOOSE ✅** · **Tiếp theo: mirror audio / E2E checklist / block VIDEO-AUDIO**

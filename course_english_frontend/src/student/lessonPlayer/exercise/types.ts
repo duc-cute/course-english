@@ -40,7 +40,20 @@ export type MatchingQuestion = {
   explanation?: string;
 };
 
-export type ExerciseQuestion = MultipleChoiceQuestion | MatchingQuestion;
+export type ListenChooseQuestion = {
+  id: string;
+  type: "LISTEN_CHOOSE";
+  /** URL audio snapshot lúc sinh bài (UK hoặc US) */
+  audioUrl: string;
+  audioAccent?: "UK" | "US";
+  wordEn?: string;
+  prompt?: ExercisePrompt;
+  choices: ExerciseChoice[];
+  correctChoiceId: string;
+  explanation?: string;
+};
+
+export type ExerciseQuestion = MultipleChoiceQuestion | MatchingQuestion | ListenChooseQuestion;
 
 export type ExercisePresentation = "stepped" | "inline";
 

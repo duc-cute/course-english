@@ -4,6 +4,7 @@ import com.courseenglish.api.domain.VocabularyWord;
 import com.courseenglish.api.domain.request.ReqCreateVocabularyWordDTO;
 import com.courseenglish.api.domain.request.ReqLookupVocabularyWordDTO;
 import com.courseenglish.api.domain.request.ReqSearchVocabularyWordDTO;
+import com.courseenglish.api.domain.request.ReqUpdateVocabularyWordDTO;
 import com.courseenglish.api.domain.response.ResVocabularyWordDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.integration.dictionary.model.VocabularyEnrichmentData;
@@ -75,6 +76,16 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
         validateWordInput(request.getWordEn(), request.getMeaningVi());
         VocabularyWord word = findOrCreate(request.getWordEn(), request.getMeaningVi());
         return toDto(word);
+    }
+
+    @Override
+    @Transactional
+    public ResVocabularyWordDTO update(UUID id, ReqUpdateVocabularyWordDTO request) throws IdInvalidException {
+        validateMeaningVi(request.getMeaningVi());
+        VocabularyWord word = wordRepository.findByIdAndVoidedFalse(id)
+                .orElseThrow(() -> new IdInvalidException("Từ vựng không tồn tại"));
+        word.setMeaningVi(request.getMeaningVi().trim());
+        return toDto(wordRepository.save(word));
     }
 
     @Override
@@ -202,11 +213,15 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
         if (wordEn == null || wordEn.isBlank()) {
             throw new IdInvalidException("Từ tiếng Anh không được để trống");
         }
-        if (meaningVi == null || meaningVi.isBlank()) {
-            throw new IdInvalidException("Nghĩa tiếng Việt không được để trống");
-        }
+        validateMeaningVi(meaningVi);
         if (wordEn.trim().length() > 255) {
             throw new IdInvalidException("Từ tiếng Anh quá dài (tối đa 255 ký tự)");
+        }
+    }
+
+    private void validateMeaningVi(String meaningVi) throws IdInvalidException {
+        if (meaningVi == null || meaningVi.isBlank()) {
+            throw new IdInvalidException("Nghĩa tiếng Việt không được để trống");
         }
     }
 }

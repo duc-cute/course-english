@@ -1,5 +1,6 @@
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
+import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
@@ -20,9 +21,8 @@ import {
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
-import {
-  VocabGenerateMcqDialog,
-} from "../../admin/components/vocabulary/VocabGenerateMcqDialog";
+import { VocabGenerateListenDialog } from "../../admin/components/vocabulary/VocabGenerateListenDialog";
+import { VocabGenerateMcqDialog } from "../../admin/components/vocabulary/VocabGenerateMcqDialog";
 import {
   VocabularyImportDialog,
 } from "../../admin/components/vocabulary/VocabularyImportDialog";
@@ -120,6 +120,7 @@ export function ManageVocabularySetsPage() {
   const [openImport, setOpenImport] = useState(false);
   const [openPicker, setOpenPicker] = useState(false);
   const [generateTarget, setGenerateTarget] = useState<VocabularySetRecord | null>(null);
+  const [listenGenerateTarget, setListenGenerateTarget] = useState<VocabularySetRecord | null>(null);
   const [enrichingAll, setEnrichingAll] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -173,14 +174,21 @@ export function ManageVocabularySetsPage() {
     }
   };
 
-  const openGenerate = async (row: VocabularySetRecord) => {
+  const loadSetDetail = async (row: VocabularySetRecord): Promise<VocabularySetRecord> => {
     try {
       const response = (await apiGetVocabularySetById(row.id)) as ApiResponse<VocabularySetRecord>;
-      const detail = response?.result ?? response?.data ?? row;
-      setGenerateTarget(detail);
+      return response?.result ?? response?.data ?? row;
     } catch {
-      setGenerateTarget(row);
+      return row;
     }
+  };
+
+  const openGenerate = async (row: VocabularySetRecord) => {
+    setGenerateTarget(await loadSetDetail(row));
+  };
+
+  const openGenerateListen = async (row: VocabularySetRecord) => {
+    setListenGenerateTarget(await loadSetDetail(row));
   };
 
   const submitForm = async () => {
@@ -305,7 +313,7 @@ export function ManageVocabularySetsPage() {
             py: 0.75,
             borderBottom: "1px solid #D3D1C7",
             display: "grid",
-            gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 120px",
+            gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 152px",
             columnGap: 1,
             fontSize: 12,
             fontWeight: 700,
@@ -335,7 +343,7 @@ export function ManageVocabularySetsPage() {
                 py: 0.75,
                 borderBottom: "1px solid #ECEAE3",
                 display: "grid",
-                gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 120px",
+                gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 152px",
                 columnGap: 1,
                 alignItems: "center",
                 fontSize: 13,
@@ -354,6 +362,11 @@ export function ManageVocabularySetsPage() {
                 <Tooltip title="Sinh MCQ">
                   <IconButton size="small" color="secondary" onClick={() => void openGenerate(row)}>
                     <AutoFixHighOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Sinh bài nghe">
+                  <IconButton size="small" color="secondary" onClick={() => void openGenerateListen(row)}>
+                    <HeadphonesOutlinedIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Sửa">
@@ -484,6 +497,15 @@ export function ManageVocabularySetsPage() {
           setTitle={generateTarget.title}
           items={generateTarget.items ?? []}
           onClose={() => setGenerateTarget(null)}
+        />
+      ) : null}
+
+      {listenGenerateTarget ? (
+        <VocabGenerateListenDialog
+          open={Boolean(listenGenerateTarget)}
+          setTitle={listenGenerateTarget.title}
+          items={listenGenerateTarget.items ?? []}
+          onClose={() => setListenGenerateTarget(null)}
         />
       ) : null}
 

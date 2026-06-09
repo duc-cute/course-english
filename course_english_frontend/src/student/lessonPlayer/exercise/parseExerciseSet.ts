@@ -38,6 +38,42 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
     };
   }
 
+  if (raw.type === "LISTEN_CHOOSE") {
+    const audioUrl = typeof raw.audioUrl === "string" ? raw.audioUrl.trim() : "";
+    if (!audioUrl) return null;
+
+    const choices = Array.isArray(raw.choices) ? raw.choices : [];
+    const parsedChoices = choices
+      .filter(isRecord)
+      .map((c) => ({
+        id: String(c.id ?? ""),
+        text: String(c.text ?? ""),
+      }))
+      .filter((c) => c.id && c.text);
+
+    if (!parsedChoices.length || typeof raw.correctChoiceId !== "string") {
+      return null;
+    }
+
+    const prompt = isRecord(raw.prompt)
+      ? { text: String(raw.prompt.text ?? ""), lang: raw.prompt.lang ? String(raw.prompt.lang) : undefined }
+      : { text: "Nghe và chọn nghĩa tiếng Việt đúng", lang: "vi" };
+
+    const audioAccent = raw.audioAccent === "US" ? "US" : raw.audioAccent === "UK" ? "UK" : undefined;
+
+    return {
+      id: raw.id,
+      type: "LISTEN_CHOOSE",
+      audioUrl,
+      audioAccent,
+      wordEn: typeof raw.wordEn === "string" ? raw.wordEn : undefined,
+      prompt,
+      choices: parsedChoices,
+      correctChoiceId: raw.correctChoiceId,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
   if (raw.type === "MATCHING") {
     const pairs = Array.isArray(raw.pairs) ? raw.pairs : [];
     const parsedPairs = pairs

@@ -3,7 +3,8 @@ import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import type { ExerciseAnswerSnapshot } from "../exerciseSessionStorage";
 import type { PreparedExerciseItem } from "./prepareExerciseItems";
-import type { MatchingQuestion, MultipleChoiceQuestion } from "./types";
+import type { ListenChooseQuestion, MatchingQuestion, MultipleChoiceQuestion } from "./types";
+import { ListenChooseQuestion as ListenChooseReview } from "./ListenChooseQuestion";
 import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 
 type ExerciseReviewScreenProps = {
@@ -89,6 +90,44 @@ export function ExerciseReviewScreen({ lessonTitle, items, answers, onBack }: Ex
                 {mcq.explanation?.trim() ? (
                   <div className="exercise-review-explain">
                     <QuestionExplanationPanel explanation={mcq.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
+          if (question.type === "LISTEN_CHOOSE") {
+            const listen = question as ListenChooseQuestion;
+            const answer = answers[listen.id];
+            const selectedId = answer?.selectedChoiceId ?? null;
+            const isCorrect = answer?.correct === true;
+
+            return (
+              <li key={listen.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Nghe chọn</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> Đúng
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> Sai
+                      </>
+                    )}
+                  </span>
+                </div>
+                <ListenChooseReview
+                  question={listen}
+                  selectedId={selectedId}
+                  showResult
+                  onSelect={() => undefined}
+                />
+                {listen.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={listen.explanation} />
                   </div>
                 ) : null}
               </li>

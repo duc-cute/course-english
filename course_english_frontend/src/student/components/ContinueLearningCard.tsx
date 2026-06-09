@@ -46,21 +46,22 @@ export function ContinueLearningCard({ progress, practiceLatest }: ContinueLearn
       ) : (
         <LinearProgress variant="determinate" value={pct} sx={{ height: 6, borderRadius: 3, mb: 1.5 }} />
       )}
-      <Typography variant="caption" sx={{ color: "var(--bio-teal-dark, #00685f)", fontWeight: 600 }}>
-        {isPractice ? "Đang làm bài tập" : `${pct}%`} · cập nhật{" "}
-        {new Date(progress.updatedAt).toLocaleDateString("vi-VN")}
-      </Typography>
-      <Button
-        className="student-btn-teal"
-        component={Link}
-        to={href}
-        variant="contained"
-        size="small"
-        startIcon={<PlayArrowIcon />}
-        sx={{ mt: 1.5 }}
-      >
-        Tiếp tục
-      </Button>
+      <div className="student-continue-footer">
+        <Typography variant="caption" sx={{ color: "var(--bio-teal-dark, #00685f)", fontWeight: 600 }}>
+          {isPractice ? "Đang làm bài tập" : `${pct}%`} · cập nhật{" "}
+          {new Date(progress.updatedAt).toLocaleDateString("vi-VN")}
+        </Typography>
+        <Button
+          className="student-btn-teal student-continue-btn"
+          component={Link}
+          to={href}
+          variant="contained"
+          size="small"
+          startIcon={<PlayArrowIcon />}
+        >
+          Tiếp tục
+        </Button>
+      </div>
     </article>
   );
 }

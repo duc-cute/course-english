@@ -67,10 +67,13 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
   if (block.blockType === "EXERCISE_SET") {
     const payload = parseExerciseSetPayload(block.payloadJson);
     const mcqCount = payload.questions.filter((q) => q.type === "MULTIPLE_CHOICE").length;
+    const listenCount = payload.questions.filter((q) => q.type === "LISTEN_CHOOSE").length;
     const matchingCount = payload.questions.filter((q) => q.type === "MATCHING").length;
     const firstMcq = payload.questions.find((q) => q.type === "MULTIPLE_CHOICE");
+    const firstListen = payload.questions.find((q) => q.type === "LISTEN_CHOOSE");
     const questionParts = [
       mcqCount ? `${mcqCount} MCQ` : "",
+      listenCount ? `${listenCount} nghe chọn` : "",
       matchingCount ? `${matchingCount} ghép cặp` : "",
     ].filter(Boolean);
     return (
@@ -84,7 +87,11 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
             {payload.passScorePercent !== undefined ? ` · Đạt ${payload.passScorePercent}%` : ""}
           </span>
         </Typography>
-        {firstMcq && firstMcq.type === "MULTIPLE_CHOICE" ? (
+        {firstListen && firstListen.type === "LISTEN_CHOOSE" ? (
+          <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
+            VD nghe: {firstListen.wordEn?.trim() || "—"} → chọn nghĩa
+          </Typography>
+        ) : firstMcq && firstMcq.type === "MULTIPLE_CHOICE" ? (
           <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
             VD: {firstMcq.prompt.text || "(chưa có câu hỏi)"}
           </Typography>

@@ -4,6 +4,7 @@ import com.courseenglish.api.domain.VocabularyWord;
 import com.courseenglish.api.domain.request.ReqCreateVocabularyWordDTO;
 import com.courseenglish.api.domain.request.ReqLookupVocabularyWordDTO;
 import com.courseenglish.api.domain.request.ReqSearchVocabularyWordDTO;
+import com.courseenglish.api.domain.request.ReqUpdateVocabularyWordDTO;
 import com.courseenglish.api.domain.response.ResVocabularyWordDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.util.error.IdInvalidException;
@@ -19,6 +20,8 @@ public interface VocabularyWordService {
     ResVocabularyWordDTO getById(UUID id) throws IdInvalidException;
 
     ResVocabularyWordDTO create(ReqCreateVocabularyWordDTO request) throws IdInvalidException;
+
+    ResVocabularyWordDTO update(UUID id, ReqUpdateVocabularyWordDTO request) throws IdInvalidException;
 
     Optional<ResVocabularyWordDTO> lookupPreview(ReqLookupVocabularyWordDTO request);
 

@@ -2,6 +2,7 @@ import { stringifyBlockPayload } from "../api/lesson";
 import type {
   ExerciseQuestion,
   ExerciseSetPayload,
+  ListenChooseQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
 } from "../../student/lessonPlayer/exercise/types";
@@ -87,14 +88,21 @@ export function getMatchingQuestionSummary(question: MatchingQuestion): string {
   return "(Ghép cặp — chưa có từ)";
 }
 
+export function getListenChooseQuestionSummary(question: ListenChooseQuestion): string {
+  if (question.wordEn?.trim()) return `Nghe: ${question.wordEn.trim()}`;
+  return "Nghe và chọn nghĩa";
+}
+
 export function getQuestionSummary(question: ExerciseQuestion): string {
   if (question.type === "MULTIPLE_CHOICE") return getMcqQuestionSummary(question);
+  if (question.type === "LISTEN_CHOOSE") return getListenChooseQuestionSummary(question);
   if (question.type === "MATCHING") return getMatchingQuestionSummary(question);
   return `(${question.type})`;
 }
 
 export function getQuestionTypeLabel(question: ExerciseQuestion): string {
   if (question.type === "MULTIPLE_CHOICE") return "Trắc nghiệm";
+  if (question.type === "LISTEN_CHOOSE") return "Nghe chọn";
   if (question.type === "MATCHING") return "Ghép cặp";
   return question.type;
 }
@@ -129,8 +137,23 @@ export function validateMcqQuestion(question: MultipleChoiceQuestion): ExerciseS
   return { valid: errors.length === 0, errors };
 }
 
+export function validateListenChooseQuestion(question: ListenChooseQuestion): ExerciseSetValidation {
+  const errors: string[] = [];
+  if (!question.audioUrl?.trim()) {
+    errors.push("Thiếu URL audio.");
+  }
+  if (question.choices.some((c) => !c.text.trim())) {
+    errors.push("Thiếu nội dung đáp án.");
+  }
+  if (!question.choices.some((c) => c.id === question.correctChoiceId)) {
+    errors.push("Chưa chọn đáp án đúng.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
 export function validateQuestion(question: ExerciseQuestion): ExerciseSetValidation {
   if (question.type === "MULTIPLE_CHOICE") return validateMcqQuestion(question);
+  if (question.type === "LISTEN_CHOOSE") return validateListenChooseQuestion(question);
   if (question.type === "MATCHING") return validateMatchingQuestion(question);
   return { valid: false, errors: ["Loại câu chưa hỗ trợ trong editor."] };
 }
@@ -143,10 +166,10 @@ export function validateExerciseSetPayload(payload: ExerciseSetPayload): Exercis
   }
 
   const editableQuestions = payload.questions.filter(
-    (q) => q.type === "MULTIPLE_CHOICE" || q.type === "MATCHING",
+    (q) => q.type === "MULTIPLE_CHOICE" || q.type === "MATCHING" || q.type === "LISTEN_CHOOSE",
   );
   if (!editableQuestions.length) {
-    errors.push("Cần ít nhất 1 câu (trắc nghiệm hoặc ghép cặp).");
+    errors.push("Cần ít nhất 1 câu (trắc nghiệm, nghe chọn hoặc ghép cặp).");
   }
 
   editableQuestions.forEach((q, index) => {
@@ -193,6 +216,15 @@ export function buildExerciseSetPayload(payload: ExerciseSetPayload): ExerciseSe
     instruction: payload.instruction?.trim() || undefined,
     questions: payload.questions.map((q) => {
       if (q.type === "MULTIPLE_CHOICE") return cleanMcqQuestion(q);
+      if (q.type === "LISTEN_CHOOSE") {
+        return {
+          ...q,
+          audioUrl: q.audioUrl.trim(),
+          wordEn: q.wordEn?.trim() || undefined,
+          choices: q.choices.map((c) => ({ ...c, text: c.text.trim() })),
+          explanation: q.explanation?.trim() || undefined,
+        };
+      }
       if (q.type === "MATCHING") return cleanMatchingQuestion(q);
       return q;
     }),

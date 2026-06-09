@@ -18,6 +18,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -73,7 +74,12 @@ function SortableQuestionItem({
   const valid = validateQuestion(question).valid;
   const summary = getQuestionSummary(question);
   const typeLabel = getQuestionTypeLabel(question);
-  const TypeIcon = question.type === "MATCHING" ? LinkIcon : QuizOutlinedIcon;
+  const TypeIcon =
+    question.type === "MATCHING"
+      ? LinkIcon
+      : question.type === "LISTEN_CHOOSE"
+        ? HeadphonesOutlinedIcon
+        : QuizOutlinedIcon;
 
   return (
     <Box

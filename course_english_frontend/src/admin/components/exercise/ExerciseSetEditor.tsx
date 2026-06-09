@@ -25,12 +25,14 @@ import { parseExerciseSetPayload } from "../../../student/lessonPlayer/exercise/
 import type {
   ExerciseQuestion,
   ExerciseSetPayload,
+  ListenChooseQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
 } from "../../../student/lessonPlayer/exercise/types";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
 import { ExerciseSetSettings } from "./ExerciseSetSettings";
+import { ListenChooseQuestionCanvas } from "./ListenChooseQuestionCanvas";
 import { MatchingQuestionCanvas } from "./MatchingQuestionCanvas";
 import { McqQuestionCanvas } from "./McqQuestionCanvas";
 import { QuestionListPanel } from "./QuestionListPanel";
@@ -43,13 +45,8 @@ type ExerciseSetEditorProps = {
   onCancel: () => void;
 };
 
-function isEditableQuestion(q: ExerciseQuestion): boolean {
-  return q.type === "MULTIPLE_CHOICE" || q.type === "MATCHING";
-}
-
 function normalizeQuestions(questions: ExerciseQuestion[]): ExerciseQuestion[] {
-  const editable = questions.filter(isEditableQuestion);
-  return editable.length ? editable : [createEmptyMcqQuestion("q1")];
+  return questions.length ? questions : [createEmptyMcqQuestion("q1")];
 }
 
 export function ExerciseSetEditor({
@@ -132,19 +129,27 @@ export function ExerciseSetEditor({
   const duplicateQuestion = (index: number) => {
     setQuestions((list) => {
       const source = list[index];
-      const copy: ExerciseQuestion =
-        source.type === "MATCHING"
-          ? {
-              ...(source as MatchingQuestion),
-              id: generateQuestionId(),
-              pairs: (source as MatchingQuestion).pairs.map((p) => ({ ...p })),
-            }
-          : {
-              ...(source as MultipleChoiceQuestion),
-              id: generateQuestionId(),
-              prompt: { ...(source as MultipleChoiceQuestion).prompt },
-              choices: (source as MultipleChoiceQuestion).choices.map((c) => ({ ...c })),
-            };
+      let copy: ExerciseQuestion;
+      if (source.type === "MATCHING") {
+        copy = {
+          ...(source as MatchingQuestion),
+          id: generateQuestionId(),
+          pairs: (source as MatchingQuestion).pairs.map((p) => ({ ...p })),
+        };
+      } else if (source.type === "LISTEN_CHOOSE") {
+        copy = {
+          ...(source as ListenChooseQuestion),
+          id: generateQuestionId(),
+          choices: (source as ListenChooseQuestion).choices.map((c) => ({ ...c })),
+        };
+      } else {
+        copy = {
+          ...(source as MultipleChoiceQuestion),
+          id: generateQuestionId(),
+          prompt: { ...(source as MultipleChoiceQuestion).prompt },
+          choices: (source as MultipleChoiceQuestion).choices.map((c) => ({ ...c })),
+        };
+      }
       const next = [...list.slice(0, index + 1), copy, ...list.slice(index + 1)];
       setActiveIndex(index + 1);
       return next;
@@ -257,6 +262,14 @@ export function ExerciseSetEditor({
               index={activeIndex}
               canDelete={questions.length > 1}
               onChange={(next) => updateQuestion(activeIndex, next)}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "LISTEN_CHOOSE" ? (
+            <ListenChooseQuestionCanvas
+              question={activeQuestion as ListenChooseQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
               onDelete={() => deleteQuestion(activeIndex)}
               onDuplicate={() => duplicateQuestion(activeIndex)}
             />

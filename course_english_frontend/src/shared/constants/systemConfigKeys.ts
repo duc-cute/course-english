@@ -71,6 +71,13 @@ export function normalizeVocabularyAudioAccent(value?: string): VocabularyAudioA
   return "UK";
 }
 
+/** Nhãn ngắn cho validate / sinh bài nghe LISTEN_CHOOSE */
+export function vocabularyAudioAccentListenLabel(accent: VocabularyAudioAccent): string {
+  if (accent === "US") return "US";
+  if (accent === "BOTH") return "UK hoặc US";
+  return "UK";
+}
+
 export function formatConfigDisplayValue(configKey?: string, configValue?: string): string {
   const meta = findSystemConfigMeta(configKey);
   if (meta?.type === "boolean") {

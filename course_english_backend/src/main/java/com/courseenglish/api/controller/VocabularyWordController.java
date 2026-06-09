@@ -3,6 +3,7 @@ package com.courseenglish.api.controller;
 import com.courseenglish.api.domain.request.ReqCreateVocabularyWordDTO;
 import com.courseenglish.api.domain.request.ReqLookupVocabularyWordDTO;
 import com.courseenglish.api.domain.request.ReqSearchVocabularyWordDTO;
+import com.courseenglish.api.domain.request.ReqUpdateVocabularyWordDTO;
 import com.courseenglish.api.domain.response.ResVocabularyWordDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.service.VocabularyWordService;
@@ -42,6 +43,14 @@ public class VocabularyWordController {
     public ResponseEntity<ResVocabularyWordDTO> create(@Valid @RequestBody ReqCreateVocabularyWordDTO request)
             throws IdInvalidException {
         return ResponseEntity.status(HttpStatus.CREATED).body(vocabularyWordService.create(request));
+    }
+
+    @PutMapping("/{id}")
+    @ApiMessage("Update vocabulary word meaning")
+    public ResponseEntity<ResVocabularyWordDTO> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReqUpdateVocabularyWordDTO request) throws IdInvalidException {
+        return ResponseEntity.ok(vocabularyWordService.update(id, request));
     }
 
     @PostMapping("/lookup")

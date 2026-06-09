@@ -1,3 +1,4 @@
+import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
@@ -30,10 +31,13 @@ import {
   createDefaultVocabularyPayload,
 } from "../../../shared/lesson/vocabularyPayload";
 import {
+  generateListenChooseFromVocabItems,
   generateMatchingFromVocabItems,
   generateMcqFromVocabItems,
 } from "../../../shared/lesson/vocabActivityGenerator";
 import type { VocabularyItemRecord } from "../../../shared/api/vocabularySet";
+import { vocabularyAudioAccentListenLabel } from "../../../shared/constants/systemConfigKeys";
+import { useFeatureFlags } from "../../../shared/featureFlags/useFeatureFlags";
 
 type VocabAttachToLessonWizardProps = {
   open: boolean;
@@ -56,8 +60,12 @@ export function VocabAttachToLessonWizard({
   onClose,
   onAttached,
 }: VocabAttachToLessonWizardProps) {
+  const { flags } = useFeatureFlags();
+  const listenAudioAccent = flags.vocabularyAudioAccent;
+
   const [includeVocabulary, setIncludeVocabulary] = useState(true);
   const [includeMcq, setIncludeMcq] = useState(true);
+  const [includeListen, setIncludeListen] = useState(false);
   const [includeMatching, setIncludeMatching] = useState(false);
   const [vocabTitle, setVocabTitle] = useState("");
   const [exerciseTitle, setExerciseTitle] = useState("");
@@ -70,6 +78,8 @@ export function VocabAttachToLessonWizard({
         id: item.id,
         wordEn: item.wordEn,
         meaningVi: item.meaningVi,
+        audioUkUrl: item.audioUkUrl,
+        audioUsUrl: item.audioUsUrl,
       })),
     [items],
   );
@@ -100,6 +110,31 @@ export function VocabAttachToLessonWizard({
     }
   }, [includeMcq, includeMatching, vocabInputs, setTitle, exerciseTitle, exerciseBase]);
 
+  const listenGeneration = useMemo(() => {
+    if (!includeListen) return { error: null as string | null, questionCount: 0, payloadJson: "", warnings: [] as string[] };
+    try {
+      const result = generateListenChooseFromVocabItems(vocabInputs, {
+        title: `${exerciseBase} — Nghe chọn`,
+        instruction: "Nghe phát âm và chọn nghĩa tiếng Việt đúng",
+        shuffleOptions: true,
+        audioAccent: listenAudioAccent,
+      });
+      return {
+        error: null,
+        questionCount: result.payload.questions.length,
+        payloadJson: buildExerciseSetPayloadJson(result.payload),
+        warnings: result.warnings,
+      };
+    } catch (err) {
+      return {
+        error: (err as { message?: string })?.message ?? "Không thể sinh bài nghe.",
+        questionCount: 0,
+        payloadJson: "",
+        warnings: [] as string[],
+      };
+    }
+  }, [includeListen, vocabInputs, exerciseBase, listenAudioAccent]);
+
   const matchingGeneration = useMemo(() => {
     if (!includeMatching) return { error: null as string | null, questionCount: 0, payloadJson: "", warnings: [] as string[] };
     try {
@@ -124,7 +159,7 @@ export function VocabAttachToLessonWizard({
   }, [includeMatching, includeMcq, vocabInputs, setTitle, exerciseTitle, exerciseBase]);
 
   const resolvedVocabTitle = vocabTitle.trim() || setTitle;
-  const includeExercise = includeMcq || includeMatching;
+  const includeExercise = includeMcq || includeListen || includeMatching;
 
   const handleAttach = async () => {
     if (!includeVocabulary && !includeExercise) {
@@ -133,6 +168,10 @@ export function VocabAttachToLessonWizard({
     }
     if (includeMcq && mcqGeneration.error) {
       setError(mcqGeneration.error);
+      return;
+    }
+    if (includeListen && listenGeneration.error) {
+      setError(listenGeneration.error);
       return;
     }
     if (includeMatching && matchingGeneration.error) {
@@ -157,6 +196,12 @@ export function VocabAttachToLessonWizard({
           payloadJson: mcqGeneration.payloadJson,
         });
       }
+      if (includeListen && listenGeneration.payloadJson) {
+        await apiCreateLessonBlock(lessonId, {
+          blockType: "EXERCISE_SET",
+          payloadJson: listenGeneration.payloadJson,
+        });
+      }
       if (includeMatching && matchingGeneration.payloadJson) {
         await apiCreateLessonBlock(lessonId, {
           blockType: "EXERCISE_SET",
@@ -172,7 +217,11 @@ export function VocabAttachToLessonWizard({
     }
   };
 
-  const allWarnings = [...(mcqGeneration.warnings ?? []), ...(matchingGeneration.warnings ?? [])];
+  const allWarnings = [
+    ...(mcqGeneration.warnings ?? []),
+    ...(listenGeneration.warnings ?? []),
+    ...(matchingGeneration.warnings ?? []),
+  ];
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: muDialogPaper }}>
@@ -234,6 +283,28 @@ export function VocabAttachToLessonWizard({
           ) : (
             <Alert severity="info" sx={{ fontSize: 13 }}>
               Sẽ sinh <strong>{mcqGeneration.questionCount}</strong> câu MCQ.
+            </Alert>
+          )
+        ) : null}
+
+        <FormControlLabel
+          control={
+            <Checkbox checked={includeListen} onChange={(e) => setIncludeListen(e.target.checked)} />
+          }
+          label={
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <HeadphonesOutlinedIcon sx={{ fontSize: 18, color: "#0C447C" }} />
+              Nghe chọn LISTEN (cần ≥ 4 từ có audio {vocabularyAudioAccentListenLabel(listenAudioAccent)})
+            </Box>
+          }
+        />
+        {includeListen ? (
+          listenGeneration.error ? (
+            <Alert severity="warning">{listenGeneration.error}</Alert>
+          ) : (
+            <Alert severity="info" sx={{ fontSize: 13 }}>
+              Sẽ sinh <strong>{listenGeneration.questionCount}</strong> câu nghe-chọn (audio{" "}
+              {vocabularyAudioAccentListenLabel(listenAudioAccent)} snapshot).
             </Alert>
           )
         ) : null}

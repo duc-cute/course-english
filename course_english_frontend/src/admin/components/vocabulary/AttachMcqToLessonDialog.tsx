@@ -33,6 +33,8 @@ type AttachMcqToLessonDialogProps = {
   payloadJson: string;
   questionCount: number;
   blockTitle: string;
+  /** Nhãn loại câu trong thông báo — mặc định MCQ */
+  questionKindLabel?: string;
   /** Gắn thẳng vào lesson đang soạn — bỏ qua chọn lesson */
   fixedLessonId?: string;
   fixedLessonTitle?: string;
@@ -45,6 +47,7 @@ export function AttachMcqToLessonDialog({
   payloadJson,
   questionCount,
   blockTitle,
+  questionKindLabel = "MCQ",
   fixedLessonId,
   fixedLessonTitle,
   onClose,
@@ -124,7 +127,7 @@ export function AttachMcqToLessonDialog({
       <DialogContent sx={{ display: "grid", gap: 2 }}>
         <Alert severity="info" sx={{ fontSize: 13 }}>
           Sẽ tạo khối <strong>Bài tập (EXERCISE_SET)</strong>: &quot;{blockTitle}&quot; —{" "}
-          <strong>{questionCount}</strong> câu MCQ.
+          <strong>{questionCount}</strong> câu {questionKindLabel}.
         </Alert>
 
         {isFixed ? (

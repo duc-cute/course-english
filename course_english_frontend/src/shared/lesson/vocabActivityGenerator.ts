@@ -1,5 +1,7 @@
+import type { VocabularyAudioAccent } from "../constants/systemConfigKeys";
 import type {
   ExerciseSetPayload,
+  ListenChooseQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
 } from "../../student/lessonPlayer/exercise/types";
@@ -8,6 +10,8 @@ export type VocabItemInput = {
   id?: string;
   wordEn: string;
   meaningVi: string;
+  audioUkUrl?: string;
+  audioUsUrl?: string;
 };
 
 export type McqGenerationOptions = {
@@ -36,9 +40,25 @@ export type MatchingGenerationResult = {
   warnings: string[];
 };
 
+export type ListenChooseGenerationOptions = {
+  title?: string;
+  instruction?: string;
+  shuffleQuestions?: boolean;
+  shuffleOptions?: boolean;
+  passScorePercent?: number;
+  /** Giọng audio snapshot — mặc định UK */
+  audioAccent?: VocabularyAudioAccent;
+};
+
+export type ListenChooseGenerationResult = {
+  payload: ExerciseSetPayload;
+  warnings: string[];
+};
+
 const CHOICE_IDS = ["a", "b", "c", "d"] as const;
 const MIN_ITEMS_FOR_MCQ = 4;
 const MIN_ITEMS_FOR_MATCHING = 2;
+const MIN_ITEMS_FOR_LISTEN = 4;
 const DEFAULT_PAIRS_PER_QUESTION = 8;
 
 function shuffle<T>(items: T[]): T[] {
@@ -220,6 +240,129 @@ export function generateMatchingFromVocabItems(
 
   if (chunks.length > 1) {
     warnings.push(`Bộ từ ${items.length} mục — chia thành ${chunks.length} câu ghép cặp.`);
+  }
+
+  return { payload, warnings };
+}
+
+function pickAudioForItem(
+  item: VocabItemInput,
+  accent: VocabularyAudioAccent,
+): { url: string; accent: "UK" | "US" } | null {
+  const uk = item.audioUkUrl?.trim();
+  const us = item.audioUsUrl?.trim();
+  if (accent === "UK") {
+    return uk ? { url: uk, accent: "UK" } : null;
+  }
+  if (accent === "US") {
+    return us ? { url: us, accent: "US" } : null;
+  }
+  if (uk) return { url: uk, accent: "UK" };
+  if (us) return { url: us, accent: "US" };
+  return null;
+}
+
+export function validateVocabSetForListenChoose(
+  items: VocabItemInput[],
+  audioAccent: VocabularyAudioAccent = "UK",
+): { valid: boolean; errors: string[]; eligible: VocabItemInput[] } {
+  const errors: string[] = [];
+  const eligible = items.filter((item) => {
+    if (!item.wordEn.trim() || !item.meaningVi.trim()) return false;
+    return pickAudioForItem(item, audioAccent) !== null;
+  });
+
+  if (eligible.length < MIN_ITEMS_FOR_LISTEN) {
+    const accentLabel = audioAccent === "US" ? "US" : audioAccent === "BOTH" ? "UK hoặc US" : "UK";
+    errors.push(
+      `Cần ít nhất ${MIN_ITEMS_FOR_LISTEN} từ có audio ${accentLabel} (đã enrich). Hiện có ${eligible.length} từ.`,
+    );
+  }
+
+  const meanings = new Set<string>();
+  for (const item of eligible) {
+    meanings.add(item.meaningVi.trim().toLowerCase());
+  }
+  if (meanings.size < eligible.length) {
+    errors.push("Có nghĩa tiếng Việt trùng nhau — bài nghe có thể có nhiều đáp án đúng.");
+  }
+
+  return { valid: errors.length === 0, errors, eligible };
+}
+
+function createListenChooseForItem(
+  item: VocabItemInput,
+  allItems: VocabItemInput[],
+  index: number,
+  audioAccent: VocabularyAudioAccent,
+): ListenChooseQuestion | null {
+  const audio = pickAudioForItem(item, audioAccent);
+  if (!audio) return null;
+
+  const distractors = shuffle(allItems.filter((x) => normalizeWord(x.wordEn) !== normalizeWord(item.wordEn)))
+    .slice(0, 3)
+    .map((x) => x.meaningVi.trim());
+
+  const choiceTexts = shuffle([item.meaningVi.trim(), ...distractors]);
+  const correctIdx = choiceTexts.indexOf(item.meaningVi.trim());
+  const choices = choiceTexts.map((text, i) => ({
+    id: CHOICE_IDS[i],
+    text,
+  }));
+
+  return {
+    id: item.id ? `vocab-listen-${item.id}` : `vocab-listen-q${index + 1}`,
+    type: "LISTEN_CHOOSE",
+    audioUrl: audio.url,
+    audioAccent: audio.accent,
+    wordEn: item.wordEn.trim(),
+    prompt: { text: "Nghe và chọn nghĩa tiếng Việt đúng", lang: "vi" },
+    choices,
+    correctChoiceId: CHOICE_IDS[correctIdx],
+    explanation: `${item.wordEn.trim()} = ${item.meaningVi.trim()}.`,
+  };
+}
+
+export function generateListenChooseFromVocabItems(
+  items: VocabItemInput[],
+  options: ListenChooseGenerationOptions = {},
+): ListenChooseGenerationResult {
+  const audioAccent = options.audioAccent ?? "UK";
+  const validation = validateVocabSetForListenChoose(items, audioAccent);
+  if (!validation.valid) {
+    throw new Error(validation.errors.join(" "));
+  }
+
+  const warnings: string[] = [];
+  const skipped = items.length - validation.eligible.length;
+  if (skipped > 0) {
+    warnings.push(`${skipped} từ không có audio phù hợp — đã bỏ qua khi sinh bài nghe.`);
+  }
+
+  const normalizedItems = validation.eligible.map((item) => ({
+    ...item,
+    wordEn: item.wordEn.trim(),
+    meaningVi: item.meaningVi.trim(),
+  }));
+
+  const questions = normalizedItems
+    .map((item, index) => createListenChooseForItem(item, normalizedItems, index, audioAccent))
+    .filter((q): q is ListenChooseQuestion => q !== null);
+
+  const shuffledQuestions = options.shuffleQuestions ? shuffle(questions) : questions;
+
+  const payload: ExerciseSetPayload = {
+    title: options.title ?? "Bài nghe — chọn nghĩa",
+    instruction: options.instruction ?? "Nghe phát âm và chọn nghĩa tiếng Việt đúng",
+    presentation: "stepped",
+    shuffleQuestions: options.shuffleQuestions ?? false,
+    shuffleOptions: options.shuffleOptions ?? true,
+    passScorePercent: options.passScorePercent ?? 80,
+    questions: shuffledQuestions,
+  };
+
+  if (normalizedItems.length < 6) {
+    warnings.push("Bộ từ ít — đáp án nhiễu sẽ lặp lại giữa các câu.");
   }
 
   return { payload, warnings };

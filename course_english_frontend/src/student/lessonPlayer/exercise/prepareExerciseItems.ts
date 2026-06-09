@@ -5,7 +5,12 @@ import { shuffleArray, reorderChoicesByIds } from "./exerciseShuffle";
 import type { FlatExerciseItem } from "./flattenExerciseBlocks";
 import { flattenExerciseBlocks } from "./flattenExerciseBlocks";
 import { sameStringSet } from "./matchingUtils";
-import type { ExerciseQuestion, MatchingQuestion, MultipleChoiceQuestion } from "./types";
+import type {
+  ExerciseQuestion,
+  ListenChooseQuestion,
+  MatchingQuestion,
+  MultipleChoiceQuestion,
+} from "./types";
 
 export type BlockExerciseSettings = {
   shuffleQuestions: boolean;
@@ -44,11 +49,13 @@ export function readBlockExerciseSettings(block: LessonBlockRecord): BlockExerci
   return { shuffleQuestions: false, shuffleOptions: true, passScorePercent: 80 };
 }
 
+type ChoiceShuffleQuestion = MultipleChoiceQuestion | ListenChooseQuestion;
+
 function applyMcqShuffle(
-  question: MultipleChoiceQuestion,
+  question: ChoiceShuffleQuestion,
   shuffleOptions: boolean,
   savedChoiceOrder?: string[],
-): { display: MultipleChoiceQuestion; choiceOrder: string[] } {
+): { display: ChoiceShuffleQuestion; choiceOrder: string[] } {
   const defaultOrder = question.choices.map((c) => c.id);
 
   if (!shuffleOptions) {
@@ -97,7 +104,7 @@ function applyQuestionDisplay(
   shuffleOptions: boolean,
   savedChoiceOrder?: string[],
 ): { display: ExerciseQuestion; choiceOrder: string[] } {
-  if (question.type === "MULTIPLE_CHOICE") {
+  if (question.type === "MULTIPLE_CHOICE" || question.type === "LISTEN_CHOOSE") {
     return applyMcqShuffle(question, shuffleOptions, savedChoiceOrder);
   }
   if (question.type === "MATCHING") {

@@ -59,6 +59,11 @@ export async function apiCreateVocabularyWord(data: { wordEn: string; meaningVi:
   return unwrapResponse(response);
 }
 
+export async function apiUpdateVocabularyWord(id: string, data: { meaningVi: string }) {
+  const response = (await api.put(`/vocabulary-words/${id}`, data)) as ApiResponse<VocabularyWordRecord>;
+  return unwrapResponse(response);
+}
+
 export async function apiLookupVocabularyWord(wordEn: string): Promise<VocabularyWordRecord | null> {
   const trimmed = wordEn.trim();
   if (!trimmed) return null;

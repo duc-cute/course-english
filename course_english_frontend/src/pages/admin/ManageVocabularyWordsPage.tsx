@@ -29,7 +29,6 @@ import {
   muFooterBtnPrimary,
   muPageShell,
   muPageTitle,
-  muRequired,
   muTextFieldSx,
 } from "./manageUserUiStyles";
 import {
@@ -37,6 +36,7 @@ import {
   apiEnrichVocabularyWord,
   apiGetVocabularyWordById,
   apiSearchVocabularyWords,
+  apiUpdateVocabularyWord,
   type VocabularyWordRecord,
   type VocabularyWordsPaginationResult,
 } from "../../shared/api/vocabularyWord";
@@ -140,6 +140,31 @@ export function ManageVocabularyWordsPage() {
     }
   };
 
+  const submitUpdate = async () => {
+    if (!editing?.id) return;
+    if (!meaningVi.trim()) {
+      setFormError("Nghĩa tiếng Việt không được để trống.");
+      return;
+    }
+    setSubmitting(true);
+    setFormError("");
+    try {
+      const response = (await apiUpdateVocabularyWord(editing.id, {
+        meaningVi: meaningVi.trim(),
+      })) as ApiResponse<VocabularyWordRecord>;
+      const detail = response?.result ?? response?.data;
+      if (detail) {
+        setEditing(detail);
+        setMeaningVi(detail.meaningVi ?? "");
+      }
+      await fetchData();
+    } catch (err) {
+      setFormError((err as { message?: string })?.message || "Không thể cập nhật nghĩa.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const enrichWord = async (force = false) => {
     if (!editing?.id) return;
     setSubmitting(true);
@@ -196,7 +221,7 @@ export function ManageVocabularyWordsPage() {
             py: 0.75,
             borderBottom: "1px solid #D3D1C7",
             display: "grid",
-            gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 72px 56px",
+            gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 56px",
             columnGap: 1,
             fontSize: 12,
             fontWeight: 700,
@@ -208,7 +233,7 @@ export function ManageVocabularyWordsPage() {
           <Box>Nghĩa (VI)</Box>
           <Box>IPA</Box>
           <Box>Audio</Box>
-          <Box>POS</Box>
+          {/* <Box>POS</Box> */}
           <Box sx={{ textAlign: "center" }} />
         </Box>
 
@@ -228,7 +253,7 @@ export function ManageVocabularyWordsPage() {
                 py: 0.75,
                 borderBottom: "1px solid #ECEAE3",
                 display: "grid",
-                gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 72px 56px",
+                gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 56px",
                 columnGap: 1,
                 alignItems: "center",
                 fontSize: 13,
@@ -245,7 +270,7 @@ export function ManageVocabularyWordsPage() {
                   <Chip size="small" label="—" variant="outlined" sx={{ height: 20, fontSize: 10 }} />
                 )}
               </Box>
-              <Box sx={{ fontSize: 11, color: "#5F5E5A" }}>{row.partOfSpeech ?? "—"}</Box>
+              {/* <Box sx={{ fontSize: 11, color: "#5F5E5A" }}>{row.partOfSpeech ?? "—"}</Box> */}
               <Box sx={{ display: "flex", justifyContent: "center" }}>
                 <Tooltip title="Chi tiết / Enrich">
                   <IconButton size="small" color="primary" onClick={() => void openDetail(row)}>
@@ -304,70 +329,65 @@ export function ManageVocabularyWordsPage() {
         <DialogTitle sx={{ fontWeight: 700, fontSize: 18 }}>
           {editing?.id ? `Từ: ${editing.wordEn}` : "Thêm từ vào thư viện"}
         </DialogTitle>
-        <DialogContent sx={{ display: "grid", gap: 2, pt: 1 }}>
-          {formError ? (
-            <Alert severity="error" sx={{ fontSize: 13 }}>
-              {formError}
-            </Alert>
-          ) : null}
+        <DialogContent>
+          <Box sx={{ pt: 1, display: "grid", rowGap: 1.5 }}>
+            {formError ? (
+              <Alert severity="error" sx={{ fontSize: 13 }}>
+                {formError}
+              </Alert>
+            ) : null}
 
-          {editing?.id ? (
-            <>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "text.secondary" }}>Phiên âm (IPA)</Typography>
-                <Typography sx={{ fontWeight: 500 }}>{editing.phonetic ?? "—"}</Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 0.5 }}>
-                  Phát âm
-                </Typography>
-                <VocabularyAudioPreview audioUkUrl={editing.audioUkUrl} audioUsUrl={editing.audioUsUrl} />
-              </Box>
-              {editing.enrichedAt ? (
-                <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
-                  Enriched: {new Date(editing.enrichedAt).toLocaleString("vi-VN")}
-                  {editing.enrichSource ? ` · ${editing.enrichSource}` : ""}
-                </Typography>
-              ) : null}
-              <TextField
-                label="Nghĩa tiếng Việt"
-                value={meaningVi}
-                onChange={(e) => setMeaningVi(e.target.value)}
-                fullWidth
-                size="small"
-                disabled
-                sx={muTextFieldSx}
-                helperText="Sửa nghĩa qua bộ từ hoặc API sau (MVP chỉ xem)"
-              />
-            </>
-          ) : (
-            <>
-              <TextField
-                label={
-                  <>
-                    Từ tiếng Anh <Box component="span" sx={muRequired}>*</Box>
-                  </>
-                }
-                value={wordEn}
-                onChange={(e) => setWordEn(e.target.value)}
-                fullWidth
-                size="small"
-                sx={muTextFieldSx}
-              />
-              <TextField
-                label={
-                  <>
-                    Nghĩa tiếng Việt <Box component="span" sx={muRequired}>*</Box>
-                  </>
-                }
-                value={meaningVi}
-                onChange={(e) => setMeaningVi(e.target.value)}
-                fullWidth
-                size="small"
-                sx={muTextFieldSx}
-              />
-            </>
-          )}
+            {editing?.id ? (
+              <>
+                <Box>
+                  <Typography sx={{ fontSize: 12, color: "text.secondary" }}>Phiên âm (IPA)</Typography>
+                  <Typography sx={{ fontWeight: 500 }}>{editing.phonetic ?? "—"}</Typography>
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 0.5 }}>
+                    Phát âm
+                  </Typography>
+                  <VocabularyAudioPreview audioUkUrl={editing.audioUkUrl} audioUsUrl={editing.audioUsUrl} />
+                </Box>
+                {editing.enrichedAt ? (
+                  <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
+                    Enriched: {new Date(editing.enrichedAt).toLocaleString("vi-VN")}
+                    {editing.enrichSource ? ` · ${editing.enrichSource}` : ""}
+                  </Typography>
+                ) : null}
+                <TextField
+                  label="Nghĩa tiếng Việt"
+                  value={meaningVi}
+                  onChange={(e) => setMeaningVi(e.target.value)}
+                  fullWidth
+                  size="small"
+                  required
+                  sx={muTextFieldSx}
+                />
+              </>
+            ) : (
+              <>
+                <TextField
+                  label="Từ tiếng Anh"
+                  value={wordEn}
+                  onChange={(e) => setWordEn(e.target.value)}
+                  fullWidth
+                  size="small"
+                  required
+                  sx={muTextFieldSx}
+                />
+                <TextField
+                  label="Nghĩa tiếng Việt"
+                  value={meaningVi}
+                  onChange={(e) => setMeaningVi(e.target.value)}
+                  fullWidth
+                  size="small"
+                  required
+                  sx={muTextFieldSx}
+                />
+              </>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions sx={muDialogFooter}>
           <Button
@@ -380,15 +400,25 @@ export function ManageVocabularyWordsPage() {
             Đóng
           </Button>
           {editing?.id ? (
-            <Button
-              variant="outlined"
-              startIcon={<AutoFixHighOutlinedIcon />}
-              onClick={() => void enrichWord(true)}
-              disabled={submitting}
-              sx={muFooterBtnOutlined}
-            >
-              Enrich lại
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<AutoFixHighOutlinedIcon />}
+                onClick={() => void enrichWord(true)}
+                disabled={submitting}
+                sx={muFooterBtnOutlined}
+              >
+                Enrich lại
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => void submitUpdate()}
+                disabled={submitting}
+                sx={muFooterBtnPrimary}
+              >
+                {submitting ? "Đang lưu…" : "Lưu nghĩa"}
+              </Button>
+            </>
           ) : (
             <Button
               variant="contained"

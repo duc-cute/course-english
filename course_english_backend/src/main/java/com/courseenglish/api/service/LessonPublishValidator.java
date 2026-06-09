@@ -97,7 +97,7 @@ public class LessonPublishValidator {
         int validQuestions = countValidExerciseQuestions(block.getPayloadJson());
         if (validQuestions == 0) {
             errors.add(blockMessage(index, "EXERCISE_SET",
-                    "chưa có câu hỏi hợp lệ (cần ít nhất 1 câu MCQ hoặc ghép cặp)"));
+                    "chưa có câu hỏi hợp lệ (cần ít nhất 1 câu MCQ, nghe chọn hoặc ghép cặp)"));
         }
     }
 
@@ -237,6 +237,9 @@ public class LessonPublishValidator {
         if ("MULTIPLE_CHOICE".equals(type)) {
             return isValidMcq(question);
         }
+        if ("LISTEN_CHOOSE".equals(type)) {
+            return isValidListenChoose(question);
+        }
         if ("MATCHING".equals(type)) {
             return isValidMatching(question);
         }
@@ -290,6 +293,19 @@ public class LessonPublishValidator {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    private boolean isValidListenChoose(JsonNode question) {
+        String audioUrl = question.path("audioUrl").asText("");
+        if (audioUrl.isBlank()) {
+            return false;
+        }
+        JsonNode choices = question.get("choices");
+        if (choices == null || !choices.isArray() || choices.isEmpty()) {
+            return false;
+        }
+        String correctChoiceId = question.path("correctChoiceId").asText("");
+        return !correctChoiceId.isBlank();
     }
 
     private boolean isValidMatching(JsonNode question) {
