@@ -1,5 +1,6 @@
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import {
@@ -15,16 +16,23 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContinueLearningCard } from "../../student/components/ContinueLearningCard";
-import type { LessonProgressEntry } from "../../student/lessonProgressStorage";
+import { PracticeAttemptBanner } from "../../student/lessonPlayer/exercise/PracticeAttemptBanner";
+import {
+  getAllLessonProgress,
+  type LessonProgressEntry,
+} from "../../student/lessonProgressStorage";
 import { resolveContinueLearning } from "../../student/lessonProgressSync";
 import { apiGetLessons, type LessonRecord, type LessonsPaginationResult } from "../../shared/api/lesson";
 import {
+  apiGetLatestLessonPracticeAttempt,
   apiGetLessonPracticeSummary,
   isPracticePassed,
+  type LessonPracticeAttemptBrief,
   type LessonPracticeSummaryItem,
 } from "../../shared/api/lessonPracticeAttempt";
 import type { ApiResponse } from "../../shared/api/types";
 import { paths } from "../../shared/constants/paths";
+import { studentLessonPath } from "../../shared/lesson/lessonPaths";
 import "../../styles/student-lessons.css";
 
 export function StudentLessonListPage() {
@@ -38,10 +46,21 @@ export function StudentLessonListPage() {
     {},
   );
   const [continueProgress, setContinueProgress] = useState<LessonProgressEntry | null>(null);
+  const [continuePractice, setContinuePractice] = useState<LessonPracticeAttemptBrief | null>(null);
+  const [localProgress, setLocalProgress] = useState<Record<string, LessonProgressEntry>>({});
 
   useEffect(() => {
+    setLocalProgress(getAllLessonProgress());
     void resolveContinueLearning().then(setContinueProgress);
   }, []);
+
+  useEffect(() => {
+    if (!continueProgress?.lessonId || continueProgress.lastTab !== "practice") {
+      setContinuePractice(null);
+      return;
+    }
+    void apiGetLatestLessonPracticeAttempt(continueProgress.lessonId).then(setContinuePractice);
+  }, [continueProgress?.lessonId, continueProgress?.lastTab]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -86,7 +105,9 @@ export function StudentLessonListPage() {
         Chỉ hiển thị bài đã publish. Mở bài để đọc nội dung và khám phá mô hình 3D.
       </p>
 
-      {continueProgress ? <ContinueLearningCard progress={continueProgress} /> : null}
+      {continueProgress ? (
+        <ContinueLearningCard progress={continueProgress} practiceLatest={continuePractice} />
+      ) : null}
 
       <TextField
         className="student-search-field"
@@ -137,11 +158,14 @@ export function StudentLessonListPage() {
             const summaryItem = practiceSummary[lesson.id];
             const practicePassed = isPracticePassed(summaryItem?.best);
             const latest = summaryItem?.latest;
+            const readPct = Math.round(localProgress[lesson.id]?.scrollPercent ?? 0);
+            const readDone = readPct >= 98;
+            const readInProgress = readPct > 2 && !readDone;
 
             return (
             <article key={lesson.id} className="student-lesson-card">
               <CardActionArea
-                onClick={() => navigate(`/${paths.STUDENT}/${paths.STUDENT_LESSONS}/${lesson.id}`)}
+                onClick={() => navigate(studentLessonPath(lesson))}
                 sx={{ p: 2 }}
               >
                 <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1.5 }}>
@@ -154,6 +178,17 @@ export function StudentLessonListPage() {
                       {lesson.blockCount != null && lesson.blockCount > 0 ? (
                         <Chip className="student-chip-teal" label={`${lesson.blockCount} phần`} size="small" variant="outlined" />
                       ) : null}
+                      {readDone ? (
+                        <Chip className="student-chip-read" label="Đã đọc" size="small" />
+                      ) : readInProgress ? (
+                        <Chip
+                          className="student-chip-read"
+                          icon={<MenuBookOutlinedIcon sx={{ fontSize: "16px !important" }} />}
+                          label={`Đọc ${readPct}%`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : null}
                       {practicePassed ? (
                         <Chip
                           className="student-chip-passed"
@@ -165,12 +200,17 @@ export function StudentLessonListPage() {
                       {!practicePassed && latest ? (
                         <Chip
                           className="student-chip-score"
-                          label={`${latest.scorePercent}%`}
+                          label={`Bài tập ${latest.scorePercent}%`}
                           size="small"
                           variant="outlined"
                         />
                       ) : null}
                     </Box>
+                    {latest ? (
+                      <div className="student-lesson-card-attempt">
+                        <PracticeAttemptBanner latest={latest} compact />
+                      </div>
+                    ) : null}
                     {lesson.summary ? (
                       <Typography className="student-lesson-card-summary" sx={{ mt: 1.25 }}>
                         {lesson.summary}

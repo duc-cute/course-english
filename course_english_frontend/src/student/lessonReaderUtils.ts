@@ -1,5 +1,7 @@
 import type { LessonBlockRecord, LessonBlockType } from "../shared/api/lesson";
 import { parseBlockPayload } from "../shared/api/lesson";
+import { parseCalloutBlockPayload } from "../shared/lesson/calloutPayload";
+import { parseSummaryBlockPayload } from "../shared/lesson/summaryPayload";
 import {
   parseResolvedVocabularyItems,
   parseVocabularyBlockPayload,
@@ -26,6 +28,8 @@ export function getBlockCssModifier(type: LessonBlockType): string {
   if (type === "IMAGE") return "lesson-reader-block--media";
   if (type === "AUDIO" || type === "VIDEO") return "lesson-reader-block--media";
   if (type === "VOCABULARY") return "lesson-reader-block--vocabulary";
+  if (type === "SUMMARY") return "lesson-reader-block--summary";
+  if (type === "CALLOUT") return "lesson-reader-block--callout";
   return "";
 }
 
@@ -38,6 +42,14 @@ export function getBlockTocTitle(block: LessonBlockRecord, index: number): strin
     const payload = parseVocabularyBlockPayload(block.payloadJson);
     if (payload.title?.trim()) return payload.title.trim();
     if (payload.vocabularySetTitle?.trim()) return payload.vocabularySetTitle.trim();
+  }
+  if (block.blockType === "SUMMARY") {
+    const payload = parseSummaryBlockPayload(block.payloadJson);
+    if (payload.title?.trim()) return payload.title.trim();
+  }
+  if (block.blockType === "CALLOUT") {
+    const payload = parseCalloutBlockPayload(block.payloadJson);
+    if (payload.title?.trim()) return payload.title.trim();
   }
   if (block.blockType === "TEXT") {
     const payload = parseBlockPayload<{ html?: string }>(block.payloadJson);
@@ -74,10 +86,19 @@ export function estimateReadingMinutes(blocks: LessonBlockRecord[]): number {
       vocabItems += parseResolvedVocabularyItems(block.resolvedVocabularyJson).length;
       continue;
     }
-    if (block.blockType !== "TEXT") continue;
-    const payload = parseBlockPayload<{ html?: string }>(block.payloadJson);
-    const text = (payload.html ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-    words += text ? text.split(" ").length : 0;
+    if (block.blockType === "SUMMARY") {
+      words += parseSummaryBlockPayload(block.payloadJson).items.join(" ").split(" ").length;
+      continue;
+    }
+    if (block.blockType === "CALLOUT" || block.blockType === "TEXT") {
+      const html =
+        block.blockType === "CALLOUT"
+          ? parseCalloutBlockPayload(block.payloadJson).html
+          : parseBlockPayload<{ html?: string }>(block.payloadJson).html ?? "";
+      const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      words += text ? text.split(" ").length : 0;
+      continue;
+    }
   }
   if (words === 0 && vocabItems === 0) return 1;
   const fromText = words > 0 ? Math.ceil(words / 180) : 0;

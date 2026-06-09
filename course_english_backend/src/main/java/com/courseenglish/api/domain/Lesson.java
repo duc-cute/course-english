@@ -20,6 +20,10 @@ public class Lesson extends BaseObject {
     @Column(nullable = false)
     private String title;
 
+    @NotBlank(message = "slug is required")
+    @Column(nullable = false, length = 64, unique = true)
+    private String slug;
+
     @Column(columnDefinition = "TEXT")
     private String summary;
 

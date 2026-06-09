@@ -49,6 +49,18 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.getAll(spec, pageable));
     }
 
+    @GetMapping("/by-slug/{slug}")
+    @ApiMessage("Fetch lesson by slug")
+    public ResponseEntity<ResLessonDTO> getBySlug(@PathVariable String slug) throws IdInvalidException {
+        return ResponseEntity.ok(lessonService.getBySlug(slug));
+    }
+
+    @GetMapping("/by-slug/{slug}/detail")
+    @ApiMessage("Fetch lesson detail by slug")
+    public ResponseEntity<ResLessonDetailDTO> getDetailBySlug(@PathVariable String slug) throws IdInvalidException {
+        return ResponseEntity.ok(lessonService.getDetailBySlug(slug));
+    }
+
     @GetMapping("/{id}")
     @ApiMessage("Fetch lesson by id")
     public ResponseEntity<ResLessonDTO> getById(@PathVariable UUID id) throws IdInvalidException {

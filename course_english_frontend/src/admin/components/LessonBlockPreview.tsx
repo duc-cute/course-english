@@ -3,6 +3,8 @@ import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/less
 import { parseBlockPayload } from "../../shared/api/lesson";
 import { parseExerciseSetPayload } from "../../student/lessonPlayer/exercise/parseExerciseSet";
 import { parseQuestionRefPayload, parseResolvedQuestions } from "../../student/lessonPlayer/exercise/parseQuestionRef";
+import { isCalloutHtmlEmpty, parseCalloutBlockPayload } from "../../shared/lesson/calloutPayload";
+import { parseSummaryBlockPayload } from "../../shared/lesson/summaryPayload";
 import {
   parseResolvedVocabularyItems,
   parseVocabularyBlockPayload,
@@ -108,6 +110,42 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
           {payload.presentation === "flashcard" ? "Flashcard · " : "Danh sách · "}
           {items.length > 0 ? `${items.length} từ` : "Chưa resolve (publish bộ từ?)"}
           {previewWords ? ` · ${previewWords}${items.length > 3 ? "…" : ""}` : ""}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (block.blockType === "SUMMARY") {
+    const payload = parseSummaryBlockPayload(block.payloadJson);
+    const previewItems = payload.items.slice(0, 3);
+    return (
+      <Box>
+        <Typography sx={{ fontSize: 13, color: "#333" }}>
+          <strong>{payload.title || "Tóm tắt"}</strong>
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: "#5F5E5A", mt: 0.25 }}>
+          {payload.items.length} ý
+          {previewItems.length ? ` · ${previewItems.join(" · ")}${payload.items.length > 3 ? "…" : ""}` : ""}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (block.blockType === "CALLOUT") {
+    const payload = parseCalloutBlockPayload(block.payloadJson);
+    const plain = (payload.html ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return (
+      <Box>
+        <Typography sx={{ fontSize: 13, color: "#333" }}>
+          <strong>{payload.variant === "warning" ? "Chú ý" : payload.variant === "definition" ? "Định nghĩa" : "Mẹo"}</strong>
+          {payload.title ? ` — ${payload.title}` : ""}
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: "#5F5E5A", mt: 0.25, fontStyle: "italic" }}>
+          {isCalloutHtmlEmpty(payload.html)
+            ? "Chưa có nội dung."
+            : plain.length > 120
+              ? `${plain.slice(0, 120)}…`
+              : plain}
         </Typography>
       </Box>
     );

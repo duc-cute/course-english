@@ -420,7 +420,6 @@ export function ExercisePlayer({
       <ExerciseResultScreen
         lessonTitle={lessonTitle}
         subjectName={subjectName}
-        practiceBlocks={practiceBlocks}
         correctCount={correctCount}
         total={total}
         passScorePercent={passScorePercent}

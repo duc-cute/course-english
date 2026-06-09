@@ -19,6 +19,7 @@ export type LessonAssetType = "IMAGE" | "FILE" | "VIDEO" | "LINK";
 export type LessonRecord = {
   id: string;
   title: string;
+  slug: string;
   summary?: string;
   status?: LessonStatus;
   displayOrder?: number;
@@ -95,6 +96,11 @@ export async function apiGetLessonById(id: string) {
 
 export async function apiGetLessonDetail(id: string) {
   const response = (await api.get(`/lessons/${id}/detail`)) as ApiResponse<LessonDetailRecord>;
+  return unwrapResponse(response);
+}
+
+export async function apiGetLessonDetailBySlug(slug: string) {
+  const response = (await api.get(`/lessons/by-slug/${encodeURIComponent(slug)}/detail`)) as ApiResponse<LessonDetailRecord>;
   return unwrapResponse(response);
 }
 

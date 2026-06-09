@@ -4,6 +4,7 @@ const STORAGE_KEY = "course-english.lessonProgress.v1";
 
 export type LessonProgressEntry = {
   lessonId: string;
+  lessonSlug?: string;
   lessonTitle: string;
   subjectName?: string;
   lastBlockId: string;
@@ -49,4 +50,8 @@ export function getContinueLearning(): LessonProgressEntry | null {
   const store = readStore();
   if (!store.lastActiveLessonId) return null;
   return store.lessons[store.lastActiveLessonId] ?? null;
+}
+
+export function getAllLessonProgress(): Record<string, LessonProgressEntry> {
+  return { ...readStore().lessons };
 }

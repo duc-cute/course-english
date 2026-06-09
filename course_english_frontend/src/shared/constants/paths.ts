@@ -4,7 +4,7 @@ export const paths = {
   ADMIN: "admin",
   STUDENT: "student",
   STUDENT_LESSONS: "lessons",
-  STUDENT_LESSON_READ: "lessons/:lessonId",
+  STUDENT_LESSON_READ: "lessons/:lessonSlug",
   MANAGE_USER: "manage-user",
   MANAGE_ROLE: "manage-role",
   MANAGE_CLASSROOM: "manage-classroom",

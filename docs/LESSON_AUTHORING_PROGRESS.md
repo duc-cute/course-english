@@ -1,6 +1,6 @@
 # Tiến độ Lesson Authoring
 
-> Cập nhật: **2026-06-06**  
+> Cập nhật: **2026-06-08**  
 > Tham chiếu kiến trúc: [`promt.md`](../promt.md)  
 > Làm **lần lượt** — không nhảy phase.
 
@@ -33,15 +33,17 @@
 
 ### Gap còn lại (sửa song song hoặc sau)
 
-- [ ] CALLOUT, SUMMARY, VIDEO, AUDIO — editor + reader
+- [x] CALLOUT, SUMMARY — editor + reader tab Bài học
+- [ ] VIDEO, AUDIO — editor + reader (cần asset pipeline)
 - [x] `shuffleQuestions`, `shuffleOptions`, `passScorePercent` trong player
 - [x] MATCHING question UI (student) + Admin editor ghép cặp
 - [x] MATCHING generator từ bộ từ (`vocabActivityGenerator`)
 - [x] VOCABULARY flashcard (`presentation: flashcard`)
-- [ ] Progress/attempt API (hiện chỉ `localStorage` — đã lưu đáp án, thời gian, hoàn thành)
-- [x] **Practice attempt API** — POST + GET latest/best/list (`005_lesson_practice_attempts.sql`)
+- [x] **Practice attempt API** — POST + GET latest/best/summary (`005_lesson_practice_attempts.sql`)
 - [x] Reading progress server (`lesson_reading_progress`) — `006_lesson_reading_progress.sql`, xem `LESSON_READING_PROGRESS.md`
-- [ ] Publish validation (BE)
+- [x] **Publish validation (BE)** — chặn publish lesson thiếu block / bank trống (`LessonPublishValidator`)
+- [x] **URL slug học sinh** — `/student/lessons/{slug}` + migration `007_lesson_slug.sql`
+- [x] **Badge tiến độ HS** — chip Đã đọc / Đã đạt + banner "Lần trước" trên danh sách bài
 
 ---
 
@@ -419,16 +421,53 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 ### Ưu tiên B — Progress server ✅ (practice attempt MVP)
 
 1. [x] BE: bảng `lesson_practice_attempts` + `answers_snapshot_json`
-2. [x] API POST + GET latest/best/list
+2. [x] API POST + GET latest/best/summary
 3. [x] FE: POST khi nộp bài (`ExercisePlayer`), chống duplicate F5
 4. [x] Reading progress sync (`lesson_reading_progress`)
-5. [ ] Badge ✓ danh sách bài + banner "Lần trước: X%"
+5. [x] Badge ✓ danh sách bài + banner "Lần trước: X%" (`StudentLessonListPage`, `ContinueLearningCard`, `PracticeAttemptBanner`)
 
 > Chi tiết + **test cases**: [`docs/LESSON_PRACTICE_ATTEMPT.md`](./LESSON_PRACTICE_ATTEMPT.md)
 
-### Ưu tiên C — Block types còn thiếu
+### Ưu tiên B.1 — Cứng hóa MVP ✅ (2026-06-08)
 
-- [ ] CALLOUT, SUMMARY — editor + reader tab Bài học
+1. [x] **Publish validation** — `LessonPublishValidator` gọi trước `POST /lessons/{id}/publish`
+   - Bài phải có ≥ 1 khối
+   - `QUESTION_REF`: `refs[]` không rỗng, mọi câu PUBLISHED trong bank
+   - `EXERCISE_SET`: ≥ 1 câu MCQ/MATCHING hợp lệ
+   - `VOCABULARY`: bộ từ tồn tại, PUBLISHED, có mục từ
+2. [x] **URL slug** — migration `007`, API `by-slug/{slug}/detail`, FE `studentLessonPath()`
+3. [x] **Badge tiến độ** — chip Đọc X% / Đã đọc / Đã đạt + banner lần trước trên list
+
+### Ưu tiên C — Block types đọc bài ✅ (CALLOUT + SUMMARY, 2026-06-08)
+
+**Mục tiêu:** Tab Bài học phong phú hơn TEXT/IMAGE/VOCABULARY.
+
+#### Payload
+
+| Block | JSON |
+|-------|------|
+| `SUMMARY` | `{ "title?", "items": string[] }` |
+| `CALLOUT` | `{ "variant": "tip"\|"warning"\|"definition", "title?", "html" }` |
+
+#### Checklist
+
+- [x] `summaryPayload.ts`, `calloutPayload.ts` — parse/build/validate
+- [x] Admin: `SummaryBlockEditor`, `CalloutBlockEditor` + menu "+ Thêm khối"
+- [x] Admin preview (`LessonBlockPreview`)
+- [x] HS: `SummaryBlock`, `CalloutBlock` + CSS (`lesson-reader.css`)
+- [x] TOC / ước lượng đọc (`lessonReaderUtils`)
+- [x] Publish validation: SUMMARY ≥ 1 item, CALLOUT có html
+
+#### File deliverable
+
+| Vai trò | Đường dẫn |
+|---------|-----------|
+| Payload | `shared/lesson/summaryPayload.ts`, `calloutPayload.ts` |
+| Admin editor | `admin/components/SummaryBlockEditor.tsx`, `CalloutBlockEditor.tsx` |
+| HS reader | `student/lessonPlayer/study/SummaryBlock.tsx`, `CalloutBlock.tsx` |
+
+### Ưu tiên D — Block types còn thiếu
+
 - [ ] VIDEO, AUDIO — cần asset pipeline (upload + player)
 
 ### E2E manual (nên chạy trước khi làm B)
@@ -452,7 +491,7 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 - [ ] Mascot asset local (thay URL Google tạm)
 - [ ] Audio phát âm từ vựng (`audio_asset_id`)
 - [ ] `POST /questions/import` API batch (bank)
-- [ ] Publish validation (BE) — chặn lesson thiếu block / bộ từ trống
+- [x] Publish validation (BE) — `LessonPublishValidator.java`
 
 ### Lệnh DB nhanh (demo)
 
@@ -474,4 +513,9 @@ mysql -u … -p … < course_english_backend/seed_vocabulary_set_demo.sql
 
 ---
 
-**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · Phase 3 ✅ · **Practice attempt API ✅** · **Reading progress sync ✅** · Tiếp theo: CALLOUT/SUMMARY blocks / E2E manual
+| 2026-06-08 | Cứng hóa MVP | Publish validation, lesson slug URL, badge tiến độ HS |
+| 2026-06-08 | CALLOUT + SUMMARY | Editor admin, reader HS, publish validation |
+
+---
+
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · Phase 3 ✅ · Progress server ✅ · Cứng hóa MVP ✅ · CALLOUT/SUMMARY ✅ · **Tiếp theo: VIDEO/AUDIO · E2E manual · Enrollment filter**

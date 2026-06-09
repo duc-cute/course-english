@@ -170,6 +170,37 @@
   color: var(--eng-teal-dark, #0f766e) !important;
 }
 
+.student-chip-read {
+  height: 22px !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+}
+
+.student-chip-read .MuiChip-icon {
+  color: #2563eb !important;
+}
+
+.student-lesson-card-attempt {
+  margin-top: 10px;
+}
+
+.student-lesson-card-attempt .practice-attempt-banner {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+}
+
+.student-continue-practice-banner {
+  margin-bottom: 12px;
+}
+
+.student-continue-practice-banner .practice-attempt-banner {
+  margin: 0;
+}
+
 .student-chip-purple {
   height: 22px !important;
   font-size: 0.6875rem !important;

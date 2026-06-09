@@ -11,4 +11,10 @@ import java.util.UUID;
 @Repository
 public interface LessonRepository extends JpaRepository<Lesson, UUID>, JpaSpecificationExecutor<Lesson> {
     Optional<Lesson> findByIdAndVoidedFalse(UUID id);
+
+    Optional<Lesson> findBySlugAndVoidedFalse(String slug);
+
+    boolean existsBySlugAndVoidedFalse(String slug);
+
+    boolean existsBySlugAndVoidedFalseAndIdNot(String slug, UUID id);
 }

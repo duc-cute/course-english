@@ -1,15 +1,15 @@
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { Button, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
-import { paths } from "../../shared/constants/paths";
 import type { LessonRecord } from "../../shared/api/lesson";
+import { studentLessonPath } from "../../shared/lesson/lessonPaths";
 
 type LessonReaderUpNextProps = {
   nextLesson: LessonRecord;
 };
 
 export function LessonReaderUpNext({ nextLesson }: LessonReaderUpNextProps) {
-  const href = `/${paths.STUDENT}/${paths.STUDENT_LESSONS}/${nextLesson.id}`;
+  const href = studentLessonPath(nextLesson);
 
   return (
     <footer className="lesson-reader-up-next">

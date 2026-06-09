@@ -37,6 +37,14 @@ import {
   buildQuestionRefPayloadJson,
   createDefaultQuestionRefPayload,
 } from "../../shared/lesson/questionRefPayload";
+import {
+  buildCalloutPayloadJson,
+  createDefaultCalloutPayload,
+} from "../../shared/lesson/calloutPayload";
+import {
+  buildSummaryPayloadJson,
+  createDefaultSummaryPayload,
+} from "../../shared/lesson/summaryPayload";
 import { buildVocabularyPayloadJson } from "../../shared/lesson/vocabularyPayload";
 import {
   apiCreateLessonBlock,
@@ -69,6 +77,8 @@ import {
 const BLOCK_TYPE_OPTIONS: { value: LessonBlockType; label: string }[] = [
   { value: "TEXT", label: "Đoạn văn" },
   { value: "IMAGE", label: "Ảnh minh họa" },
+  { value: "CALLOUT", label: "Ghi chú (mẹo / cảnh báo)" },
+  { value: "SUMMARY", label: "Tóm tắt cuối bài" },
   { value: "VOCABULARY", label: "Từ vựng (cần chọn bộ từ sau)" },
   { value: "EXERCISE_SET", label: "Bài tập (soạn / import)" },
   { value: "QUESTION_REF", label: "Bài tập (ngân hàng câu)" },
@@ -159,6 +169,10 @@ export function LessonEditorPage() {
           presentation: "list",
           showPhonetic: true,
         });
+      case "SUMMARY":
+        return buildSummaryPayloadJson(createDefaultSummaryPayload());
+      case "CALLOUT":
+        return buildCalloutPayloadJson(createDefaultCalloutPayload());
       default:
         return "{}";
     }

@@ -63,7 +63,7 @@ export const appRouter = createBrowserRouter([
         element: <StudentLessonListPage />,
       },
       {
-        path: `${paths.STUDENT_LESSONS}/:lessonId`,
+        path: paths.STUDENT_LESSON_READ,
         element: <LessonReaderPage />,
       },
       {

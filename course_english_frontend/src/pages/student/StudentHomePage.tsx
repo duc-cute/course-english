@@ -3,6 +3,7 @@ import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import { Box, Button, CardContent, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { apiGetLatestLessonPracticeAttempt, type LessonPracticeAttemptBrief } from "../../shared/api/lessonPracticeAttempt";
 import { ContinueLearningCard } from "../../student/components/ContinueLearningCard";
 import { resolveContinueLearning } from "../../student/lessonProgressSync";
 import type { LessonProgressEntry } from "../../student/lessonProgressStorage";
@@ -11,10 +12,19 @@ import "../../styles/student-lessons.css";
 
 export function StudentHomePage() {
   const [continueProgress, setContinueProgress] = useState<LessonProgressEntry | null>(null);
+  const [continuePractice, setContinuePractice] = useState<LessonPracticeAttemptBrief | null>(null);
 
   useEffect(() => {
     void resolveContinueLearning().then(setContinueProgress);
   }, []);
+
+  useEffect(() => {
+    if (!continueProgress?.lessonId || continueProgress.lastTab !== "practice") {
+      setContinuePractice(null);
+      return;
+    }
+    void apiGetLatestLessonPracticeAttempt(continueProgress.lessonId).then(setContinuePractice);
+  }, [continueProgress?.lessonId, continueProgress?.lastTab]);
 
   return (
     <div className="student-page">
@@ -23,7 +33,9 @@ export function StudentHomePage() {
         Course English — học đọc, nghe và làm bài tiếng Anh theo từng chủ đề.
       </p>
 
-      {continueProgress ? <ContinueLearningCard progress={continueProgress} /> : null}
+      {continueProgress ? (
+        <ContinueLearningCard progress={continueProgress} practiceLatest={continuePractice} />
+      ) : null}
 
       <div className="student-home-grid">
         <Box className="student-glass-card student-glass-card--primary">

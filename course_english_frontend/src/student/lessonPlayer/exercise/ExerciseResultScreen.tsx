@@ -8,18 +8,12 @@ import ReplayOutlinedIcon from "@mui/icons-material/ReplayOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import StarOutlinedIcon from "@mui/icons-material/StarOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import type { LessonBlockRecord } from "../../../shared/api/lesson";
 import { ConfettiCelebration } from "./ConfettiCelebration";
-import {
-  buildPracticeSubtitle,
-  buildQuestionRefNote,
-  formatElapsedTime,
-} from "./exerciseResultUtils";
+import { buildPracticeSubtitle, formatElapsedTime } from "./exerciseResultUtils";
 
 type ExerciseResultScreenProps = {
   lessonTitle: string;
   subjectName?: string;
-  practiceBlocks: LessonBlockRecord[];
   correctCount: number;
   total: number;
   passScorePercent: number;
@@ -41,7 +35,6 @@ const TEACHER_FAIL_IMG =
 export function ExerciseResultScreen({
   lessonTitle,
   subjectName,
-  practiceBlocks,
   correctCount,
   total,
   passScorePercent,
@@ -59,8 +52,7 @@ export function ExerciseResultScreen({
   const questionsStillNeeded = Math.max(0, requiredCorrect - correctCount);
   const correctPct = total > 0 ? (correctCount / total) * 100 : 0;
 
-  const subtitle = buildPracticeSubtitle(practiceBlocks, total);
-  const refNote = buildQuestionRefNote(practiceBlocks);
+  const subtitle = buildPracticeSubtitle(total);
 
   return (
     <div className={`exercise-result${passed ? " exercise-result--pass" : " exercise-result--fail"}`}>
@@ -87,8 +79,6 @@ export function ExerciseResultScreen({
             <h2 className="exercise-result-lesson-title">{lessonTitle}</h2>
             {subtitle ? <p className="exercise-result-lesson-sub">{subtitle}</p> : null}
           </div>
-
-          {refNote ? <div className="exercise-result-ref-note">{refNote}</div> : null}
 
           <div className="exercise-result-circle-wrap">
             <div

@@ -78,11 +78,12 @@ INSERT INTO `question_choices` (
 -- Lesson A — QUESTION_REF (3 câu)
 -- -----------------------------------------------------------------------------
 INSERT INTO `lessons` (
-  `id`, `title`, `summary`, `status`, `display_order`, `subject_id`,
+  `id`, `title`, `slug`, `summary`, `status`, `display_order`, `subject_id`,
   `created_at`, `created_by`, `voided`
 ) VALUES (
   'b2000002-0000-4000-8000-000000000010',
   'Bank demo — Lesson A (3 câu)',
+  'bank-demo-lesson-a',
   'QUESTION_REF: apple, book, happy',
   'PUBLISHED', 2, @subject_en, @now, 'seed', 0
 );
@@ -102,11 +103,12 @@ INSERT INTO `lesson_blocks` (
 -- Lesson B — QUESTION_REF (3 câu, overlap apple với Lesson A)
 -- -----------------------------------------------------------------------------
 INSERT INTO `lessons` (
-  `id`, `title`, `summary`, `status`, `display_order`, `subject_id`,
+  `id`, `title`, `slug`, `summary`, `status`, `display_order`, `subject_id`,
   `created_at`, `created_by`, `voided`
 ) VALUES (
   'b2000002-0000-4000-8000-000000000020',
   'Bank demo — Lesson B (3 câu, overlap)',
+  'bank-demo-lesson-b',
   'QUESTION_REF: apple, school, water — sửa apple trong bank → cả A & B đổi',
   'PUBLISHED', 3, @subject_en, @now, 'seed', 0
 );

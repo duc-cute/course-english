@@ -22,11 +22,12 @@ SET @now = NOW(6);
 SET @subject_en = 'a1000004-0000-4000-8000-000000000003';
 
 INSERT INTO `lessons` (
-  `id`, `title`, `summary`, `status`, `display_order`, `subject_id`,
+  `id`, `title`, `slug`, `summary`, `status`, `display_order`, `subject_id`,
   `created_at`, `created_by`, `updated_at`, `updated_by`, `voided`
 ) VALUES (
   'b2000001-0000-4000-8000-000000000010',
   'Từ vựng demo — Daily words',
+  'tu-vung-demo-daily-words',
   'Bài luyện 5 câu chọn đáp án (EXERCISE_SET) cho Lesson Player MVP.',
   'PUBLISHED',
   1,

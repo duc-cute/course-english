@@ -11,8 +11,10 @@ import {
 } from "../../pages/admin/manageUserUiStyles";
 import { LessonImageUpload } from "./LessonImageUpload";
 import { LessonRichTextEditor } from "./LessonRichTextEditor";
+import { CalloutBlockEditor } from "./CalloutBlockEditor";
 import { ExerciseSetEditor } from "./exercise/ExerciseSetEditor";
 import { QuestionRefEditor } from "./question/QuestionRefEditor";
+import { SummaryBlockEditor } from "./SummaryBlockEditor";
 import { VocabularyBlockEditor } from "./vocabulary/VocabularyBlockEditor";
 
 type TextPayload = { html?: string };
@@ -176,6 +178,30 @@ export function LessonBlockEditorPanel({
       <VocabularyBlockEditor
         payloadJson={draft.payloadJson ?? "{}"}
         resolvedVocabularyJson={block.resolvedVocabularyJson}
+        saving={saving}
+        error={error}
+        onSave={saveBlock}
+        onCancel={onCancel}
+      />
+    );
+  }
+
+  if (block.blockType === "SUMMARY") {
+    return (
+      <SummaryBlockEditor
+        payloadJson={draft.payloadJson ?? "{}"}
+        saving={saving}
+        error={error}
+        onSave={saveBlock}
+        onCancel={onCancel}
+      />
+    );
+  }
+
+  if (block.blockType === "CALLOUT") {
+    return (
+      <CalloutBlockEditor
+        payloadJson={draft.payloadJson ?? "{}"}
         saving={saving}
         error={error}
         onSave={saveBlock}

@@ -11,6 +11,7 @@ import java.util.UUID;
 public class ResLessonDTO {
     private UUID id;
     private String title;
+    private String slug;
     private String summary;
     private LessonStatusEnum status;
     private int displayOrder;

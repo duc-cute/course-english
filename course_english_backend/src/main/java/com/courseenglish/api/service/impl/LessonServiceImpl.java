@@ -19,9 +19,11 @@ import com.courseenglish.api.repository.LessonRepository;
 import com.courseenglish.api.repository.SubjectRepository;
 import com.courseenglish.api.service.LessonAssetService;
 import com.courseenglish.api.service.LessonBlockService;
+import com.courseenglish.api.service.LessonPublishValidator;
 import com.courseenglish.api.service.LessonService;
 import com.courseenglish.api.service.QuestionRefResolverService;
 import com.courseenglish.api.service.VocabularyBlockResolverService;
+import com.courseenglish.api.util.LessonSlugUtil;
 import com.courseenglish.api.util.constant.LessonStatusEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 
@@ -35,6 +37,7 @@ public class LessonServiceImpl implements LessonService {
     private final LessonAssetService lessonAssetService;
     private final QuestionRefResolverService questionRefResolverService;
     private final VocabularyBlockResolverService vocabularyBlockResolverService;
+    private final LessonPublishValidator lessonPublishValidator;
 
     public LessonServiceImpl(
             LessonRepository lessonRepository,
@@ -43,7 +46,8 @@ public class LessonServiceImpl implements LessonService {
             LessonBlockService lessonBlockService,
             LessonAssetService lessonAssetService,
             QuestionRefResolverService questionRefResolverService,
-            VocabularyBlockResolverService vocabularyBlockResolverService) {
+            VocabularyBlockResolverService vocabularyBlockResolverService,
+            LessonPublishValidator lessonPublishValidator) {
         this.lessonRepository = lessonRepository;
         this.subjectRepository = subjectRepository;
         this.lessonBlockRepository = lessonBlockRepository;
@@ -51,6 +55,7 @@ public class LessonServiceImpl implements LessonService {
         this.lessonAssetService = lessonAssetService;
         this.questionRefResolverService = questionRefResolverService;
         this.vocabularyBlockResolverService = vocabularyBlockResolverService;
+        this.lessonPublishValidator = lessonPublishValidator;
     }
 
     @Override
@@ -87,15 +92,32 @@ public class LessonServiceImpl implements LessonService {
     public ResLessonDetailDTO getDetail(UUID id) throws IdInvalidException {
         Lesson lesson = lessonRepository.findByIdAndVoidedFalse(id)
                 .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
+        return buildDetail(lesson);
+    }
 
-        ResLessonDetailDTO detail = new ResLessonDetailDTO();
-        copyLessonFields(lesson, detail);
-        var blocks = lessonBlockService.listByLessonId(id);
-        questionRefResolverService.resolve(blocks);
-        vocabularyBlockResolverService.resolve(blocks);
-        detail.setBlocks(blocks);
-        detail.setAssets(lessonAssetService.listByLessonId(id));
-        return detail;
+    @Override
+    public ResLessonDTO getBySlug(String slug) throws IdInvalidException {
+        Lesson lesson = lessonRepository.findBySlugAndVoidedFalse(slug)
+                .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
+        return toDto(lesson);
+    }
+
+    @Override
+    public ResLessonDetailDTO getDetailBySlug(String slug) throws IdInvalidException {
+        Lesson lesson = lessonRepository.findBySlugAndVoidedFalse(slug)
+                .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
+        return buildDetail(lesson);
+    }
+
+    @Override
+    public void backfillTemporarySlugs() {
+        for (Lesson lesson : lessonRepository.findAll()) {
+            if (lesson.isVoided() || lesson.getSlug() == null || !lesson.getSlug().startsWith("lesson-")) {
+                continue;
+            }
+            lesson.setSlug(assignUniqueSlug(lesson.getTitle(), lesson.getId()));
+            lessonRepository.save(lesson);
+        }
     }
 
     @Override
@@ -103,6 +125,7 @@ public class LessonServiceImpl implements LessonService {
         Subject subject = resolveSubject(request);
         Lesson entity = new Lesson();
         entity.setTitle(request.getTitle() == null ? "" : request.getTitle().trim());
+        entity.setSlug(assignUniqueSlug(entity.getTitle(), null));
         entity.setSummary(request.getSummary());
         entity.setDisplayOrder(request.getDisplayOrder());
         entity.setStatus(LessonStatusEnum.DRAFT);
@@ -135,6 +158,7 @@ public class LessonServiceImpl implements LessonService {
     public ResLessonDTO publish(UUID id) throws IdInvalidException {
         Lesson entity = lessonRepository.findByIdAndVoidedFalse(id)
                 .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
+        lessonPublishValidator.validateForPublish(id);
         entity.setStatus(LessonStatusEnum.PUBLISHED);
         return toDto(lessonRepository.save(entity));
     }
@@ -165,9 +189,39 @@ public class LessonServiceImpl implements LessonService {
         return dto;
     }
 
+    private ResLessonDetailDTO buildDetail(Lesson lesson) {
+        ResLessonDetailDTO detail = new ResLessonDetailDTO();
+        copyLessonFields(lesson, detail);
+        UUID lessonId = lesson.getId();
+        var blocks = lessonBlockService.listByLessonId(lessonId);
+        questionRefResolverService.resolve(blocks);
+        vocabularyBlockResolverService.resolve(blocks);
+        detail.setBlocks(blocks);
+        detail.setAssets(lessonAssetService.listByLessonId(lessonId));
+        return detail;
+    }
+
+    private String assignUniqueSlug(String title, UUID excludeId) {
+        String base = LessonSlugUtil.slugifyTitle(title);
+        String candidate = base;
+        int suffix = 2;
+        while (isSlugTaken(candidate, excludeId)) {
+            candidate = LessonSlugUtil.withSuffix(base, suffix++);
+        }
+        return candidate;
+    }
+
+    private boolean isSlugTaken(String slug, UUID excludeId) {
+        if (excludeId == null) {
+            return lessonRepository.existsBySlugAndVoidedFalse(slug);
+        }
+        return lessonRepository.existsBySlugAndVoidedFalseAndIdNot(slug, excludeId);
+    }
+
     private void copyLessonFields(Lesson lesson, ResLessonDTO dto) {
         dto.setId(lesson.getId());
         dto.setTitle(lesson.getTitle());
+        dto.setSlug(lesson.getSlug());
         dto.setSummary(lesson.getSummary());
         dto.setStatus(lesson.getStatus());
         dto.setDisplayOrder(lesson.getDisplayOrder());

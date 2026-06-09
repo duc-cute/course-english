@@ -22,6 +22,12 @@ public interface LessonService {
 
     ResLessonDetailDTO getDetail(UUID id) throws IdInvalidException;
 
+    ResLessonDTO getBySlug(String slug) throws IdInvalidException;
+
+    ResLessonDetailDTO getDetailBySlug(String slug) throws IdInvalidException;
+
+    void backfillTemporarySlugs();
+
     ResLessonDTO create(Lesson request) throws IdInvalidException;
 
     ResLessonDTO update(UUID id, Lesson request) throws IdInvalidException;

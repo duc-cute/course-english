@@ -24,6 +24,7 @@ import {
 } from "../../shared/lesson/blockTypes";
 import {
   apiGetLessonDetail,
+  apiGetLessonDetailBySlug,
   type LessonAssetRecord,
   type LessonDetailRecord,
   type LessonRecord,
@@ -31,11 +32,13 @@ import {
 import type { ApiResponse } from "../../shared/api/types";
 import { STUDENT_SCROLL_ROOT_ID } from "../../shared/constants/scrollRoots";
 import { paths } from "../../shared/constants/paths";
+import { isLessonUuid } from "../../shared/lesson/isLessonUuid";
+import { studentLessonPath } from "../../shared/lesson/lessonPaths";
 import "../../styles/lesson-reader.css";
 import "../../styles/lesson-player.css";
 
 export function LessonReaderPage() {
-  const { lessonId } = useParams<{ lessonId: string }>();
+  const { lessonSlug } = useParams<{ lessonSlug: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -48,17 +51,30 @@ export function LessonReaderPage() {
   const [savedProgress, setSavedProgress] = useState<ReturnType<typeof getLessonProgress>>(null);
   const saveTimer = useRef<number | null>(null);
 
+  const tabFromUrl = searchParams.get("tab");
+
   useEffect(() => {
-    if (!lessonId) return;
+    if (!lessonSlug) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       setError("");
       try {
-        const response = (await apiGetLessonDetail(lessonId)) as ApiResponse<LessonDetailRecord>;
+        const response = (isLessonUuid(lessonSlug)
+          ? await apiGetLessonDetail(lessonSlug)
+          : await apiGetLessonDetailBySlug(lessonSlug)) as ApiResponse<LessonDetailRecord>;
         const detail = response?.result ?? response?.data ?? null;
+        if (!detail) {
+          if (!cancelled) setError("Không tìm thấy bài học.");
+          return;
+        }
+        if (!cancelled && detail.slug && detail.slug !== lessonSlug) {
+          const tab = tabFromUrl === "practice" || tabFromUrl === "study" ? tabFromUrl : undefined;
+          navigate(studentLessonPath(detail, tab ? { tab } : undefined), { replace: true });
+          return;
+        }
         if (!cancelled) setLesson(detail);
-        if (detail && !cancelled) {
+        if (!cancelled) {
           const next = await findNextPublishedLesson(detail);
           if (!cancelled) setNextLesson(next);
         }
@@ -71,7 +87,7 @@ export function LessonReaderPage() {
     return () => {
       cancelled = true;
     };
-  }, [lessonId]);
+  }, [lessonSlug, tabFromUrl, navigate]);
 
   const blocks = useMemo(() => {
     const list = lesson?.blocks ?? [];
@@ -83,7 +99,6 @@ export function LessonReaderPage() {
   const showPractice = lessonHasPracticeTab(blocks);
   const hasPracticeOnly = showPractice && !showStudy;
 
-  const tabFromUrl = searchParams.get("tab");
   const activeTab: LessonPlayerTab = useMemo(() => {
     if (tabFromUrl === "practice" && showPractice) return "practice";
     if (tabFromUrl === "study" && showStudy) return "study";
@@ -120,6 +135,7 @@ export function LessonReaderPage() {
       saveTimer.current = window.setTimeout(() => {
         syncLessonProgress({
           lessonId: lesson.id,
+          lessonSlug: lesson.slug,
           lessonTitle: lesson.title,
           subjectName: lesson.subjectName,
           lastBlockId: activeBlockId,
@@ -138,19 +154,19 @@ export function LessonReaderPage() {
   });
 
   useEffect(() => {
-    if (!lessonId) {
+    if (!lesson?.id) {
       setSavedProgress(null);
       return;
     }
     let cancelled = false;
-    setSavedProgress(getLessonProgress(lessonId));
-    void hydrateLessonProgressForLesson(lessonId).then((merged) => {
-      if (!cancelled) setSavedProgress(merged ?? getLessonProgress(lessonId));
+    setSavedProgress(getLessonProgress(lesson.id));
+    void hydrateLessonProgressForLesson(lesson.id).then((merged) => {
+      if (!cancelled) setSavedProgress(merged ?? getLessonProgress(lesson.id));
     });
     return () => {
       cancelled = true;
     };
-  }, [lessonId]);
+  }, [lesson?.id]);
 
   const showResume =
     activeTab === "study" &&
@@ -178,30 +194,32 @@ export function LessonReaderPage() {
     if (!lesson?.id || !hasScrollBlocks || activeTab !== "study") return;
     syncLessonProgress({
       lessonId: lesson.id,
+      lessonSlug: lesson.slug,
       lessonTitle: lesson.title,
       subjectName: lesson.subjectName,
       lastBlockId: studyBlocks[0]?.id ?? "",
       scrollPercent: 0,
       lastTab: "study",
     });
-  }, [lesson?.id, lesson?.title, lesson?.subjectName, hasScrollBlocks, studyBlocks, activeTab]);
+  }, [lesson?.id, lesson?.slug, lesson?.title, lesson?.subjectName, hasScrollBlocks, studyBlocks, activeTab]);
 
   useEffect(() => {
     if (!lesson?.id || loading) return;
     const existing = getLessonProgress(lesson.id);
     syncLessonProgress({
       lessonId: lesson.id,
+      lessonSlug: lesson.slug,
       lessonTitle: lesson.title,
       subjectName: lesson.subjectName,
       lastBlockId: existing?.lastBlockId ?? studyBlocks[0]?.id ?? "",
       scrollPercent: existing?.scrollPercent ?? 0,
       lastTab: activeTab,
     });
-  }, [lesson?.id, lesson?.title, lesson?.subjectName, activeTab, loading, studyBlocks]);
+  }, [lesson?.id, lesson?.slug, lesson?.title, lesson?.subjectName, activeTab, loading, studyBlocks]);
 
   const handleContinueAfterExercise = useCallback(() => {
     if (nextLesson) {
-      navigate(`/${paths.STUDENT}/${paths.STUDENT_LESSONS}/${nextLesson.id}`);
+      navigate(studentLessonPath(nextLesson));
       return;
     }
     if (showStudy) {
