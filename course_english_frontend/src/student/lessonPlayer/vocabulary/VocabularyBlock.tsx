@@ -4,6 +4,7 @@ import {
   parseResolvedVocabularyItems,
   parseVocabularyBlockPayload,
 } from "../../../shared/lesson/vocabularyPayload";
+import { useFeatureFlags } from "../../../shared/featureFlags/useFeatureFlags";
 import { VocabularyAudioButtons } from "./VocabularyAudioButtons";
 import { VocabularyFlashcard } from "./VocabularyFlashcard";
 
@@ -12,6 +13,9 @@ type VocabularyBlockProps = {
 };
 
 export function VocabularyBlock({ block }: VocabularyBlockProps) {
+  const { flags } = useFeatureFlags();
+  const audioEnabled = flags.vocabularyAudioEnabled;
+  const audioAccent = flags.vocabularyAudioAccent;
   const payload = parseVocabularyBlockPayload(block.payloadJson);
   const items = parseResolvedVocabularyItems(block.resolvedVocabularyJson);
   const showPhonetic = payload.showPhonetic !== false;
@@ -42,7 +46,12 @@ export function VocabularyBlock({ block }: VocabularyBlockProps) {
       ) : null}
 
       {isFlashcard ? (
-        <VocabularyFlashcard items={items} showPhonetic={showPhonetic} />
+        <VocabularyFlashcard
+          items={items}
+          showPhonetic={showPhonetic}
+          audioEnabled={audioEnabled}
+          audioAccent={audioAccent}
+        />
       ) : (
         <ul className="vocabulary-block-list">
           {items.map((item, index) => (
@@ -52,7 +61,13 @@ export function VocabularyBlock({ block }: VocabularyBlockProps) {
                 {showPhonetic && item.phonetic ? (
                   <span className="vocabulary-block-phonetic">{item.phonetic}</span>
                 ) : null}
-                <VocabularyAudioButtons audioUkUrl={item.audioUkUrl} audioUsUrl={item.audioUsUrl} />
+                {audioEnabled ? (
+                  <VocabularyAudioButtons
+                    audioUkUrl={item.audioUkUrl}
+                    audioUsUrl={item.audioUsUrl}
+                    accentMode={audioAccent}
+                  />
+                ) : null}
               </div>
               <p className="vocabulary-block-meaning">{item.meaningVi}</p>
             </li>

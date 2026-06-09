@@ -2,6 +2,7 @@ package com.courseenglish.api.integration.dictionary.service;
 
 import com.courseenglish.api.integration.dictionary.model.VocabularyEnrichmentData;
 import com.courseenglish.api.integration.dictionary.port.DictionaryLookupPort;
+import com.courseenglish.api.util.AppConstants;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -19,6 +20,9 @@ public class DictionaryLookupService {
     }
 
     public Optional<VocabularyEnrichmentData> lookup(String wordEn) {
+        if (!AppConstants.dictionaryEnrichEnabled) {
+            return Optional.empty();
+        }
         if (wordEn == null || wordEn.isBlank()) {
             return Optional.empty();
         }

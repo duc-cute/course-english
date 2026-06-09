@@ -7,6 +7,7 @@ import { TextFieldInput } from "../../admin/components/TextFieldInput";
 import { apiLogin } from "../../shared/api/user";
 import { setAccessToken } from "../../shared/auth/token";
 import { paths } from "../../shared/constants/paths";
+import { useFeatureFlags } from "../../shared/featureFlags/useFeatureFlags";
 
 type LoginForm = {
   username: string;
@@ -14,6 +15,7 @@ type LoginForm = {
 };
 
 export function LoginPage() {
+  const { flags } = useFeatureFlags();
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit } = useForm<LoginForm>();
   const navigate = useNavigate();
@@ -90,12 +92,14 @@ export function LoginPage() {
           </Grid>
         </Box>
 
-        <Typography variant="body2" sx={{ mt: 3, textAlign: "center" }}>
-          Chưa có tài khoản?{" "}
-          <Typography component={RouterLink} to={`/${paths.REGISTER}`} color="primary" sx={{ fontWeight: 600 }}>
-            Đăng ký
+        {flags.studentSelfRegistrationEnabled ? (
+          <Typography variant="body2" sx={{ mt: 3, textAlign: "center" }}>
+            Chưa có tài khoản?{" "}
+            <Typography component={RouterLink} to={`/${paths.REGISTER}`} color="primary" sx={{ fontWeight: 600 }}>
+              Đăng ký
+            </Typography>
           </Typography>
-        </Typography>
+        ) : null}
         <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
           <Typography component={RouterLink} to={`/${paths.STUDENT}`} color="primary" sx={{ fontWeight: 600 }}>
             Vào khu vực học sinh

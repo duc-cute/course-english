@@ -20,6 +20,7 @@ import com.courseenglish.api.domain.request.ReqRegisterDTO;
 import com.courseenglish.api.domain.response.ResCreateUserDTO;
 import com.courseenglish.api.domain.response.ResLoginDTO;
 import com.courseenglish.api.service.UserService;
+import com.courseenglish.api.util.AppConstants;
 import com.courseenglish.api.util.SercurityUtil;
 import com.courseenglish.api.util.annotation.ApiMessage;
 import com.courseenglish.api.util.error.IdInvalidException;
@@ -52,6 +53,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ResCreateUserDTO> register(@Valid @RequestBody ReqRegisterDTO registerDTO) throws IdInvalidException {
+        if (!AppConstants.studentSelfRegistrationEnabled) {
+            throw new IdInvalidException("Hệ thống tạm thời không cho phép tự đăng ký tài khoản");
+        }
 //        boolean isExistUser = this.userService.isEmailExist(registerDTO.getEmail());
 //        if (isExistUser) {
 //            throw new IdInvalidException("Email: " + registerDTO.getEmail() + " đã tồn tại!");

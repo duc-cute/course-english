@@ -14,6 +14,7 @@ import { ReviewDocPage } from "../pages/admin/ReviewDocPage";
 import { ManageQuestionsPage } from "../pages/admin/ManageQuestionsPage";
 import { ManageVocabularySetsPage } from "../pages/admin/ManageVocabularySetsPage";
 import { ManageVocabularyWordsPage } from "../pages/admin/ManageVocabularyWordsPage";
+import { ManageSystemConfigPage } from "../pages/admin/ManageSystemConfigPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { StudentHomePage } from "../pages/student/StudentHomePage";
@@ -120,6 +121,10 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.MANAGE_VOCABULARY_SETS,
         element: <ManageVocabularySetsPage />,
+      },
+      {
+        path: paths.MANAGE_SYSTEM_CONFIG,
+        element: <ManageSystemConfigPage />,
       },
       {
         path: "manage-lesson/:lessonId/edit",

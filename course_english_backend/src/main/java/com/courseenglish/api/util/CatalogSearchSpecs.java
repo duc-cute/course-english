@@ -69,6 +69,22 @@ public final class CatalogSearchSpecs {
         return vocabularyWordKeywordLike(req.getKeyword());
     }
 
+    public static Specification<SystemConfig> systemConfigSearch(ReqSearchSystemConfigDTO req) {
+        return systemConfigKeywordLike(req.getKeyword());
+    }
+
+    private static Specification<SystemConfig> systemConfigKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("configKey")), pattern),
+                cb.like(cb.lower(root.get("configValue")), pattern),
+                cb.like(cb.lower(root.get("note")), pattern)
+        );
+    }
+
     private static Specification<VocabularyWord> vocabularyWordKeywordLike(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return null;

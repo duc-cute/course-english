@@ -1,4 +1,4 @@
-import { Box, Button, Grid, Paper, Typography } from "@mui/material";
+import { Alert, Box, Button, Grid, Paper, Typography } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -6,6 +6,7 @@ import { TextFieldInput } from "../../admin/components/TextFieldInput";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { registerUser } from "../../redux/user/userActions";
 import { paths } from "../../shared/constants/paths";
+import { useFeatureFlags } from "../../shared/featureFlags/useFeatureFlags";
 
 type RegisterForm = {
   name: string;
@@ -15,6 +16,7 @@ type RegisterForm = {
 };
 
 export function RegisterPage() {
+  const { flags } = useFeatureFlags();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const loading = useAppSelector((state) => state.user.loading);
@@ -55,6 +57,11 @@ export function RegisterPage() {
         <Typography variant="h5" fontWeight={700} gutterBottom>
           Đăng ký
         </Typography>
+        {!flags.studentSelfRegistrationEnabled ? (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Hệ thống tạm thời không cho phép tự đăng ký. Vui lòng liên hệ quản trị viên.
+          </Alert>
+        ) : null}
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 2 }}>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
@@ -96,7 +103,12 @@ export function RegisterPage() {
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <Button type="submit" variant="contained" fullWidth disabled={loading}>
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                disabled={loading || !flags.studentSelfRegistrationEnabled}
+              >
                 {loading ? "Đang đăng ký..." : "Đăng ký"}
               </Button>
             </Grid>

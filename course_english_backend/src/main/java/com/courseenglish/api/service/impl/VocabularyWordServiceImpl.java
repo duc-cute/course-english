@@ -10,6 +10,7 @@ import com.courseenglish.api.integration.dictionary.model.VocabularyEnrichmentDa
 import com.courseenglish.api.integration.dictionary.service.DictionaryLookupService;
 import com.courseenglish.api.repository.VocabularyWordRepository;
 import com.courseenglish.api.service.VocabularyWordService;
+import com.courseenglish.api.util.AppConstants;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
 import com.courseenglish.api.util.VocabularyWordKeyUtil;
@@ -152,6 +153,9 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
     }
 
     private VocabularyWord enrichWord(VocabularyWord word, boolean force) {
+        if (!AppConstants.dictionaryEnrichEnabled) {
+            return word;
+        }
         if (!force && word.getEnrichedAt() != null) {
             return word;
         }

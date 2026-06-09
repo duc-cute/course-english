@@ -14,6 +14,7 @@ export const paths = {
   MANAGE_QUESTIONS: "questions",
   MANAGE_VOCABULARY_WORDS: "vocabulary-words",
   MANAGE_VOCABULARY_SETS: "vocabulary-sets",
+  MANAGE_SYSTEM_CONFIG: "system-config",
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",
   USAGE_GUIDE: "huong-dan",

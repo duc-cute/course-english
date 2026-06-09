@@ -1,8 +1,10 @@
 import type { MouseEvent } from "react";
+import type { VocabularyAudioAccent } from "../../../shared/constants/systemConfigKeys";
 
 type VocabularyAudioButtonsProps = {
   audioUkUrl?: string;
   audioUsUrl?: string;
+  accentMode?: VocabularyAudioAccent;
   className?: string;
 };
 
@@ -18,18 +20,21 @@ function playUrl(url: string, event: MouseEvent<HTMLButtonElement>) {
 export function VocabularyAudioButtons({
   audioUkUrl,
   audioUsUrl,
+  accentMode = "UK",
   className = "",
 }: VocabularyAudioButtonsProps) {
   const hasUk = Boolean(audioUkUrl?.trim());
   const hasUs = Boolean(audioUsUrl?.trim());
+  const showUk = hasUk && (accentMode === "UK" || accentMode === "BOTH");
+  const showUs = hasUs && (accentMode === "US" || accentMode === "BOTH");
 
-  if (!hasUk && !hasUs) {
+  if (!showUk && !showUs) {
     return null;
   }
 
   return (
     <div className={`vocabulary-audio-buttons${className ? ` ${className}` : ""}`}>
-      {hasUk ? (
+      {showUk ? (
         <button
           type="button"
           className="vocabulary-audio-btn vocabulary-audio-btn--uk"
@@ -42,7 +47,7 @@ export function VocabularyAudioButtons({
           UK
         </button>
       ) : null}
-      {hasUs ? (
+      {showUs ? (
         <button
           type="button"
           className="vocabulary-audio-btn vocabulary-audio-btn--us"

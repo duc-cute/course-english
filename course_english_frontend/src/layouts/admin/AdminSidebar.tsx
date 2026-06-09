@@ -11,6 +11,7 @@ import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import EmojiPeopleOutlinedIcon from "@mui/icons-material/EmojiPeopleOutlined";
 import SecurityIcon from "@mui/icons-material/Security";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import {
   Avatar,
   Box,
@@ -96,6 +97,11 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         label: "Quản lý phân lớp",
         icon: <GroupAddOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.MANAGE_ENROLLMENT}`,
+      },
+      {
+        label: "Cấu hình hệ thống",
+        icon: <SettingsOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.MANAGE_SYSTEM_CONFIG}`,
       },
       {
         label: "Hướng dẫn sử dụng",
