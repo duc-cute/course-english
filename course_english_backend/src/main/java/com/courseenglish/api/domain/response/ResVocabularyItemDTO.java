@@ -12,6 +12,9 @@ public class ResVocabularyItemDTO {
     private String wordEn;
     private String meaningVi;
     private String phonetic;
+    private String audioUkUrl;
+    private String audioUsUrl;
+    private String partOfSpeech;
     private UUID imageAssetId;
     private UUID audioAssetId;
     private int displayOrder;

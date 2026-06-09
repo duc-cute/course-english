@@ -57,4 +57,13 @@ public class VocabularySetController {
         vocabularySetService.delete(id);
         return ResponseEntity.ok(null);
     }
+
+    @PostMapping("/{id}/enrich-all")
+    @ApiMessage("Enrich all vocabulary words in set from dictionary API")
+    public ResponseEntity<java.util.Map<String, Integer>> enrichAll(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "false") boolean force) throws IdInvalidException {
+        int enriched = vocabularySetService.enrichAll(id, force);
+        return ResponseEntity.ok(java.util.Map.of("enrichedCount", enriched));
+    }
 }

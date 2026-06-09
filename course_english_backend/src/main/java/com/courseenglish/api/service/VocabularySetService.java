@@ -21,4 +21,7 @@ public interface VocabularySetService {
 
     /** JSON mảng items cho block VOCABULARY (student player). */
     String buildResolvedVocabularyJson(java.util.UUID setId, boolean publishedOnly);
+
+    /** Enrich mọi từ trong bộ chưa có {@code enriched_at}. */
+    int enrichAll(UUID setId, boolean force) throws IdInvalidException;
 }

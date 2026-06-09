@@ -489,7 +489,7 @@ vocabulary_items   (id, set_id, word_en, meaning_vi, phonetic?, display_order, �
 
 - [ ] Thời gian làm bài chính xác hơn khi restore session đang làm dở
 - [ ] Mascot asset local (thay URL Google tạm)
-- [ ] Audio phát âm từ vựng (`audio_asset_id`)
+- [ ] Audio phát âm từ vựng — xem [`VOCABULARY_LIBRARY_DICTIONARY_PROGRESS.md`](./VOCABULARY_LIBRARY_DICTIONARY_PROGRESS.md)
 - [ ] `POST /questions/import` API batch (bank)
 - [x] Publish validation (BE) — `LessonPublishValidator.java`
 
@@ -518,4 +518,4 @@ mysql -u … -p … < course_english_backend/seed_vocabulary_set_demo.sql
 
 ---
 
-**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · Phase 3 ✅ · Progress server ✅ · Cứng hóa MVP ✅ · CALLOUT/SUMMARY ✅ · **Tiếp theo: VIDEO/AUDIO · E2E manual · Enrollment filter**
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · Phase 3 ✅ · Progress server ✅ · Cứng hóa MVP ✅ · CALLOUT/SUMMARY ✅ · **Tiếp theo: [Vocabulary Library + Dictionary](./VOCABULARY_LIBRARY_DICTIONARY_PROGRESS.md) · E2E manual · Enrollment filter**

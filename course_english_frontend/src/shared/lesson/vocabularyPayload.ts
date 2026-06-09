@@ -16,6 +16,9 @@ export type ResolvedVocabularyItem = {
   wordEn: string;
   meaningVi: string;
   phonetic?: string;
+  audioUkUrl?: string;
+  audioUsUrl?: string;
+  partOfSpeech?: string;
   displayOrder?: number;
 };
 
@@ -77,6 +80,9 @@ export function parseResolvedVocabularyItems(json?: string): ResolvedVocabularyI
         wordEn: String(row.wordEn ?? "").trim(),
         meaningVi: String(row.meaningVi ?? "").trim(),
         phonetic: typeof row.phonetic === "string" ? row.phonetic : undefined,
+        audioUkUrl: typeof row.audioUkUrl === "string" ? row.audioUkUrl : undefined,
+        audioUsUrl: typeof row.audioUsUrl === "string" ? row.audioUsUrl : undefined,
+        partOfSpeech: typeof row.partOfSpeech === "string" ? row.partOfSpeech : undefined,
         displayOrder: typeof row.displayOrder === "number" ? row.displayOrder : undefined,
       }))
       .filter((item) => item.wordEn && item.meaningVi);

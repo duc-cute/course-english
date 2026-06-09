@@ -1,9 +1,11 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   IconButton,
   MenuItem,
   Table,
@@ -15,8 +17,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useRef, useState } from "react";
 import type { VocabularyItemRecord, VocabularySetStatus } from "../../../shared/api/vocabularySet";
+import { apiLookupVocabularyWord } from "../../../shared/api/vocabularyWord";
 import { muFieldLabel, muRequired, muTextFieldSx } from "../../../pages/admin/manageUserUiStyles";
+import { VocabularyAudioPreview } from "./VocabularyAudioPreview";
 
 export type VocabularySetFormState = {
   title: string;
@@ -30,13 +35,23 @@ type VocabularySetFormProps = {
   error?: string;
   onChange: (next: VocabularySetFormState) => void;
   onImportClick?: () => void;
+  onPickFromLibrary?: () => void;
 };
 
 function emptyItem(): VocabularyItemRecord {
-  return { wordEn: "", meaningVi: "", phonetic: "" };
+  return { wordEn: "", meaningVi: "" };
 }
 
-export function VocabularySetForm({ form, error, onChange, onImportClick }: VocabularySetFormProps) {
+export function VocabularySetForm({
+  form,
+  error,
+  onChange,
+  onImportClick,
+  onPickFromLibrary,
+}: VocabularySetFormProps) {
+  const [lookupIndex, setLookupIndex] = useState<number | null>(null);
+  const lookupCache = useRef<Record<string, boolean>>({});
+
   const updateItem = (index: number, patch: Partial<VocabularyItemRecord>) => {
     const items = form.items.map((item, i) => (i === index ? { ...item, ...patch } : item));
     onChange({ ...form, items });
@@ -48,6 +63,31 @@ export function VocabularySetForm({ form, error, onChange, onImportClick }: Voca
 
   const removeItem = (index: number) => {
     onChange({ ...form, items: form.items.filter((_, i) => i !== index) });
+  };
+
+  const lookupWord = async (index: number) => {
+    const item = form.items[index];
+    const word = item?.wordEn?.trim();
+    if (!word) return;
+
+    const cacheKey = word.toLowerCase();
+    if (lookupCache.current[cacheKey] && item.phonetic) return;
+
+    setLookupIndex(index);
+    try {
+      const preview = await apiLookupVocabularyWord(word);
+      lookupCache.current[cacheKey] = true;
+      if (preview) {
+        updateItem(index, {
+          phonetic: preview.phonetic ?? item.phonetic,
+          audioUkUrl: preview.audioUkUrl,
+          audioUsUrl: preview.audioUsUrl,
+          partOfSpeech: preview.partOfSpeech,
+        });
+      }
+    } finally {
+      setLookupIndex(null);
+    }
   };
 
   return (
@@ -95,11 +135,20 @@ export function VocabularySetForm({ form, error, onChange, onImportClick }: Voca
         <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
       </TextField>
 
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-        <Typography sx={muFieldLabel}>
-          Danh sách từ ({form.items.length})
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
+        <Typography sx={muFieldLabel}>Danh sách từ ({form.items.length})</Typography>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {onPickFromLibrary ? (
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<LibraryBooksOutlinedIcon />}
+              onClick={onPickFromLibrary}
+              sx={{ textTransform: "none" }}
+            >
+              Chọn từ thư viện
+            </Button>
+          ) : null}
           {onImportClick ? (
             <Button size="small" variant="outlined" onClick={onImportClick} sx={{ textTransform: "none" }}>
               Import CSV
@@ -111,15 +160,20 @@ export function VocabularySetForm({ form, error, onChange, onImportClick }: Voca
         </Box>
       </Box>
 
+      <Typography sx={{ fontSize: 11, color: "text.secondary", mt: -1 }}>
+        Nhập Word + Meaning → rời ô Word để xem trước IPA/audio. Khi Lưu, hệ thống enrich và lưu vào thư viện.
+      </Typography>
+
       <TableContainer sx={{ border: "1px solid #ECEAE3", borderRadius: "10px" }}>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ bgcolor: "#F8F7F4" }}>
-              <TableCell sx={{ fontWeight: 600, width: 48 }}>#</TableCell>
+              <TableCell sx={{ fontWeight: 600, width: 40 }}>#</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Word (EN)</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Meaning (VI)</TableCell>
-              <TableCell sx={{ fontWeight: 600, width: 120 }}>Phonetic</TableCell>
-              <TableCell sx={{ width: 48 }} />
+              <TableCell sx={{ fontWeight: 600, width: 110 }}>IPA</TableCell>
+              <TableCell sx={{ fontWeight: 600, width: 72 }}>Audio</TableCell>
+              <TableCell sx={{ width: 40 }} />
             </TableRow>
           </TableHead>
           <TableBody>
@@ -130,10 +184,15 @@ export function VocabularySetForm({ form, error, onChange, onImportClick }: Voca
                   <TextField
                     value={item.wordEn}
                     onChange={(e) => updateItem(index, { wordEn: e.target.value })}
+                    onBlur={() => void lookupWord(index)}
                     size="small"
                     fullWidth
                     placeholder="apple"
                     sx={muTextFieldSx}
+                    InputProps={{
+                      endAdornment:
+                        lookupIndex === index ? <CircularProgress size={14} /> : undefined,
+                    }}
                   />
                 </TableCell>
                 <TableCell>
@@ -154,7 +213,12 @@ export function VocabularySetForm({ form, error, onChange, onImportClick }: Voca
                     fullWidth
                     placeholder="/ˈæp.əl/"
                     sx={muTextFieldSx}
+                    helperText={item.partOfSpeech ? item.partOfSpeech : undefined}
+                    FormHelperTextProps={{ sx: { fontSize: 10, m: 0 } }}
                   />
+                </TableCell>
+                <TableCell>
+                  <VocabularyAudioPreview audioUkUrl={item.audioUkUrl} audioUsUrl={item.audioUsUrl} compact />
                 </TableCell>
                 <TableCell>
                   <IconButton

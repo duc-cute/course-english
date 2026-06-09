@@ -65,6 +65,22 @@ public final class CatalogSearchSpecs {
         );
     }
 
+    public static Specification<VocabularyWord> vocabularyWordSearch(ReqSearchVocabularyWordDTO req) {
+        return vocabularyWordKeywordLike(req.getKeyword());
+    }
+
+    private static Specification<VocabularyWord> vocabularyWordKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("wordEn")), pattern),
+                cb.like(cb.lower(root.get("wordKey")), pattern),
+                cb.like(cb.lower(root.get("meaningVi")), pattern)
+        );
+    }
+
     private static Specification<VocabularySet> vocabularySetKeywordLike(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return null;

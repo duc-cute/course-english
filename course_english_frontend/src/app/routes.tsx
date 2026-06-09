@@ -13,6 +13,7 @@ import { ManageUserPage } from "../pages/admin/ManageUserPage";
 import { ReviewDocPage } from "../pages/admin/ReviewDocPage";
 import { ManageQuestionsPage } from "../pages/admin/ManageQuestionsPage";
 import { ManageVocabularySetsPage } from "../pages/admin/ManageVocabularySetsPage";
+import { ManageVocabularyWordsPage } from "../pages/admin/ManageVocabularyWordsPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { StudentHomePage } from "../pages/student/StudentHomePage";
@@ -111,6 +112,10 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.MANAGE_QUESTIONS,
         element: <ManageQuestionsPage />,
+      },
+      {
+        path: paths.MANAGE_VOCABULARY_WORDS,
+        element: <ManageVocabularyWordsPage />,
       },
       {
         path: paths.MANAGE_VOCABULARY_SETS,

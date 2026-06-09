@@ -2,6 +2,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useCallback, useState } from "react";
 import type { ResolvedVocabularyItem } from "../../../shared/lesson/vocabularyPayload";
+import { VocabularyAudioButtons } from "./VocabularyAudioButtons";
 
 type VocabularyFlashcardProps = {
   items: ResolvedVocabularyItem[];
@@ -61,6 +62,11 @@ export function VocabularyFlashcard({ items, showPhonetic = true }: VocabularyFl
             {showPhonetic && current.phonetic ? (
               <span className="vocabulary-flashcard-phonetic">{current.phonetic}</span>
             ) : null}
+            <VocabularyAudioButtons
+              audioUkUrl={current.audioUkUrl}
+              audioUsUrl={current.audioUsUrl}
+              className="vocabulary-audio-buttons--flashcard"
+            />
           </div>
           <div className="vocabulary-flashcard-face vocabulary-flashcard-face--back">
             <span className="vocabulary-flashcard-meaning">{current.meaningVi}</span>

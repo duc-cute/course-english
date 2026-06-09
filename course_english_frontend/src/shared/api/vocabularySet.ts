@@ -8,6 +8,9 @@ export type VocabularyItemRecord = {
   wordEn: string;
   meaningVi: string;
   phonetic?: string;
+  audioUkUrl?: string;
+  audioUsUrl?: string;
+  partOfSpeech?: string;
   imageAssetId?: string;
   audioAssetId?: string;
   displayOrder?: number;
@@ -82,5 +85,12 @@ export async function apiUpdateVocabularySet(id: string, data: VocabularySetForm
 
 export async function apiDeleteVocabularySet(id: string) {
   const response = (await api.delete(`/vocabulary-sets/${id}`)) as ApiResponse;
+  return unwrapResponse(response);
+}
+
+export async function apiEnrichAllVocabularySet(id: string, force = false) {
+  const response = (await api.post(`/vocabulary-sets/${id}/enrich-all`, null, {
+    params: { force },
+  })) as ApiResponse<{ enrichedCount?: number }>;
   return unwrapResponse(response);
 }

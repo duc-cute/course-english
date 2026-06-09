@@ -12,6 +12,7 @@ export const paths = {
   MANAGE_ENROLLMENT: "manage-enrollment",
   MANAGE_LESSON: "manage-lesson",
   MANAGE_QUESTIONS: "questions",
+  MANAGE_VOCABULARY_WORDS: "vocabulary-words",
   MANAGE_VOCABULARY_SETS: "vocabulary-sets",
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",

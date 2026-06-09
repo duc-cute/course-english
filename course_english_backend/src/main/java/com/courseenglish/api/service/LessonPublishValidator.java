@@ -3,7 +3,7 @@ package com.courseenglish.api.service;
 import com.courseenglish.api.domain.LessonBlock;
 import com.courseenglish.api.domain.VocabularySet;
 import com.courseenglish.api.repository.LessonBlockRepository;
-import com.courseenglish.api.repository.VocabularyItemRepository;
+import com.courseenglish.api.repository.VocabularySetMemberRepository;
 import com.courseenglish.api.repository.VocabularySetRepository;
 import com.courseenglish.api.util.constant.LessonBlockTypeEnum;
 import com.courseenglish.api.util.constant.VocabularySetStatusEnum;
@@ -23,19 +23,19 @@ public class LessonPublishValidator {
     private final LessonBlockRepository lessonBlockRepository;
     private final QuestionService questionService;
     private final VocabularySetRepository vocabularySetRepository;
-    private final VocabularyItemRepository vocabularyItemRepository;
+    private final VocabularySetMemberRepository vocabularySetMemberRepository;
     private final ObjectMapper objectMapper;
 
     public LessonPublishValidator(
             LessonBlockRepository lessonBlockRepository,
             QuestionService questionService,
             VocabularySetRepository vocabularySetRepository,
-            VocabularyItemRepository vocabularyItemRepository,
+            VocabularySetMemberRepository vocabularySetMemberRepository,
             ObjectMapper objectMapper) {
         this.lessonBlockRepository = lessonBlockRepository;
         this.questionService = questionService;
         this.vocabularySetRepository = vocabularySetRepository;
-        this.vocabularyItemRepository = vocabularyItemRepository;
+        this.vocabularySetMemberRepository = vocabularySetMemberRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -134,7 +134,7 @@ public class LessonPublishValidator {
             return;
         }
 
-        long itemCount = vocabularyItemRepository.countByVocabularySet_IdAndVoidedFalse(setId);
+        long itemCount = vocabularySetMemberRepository.countByVocabularySet_IdAndVoidedFalse(setId);
         if (itemCount == 0) {
             errors.add(blockMessage(index, "VOCABULARY",
                     "bộ từ \"" + safeLabel(set.getTitle()) + "\" chưa có mục từ nào"));

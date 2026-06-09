@@ -3,6 +3,7 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
+import AbcOutlinedIcon from "@mui/icons-material/AbcOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
@@ -80,6 +81,11 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         label: "Thư viện câu hỏi",
         icon: <QuizOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.MANAGE_QUESTIONS}`,
+      },
+      {
+        label: "Thư viện từ",
+        icon: <AbcOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_WORDS}`,
       },
       {
         label: "Bộ từ vựng",

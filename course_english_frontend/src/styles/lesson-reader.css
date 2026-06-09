@@ -829,6 +829,52 @@
   font-weight: 600;
 }
 
+.vocabulary-audio-buttons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.vocabulary-audio-buttons--flashcard {
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.vocabulary-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 148, 136, 0.28);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--eng-teal-dark, #0f766e);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.vocabulary-audio-btn:hover {
+  background: rgba(13, 148, 136, 0.1);
+}
+
+.vocabulary-audio-btn:active {
+  transform: scale(0.97);
+}
+
+.vocabulary-audio-btn--us {
+  border-color: rgba(12, 68, 124, 0.28);
+  color: #0c447c;
+}
+
+.vocabulary-audio-btn-icon {
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
 /* Flashcard presentation */
 .vocabulary-block--flashcard {
   max-width: 480px;

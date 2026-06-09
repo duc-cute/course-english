@@ -38,5 +38,5 @@ public class VocabularySet extends BaseObject {
     private VocabularySetStatusEnum status = VocabularySetStatusEnum.DRAFT;
 
     @OneToMany(mappedBy = "vocabularySet", fetch = FetchType.LAZY)
-    private List<VocabularyItem> items = new ArrayList<>();
+    private List<VocabularySetMember> members = new ArrayList<>();
 }

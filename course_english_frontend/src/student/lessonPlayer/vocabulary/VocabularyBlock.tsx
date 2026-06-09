@@ -4,6 +4,7 @@ import {
   parseResolvedVocabularyItems,
   parseVocabularyBlockPayload,
 } from "../../../shared/lesson/vocabularyPayload";
+import { VocabularyAudioButtons } from "./VocabularyAudioButtons";
 import { VocabularyFlashcard } from "./VocabularyFlashcard";
 
 type VocabularyBlockProps = {
@@ -51,6 +52,7 @@ export function VocabularyBlock({ block }: VocabularyBlockProps) {
                 {showPhonetic && item.phonetic ? (
                   <span className="vocabulary-block-phonetic">{item.phonetic}</span>
                 ) : null}
+                <VocabularyAudioButtons audioUkUrl={item.audioUkUrl} audioUsUrl={item.audioUsUrl} />
               </div>
               <p className="vocabulary-block-meaning">{item.meaningVi}</p>
             </li>

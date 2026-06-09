@@ -1,4 +1,5 @@
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
@@ -25,6 +26,7 @@ import {
 import {
   VocabularyImportDialog,
 } from "../../admin/components/vocabulary/VocabularyImportDialog";
+import { VocabularyWordPicker } from "../../admin/components/vocabulary/VocabularyWordPicker";
 import {
   VocabularySetForm,
   createDefaultVocabularySetForm,
@@ -45,6 +47,7 @@ import {
 import {
   apiCreateVocabularySet,
   apiDeleteVocabularySet,
+  apiEnrichAllVocabularySet,
   apiGetVocabularySetById,
   apiSearchVocabularySets,
   apiUpdateVocabularySet,
@@ -89,6 +92,9 @@ function recordToForm(record: VocabularySetRecord): VocabularySetFormState {
           wordEn: item.wordEn,
           meaningVi: item.meaningVi,
           phonetic: item.phonetic,
+          audioUkUrl: item.audioUkUrl,
+          audioUsUrl: item.audioUsUrl,
+          partOfSpeech: item.partOfSpeech,
         }))
       : [{ wordEn: "", meaningVi: "" }],
   };
@@ -112,7 +118,9 @@ export function ManageVocabularySetsPage() {
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState<VocabularySetRecord | null>(null);
   const [openImport, setOpenImport] = useState(false);
+  const [openPicker, setOpenPicker] = useState(false);
   const [generateTarget, setGenerateTarget] = useState<VocabularySetRecord | null>(null);
+  const [enrichingAll, setEnrichingAll] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -202,6 +210,28 @@ export function ManageVocabularySetsPage() {
       setSubmitting(false);
     }
   };
+
+  const enrichAllInSet = async () => {
+    if (!editing?.id) return;
+    setEnrichingAll(true);
+    setFormError("");
+    try {
+      await apiEnrichAllVocabularySet(editing.id, false);
+      const response = (await apiGetVocabularySetById(editing.id)) as ApiResponse<VocabularySetRecord>;
+      const detail = response?.result ?? response?.data;
+      if (detail) {
+        setForm(recordToForm(detail));
+        setEditing(detail);
+      }
+    } catch (err) {
+      setFormError((err as { message?: string })?.message || "Không thể enrich cả bộ.");
+    } finally {
+      setEnrichingAll(false);
+    }
+  };
+
+  const existingWordKeys = () =>
+    new Set(form.items.map((item) => item.wordEn.trim().toLowerCase()).filter(Boolean));
 
   const deleteRow = async () => {
     if (!deleting?.id) return;
@@ -401,9 +431,20 @@ export function ManageVocabularySetsPage() {
             error={formError}
             onChange={setForm}
             onImportClick={() => setOpenImport(true)}
+            onPickFromLibrary={() => setOpenPicker(true)}
           />
         </DialogContent>
         <DialogActions sx={muDialogFooter}>
+          {editing?.id ? (
+            <Button
+              startIcon={<AutoAwesomeOutlinedIcon />}
+              onClick={() => void enrichAllInSet()}
+              disabled={enrichingAll || submitting}
+              sx={{ ...muFooterBtnOutlined, mr: "auto" }}
+            >
+              {enrichingAll ? "Đang enrich…" : "Enrich cả bộ"}
+            </Button>
+          ) : null}
           <Button
             onClick={() => {
               setOpenForm(false);
@@ -423,6 +464,18 @@ export function ManageVocabularySetsPage() {
         open={openImport}
         onClose={() => setOpenImport(false)}
         onImported={(items) => setForm((prev) => ({ ...prev, items }))}
+      />
+
+      <VocabularyWordPicker
+        open={openPicker}
+        onClose={() => setOpenPicker(false)}
+        excludeWordKeys={existingWordKeys()}
+        onSelect={(picked) =>
+          setForm((prev) => ({
+            ...prev,
+            items: [...prev.items.filter((i) => i.wordEn.trim() || i.meaningVi.trim()), ...picked],
+          }))
+        }
       />
 
       {generateTarget ? (
