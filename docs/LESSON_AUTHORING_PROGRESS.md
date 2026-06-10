@@ -526,12 +526,13 @@ mysql -u … -p … < course_english_backend/seed_vocabulary_set_demo.sql
 |--------|------|--------|
 | S1 ✅ | `SPELLING` | Nghĩa VI → gõ từ EN |
 | S1 ✅ | `LISTEN_TYPE` | Nghe audio → gõ từ EN |
-| S2 | `FILL_BLANK` | Điền từ vào `___` (template hoặc câu mẫu) |
+| S2 ✅ | `FILL_BLANK` | Điền từ vào `___` — **chỉ GV soạn tay** (không sinh từ bộ từ) |
 | S3 | `REORDER_SENTENCE` | Sắp xếp 3–15 từ/chip thành câu đúng (drag-drop) |
 
 - [x] `answerNormalize.ts` — chấm gõ chữ chung (S1)
-- [ ] (Tuỳ chọn) migration `example_sentence_en` trên `vocabulary_words` cho FILL + REORDER auto-gen
+- [x] `fillBlankUtils.ts` — parse `___`, chấm nhiều ô (S2)
+- [ ] ⏳ migration `example_sentence_en` trên `vocabulary_words` — **làm sau (S3, cách B)**
 
 ---
 
-**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · LISTEN_CHOOSE ✅ · Phase 8 S1 ✅ · **Tiếp theo: [Phase 8 S2–S4 — FILL_BLANK, REORDER](./EXERCISE_TYPES_PHASE8_PLAN.md) · E2E · Enrollment**
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · LISTEN_CHOOSE ✅ · Phase 8 S1 ✅ · S2 ✅ · **Tiếp theo: [Phase 8 S3–S4 — example_sentence, REORDER](./EXERCISE_TYPES_PHASE8_PLAN.md) · E2E · Enrollment**

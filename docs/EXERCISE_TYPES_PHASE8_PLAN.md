@@ -162,11 +162,11 @@ normalizeAnswer(input: string, options?: {
 
 | Cách | Mô tả |
 |------|--------|
-| **A — Template cố định** | `"This is a ___."` + answer = `wordEn` — đơn giản, câu hơi vô nghĩa |
-| **B — `example_sentence` trên từ** | Migration thêm `example_sentence_en` trên `vocabulary_words`; GV/enrich điền câu → blank 1 từ |
-| **C — Chỉ soạn tay / bank** | Không auto-gen; GV nhập câu + đáp án |
+| ~~**A — Template cố định**~~ | ~~Sinh từ bộ từ~~ — **đã bỏ** (câu template kém tự nhiên; GV nên soạn tay) |
+| **B — `example_sentence` trên từ** ⏳ *làm sau (S3)* | Migration thêm `example_sentence_en` trên `vocabulary_words`; GV/enrich điền câu → blank 1 từ |
+| **C — Soạn tay / bank** ✅ *S2* | GV nhập câu + đáp án trong editor (`Thêm điền khuyết`) |
 
-**Đề xuất MVP:** Cách **A** cho generator nhanh; Cách **B** là Phase 8.3b (migration nhỏ).
+**S2:** Chỉ **C** (editor tay). Không sinh từ bộ từ. Cách **B** hoãn sang S3 cùng `REORDER_SENTENCE`.
 
 **Effort:** ~1.5 session (parser blank + chấm nhiều ô).
 
@@ -226,8 +226,8 @@ flowchart LR
 | Sprint | Deliverable | Acceptance |
 |--------|-------------|------------|
 | **S1** ✅ | SPELLING + LISTEN_TYPE | Sinh từ bộ fruit → HS tab Bài tập gõ đúng; review hiện đáp án |
-| **S2** | FILL_BLANK (template + editor tay) | GV soạn "I ___ …" + publish; HS điền, chấm đúng/sai |
-| **S3** | `example_sentence_en` + gen FILL + REORDER | Enrich hoặc GV nhập câu mẫu → auto 2 dạng |
+| **S2** ✅ | FILL_BLANK (editor C — GV soạn tay) | GV soạn "I ___ …" + publish; HS điền, chấm đúng/sai |
+| **S3** | `example_sentence_en` (cách B — **làm sau**) + gen FILL + REORDER | Enrich hoặc GV nhập câu mẫu trên từng từ → auto 2 dạng |
 | **S4** | Polish | Wizard tick từng loại; import CSV; bank resolve |
 
 ---

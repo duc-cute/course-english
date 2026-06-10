@@ -5,6 +5,8 @@ export type ExerciseAnswerSnapshot = {
   selectedChoiceId?: string;
   /** Gõ chữ — SPELLING / LISTEN_TYPE */
   typedAnswer?: string;
+  /** blankId → answer (FILL_BLANK) */
+  fillBlankAnswers?: Record<string, string>;
   /** left → right (MATCHING) */
   matchingSelections?: Record<string, string>;
 };

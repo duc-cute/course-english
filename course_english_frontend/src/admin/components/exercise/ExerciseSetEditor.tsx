@@ -16,6 +16,7 @@ import {
 } from "../../../pages/admin/manageUserUiStyles";
 import {
   buildExerciseSetPayloadJson,
+  createEmptyFillBlankQuestion,
   createEmptyMatchingQuestion,
   createEmptyMcqQuestion,
   generateQuestionId,
@@ -25,12 +26,14 @@ import { parseExerciseSetPayload } from "../../../student/lessonPlayer/exercise/
 import type {
   ExerciseQuestion,
   ExerciseSetPayload,
+  FillBlankQuestion,
   ListenChooseQuestion,
   ListenTypeQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
   SpellingQuestion,
 } from "../../../student/lessonPlayer/exercise/types";
+import { FillBlankQuestionCanvas } from "./FillBlankQuestionCanvas";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
 import { ExerciseSetSettings } from "./ExerciseSetSettings";
@@ -110,12 +113,14 @@ export function ExerciseSetEditor({
     setQuestions((list) => list.map((q, i) => (i === index ? next : q)));
   };
 
-  const addQuestion = (type: "MULTIPLE_CHOICE" | "MATCHING") => {
+  const addQuestion = (type: "MULTIPLE_CHOICE" | "MATCHING" | "FILL_BLANK") => {
     setQuestions((list) => {
       const next =
         type === "MATCHING"
           ? [...list, createEmptyMatchingQuestion()]
-          : [...list, createEmptyMcqQuestion()];
+          : type === "FILL_BLANK"
+            ? [...list, createEmptyFillBlankQuestion()]
+            : [...list, createEmptyMcqQuestion()];
       setActiveIndex(next.length - 1);
       return next;
     });
@@ -147,6 +152,15 @@ export function ExerciseSetEditor({
         };
       } else if (source.type === "SPELLING" || source.type === "LISTEN_TYPE") {
         copy = { ...source, id: generateQuestionId() };
+      } else if (source.type === "FILL_BLANK") {
+        copy = {
+          ...(source as FillBlankQuestion),
+          id: generateQuestionId(),
+          blanks: (source as FillBlankQuestion).blanks.map((b) => ({
+            ...b,
+            acceptedAnswers: [...b.acceptedAnswers],
+          })),
+        };
       } else {
         copy = {
           ...(source as MultipleChoiceQuestion),
@@ -240,6 +254,7 @@ export function ExerciseSetEditor({
           onSelect={setActiveIndex}
           onAddMcq={() => addQuestion("MULTIPLE_CHOICE")}
           onAddMatching={() => addQuestion("MATCHING")}
+          onAddFillBlank={() => addQuestion("FILL_BLANK")}
           onReorder={reorderQuestions}
         />
 
@@ -283,6 +298,15 @@ export function ExerciseSetEditor({
               question={activeQuestion as SpellingQuestion | ListenTypeQuestion}
               index={activeIndex}
               canDelete={questions.length > 1}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "FILL_BLANK" ? (
+            <FillBlankQuestionCanvas
+              question={activeQuestion as FillBlankQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
+              onChange={(next) => updateQuestion(activeIndex, next)}
               onDelete={() => deleteQuestion(activeIndex)}
               onDuplicate={() => duplicateQuestion(activeIndex)}
             />

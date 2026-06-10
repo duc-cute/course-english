@@ -3,7 +3,15 @@ import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import type { ExerciseAnswerSnapshot } from "../exerciseSessionStorage";
 import type { PreparedExerciseItem } from "./prepareExerciseItems";
-import type { ListenChooseQuestion, ListenTypeQuestion, MatchingQuestion, MultipleChoiceQuestion, SpellingQuestion } from "./types";
+import type {
+  FillBlankQuestion,
+  ListenChooseQuestion,
+  ListenTypeQuestion,
+  MatchingQuestion,
+  MultipleChoiceQuestion,
+  SpellingQuestion,
+} from "./types";
+import { FillBlankQuestion as FillBlankReview } from "./FillBlankQuestion";
 import { ListenChooseQuestion as ListenChooseReview } from "./ListenChooseQuestion";
 import { ListenTypeQuestion as ListenTypeReview } from "./ListenTypeQuestion";
 import { SpellingQuestion as SpellingReview } from "./SpellingQuestion";
@@ -206,6 +214,44 @@ export function ExerciseReviewScreen({ lessonTitle, items, answers, onBack }: Ex
                 {listenType.explanation?.trim() ? (
                   <div className="exercise-review-explain">
                     <QuestionExplanationPanel explanation={listenType.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
+          if (question.type === "FILL_BLANK") {
+            const fillBlank = question as FillBlankQuestion;
+            const answer = answers[fillBlank.id];
+            const isCorrect = answer?.correct === true;
+
+            return (
+              <li key={fillBlank.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Điền khuyết</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> Đúng
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> Sai
+                      </>
+                    )}
+                  </span>
+                </div>
+                <FillBlankReview
+                  question={fillBlank}
+                  answers={answer?.fillBlankAnswers ?? {}}
+                  showResult
+                  isCorrect={isCorrect}
+                  onChange={() => undefined}
+                />
+                {fillBlank.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={fillBlank.explanation} />
                   </div>
                 ) : null}
               </li>

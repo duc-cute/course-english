@@ -113,6 +113,40 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
     };
   }
 
+  if (raw.type === "FILL_BLANK") {
+    const prompt = isRecord(raw.prompt)
+      ? { text: String(raw.prompt.text ?? ""), lang: raw.prompt.lang ? String(raw.prompt.lang) : undefined }
+      : { text: "" };
+    if (!prompt.text.trim()) return null;
+
+    const blanksRaw = Array.isArray(raw.blanks) ? raw.blanks : [];
+    const blanks = blanksRaw
+      .filter(isRecord)
+      .map((b, index) => {
+        const id = typeof b.id === "string" && b.id.trim() ? b.id.trim() : `b${index + 1}`;
+        const acceptedRaw = Array.isArray(b.acceptedAnswers) ? b.acceptedAnswers : [];
+        const acceptedAnswers = acceptedRaw.map((a) => String(a ?? "").trim()).filter(Boolean);
+        return {
+          id,
+          acceptedAnswers,
+          placeholder: typeof b.placeholder === "string" ? b.placeholder : undefined,
+        };
+      })
+      .filter((b) => b.acceptedAnswers.length > 0);
+
+    if (!blanks.length) return null;
+
+    return {
+      id: raw.id,
+      type: "FILL_BLANK",
+      prompt,
+      blanks,
+      wordEn: typeof raw.wordEn === "string" ? raw.wordEn : undefined,
+      caseSensitive: raw.caseSensitive === true,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
   if (raw.type === "LISTEN_TYPE") {
     const audioUrl = typeof raw.audioUrl === "string" ? raw.audioUrl.trim() : "";
     const correctAnswer = typeof raw.correctAnswer === "string" ? raw.correctAnswer.trim() : "";

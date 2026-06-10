@@ -249,6 +249,9 @@ public class LessonPublishValidator {
         if ("LISTEN_TYPE".equals(type)) {
             return isValidListenType(question);
         }
+        if ("FILL_BLANK".equals(type)) {
+            return isValidFillBlank(question);
+        }
         return false;
     }
 
@@ -346,5 +349,37 @@ public class LessonPublishValidator {
         String audioUrl = question.path("audioUrl").asText("");
         String correctAnswer = question.path("correctAnswer").asText("");
         return !audioUrl.isBlank() && !correctAnswer.isBlank();
+    }
+
+    private boolean isValidFillBlank(JsonNode question) {
+        JsonNode prompt = question.get("prompt");
+        String promptText = prompt != null && prompt.isObject() ? prompt.path("text").asText("") : "";
+        if (promptText.isBlank() || !promptText.contains("___")) {
+            return false;
+        }
+        JsonNode blanks = question.get("blanks");
+        if (blanks == null || !blanks.isArray() || blanks.isEmpty()) {
+            return false;
+        }
+        for (JsonNode blank : blanks) {
+            if (blank == null || blank.isNull()) {
+                continue;
+            }
+            JsonNode accepted = blank.get("acceptedAnswers");
+            if (accepted == null || !accepted.isArray() || accepted.isEmpty()) {
+                return false;
+            }
+            boolean hasAnswer = false;
+            for (JsonNode answer : accepted) {
+                if (answer != null && !answer.isNull() && !answer.asText("").isBlank()) {
+                    hasAnswer = true;
+                    break;
+                }
+            }
+            if (!hasAnswer) {
+                return false;
+            }
+        }
+        return true;
     }
 }

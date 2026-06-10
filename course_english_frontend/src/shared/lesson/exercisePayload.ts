@@ -1,7 +1,9 @@
 import { stringifyBlockPayload } from "../api/lesson";
+import { countBlankPlaceholders, syncBlanksWithPrompt } from "./fillBlankUtils";
 import type {
   ExerciseQuestion,
   ExerciseSetPayload,
+  FillBlankQuestion,
   ListenChooseQuestion,
   ListenTypeQuestion,
   MatchingQuestion,
@@ -26,6 +28,17 @@ export function createEmptyMatchingQuestion(id?: string): MatchingQuestion {
       { left: "", right: "" },
       { left: "", right: "" },
     ],
+    explanation: "",
+  };
+}
+
+export function createEmptyFillBlankQuestion(id?: string): FillBlankQuestion {
+  const promptText = "I ___ to school every day.";
+  return {
+    id: id ?? generateQuestionId(),
+    type: "FILL_BLANK",
+    prompt: { text: promptText, lang: "en" },
+    blanks: syncBlanksWithPrompt(promptText, [{ id: "b1", acceptedAnswers: [""] }]),
     explanation: "",
   };
 }
@@ -107,11 +120,18 @@ export function getListenTypeQuestionSummary(question: ListenTypeQuestion): stri
   return "Nghe và gõ từ";
 }
 
+export function getFillBlankQuestionSummary(question: FillBlankQuestion): string {
+  const text = question.prompt.text.trim();
+  if (text) return text.length > 48 ? `${text.slice(0, 48)}…` : text;
+  return "Điền khuyết";
+}
+
 export function getQuestionSummary(question: ExerciseQuestion): string {
   if (question.type === "MULTIPLE_CHOICE") return getMcqQuestionSummary(question);
   if (question.type === "LISTEN_CHOOSE") return getListenChooseQuestionSummary(question);
   if (question.type === "SPELLING") return getSpellingQuestionSummary(question);
   if (question.type === "LISTEN_TYPE") return getListenTypeQuestionSummary(question);
+  if (question.type === "FILL_BLANK") return getFillBlankQuestionSummary(question);
   if (question.type === "MATCHING") return getMatchingQuestionSummary(question);
   return `(${question.type})`;
 }
@@ -121,6 +141,7 @@ export function getQuestionTypeLabel(question: ExerciseQuestion): string {
   if (question.type === "LISTEN_CHOOSE") return "Nghe chọn";
   if (question.type === "SPELLING") return "Gõ chính tả";
   if (question.type === "LISTEN_TYPE") return "Nghe gõ";
+  if (question.type === "FILL_BLANK") return "Điền khuyết";
   if (question.type === "MATCHING") return "Ghép cặp";
   return question.type;
 }
@@ -180,6 +201,29 @@ export function validateSpellingQuestion(question: SpellingQuestion): ExerciseSe
   return { valid: errors.length === 0, errors };
 }
 
+export function validateFillBlankQuestion(question: FillBlankQuestion): ExerciseSetValidation {
+  const errors: string[] = [];
+  const promptText = question.prompt.text.trim();
+  if (!promptText) {
+    errors.push("Chưa nhập câu có chỗ trống.");
+  }
+  const placeholderCount = countBlankPlaceholders(promptText);
+  if (placeholderCount < 1) {
+    errors.push('Câu cần ít nhất một chỗ trống "___".');
+  }
+  if (question.blanks.length < 1) {
+    errors.push("Thiếu danh sách ô trống.");
+  }
+  if (placeholderCount > 0 && question.blanks.length !== placeholderCount) {
+    errors.push("Số ô trống không khớp số dấu ___ trong câu.");
+  }
+  const hasEmptyAnswer = question.blanks.some((b) => !b.acceptedAnswers.some((a) => a.trim()));
+  if (hasEmptyAnswer) {
+    errors.push("Mỗi ô trống cần ít nhất một đáp án.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
 export function validateListenTypeQuestion(question: ListenTypeQuestion): ExerciseSetValidation {
   const errors: string[] = [];
   if (!question.audioUrl?.trim()) {
@@ -196,6 +240,7 @@ export function validateQuestion(question: ExerciseQuestion): ExerciseSetValidat
   if (question.type === "LISTEN_CHOOSE") return validateListenChooseQuestion(question);
   if (question.type === "SPELLING") return validateSpellingQuestion(question);
   if (question.type === "LISTEN_TYPE") return validateListenTypeQuestion(question);
+  if (question.type === "FILL_BLANK") return validateFillBlankQuestion(question);
   if (question.type === "MATCHING") return validateMatchingQuestion(question);
   return { valid: false, errors: ["Loại câu chưa hỗ trợ trong editor."] };
 }
@@ -213,7 +258,8 @@ export function validateExerciseSetPayload(payload: ExerciseSetPayload): Exercis
       q.type === "MATCHING" ||
       q.type === "LISTEN_CHOOSE" ||
       q.type === "SPELLING" ||
-      q.type === "LISTEN_TYPE",
+      q.type === "LISTEN_TYPE" ||
+      q.type === "FILL_BLANK",
   );
   if (!editableQuestions.length) {
     errors.push("Cần ít nhất 1 câu hợp lệ.");
@@ -291,6 +337,20 @@ export function buildExerciseSetPayload(payload: ExerciseSetPayload): ExerciseSe
           prompt: q.prompt?.text?.trim()
             ? { ...q.prompt, text: q.prompt.text.trim() }
             : q.prompt,
+          explanation: q.explanation?.trim() || undefined,
+        };
+      }
+      if (q.type === "FILL_BLANK") {
+        return {
+          ...q,
+          prompt: { ...q.prompt, text: q.prompt.text.trim() },
+          blanks: q.blanks.map((b) => ({
+            ...b,
+            id: b.id.trim(),
+            acceptedAnswers: b.acceptedAnswers.map((a) => a.trim()).filter(Boolean),
+            placeholder: b.placeholder?.trim() || undefined,
+          })),
+          wordEn: q.wordEn?.trim() || undefined,
           explanation: q.explanation?.trim() || undefined,
         };
       }

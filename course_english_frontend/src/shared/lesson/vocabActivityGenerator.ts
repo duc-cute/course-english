@@ -534,3 +534,4 @@ export function generateListenTypeFromVocabItems(
 
   return { payload, warnings };
 }
+

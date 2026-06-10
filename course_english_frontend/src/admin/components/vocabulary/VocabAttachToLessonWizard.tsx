@@ -214,7 +214,8 @@ export function VocabAttachToLessonWizard({
   }, [includeMatching, includeMcq, vocabInputs, setTitle, exerciseTitle, exerciseBase]);
 
   const resolvedVocabTitle = vocabTitle.trim() || setTitle;
-  const includeExercise = includeMcq || includeListen || includeSpelling || includeListenType || includeMatching;
+  const includeExercise =
+    includeMcq || includeListen || includeSpelling || includeListenType || includeMatching;
 
   const handleAttach = async () => {
     if (!includeVocabulary && !includeExercise) {

@@ -82,12 +82,29 @@ export type ListenTypeQuestion = {
   explanation?: string;
 };
 
+export type FillBlankSlot = {
+  id: string;
+  acceptedAnswers: string[];
+  placeholder?: string;
+};
+
+export type FillBlankQuestion = {
+  id: string;
+  type: "FILL_BLANK";
+  prompt: ExercisePrompt;
+  blanks: FillBlankSlot[];
+  wordEn?: string;
+  caseSensitive?: boolean;
+  explanation?: string;
+};
+
 export type ExerciseQuestion =
   | MultipleChoiceQuestion
   | MatchingQuestion
   | ListenChooseQuestion
   | SpellingQuestion
-  | ListenTypeQuestion;
+  | ListenTypeQuestion
+  | FillBlankQuestion;
 
 export type ExercisePresentation = "stepped" | "inline";
 

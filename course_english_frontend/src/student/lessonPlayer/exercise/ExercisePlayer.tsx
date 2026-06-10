@@ -22,13 +22,16 @@ import { ListenChooseQuestion } from "./ListenChooseQuestion";
 import { ListenTypeQuestion } from "./ListenTypeQuestion";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion";
+import { FillBlankQuestion } from "./FillBlankQuestion";
 import { SpellingQuestion } from "./SpellingQuestion";
 import { prepareExercisePlan, type PreparedExerciseItem } from "./prepareExerciseItems";
 import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 import { QuestionProgressBar } from "./QuestionProgressBar";
 import { compareTypedAnswers } from "../../../shared/lesson/answerNormalize";
+import { compareFillBlankAnswers, isFillBlankComplete } from "../../../shared/lesson/fillBlankUtils";
 import type {
   ListenChooseQuestion as ListenChooseType,
+  FillBlankQuestion as FillBlankType,
   ListenTypeQuestion as ListenTypeQuestionModel,
   MatchingQuestion as MatchingType,
   MultipleChoiceQuestion as McqType,
@@ -88,6 +91,7 @@ export function ExercisePlayer({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
   const [typedAnswer, setTypedAnswer] = useState("");
+  const [fillBlankAnswers, setFillBlankAnswers] = useState<Record<string, string>>({});
   const [matchingSelections, setMatchingSelections] = useState<Record<string, string>>({});
   const [activeMatchingLeft, setActiveMatchingLeft] = useState<string | null>(null);
   const [phase, setPhase] = useState<PlayerPhase>("answer");
@@ -149,6 +153,7 @@ export function ExercisePlayer({
 
     setSelectedChoiceId(null);
     setTypedAnswer("");
+    setFillBlankAnswers({});
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setShowExplanation(false);
@@ -172,6 +177,10 @@ export function ExercisePlayer({
     current?.displayQuestion.type === "LISTEN_TYPE"
       ? (current.displayQuestion as ListenTypeQuestionModel)
       : null;
+  const currentFillBlank =
+    current?.displayQuestion.type === "FILL_BLANK"
+      ? (current.displayQuestion as FillBlankType)
+      : null;
   const currentMatching =
     current?.displayQuestion.type === "MATCHING"
       ? (current.displayQuestion as MatchingType)
@@ -189,6 +198,15 @@ export function ExercisePlayer({
     }
     if (currentSpelling || currentListenType) {
       setTypedAnswer(saved?.typedAnswer ?? "");
+      setFillBlankAnswers({});
+      setSelectedChoiceId(null);
+      setMatchingSelections({});
+      setActiveMatchingLeft(null);
+      return;
+    }
+    if (currentFillBlank) {
+      setFillBlankAnswers(saved?.fillBlankAnswers ?? {});
+      setTypedAnswer("");
       setSelectedChoiceId(null);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
@@ -199,7 +217,7 @@ export function ExercisePlayer({
       setActiveMatchingLeft(null);
       setSelectedChoiceId(null);
     }
-  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentSpelling, currentListenType, currentMatching, answers]);
+  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentSpelling, currentListenType, currentFillBlank, currentMatching, answers]);
 
   useEffect(() => {
     if (phase === "done" || phase === "review") {
@@ -354,6 +372,26 @@ export function ExercisePlayer({
       return;
     }
 
+    if (
+      currentFillBlank &&
+      isFillBlankComplete(fillBlankAnswers, currentFillBlank.blanks)
+    ) {
+      const correct = compareFillBlankAnswers(
+        fillBlankAnswers,
+        currentFillBlank.blanks,
+        currentFillBlank.caseSensitive,
+      );
+      const nextAnswers = {
+        ...answers,
+        [currentFillBlank.id]: { correct, fillBlankAnswers: { ...fillBlankAnswers } },
+      };
+      setAnswers(nextAnswers);
+      setShowExplanation(false);
+      setPhase("feedback");
+      persistSession(questionIndex, false, nextAnswers);
+      return;
+    }
+
     if (currentMatching && isMatchingComplete(currentMatching.pairs, matchingSelections)) {
       const correct = scoreMatchingAnswer(currentMatching.pairs, matchingSelections);
       const nextAnswers = {
@@ -403,6 +441,7 @@ export function ExercisePlayer({
     setQuestionIndex(next);
     setSelectedChoiceId(null);
     setTypedAnswer("");
+    setFillBlankAnswers({});
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setShowExplanation(false);
@@ -418,6 +457,7 @@ export function ExercisePlayer({
     setQuestionIndex(0);
     setSelectedChoiceId(null);
     setTypedAnswer("");
+    setFillBlankAnswers({});
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setPhase("answer");
@@ -433,15 +473,18 @@ export function ExercisePlayer({
     ? Boolean(selectedChoiceId)
     : currentSpelling || currentListenType
       ? Boolean(typedAnswer.trim())
-      : currentMatching
-        ? isMatchingComplete(currentMatching.pairs, matchingSelections)
-        : false;
+      : currentFillBlank
+        ? isFillBlankComplete(fillBlankAnswers, currentFillBlank.blanks)
+        : currentMatching
+          ? isMatchingComplete(currentMatching.pairs, matchingSelections)
+          : false;
 
   const currentExplanation =
     currentMcq?.explanation ??
     currentListen?.explanation ??
     currentSpelling?.explanation ??
     currentListenType?.explanation ??
+    currentFillBlank?.explanation ??
     currentMatching?.explanation;
 
   const typedShowResult = phase === "feedback";
@@ -498,7 +541,12 @@ export function ExercisePlayer({
     );
   }
 
-  if (!current || (!currentMcq && !currentListen && !currentSpelling && !currentListenType && !currentMatching)) {
+  const fillBlankIsCorrect =
+    typedShowResult && currentFillBlank
+      ? answers[currentFillBlank.id]?.correct === true
+      : false;
+
+  if (!current || (!currentMcq && !currentListen && !currentSpelling && !currentListenType && !currentFillBlank && !currentMatching)) {
     return (
       <Alert severity="warning" sx={{ borderRadius: "14px" }}>
         Dạng câu <strong>{current?.displayQuestion.type ?? "unknown"}</strong> sẽ hỗ trợ ở bản tiếp theo.
@@ -569,6 +617,19 @@ export function ExercisePlayer({
           showResult={showFeedback}
           isCorrect={typedIsCorrect}
           onChange={setTypedAnswer}
+        />
+      ) : null}
+
+      {currentFillBlank ? (
+        <FillBlankQuestion
+          question={currentFillBlank}
+          answers={fillBlankAnswers}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          isCorrect={fillBlankIsCorrect}
+          onChange={(blankId, value) =>
+            setFillBlankAnswers((prev) => ({ ...prev, [blankId]: value }))
+          }
         />
       ) : null}
 
