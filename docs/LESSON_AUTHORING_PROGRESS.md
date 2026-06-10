@@ -524,14 +524,14 @@ mysql -u … -p … < course_english_backend/seed_vocabulary_set_demo.sql
 
 | Sprint | Type | Mô tả |
 |--------|------|--------|
-| S1 | `SPELLING` | Nghĩa VI → gõ từ EN |
-| S1 | `LISTEN_TYPE` | Nghe audio → gõ từ EN |
+| S1 ✅ | `SPELLING` | Nghĩa VI → gõ từ EN |
+| S1 ✅ | `LISTEN_TYPE` | Nghe audio → gõ từ EN |
 | S2 | `FILL_BLANK` | Điền từ vào `___` (template hoặc câu mẫu) |
 | S3 | `REORDER_SENTENCE` | Sắp xếp 3–15 từ/chip thành câu đúng (drag-drop) |
 
-- [ ] `answerNormalize.ts` — chấm gõ chữ chung
+- [x] `answerNormalize.ts` — chấm gõ chữ chung (S1)
 - [ ] (Tuỳ chọn) migration `example_sentence_en` trên `vocabulary_words` cho FILL + REORDER auto-gen
 
 ---
 
-**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · LISTEN_CHOOSE ✅ · **Tiếp theo: [Phase 8 — SPELLING, LISTEN_TYPE, FILL_BLANK, REORDER](./EXERCISE_TYPES_PHASE8_PLAN.md) · E2E · Enrollment**
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · LISTEN_CHOOSE ✅ · Phase 8 S1 ✅ · **Tiếp theo: [Phase 8 S2–S4 — FILL_BLANK, REORDER](./EXERCISE_TYPES_PHASE8_PLAN.md) · E2E · Enrollment**

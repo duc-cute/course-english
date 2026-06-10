@@ -3,8 +3,10 @@ import type {
   ExerciseQuestion,
   ExerciseSetPayload,
   ListenChooseQuestion,
+  ListenTypeQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
+  SpellingQuestion,
 } from "../../student/lessonPlayer/exercise/types";
 
 let questionIdSeq = 0;
@@ -93,9 +95,23 @@ export function getListenChooseQuestionSummary(question: ListenChooseQuestion): 
   return "Nghe và chọn nghĩa";
 }
 
+export function getSpellingQuestionSummary(question: SpellingQuestion): string {
+  const meaning = question.prompt.text.trim();
+  if (meaning) return `Gõ chính tả: ${meaning}`;
+  if (question.wordEn?.trim()) return `Gõ: ${question.wordEn.trim()}`;
+  return "Gõ chính tả";
+}
+
+export function getListenTypeQuestionSummary(question: ListenTypeQuestion): string {
+  if (question.wordEn?.trim()) return `Nghe gõ: ${question.wordEn.trim()}`;
+  return "Nghe và gõ từ";
+}
+
 export function getQuestionSummary(question: ExerciseQuestion): string {
   if (question.type === "MULTIPLE_CHOICE") return getMcqQuestionSummary(question);
   if (question.type === "LISTEN_CHOOSE") return getListenChooseQuestionSummary(question);
+  if (question.type === "SPELLING") return getSpellingQuestionSummary(question);
+  if (question.type === "LISTEN_TYPE") return getListenTypeQuestionSummary(question);
   if (question.type === "MATCHING") return getMatchingQuestionSummary(question);
   return `(${question.type})`;
 }
@@ -103,6 +119,8 @@ export function getQuestionSummary(question: ExerciseQuestion): string {
 export function getQuestionTypeLabel(question: ExerciseQuestion): string {
   if (question.type === "MULTIPLE_CHOICE") return "Trắc nghiệm";
   if (question.type === "LISTEN_CHOOSE") return "Nghe chọn";
+  if (question.type === "SPELLING") return "Gõ chính tả";
+  if (question.type === "LISTEN_TYPE") return "Nghe gõ";
   if (question.type === "MATCHING") return "Ghép cặp";
   return question.type;
 }
@@ -151,9 +169,33 @@ export function validateListenChooseQuestion(question: ListenChooseQuestion): Ex
   return { valid: errors.length === 0, errors };
 }
 
+export function validateSpellingQuestion(question: SpellingQuestion): ExerciseSetValidation {
+  const errors: string[] = [];
+  if (!question.prompt.text.trim() && !question.correctAnswer.trim()) {
+    errors.push("Thiếu gợi ý hoặc đáp án.");
+  }
+  if (!question.correctAnswer.trim()) {
+    errors.push("Thiếu đáp án đúng.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateListenTypeQuestion(question: ListenTypeQuestion): ExerciseSetValidation {
+  const errors: string[] = [];
+  if (!question.audioUrl?.trim()) {
+    errors.push("Thiếu URL audio.");
+  }
+  if (!question.correctAnswer.trim()) {
+    errors.push("Thiếu đáp án đúng.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
 export function validateQuestion(question: ExerciseQuestion): ExerciseSetValidation {
   if (question.type === "MULTIPLE_CHOICE") return validateMcqQuestion(question);
   if (question.type === "LISTEN_CHOOSE") return validateListenChooseQuestion(question);
+  if (question.type === "SPELLING") return validateSpellingQuestion(question);
+  if (question.type === "LISTEN_TYPE") return validateListenTypeQuestion(question);
   if (question.type === "MATCHING") return validateMatchingQuestion(question);
   return { valid: false, errors: ["Loại câu chưa hỗ trợ trong editor."] };
 }
@@ -166,10 +208,15 @@ export function validateExerciseSetPayload(payload: ExerciseSetPayload): Exercis
   }
 
   const editableQuestions = payload.questions.filter(
-    (q) => q.type === "MULTIPLE_CHOICE" || q.type === "MATCHING" || q.type === "LISTEN_CHOOSE",
+    (q) =>
+      q.type === "MULTIPLE_CHOICE" ||
+      q.type === "MATCHING" ||
+      q.type === "LISTEN_CHOOSE" ||
+      q.type === "SPELLING" ||
+      q.type === "LISTEN_TYPE",
   );
   if (!editableQuestions.length) {
-    errors.push("Cần ít nhất 1 câu (trắc nghiệm, nghe chọn hoặc ghép cặp).");
+    errors.push("Cần ít nhất 1 câu hợp lệ.");
   }
 
   editableQuestions.forEach((q, index) => {
@@ -222,6 +269,28 @@ export function buildExerciseSetPayload(payload: ExerciseSetPayload): ExerciseSe
           audioUrl: q.audioUrl.trim(),
           wordEn: q.wordEn?.trim() || undefined,
           choices: q.choices.map((c) => ({ ...c, text: c.text.trim() })),
+          explanation: q.explanation?.trim() || undefined,
+        };
+      }
+      if (q.type === "SPELLING") {
+        return {
+          ...q,
+          prompt: { ...q.prompt, text: q.prompt.text.trim() },
+          correctAnswer: q.correctAnswer.trim(),
+          wordEn: q.wordEn?.trim() || undefined,
+          hint: q.hint?.trim() || undefined,
+          explanation: q.explanation?.trim() || undefined,
+        };
+      }
+      if (q.type === "LISTEN_TYPE") {
+        return {
+          ...q,
+          audioUrl: q.audioUrl.trim(),
+          correctAnswer: q.correctAnswer.trim(),
+          wordEn: q.wordEn?.trim() || undefined,
+          prompt: q.prompt?.text?.trim()
+            ? { ...q.prompt, text: q.prompt.text.trim() }
+            : q.prompt,
           explanation: q.explanation?.trim() || undefined,
         };
       }

@@ -328,6 +328,73 @@
   margin-top: 4px;
 }
 
+/* --- SPELLING / LISTEN_TYPE typed answer --- */
+.exercise-typed {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.exercise-typed-prompt {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: clamp(1.25rem, 4vw, 1.875rem);
+  font-weight: 700;
+  color: var(--eng-on-surface, #1a2423);
+  line-height: 1.3;
+}
+
+.exercise-typed-hint {
+  margin: -8px 0 12px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--eng-on-surface-variant, #7a8584);
+}
+
+.exercise-typed-input {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 12px;
+  padding: 14px 16px;
+  border: 2px solid rgba(13, 148, 136, 0.22);
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.exercise-typed-input:focus:not(:disabled) {
+  border-color: var(--eng-teal, #0d9488);
+  background: rgba(13, 148, 136, 0.04);
+}
+
+.exercise-typed-input.is-correct {
+  border-color: #22a06b;
+  background: #d8f5e4;
+}
+
+.exercise-typed-input.is-wrong {
+  border-color: #e5484d;
+  background: #ffe5e5;
+}
+
+.exercise-typed-input:disabled {
+  opacity: 0.95;
+  cursor: default;
+}
+
+.exercise-typed-reveal {
+  margin: 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--eng-on-surface-variant, #7a8584);
+}
+
+.exercise-listen-type .exercise-listen-play {
+  margin-bottom: 16px;
+}
+
 /* --- MATCHING question (Design/add_lesson/match) --- */
 .exercise-matching {
   max-width: 640px;

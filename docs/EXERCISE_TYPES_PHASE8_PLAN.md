@@ -225,7 +225,7 @@ flowchart LR
 
 | Sprint | Deliverable | Acceptance |
 |--------|-------------|------------|
-| **S1** | SPELLING + LISTEN_TYPE | Sinh từ bộ fruit → HS tab Bài tập gõ đúng; review hiện đáp án |
+| **S1** ✅ | SPELLING + LISTEN_TYPE | Sinh từ bộ fruit → HS tab Bài tập gõ đúng; review hiện đáp án |
 | **S2** | FILL_BLANK (template + editor tay) | GV soạn "I ___ …" + publish; HS điền, chấm đúng/sai |
 | **S3** | `example_sentence_en` + gen FILL + REORDER | Enrich hoặc GV nhập câu mẫu → auto 2 dạng |
 | **S4** | Polish | Wizard tick từng loại; import CSV; bank resolve |

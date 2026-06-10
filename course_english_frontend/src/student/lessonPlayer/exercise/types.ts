@@ -4,7 +4,9 @@ export type ExerciseQuestionType =
   | "MATCHING"
   | "FILL_BLANK"
   | "TRUE_FALSE"
-  | "LISTEN_CHOOSE";
+  | "LISTEN_CHOOSE"
+  | "SPELLING"
+  | "LISTEN_TYPE";
 
 export type ExerciseChoice = {
   id: string;
@@ -14,6 +16,10 @@ export type ExerciseChoice = {
 export type ExercisePrompt = {
   text: string;
   lang?: string;
+};
+
+export type TypedAnswerOptions = {
+  caseSensitive?: boolean;
 };
 
 export type MultipleChoiceQuestion = {
@@ -53,7 +59,35 @@ export type ListenChooseQuestion = {
   explanation?: string;
 };
 
-export type ExerciseQuestion = MultipleChoiceQuestion | MatchingQuestion | ListenChooseQuestion;
+export type SpellingQuestion = {
+  id: string;
+  type: "SPELLING";
+  prompt: ExercisePrompt;
+  correctAnswer: string;
+  wordEn?: string;
+  hint?: string;
+  caseSensitive?: boolean;
+  explanation?: string;
+};
+
+export type ListenTypeQuestion = {
+  id: string;
+  type: "LISTEN_TYPE";
+  audioUrl: string;
+  audioAccent?: "UK" | "US";
+  correctAnswer: string;
+  wordEn?: string;
+  prompt?: ExercisePrompt;
+  caseSensitive?: boolean;
+  explanation?: string;
+};
+
+export type ExerciseQuestion =
+  | MultipleChoiceQuestion
+  | MatchingQuestion
+  | ListenChooseQuestion
+  | SpellingQuestion
+  | ListenTypeQuestion;
 
 export type ExercisePresentation = "stepped" | "inline";
 

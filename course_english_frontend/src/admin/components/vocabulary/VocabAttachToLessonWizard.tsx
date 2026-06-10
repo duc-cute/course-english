@@ -1,7 +1,9 @@
 import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
+import KeyboardOutlinedIcon from "@mui/icons-material/KeyboardOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
+import SpellcheckOutlinedIcon from "@mui/icons-material/SpellcheckOutlined";
 import {
   Alert,
   Box,
@@ -32,8 +34,10 @@ import {
 } from "../../../shared/lesson/vocabularyPayload";
 import {
   generateListenChooseFromVocabItems,
+  generateListenTypeFromVocabItems,
   generateMatchingFromVocabItems,
   generateMcqFromVocabItems,
+  generateSpellingFromVocabItems,
 } from "../../../shared/lesson/vocabActivityGenerator";
 import type { VocabularyItemRecord } from "../../../shared/api/vocabularySet";
 import { vocabularyAudioAccentListenLabel } from "../../../shared/constants/systemConfigKeys";
@@ -66,6 +70,8 @@ export function VocabAttachToLessonWizard({
   const [includeVocabulary, setIncludeVocabulary] = useState(true);
   const [includeMcq, setIncludeMcq] = useState(true);
   const [includeListen, setIncludeListen] = useState(false);
+  const [includeSpelling, setIncludeSpelling] = useState(false);
+  const [includeListenType, setIncludeListenType] = useState(false);
   const [includeMatching, setIncludeMatching] = useState(false);
   const [vocabTitle, setVocabTitle] = useState("");
   const [exerciseTitle, setExerciseTitle] = useState("");
@@ -135,6 +141,55 @@ export function VocabAttachToLessonWizard({
     }
   }, [includeListen, vocabInputs, exerciseBase, listenAudioAccent]);
 
+  const spellingGeneration = useMemo(() => {
+    if (!includeSpelling) return { error: null as string | null, questionCount: 0, payloadJson: "", warnings: [] as string[] };
+    try {
+      const result = generateSpellingFromVocabItems(vocabInputs, {
+        title: `${exerciseBase} — Gõ chính tả`,
+        instruction: "Nhìn nghĩa tiếng Việt và gõ từ tiếng Anh",
+        shuffleQuestions: true,
+      });
+      return {
+        error: null,
+        questionCount: result.payload.questions.length,
+        payloadJson: buildExerciseSetPayloadJson(result.payload),
+        warnings: result.warnings,
+      };
+    } catch (err) {
+      return {
+        error: (err as { message?: string })?.message ?? "Không thể sinh bài gõ chính tả.",
+        questionCount: 0,
+        payloadJson: "",
+        warnings: [] as string[],
+      };
+    }
+  }, [includeSpelling, vocabInputs, exerciseBase]);
+
+  const listenTypeGeneration = useMemo(() => {
+    if (!includeListenType) return { error: null as string | null, questionCount: 0, payloadJson: "", warnings: [] as string[] };
+    try {
+      const result = generateListenTypeFromVocabItems(vocabInputs, {
+        title: `${exerciseBase} — Nghe gõ`,
+        instruction: "Nghe phát âm và gõ từ tiếng Anh",
+        shuffleQuestions: true,
+        audioAccent: listenAudioAccent,
+      });
+      return {
+        error: null,
+        questionCount: result.payload.questions.length,
+        payloadJson: buildExerciseSetPayloadJson(result.payload),
+        warnings: result.warnings,
+      };
+    } catch (err) {
+      return {
+        error: (err as { message?: string })?.message ?? "Không thể sinh bài nghe gõ.",
+        questionCount: 0,
+        payloadJson: "",
+        warnings: [] as string[],
+      };
+    }
+  }, [includeListenType, vocabInputs, exerciseBase, listenAudioAccent]);
+
   const matchingGeneration = useMemo(() => {
     if (!includeMatching) return { error: null as string | null, questionCount: 0, payloadJson: "", warnings: [] as string[] };
     try {
@@ -159,7 +214,7 @@ export function VocabAttachToLessonWizard({
   }, [includeMatching, includeMcq, vocabInputs, setTitle, exerciseTitle, exerciseBase]);
 
   const resolvedVocabTitle = vocabTitle.trim() || setTitle;
-  const includeExercise = includeMcq || includeListen || includeMatching;
+  const includeExercise = includeMcq || includeListen || includeSpelling || includeListenType || includeMatching;
 
   const handleAttach = async () => {
     if (!includeVocabulary && !includeExercise) {
@@ -172,6 +227,14 @@ export function VocabAttachToLessonWizard({
     }
     if (includeListen && listenGeneration.error) {
       setError(listenGeneration.error);
+      return;
+    }
+    if (includeSpelling && spellingGeneration.error) {
+      setError(spellingGeneration.error);
+      return;
+    }
+    if (includeListenType && listenTypeGeneration.error) {
+      setError(listenTypeGeneration.error);
       return;
     }
     if (includeMatching && matchingGeneration.error) {
@@ -202,6 +265,18 @@ export function VocabAttachToLessonWizard({
           payloadJson: listenGeneration.payloadJson,
         });
       }
+      if (includeSpelling && spellingGeneration.payloadJson) {
+        await apiCreateLessonBlock(lessonId, {
+          blockType: "EXERCISE_SET",
+          payloadJson: spellingGeneration.payloadJson,
+        });
+      }
+      if (includeListenType && listenTypeGeneration.payloadJson) {
+        await apiCreateLessonBlock(lessonId, {
+          blockType: "EXERCISE_SET",
+          payloadJson: listenTypeGeneration.payloadJson,
+        });
+      }
       if (includeMatching && matchingGeneration.payloadJson) {
         await apiCreateLessonBlock(lessonId, {
           blockType: "EXERCISE_SET",
@@ -220,6 +295,8 @@ export function VocabAttachToLessonWizard({
   const allWarnings = [
     ...(mcqGeneration.warnings ?? []),
     ...(listenGeneration.warnings ?? []),
+    ...(spellingGeneration.warnings ?? []),
+    ...(listenTypeGeneration.warnings ?? []),
     ...(matchingGeneration.warnings ?? []),
   ];
 
@@ -305,6 +382,48 @@ export function VocabAttachToLessonWizard({
             <Alert severity="info" sx={{ fontSize: 13 }}>
               Sẽ sinh <strong>{listenGeneration.questionCount}</strong> câu nghe-chọn (audio{" "}
               {vocabularyAudioAccentListenLabel(listenAudioAccent)} snapshot).
+            </Alert>
+          )
+        ) : null}
+
+        <FormControlLabel
+          control={
+            <Checkbox checked={includeSpelling} onChange={(e) => setIncludeSpelling(e.target.checked)} />
+          }
+          label={
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <SpellcheckOutlinedIcon sx={{ fontSize: 18, color: "#0C447C" }} />
+              Gõ chính tả SPELLING (≥ 1 từ)
+            </Box>
+          }
+        />
+        {includeSpelling ? (
+          spellingGeneration.error ? (
+            <Alert severity="warning">{spellingGeneration.error}</Alert>
+          ) : (
+            <Alert severity="info" sx={{ fontSize: 13 }}>
+              Sẽ sinh <strong>{spellingGeneration.questionCount}</strong> câu gõ chính tả.
+            </Alert>
+          )
+        ) : null}
+
+        <FormControlLabel
+          control={
+            <Checkbox checked={includeListenType} onChange={(e) => setIncludeListenType(e.target.checked)} />
+          }
+          label={
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <KeyboardOutlinedIcon sx={{ fontSize: 18, color: "#0C447C" }} />
+              Nghe gõ LISTEN_TYPE (≥ 1 từ có audio {vocabularyAudioAccentListenLabel(listenAudioAccent)})
+            </Box>
+          }
+        />
+        {includeListenType ? (
+          listenTypeGeneration.error ? (
+            <Alert severity="warning">{listenTypeGeneration.error}</Alert>
+          ) : (
+            <Alert severity="info" sx={{ fontSize: 13 }}>
+              Sẽ sinh <strong>{listenTypeGeneration.questionCount}</strong> câu nghe-gõ.
             </Alert>
           )
         ) : null}

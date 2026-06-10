@@ -19,15 +19,20 @@ import { ExerciseReviewScreen } from "./ExerciseReviewScreen";
 import { PracticeAttemptBanner } from "./PracticeAttemptBanner";
 import { isMatchingComplete, scoreMatchingAnswer } from "./matchingUtils";
 import { ListenChooseQuestion } from "./ListenChooseQuestion";
+import { ListenTypeQuestion } from "./ListenTypeQuestion";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion";
+import { SpellingQuestion } from "./SpellingQuestion";
 import { prepareExercisePlan, type PreparedExerciseItem } from "./prepareExerciseItems";
 import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 import { QuestionProgressBar } from "./QuestionProgressBar";
+import { compareTypedAnswers } from "../../../shared/lesson/answerNormalize";
 import type {
   ListenChooseQuestion as ListenChooseType,
+  ListenTypeQuestion as ListenTypeQuestionModel,
   MatchingQuestion as MatchingType,
   MultipleChoiceQuestion as McqType,
+  SpellingQuestion as SpellingType,
 } from "./types";
 
 type ExercisePlayerProps = {
@@ -82,6 +87,7 @@ export function ExercisePlayer({
 
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+  const [typedAnswer, setTypedAnswer] = useState("");
   const [matchingSelections, setMatchingSelections] = useState<Record<string, string>>({});
   const [activeMatchingLeft, setActiveMatchingLeft] = useState<string | null>(null);
   const [phase, setPhase] = useState<PlayerPhase>("answer");
@@ -142,6 +148,7 @@ export function ExercisePlayer({
     }
 
     setSelectedChoiceId(null);
+    setTypedAnswer("");
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setShowExplanation(false);
@@ -157,6 +164,14 @@ export function ExercisePlayer({
     current?.displayQuestion.type === "LISTEN_CHOOSE"
       ? (current.displayQuestion as ListenChooseType)
       : null;
+  const currentSpelling =
+    current?.displayQuestion.type === "SPELLING"
+      ? (current.displayQuestion as SpellingType)
+      : null;
+  const currentListenType =
+    current?.displayQuestion.type === "LISTEN_TYPE"
+      ? (current.displayQuestion as ListenTypeQuestionModel)
+      : null;
   const currentMatching =
     current?.displayQuestion.type === "MATCHING"
       ? (current.displayQuestion as MatchingType)
@@ -167,6 +182,14 @@ export function ExercisePlayer({
     const saved = answers[current.displayQuestion.id];
     if (currentMcq || currentListen) {
       setSelectedChoiceId(saved?.selectedChoiceId ?? null);
+      setTypedAnswer("");
+      setMatchingSelections({});
+      setActiveMatchingLeft(null);
+      return;
+    }
+    if (currentSpelling || currentListenType) {
+      setTypedAnswer(saved?.typedAnswer ?? "");
+      setSelectedChoiceId(null);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
       return;
@@ -176,7 +199,7 @@ export function ExercisePlayer({
       setActiveMatchingLeft(null);
       setSelectedChoiceId(null);
     }
-  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentMatching, answers]);
+  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentSpelling, currentListenType, currentMatching, answers]);
 
   useEffect(() => {
     if (phase === "done" || phase === "review") {
@@ -315,6 +338,22 @@ export function ExercisePlayer({
       return;
     }
 
+    const typedQuestion = currentSpelling ?? currentListenType;
+    if (typedQuestion && typedAnswer.trim()) {
+      const correct = compareTypedAnswers(typedAnswer, typedQuestion.correctAnswer, {
+        caseSensitive: typedQuestion.caseSensitive,
+      });
+      const nextAnswers = {
+        ...answers,
+        [typedQuestion.id]: { correct, typedAnswer: typedAnswer.trim() },
+      };
+      setAnswers(nextAnswers);
+      setShowExplanation(false);
+      setPhase("feedback");
+      persistSession(questionIndex, false, nextAnswers);
+      return;
+    }
+
     if (currentMatching && isMatchingComplete(currentMatching.pairs, matchingSelections)) {
       const correct = scoreMatchingAnswer(currentMatching.pairs, matchingSelections);
       const nextAnswers = {
@@ -363,6 +402,7 @@ export function ExercisePlayer({
     const next = questionIndex + 1;
     setQuestionIndex(next);
     setSelectedChoiceId(null);
+    setTypedAnswer("");
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setShowExplanation(false);
@@ -377,6 +417,7 @@ export function ExercisePlayer({
     attemptSubmitLockRef.current = false;
     setQuestionIndex(0);
     setSelectedChoiceId(null);
+    setTypedAnswer("");
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setPhase("answer");
@@ -390,12 +431,24 @@ export function ExercisePlayer({
 
   const canCheck = currentMcq || currentListen
     ? Boolean(selectedChoiceId)
-    : currentMatching
-      ? isMatchingComplete(currentMatching.pairs, matchingSelections)
-      : false;
+    : currentSpelling || currentListenType
+      ? Boolean(typedAnswer.trim())
+      : currentMatching
+        ? isMatchingComplete(currentMatching.pairs, matchingSelections)
+        : false;
 
   const currentExplanation =
-    currentMcq?.explanation ?? currentListen?.explanation ?? currentMatching?.explanation;
+    currentMcq?.explanation ??
+    currentListen?.explanation ??
+    currentSpelling?.explanation ??
+    currentListenType?.explanation ??
+    currentMatching?.explanation;
+
+  const typedShowResult = phase === "feedback";
+  const typedIsCorrect =
+    typedShowResult && (currentSpelling ?? currentListenType)
+      ? answers[(currentSpelling ?? currentListenType)!.id]?.correct === true
+      : false;
 
   if (total === 0) {
     const hasPracticeBlocks = practiceBlocks.length > 0;
@@ -445,7 +498,7 @@ export function ExercisePlayer({
     );
   }
 
-  if (!current || (!currentMcq && !currentListen && !currentMatching)) {
+  if (!current || (!currentMcq && !currentListen && !currentSpelling && !currentListenType && !currentMatching)) {
     return (
       <Alert severity="warning" sx={{ borderRadius: "14px" }}>
         Dạng câu <strong>{current?.displayQuestion.type ?? "unknown"}</strong> sẽ hỗ trợ ở bản tiếp theo.
@@ -494,6 +547,28 @@ export function ExercisePlayer({
           disabled={showFeedback}
           showResult={showFeedback}
           onSelect={setSelectedChoiceId}
+        />
+      ) : null}
+
+      {currentSpelling ? (
+        <SpellingQuestion
+          question={currentSpelling}
+          value={typedAnswer}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          isCorrect={typedIsCorrect}
+          onChange={setTypedAnswer}
+        />
+      ) : null}
+
+      {currentListenType ? (
+        <ListenTypeQuestion
+          question={currentListenType}
+          value={typedAnswer}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          isCorrect={typedIsCorrect}
+          onChange={setTypedAnswer}
         />
       ) : null}
 

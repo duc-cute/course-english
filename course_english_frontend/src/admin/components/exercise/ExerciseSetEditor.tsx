@@ -26,8 +26,10 @@ import type {
   ExerciseQuestion,
   ExerciseSetPayload,
   ListenChooseQuestion,
+  ListenTypeQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
+  SpellingQuestion,
 } from "../../../student/lessonPlayer/exercise/types";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
@@ -36,6 +38,7 @@ import { ListenChooseQuestionCanvas } from "./ListenChooseQuestionCanvas";
 import { MatchingQuestionCanvas } from "./MatchingQuestionCanvas";
 import { McqQuestionCanvas } from "./McqQuestionCanvas";
 import { QuestionListPanel } from "./QuestionListPanel";
+import { TypedExerciseQuestionCanvas } from "./TypedExerciseQuestionCanvas";
 
 type ExerciseSetEditorProps = {
   payloadJson: string;
@@ -142,6 +145,8 @@ export function ExerciseSetEditor({
           id: generateQuestionId(),
           choices: (source as ListenChooseQuestion).choices.map((c) => ({ ...c })),
         };
+      } else if (source.type === "SPELLING" || source.type === "LISTEN_TYPE") {
+        copy = { ...source, id: generateQuestionId() };
       } else {
         copy = {
           ...(source as MultipleChoiceQuestion),
@@ -268,6 +273,14 @@ export function ExerciseSetEditor({
           ) : activeQuestion?.type === "LISTEN_CHOOSE" ? (
             <ListenChooseQuestionCanvas
               question={activeQuestion as ListenChooseQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "SPELLING" || activeQuestion?.type === "LISTEN_TYPE" ? (
+            <TypedExerciseQuestionCanvas
+              question={activeQuestion as SpellingQuestion | ListenTypeQuestion}
               index={activeIndex}
               canDelete={questions.length > 1}
               onDelete={() => deleteQuestion(activeIndex)}

@@ -5,5 +5,7 @@ public enum QuestionTypeEnum {
     MATCHING,
     FILL_BLANK,
     TRUE_FALSE,
-    LISTEN_CHOOSE
+    LISTEN_CHOOSE,
+    SPELLING,
+    LISTEN_TYPE
 }

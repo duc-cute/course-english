@@ -243,6 +243,12 @@ public class LessonPublishValidator {
         if ("MATCHING".equals(type)) {
             return isValidMatching(question);
         }
+        if ("SPELLING".equals(type)) {
+            return isValidSpelling(question);
+        }
+        if ("LISTEN_TYPE".equals(type)) {
+            return isValidListenType(question);
+        }
         return false;
     }
 
@@ -324,5 +330,21 @@ public class LessonPublishValidator {
             }
         }
         return false;
+    }
+
+    private boolean isValidSpelling(JsonNode question) {
+        String correctAnswer = question.path("correctAnswer").asText("");
+        if (correctAnswer.isBlank()) {
+            return false;
+        }
+        JsonNode prompt = question.get("prompt");
+        String promptText = prompt != null && prompt.isObject() ? prompt.path("text").asText("") : "";
+        return !promptText.isBlank() || !question.path("wordEn").asText("").isBlank();
+    }
+
+    private boolean isValidListenType(JsonNode question) {
+        String audioUrl = question.path("audioUrl").asText("");
+        String correctAnswer = question.path("correctAnswer").asText("");
+        return !audioUrl.isBlank() && !correctAnswer.isBlank();
     }
 }

@@ -68,12 +68,18 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
     const payload = parseExerciseSetPayload(block.payloadJson);
     const mcqCount = payload.questions.filter((q) => q.type === "MULTIPLE_CHOICE").length;
     const listenCount = payload.questions.filter((q) => q.type === "LISTEN_CHOOSE").length;
+    const spellingCount = payload.questions.filter((q) => q.type === "SPELLING").length;
+    const listenTypeCount = payload.questions.filter((q) => q.type === "LISTEN_TYPE").length;
     const matchingCount = payload.questions.filter((q) => q.type === "MATCHING").length;
     const firstMcq = payload.questions.find((q) => q.type === "MULTIPLE_CHOICE");
     const firstListen = payload.questions.find((q) => q.type === "LISTEN_CHOOSE");
+    const firstSpelling = payload.questions.find((q) => q.type === "SPELLING");
+    const firstListenType = payload.questions.find((q) => q.type === "LISTEN_TYPE");
     const questionParts = [
       mcqCount ? `${mcqCount} MCQ` : "",
       listenCount ? `${listenCount} nghe chọn` : "",
+      spellingCount ? `${spellingCount} gõ chính tả` : "",
+      listenTypeCount ? `${listenTypeCount} nghe gõ` : "",
       matchingCount ? `${matchingCount} ghép cặp` : "",
     ].filter(Boolean);
     return (
@@ -90,6 +96,14 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
         {firstListen && firstListen.type === "LISTEN_CHOOSE" ? (
           <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
             VD nghe: {firstListen.wordEn?.trim() || "—"} → chọn nghĩa
+          </Typography>
+        ) : firstSpelling && firstSpelling.type === "SPELLING" ? (
+          <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
+            VD gõ: {firstSpelling.prompt.text} → {firstSpelling.correctAnswer}
+          </Typography>
+        ) : firstListenType && firstListenType.type === "LISTEN_TYPE" ? (
+          <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
+            VD nghe gõ: {firstListenType.wordEn?.trim() || firstListenType.correctAnswer}
           </Typography>
         ) : firstMcq && firstMcq.type === "MULTIPLE_CHOICE" ? (
           <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>

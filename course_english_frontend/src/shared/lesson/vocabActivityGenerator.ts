@@ -2,9 +2,12 @@ import type { VocabularyAudioAccent } from "../constants/systemConfigKeys";
 import type {
   ExerciseSetPayload,
   ListenChooseQuestion,
+  ListenTypeQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
+  SpellingQuestion,
 } from "../../student/lessonPlayer/exercise/types";
+import { buildSpellingHint } from "./answerNormalize";
 
 export type VocabItemInput = {
   id?: string;
@@ -55,10 +58,38 @@ export type ListenChooseGenerationResult = {
   warnings: string[];
 };
 
+export type SpellingGenerationOptions = {
+  title?: string;
+  instruction?: string;
+  shuffleQuestions?: boolean;
+  passScorePercent?: number;
+  includeHint?: boolean;
+};
+
+export type SpellingGenerationResult = {
+  payload: ExerciseSetPayload;
+  warnings: string[];
+};
+
+export type ListenTypeGenerationOptions = {
+  title?: string;
+  instruction?: string;
+  shuffleQuestions?: boolean;
+  passScorePercent?: number;
+  audioAccent?: VocabularyAudioAccent;
+};
+
+export type ListenTypeGenerationResult = {
+  payload: ExerciseSetPayload;
+  warnings: string[];
+};
+
 const CHOICE_IDS = ["a", "b", "c", "d"] as const;
 const MIN_ITEMS_FOR_MCQ = 4;
 const MIN_ITEMS_FOR_MATCHING = 2;
 const MIN_ITEMS_FOR_LISTEN = 4;
+const MIN_ITEMS_FOR_SPELLING = 1;
+const MIN_ITEMS_FOR_LISTEN_TYPE = 1;
 const DEFAULT_PAIRS_PER_QUESTION = 8;
 
 function shuffle<T>(items: T[]): T[] {
@@ -364,6 +395,142 @@ export function generateListenChooseFromVocabItems(
   if (normalizedItems.length < 6) {
     warnings.push("Bộ từ ít — đáp án nhiễu sẽ lặp lại giữa các câu.");
   }
+
+  return { payload, warnings };
+}
+
+export function validateVocabSetForSpelling(
+  items: VocabItemInput[],
+): { valid: boolean; errors: string[]; eligible: VocabItemInput[] } {
+  const errors: string[] = [];
+  const eligible = items.filter((item) => item.wordEn.trim() && item.meaningVi.trim());
+
+  if (eligible.length < MIN_ITEMS_FOR_SPELLING) {
+    errors.push(
+      `Cần ít nhất ${MIN_ITEMS_FOR_SPELLING} từ hợp lệ (word + nghĩa). Hiện có ${eligible.length} từ.`,
+    );
+  }
+
+  return { valid: errors.length === 0, errors, eligible };
+}
+
+export function generateSpellingFromVocabItems(
+  items: VocabItemInput[],
+  options: SpellingGenerationOptions = {},
+): SpellingGenerationResult {
+  const validation = validateVocabSetForSpelling(items);
+  if (!validation.valid) {
+    throw new Error(validation.errors.join(" "));
+  }
+
+  const warnings: string[] = [];
+  const includeHint = options.includeHint !== false;
+
+  const questions: SpellingQuestion[] = validation.eligible.map((item, index) => {
+    const wordEn = item.wordEn.trim();
+    const meaningVi = item.meaningVi.trim();
+    return {
+      id: item.id ? `vocab-spell-${item.id}` : `vocab-spell-q${index + 1}`,
+      type: "SPELLING",
+      prompt: { text: meaningVi, lang: "vi" },
+      correctAnswer: wordEn,
+      wordEn,
+      hint: includeHint ? buildSpellingHint(wordEn) : undefined,
+      caseSensitive: false,
+      explanation: `${wordEn} = ${meaningVi}.`,
+    };
+  });
+
+  const shuffledQuestions = options.shuffleQuestions ? shuffle(questions) : questions;
+
+  const payload: ExerciseSetPayload = {
+    title: options.title ?? "Bài gõ chính tả",
+    instruction: options.instruction ?? "Nhìn nghĩa tiếng Việt và gõ từ tiếng Anh",
+    presentation: "stepped",
+    shuffleQuestions: options.shuffleQuestions ?? false,
+    shuffleOptions: false,
+    passScorePercent: options.passScorePercent ?? 80,
+    questions: shuffledQuestions,
+  };
+
+  return { payload, warnings };
+}
+
+export function validateVocabSetForListenType(
+  items: VocabItemInput[],
+  audioAccent: VocabularyAudioAccent = "UK",
+): { valid: boolean; errors: string[]; eligible: VocabItemInput[] } {
+  const errors: string[] = [];
+  const eligible = items.filter((item) => {
+    if (!item.wordEn.trim()) return false;
+    return pickAudioForItem(item, audioAccent) !== null;
+  });
+
+  if (eligible.length < MIN_ITEMS_FOR_LISTEN_TYPE) {
+    const accentLabel = audioAccent === "US" ? "US" : audioAccent === "BOTH" ? "UK hoặc US" : "UK";
+    errors.push(
+      `Cần ít nhất ${MIN_ITEMS_FOR_LISTEN_TYPE} từ có audio ${accentLabel} (đã enrich). Hiện có ${eligible.length} từ.`,
+    );
+  }
+
+  return { valid: errors.length === 0, errors, eligible };
+}
+
+function createListenTypeForItem(
+  item: VocabItemInput,
+  index: number,
+  audioAccent: VocabularyAudioAccent,
+): ListenTypeQuestion | null {
+  const audio = pickAudioForItem(item, audioAccent);
+  if (!audio) return null;
+
+  const wordEn = item.wordEn.trim();
+  const meaningVi = item.meaningVi.trim();
+
+  return {
+    id: item.id ? `vocab-listen-type-${item.id}` : `vocab-listen-type-q${index + 1}`,
+    type: "LISTEN_TYPE",
+    audioUrl: audio.url,
+    audioAccent: audio.accent,
+    correctAnswer: wordEn,
+    wordEn,
+    prompt: { text: "Nghe và gõ từ tiếng Anh", lang: "vi" },
+    caseSensitive: false,
+    explanation: meaningVi ? `${wordEn} = ${meaningVi}.` : undefined,
+  };
+}
+
+export function generateListenTypeFromVocabItems(
+  items: VocabItemInput[],
+  options: ListenTypeGenerationOptions = {},
+): ListenTypeGenerationResult {
+  const audioAccent = options.audioAccent ?? "UK";
+  const validation = validateVocabSetForListenType(items, audioAccent);
+  if (!validation.valid) {
+    throw new Error(validation.errors.join(" "));
+  }
+
+  const warnings: string[] = [];
+  const skipped = items.length - validation.eligible.length;
+  if (skipped > 0) {
+    warnings.push(`${skipped} từ không có audio phù hợp — đã bỏ qua.`);
+  }
+
+  const questions = validation.eligible
+    .map((item, index) => createListenTypeForItem(item, index, audioAccent))
+    .filter((q): q is ListenTypeQuestion => q !== null);
+
+  const shuffledQuestions = options.shuffleQuestions ? shuffle(questions) : questions;
+
+  const payload: ExerciseSetPayload = {
+    title: options.title ?? "Bài nghe — gõ từ",
+    instruction: options.instruction ?? "Nghe phát âm và gõ từ tiếng Anh",
+    presentation: "stepped",
+    shuffleQuestions: options.shuffleQuestions ?? false,
+    shuffleOptions: false,
+    passScorePercent: options.passScorePercent ?? 80,
+    questions: shuffledQuestions,
+  };
 
   return { payload, warnings };
 }

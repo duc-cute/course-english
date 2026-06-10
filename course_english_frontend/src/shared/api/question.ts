@@ -7,7 +7,9 @@ export type QuestionType =
   | "MATCHING"
   | "FILL_BLANK"
   | "TRUE_FALSE"
-  | "LISTEN_CHOOSE";
+  | "LISTEN_CHOOSE"
+  | "SPELLING"
+  | "LISTEN_TYPE";
 
 export type QuestionChoiceRecord = {
   id?: string;

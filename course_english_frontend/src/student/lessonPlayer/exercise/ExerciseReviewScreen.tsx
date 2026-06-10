@@ -3,8 +3,10 @@ import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import type { ExerciseAnswerSnapshot } from "../exerciseSessionStorage";
 import type { PreparedExerciseItem } from "./prepareExerciseItems";
-import type { ListenChooseQuestion, MatchingQuestion, MultipleChoiceQuestion } from "./types";
+import type { ListenChooseQuestion, ListenTypeQuestion, MatchingQuestion, MultipleChoiceQuestion, SpellingQuestion } from "./types";
 import { ListenChooseQuestion as ListenChooseReview } from "./ListenChooseQuestion";
+import { ListenTypeQuestion as ListenTypeReview } from "./ListenTypeQuestion";
+import { SpellingQuestion as SpellingReview } from "./SpellingQuestion";
 import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 
 type ExerciseReviewScreenProps = {
@@ -128,6 +130,82 @@ export function ExerciseReviewScreen({ lessonTitle, items, answers, onBack }: Ex
                 {listen.explanation?.trim() ? (
                   <div className="exercise-review-explain">
                     <QuestionExplanationPanel explanation={listen.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
+          if (question.type === "SPELLING") {
+            const spelling = question as SpellingQuestion;
+            const answer = answers[spelling.id];
+            const isCorrect = answer?.correct === true;
+
+            return (
+              <li key={spelling.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Gõ chính tả</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> Đúng
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> Sai
+                      </>
+                    )}
+                  </span>
+                </div>
+                <SpellingReview
+                  question={spelling}
+                  value={answer?.typedAnswer ?? ""}
+                  showResult
+                  isCorrect={isCorrect}
+                  onChange={() => undefined}
+                />
+                {spelling.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={spelling.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
+          if (question.type === "LISTEN_TYPE") {
+            const listenType = question as ListenTypeQuestion;
+            const answer = answers[listenType.id];
+            const isCorrect = answer?.correct === true;
+
+            return (
+              <li key={listenType.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Nghe gõ</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> Đúng
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> Sai
+                      </>
+                    )}
+                  </span>
+                </div>
+                <ListenTypeReview
+                  question={listenType}
+                  value={answer?.typedAnswer ?? ""}
+                  showResult
+                  isCorrect={isCorrect}
+                  onChange={() => undefined}
+                />
+                {listenType.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={listenType.explanation} />
                   </div>
                 ) : null}
               </li>

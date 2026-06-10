@@ -3,6 +3,8 @@ const KEY_PREFIX = "course-english.exercise.v1";
 export type ExerciseAnswerSnapshot = {
   correct: boolean;
   selectedChoiceId?: string;
+  /** Gõ chữ — SPELLING / LISTEN_TYPE */
+  typedAnswer?: string;
   /** left → right (MATCHING) */
   matchingSelections?: Record<string, string>;
 };

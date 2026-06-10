@@ -1,6 +1,8 @@
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
+import KeyboardOutlinedIcon from "@mui/icons-material/KeyboardOutlined";
+import SpellcheckOutlinedIcon from "@mui/icons-material/SpellcheckOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
@@ -22,7 +24,9 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
 import { VocabGenerateListenDialog } from "../../admin/components/vocabulary/VocabGenerateListenDialog";
+import { VocabGenerateListenTypeDialog } from "../../admin/components/vocabulary/VocabGenerateListenTypeDialog";
 import { VocabGenerateMcqDialog } from "../../admin/components/vocabulary/VocabGenerateMcqDialog";
+import { VocabGenerateSpellingDialog } from "../../admin/components/vocabulary/VocabGenerateSpellingDialog";
 import {
   VocabularyImportDialog,
 } from "../../admin/components/vocabulary/VocabularyImportDialog";
@@ -121,6 +125,8 @@ export function ManageVocabularySetsPage() {
   const [openPicker, setOpenPicker] = useState(false);
   const [generateTarget, setGenerateTarget] = useState<VocabularySetRecord | null>(null);
   const [listenGenerateTarget, setListenGenerateTarget] = useState<VocabularySetRecord | null>(null);
+  const [spellingGenerateTarget, setSpellingGenerateTarget] = useState<VocabularySetRecord | null>(null);
+  const [listenTypeGenerateTarget, setListenTypeGenerateTarget] = useState<VocabularySetRecord | null>(null);
   const [enrichingAll, setEnrichingAll] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -189,6 +195,14 @@ export function ManageVocabularySetsPage() {
 
   const openGenerateListen = async (row: VocabularySetRecord) => {
     setListenGenerateTarget(await loadSetDetail(row));
+  };
+
+  const openGenerateSpelling = async (row: VocabularySetRecord) => {
+    setSpellingGenerateTarget(await loadSetDetail(row));
+  };
+
+  const openGenerateListenType = async (row: VocabularySetRecord) => {
+    setListenTypeGenerateTarget(await loadSetDetail(row));
   };
 
   const submitForm = async () => {
@@ -313,7 +327,7 @@ export function ManageVocabularySetsPage() {
             py: 0.75,
             borderBottom: "1px solid #D3D1C7",
             display: "grid",
-            gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 152px",
+            gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 208px",
             columnGap: 1,
             fontSize: 12,
             fontWeight: 700,
@@ -343,7 +357,7 @@ export function ManageVocabularySetsPage() {
                 py: 0.75,
                 borderBottom: "1px solid #ECEAE3",
                 display: "grid",
-                gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 152px",
+                gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 208px",
                 columnGap: 1,
                 alignItems: "center",
                 fontSize: 13,
@@ -367,6 +381,16 @@ export function ManageVocabularySetsPage() {
                 <Tooltip title="Sinh bài nghe">
                   <IconButton size="small" color="secondary" onClick={() => void openGenerateListen(row)}>
                     <HeadphonesOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Sinh gõ chính tả">
+                  <IconButton size="small" color="secondary" onClick={() => void openGenerateSpelling(row)}>
+                    <SpellcheckOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Sinh nghe-gõ">
+                  <IconButton size="small" color="secondary" onClick={() => void openGenerateListenType(row)}>
+                    <KeyboardOutlinedIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Sửa">
@@ -506,6 +530,24 @@ export function ManageVocabularySetsPage() {
           setTitle={listenGenerateTarget.title}
           items={listenGenerateTarget.items ?? []}
           onClose={() => setListenGenerateTarget(null)}
+        />
+      ) : null}
+
+      {spellingGenerateTarget ? (
+        <VocabGenerateSpellingDialog
+          open={Boolean(spellingGenerateTarget)}
+          setTitle={spellingGenerateTarget.title}
+          items={spellingGenerateTarget.items ?? []}
+          onClose={() => setSpellingGenerateTarget(null)}
+        />
+      ) : null}
+
+      {listenTypeGenerateTarget ? (
+        <VocabGenerateListenTypeDialog
+          open={Boolean(listenTypeGenerateTarget)}
+          setTitle={listenTypeGenerateTarget.title}
+          items={listenTypeGenerateTarget.items ?? []}
+          onClose={() => setListenTypeGenerateTarget(null)}
         />
       ) : null}
 

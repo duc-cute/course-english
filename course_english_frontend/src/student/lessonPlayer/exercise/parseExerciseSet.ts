@@ -91,6 +91,52 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
     };
   }
 
+  if (raw.type === "SPELLING") {
+    const correctAnswer = typeof raw.correctAnswer === "string" ? raw.correctAnswer.trim() : "";
+    if (!correctAnswer) return null;
+
+    const prompt = isRecord(raw.prompt)
+      ? { text: String(raw.prompt.text ?? ""), lang: raw.prompt.lang ? String(raw.prompt.lang) : undefined }
+      : { text: "" };
+
+    if (!prompt.text.trim() && !correctAnswer) return null;
+
+    return {
+      id: raw.id,
+      type: "SPELLING",
+      prompt: prompt.text.trim() ? prompt : { text: correctAnswer, lang: "en" },
+      correctAnswer,
+      wordEn: typeof raw.wordEn === "string" ? raw.wordEn : undefined,
+      hint: typeof raw.hint === "string" ? raw.hint : undefined,
+      caseSensitive: raw.caseSensitive === true,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
+  if (raw.type === "LISTEN_TYPE") {
+    const audioUrl = typeof raw.audioUrl === "string" ? raw.audioUrl.trim() : "";
+    const correctAnswer = typeof raw.correctAnswer === "string" ? raw.correctAnswer.trim() : "";
+    if (!audioUrl || !correctAnswer) return null;
+
+    const prompt = isRecord(raw.prompt)
+      ? { text: String(raw.prompt.text ?? ""), lang: raw.prompt.lang ? String(raw.prompt.lang) : undefined }
+      : { text: "Nghe và gõ từ tiếng Anh", lang: "vi" };
+
+    const audioAccent = raw.audioAccent === "US" ? "US" : raw.audioAccent === "UK" ? "UK" : undefined;
+
+    return {
+      id: raw.id,
+      type: "LISTEN_TYPE",
+      audioUrl,
+      audioAccent,
+      correctAnswer,
+      wordEn: typeof raw.wordEn === "string" ? raw.wordEn : undefined,
+      prompt,
+      caseSensitive: raw.caseSensitive === true,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
   return null;
 }
 
