@@ -518,4 +518,20 @@ mysql -u … -p … < course_english_backend/seed_vocabulary_set_demo.sql
 
 ---
 
-**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 2.6 ✅ · Phase 3 ✅ · Progress server ✅ · Cứng hóa MVP ✅ · CALLOUT/SUMMARY ✅ · **Tiếp theo: [Vocabulary Library + Dictionary](./VOCABULARY_LIBRARY_DICTIONARY_PROGRESS.md) · E2E manual · Enrollment filter**
+### Ưu tiên E — Phase 8: Bài tập nâng cao (kế hoạch)
+
+> Chi tiết đầy đủ: [`EXERCISE_TYPES_PHASE8_PLAN.md`](./EXERCISE_TYPES_PHASE8_PLAN.md)
+
+| Sprint | Type | Mô tả |
+|--------|------|--------|
+| S1 | `SPELLING` | Nghĩa VI → gõ từ EN |
+| S1 | `LISTEN_TYPE` | Nghe audio → gõ từ EN |
+| S2 | `FILL_BLANK` | Điền từ vào `___` (template hoặc câu mẫu) |
+| S3 | `REORDER_SENTENCE` | Sắp xếp 3–15 từ/chip thành câu đúng (drag-drop) |
+
+- [ ] `answerNormalize.ts` — chấm gõ chữ chung
+- [ ] (Tuỳ chọn) migration `example_sentence_en` trên `vocabulary_words` cho FILL + REORDER auto-gen
+
+---
+
+**Tóm tắt:** Phase 1 ✅ · Phase 2 ✅ · Phase 3 ✅ · LISTEN_CHOOSE ✅ · **Tiếp theo: [Phase 8 — SPELLING, LISTEN_TYPE, FILL_BLANK, REORDER](./EXERCISE_TYPES_PHASE8_PLAN.md) · E2E · Enrollment**
