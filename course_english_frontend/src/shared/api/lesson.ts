@@ -21,6 +21,7 @@ export type LessonRecord = {
   title: string;
   slug: string;
   summary?: string;
+  coverImageUrl?: string;
   status?: LessonStatus;
   displayOrder?: number;
   subjectId?: string;
@@ -107,6 +108,7 @@ export async function apiGetLessonDetailBySlug(slug: string) {
 export async function apiCreateLesson(data: {
   title: string;
   summary?: string;
+  coverImageUrl?: string;
   displayOrder?: number;
   subjectId: string;
 }) {
@@ -119,6 +121,7 @@ export async function apiUpdateLesson(
   data: {
     title: string;
     summary?: string;
+    coverImageUrl?: string;
     displayOrder?: number;
     subjectId: string;
     status?: LessonStatus;

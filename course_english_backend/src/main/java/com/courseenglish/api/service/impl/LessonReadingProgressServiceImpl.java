@@ -117,6 +117,16 @@ public class LessonReadingProgressServiceImpl implements LessonReadingProgressSe
         dto.setLessonTitle(row.getLessonTitle());
         dto.setSubjectName(row.getSubjectName());
         dto.setUpdatedAt(row.getUpdatedAt() != null ? row.getUpdatedAt() : row.getCreatedAt());
+        lessonRepository.findByIdAndVoidedFalse(row.getLessonId()).ifPresent(lesson -> {
+            dto.setLessonSlug(lesson.getSlug());
+            dto.setCoverImageUrl(lesson.getCoverImageUrl());
+            if (dto.getLessonTitle() == null || dto.getLessonTitle().isBlank()) {
+                dto.setLessonTitle(lesson.getTitle());
+            }
+            if (dto.getSubjectName() == null || dto.getSubjectName().isBlank()) {
+                dto.setSubjectName(lesson.getSubject() != null ? lesson.getSubject().getName() : null);
+            }
+        });
         return dto;
     }
 }

@@ -218,6 +218,18 @@
   justify-content: center;
   background: #dee0ff;
   border-radius: var(--vq-radius);
+  overflow: hidden;
+}
+
+.vq-home-continue__visual.has-cover {
+  background: #f3f4f6;
+}
+
+.vq-home-continue__cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 @media (min-width: 640px) {

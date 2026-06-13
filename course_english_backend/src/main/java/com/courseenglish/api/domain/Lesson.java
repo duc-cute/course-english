@@ -1,6 +1,7 @@
 package com.courseenglish.api.domain;
 
 import com.courseenglish.api.util.constant.LessonStatusEnum;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -20,12 +21,16 @@ public class Lesson extends BaseObject {
     @Column(nullable = false)
     private String title;
 
-    @NotBlank(message = "slug is required")
+    /** Slug do server sinh khi tạo — không nhận từ client. */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(nullable = false, length = 64, unique = true)
     private String slug;
 
     @Column(columnDefinition = "TEXT")
     private String summary;
+
+    @Column(name = "cover_image_url", columnDefinition = "TEXT")
+    private String coverImageUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

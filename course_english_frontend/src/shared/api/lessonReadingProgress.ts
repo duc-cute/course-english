@@ -11,6 +11,8 @@ export type LessonReadingProgressRecord = {
   lastTab: LessonPlayerTab;
   lessonTitle?: string;
   subjectName?: string;
+  lessonSlug?: string;
+  coverImageUrl?: string;
   updatedAt?: string;
 };
 

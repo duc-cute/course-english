@@ -20,8 +20,16 @@ export function HomeContinueCard({ progress, practiceLatest }: HomeContinueCardP
 
   return (
     <article className="vq-home-continue">
-      <div className="vq-home-continue__visual" aria-hidden>
-        <MenuBookOutlinedIcon sx={{ fontSize: 56, color: "var(--vq-primary)" }} />
+      <div className={`vq-home-continue__visual${progress.coverImageUrl ? " has-cover" : ""}`} aria-hidden>
+        {progress.coverImageUrl ? (
+          <img
+            src={progress.coverImageUrl}
+            alt=""
+            className="vq-home-continue__cover"
+          />
+        ) : (
+          <MenuBookOutlinedIcon sx={{ fontSize: 56, color: "var(--vq-primary)" }} />
+        )}
       </div>
       <div className="vq-home-continue__body">
         <div className="vq-home-continue__meta">

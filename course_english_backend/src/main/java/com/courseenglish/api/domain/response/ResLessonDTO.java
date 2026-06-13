@@ -13,6 +13,7 @@ public class ResLessonDTO {
     private String title;
     private String slug;
     private String summary;
+    private String coverImageUrl;
     private LessonStatusEnum status;
     private int displayOrder;
     private UUID subjectId;

@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AdminCatalogToolbar, ConfirmDialog, SubjectPagingAutocomplete } from "../../admin/components";
+import { AdminCatalogToolbar, ConfirmDialog, LessonImageUpload, SubjectPagingAutocomplete } from "../../admin/components";
 import {
   muBtnSmOutlined,
   muCatalogTableShell,
@@ -43,6 +43,7 @@ import {
   type LessonRecord,
   type LessonsPaginationResult,
 } from "../../shared/api/lesson";
+import { apiUploadFile, buildStoragePublicUrl } from "../../shared/api/file";
 import type { SubjectRecord } from "../../shared/api/subject";
 import type { ApiResponse } from "../../shared/api/types";
 import { paths } from "../../shared/constants/paths";
@@ -50,6 +51,7 @@ import { paths } from "../../shared/constants/paths";
 type LessonForm = {
   title: string;
   summary: string;
+  coverImageUrl: string;
   displayOrder: number;
   subject: SubjectRecord | null;
 };
@@ -57,6 +59,7 @@ type LessonForm = {
 const defaultForm: LessonForm = {
   title: "",
   summary: "",
+  coverImageUrl: "",
   displayOrder: 0,
   subject: null,
 };
@@ -83,6 +86,7 @@ export function ManageLessonPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<LessonRecord | null>(null);
   const [form, setForm] = useState<LessonForm>(defaultForm);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [formError, setFormError] = useState("");
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState<LessonRecord | null>(null);
@@ -130,6 +134,7 @@ export function ManageLessonPage() {
       setForm({
         title: detail?.title ?? "",
         summary: detail?.summary ?? "",
+        coverImageUrl: detail?.coverImageUrl ?? "",
         displayOrder: Number(detail?.displayOrder ?? 0),
         subject: detail?.subjectId
           ? ({ id: detail.subjectId, name: detail.subjectName || "Môn học" } as SubjectRecord)
@@ -139,11 +144,27 @@ export function ManageLessonPage() {
       setForm({
         title: item.title ?? "",
         summary: item.summary ?? "",
+        coverImageUrl: item.coverImageUrl ?? "",
         displayOrder: Number(item.displayOrder ?? 0),
         subject: item.subjectId
           ? ({ id: item.subjectId, name: item.subjectName || "Môn học" } as SubjectRecord)
           : null,
       });
+    }
+  };
+
+  const uploadCoverImage = async (file: File) => {
+    setUploadingCover(true);
+    setFormError("");
+    try {
+      const folder = editing?.id ? `lessons/${editing.id}/cover` : "lessons/covers";
+      const uploaded = await apiUploadFile(file, folder);
+      const url = buildStoragePublicUrl(folder, uploaded.fileName);
+      setForm((prev) => ({ ...prev, coverImageUrl: url }));
+    } catch (err) {
+      setFormError((err as { message?: string })?.message || "Upload ảnh bìa thất bại.");
+    } finally {
+      setUploadingCover(false);
     }
   };
 
@@ -159,6 +180,7 @@ export function ManageLessonPage() {
       const payload = {
         title,
         summary: form.summary.trim(),
+        coverImageUrl: form.coverImageUrl.trim() || undefined,
         displayOrder: Number(form.displayOrder) || 0,
         subjectId: form.subject.id,
       };
@@ -386,6 +408,12 @@ export function ManageLessonPage() {
               value={form.summary}
               onChange={(e) => setForm((p) => ({ ...p, summary: e.target.value }))}
             />
+            <LessonImageUpload
+              label="Ảnh bìa bài học"
+              imageUrl={form.coverImageUrl || undefined}
+              uploading={uploadingCover}
+              onFileSelected={uploadCoverImage}
+            />
             <Box>
               <Typography component="label" sx={{ ...muFieldLabel, mb: 0.5 }}>
                 Môn học <Box component="span" sx={muRequired}>*</Box>
@@ -410,7 +438,7 @@ export function ManageLessonPage() {
           <Button onClick={() => setOpenForm(false)} sx={muFooterBtnOutlined} disabled={submitting}>
             Hủy
           </Button>
-          <Button variant="contained" sx={muFooterBtnPrimary} onClick={() => void submitForm()} disabled={submitting}>
+          <Button variant="contained" sx={muFooterBtnPrimary} onClick={() => void submitForm()} disabled={submitting || uploadingCover}>
             {editing?.id ? "Lưu" : "Tạo & soạn block"}
           </Button>
         </DialogActions>

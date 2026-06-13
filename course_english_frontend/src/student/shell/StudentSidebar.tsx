@@ -20,6 +20,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
     <ul className="student-vq-nav">
       {items.map((item) => {
         const active = isStudentNavActive(location.pathname, item.to);
+        const Icon = item.icon;
         return (
           <li key={item.id} className="student-vq-nav__item">
             <button
@@ -30,7 +31,9 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                 onNavigate?.();
               }}
             >
-              <span className="student-vq-nav__icon">{item.icon}</span>
+              <span className="student-vq-nav__icon">
+                <Icon />
+              </span>
               <span>{item.label}</span>
             </button>
           </li>

@@ -7,7 +7,8 @@ import { useLessonReaderScroll } from "../hooks/useLessonReaderScroll";
 import { findNextPublishedLesson } from "../lessonNavigation";
 import { getLessonProgress } from "../lessonProgressStorage";
 import { hydrateLessonProgressForLesson, syncLessonProgress } from "../lessonProgressSync";
-import { ExercisePlayer } from "./exercise/ExercisePlayer";
+import { ExercisePlayer, type PracticeAttemptBannerContext } from "./exercise/ExercisePlayer";
+import { PracticeAttemptBanner } from "./exercise/PracticeAttemptBanner";
 import { useLessonPlayerChrome } from "./LessonPlayerChromeContext";
 import { LessonPlayerTabs } from "./LessonPlayerTabs";
 import { LessonReaderToolbar } from "./LessonReaderToolbar";
@@ -45,6 +46,7 @@ export function LessonReaderPage() {
   const [focusMode, setFocusMode] = useState(false);
   const [resumeDismissed, setResumeDismissed] = useState(false);
   const [exerciseView, setExerciseView] = useState<"exercise" | "result" | "review">("exercise");
+  const [practiceAttemptBanner, setPracticeAttemptBanner] = useState<PracticeAttemptBannerContext | null>(null);
   const [savedProgress, setSavedProgress] = useState<ReturnType<typeof getLessonProgress>>(null);
   const saveTimer = useRef<number | null>(null);
 
@@ -137,6 +139,7 @@ export function LessonReaderPage() {
           lessonSlug: lesson.slug,
           lessonTitle: lesson.title,
           subjectName: lesson.subjectName,
+          coverImageUrl: lesson.coverImageUrl,
           lastBlockId: activeBlockId,
           scrollPercent,
           lastTab: "study",
@@ -228,11 +231,12 @@ export function LessonReaderPage() {
       lessonSlug: lesson.slug,
       lessonTitle: lesson.title,
       subjectName: lesson.subjectName,
+      coverImageUrl: lesson.coverImageUrl,
       lastBlockId: studyBlocks[0]?.id ?? "",
       scrollPercent: 0,
       lastTab: "study",
     });
-  }, [lesson?.id, lesson?.slug, lesson?.title, lesson?.subjectName, hasScrollBlocks, studyBlocks, activeTab]);
+  }, [lesson?.id, lesson?.slug, lesson?.title, lesson?.subjectName, lesson?.coverImageUrl, hasScrollBlocks, studyBlocks, activeTab]);
 
   useEffect(() => {
     if (!lesson?.id || loading) return;
@@ -242,11 +246,12 @@ export function LessonReaderPage() {
       lessonSlug: lesson.slug,
       lessonTitle: lesson.title,
       subjectName: lesson.subjectName,
+      coverImageUrl: lesson.coverImageUrl,
       lastBlockId: existing?.lastBlockId ?? studyBlocks[0]?.id ?? "",
       scrollPercent: existing?.scrollPercent ?? 0,
       lastTab: activeTab,
     });
-  }, [lesson?.id, lesson?.slug, lesson?.title, lesson?.subjectName, activeTab, loading, studyBlocks]);
+  }, [lesson?.id, lesson?.slug, lesson?.title, lesson?.subjectName, lesson?.coverImageUrl, activeTab, loading, studyBlocks]);
 
   const handleContinueAfterExercise = useCallback(() => {
     if (nextLesson) {
@@ -259,6 +264,10 @@ export function LessonReaderPage() {
     }
     navigate(`/${paths.STUDENT}/${paths.STUDENT_LESSONS}`);
   }, [nextLesson, showStudy, navigate, setActiveTab]);
+
+  const handleAttemptBanner = useCallback((ctx: PracticeAttemptBannerContext | null) => {
+    setPracticeAttemptBanner(ctx);
+  }, []);
 
   if (loading) {
     return (
@@ -280,6 +289,8 @@ export function LessonReaderPage() {
   const listPath = `/${paths.STUDENT}/${paths.STUDENT_LESSONS}`;
   const showToc = activeTab === "study" && hasScrollBlocks && !focusMode;
   const showResultLayout = activeTab === "practice" && exerciseView !== "exercise";
+  const showHeroPracticeBanner =
+    activeTab === "practice" && exerciseView === "exercise" && practiceAttemptBanner?.latest;
 
   const layoutClass = [
     "lesson-reader-layout",
@@ -339,18 +350,28 @@ export function LessonReaderPage() {
 
           {!showResultLayout ? (
             <header className="lesson-reader-hero">
-              <div className="lesson-reader-hero-eyebrow">
-                <MenuBookOutlinedIcon sx={{ fontSize: 16 }} />
-                {hasPracticeOnly ? "Bài tập" : "Bài học"}
-                {lesson.subjectName ? (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span className="lesson-reader-hero-subject">{lesson.subjectName}</span>
-                  </>
-                ) : null}
+              <div className="lesson-reader-hero-content">
+                <div className="lesson-reader-hero-eyebrow">
+                  <MenuBookOutlinedIcon sx={{ fontSize: 16 }} />
+                  {hasPracticeOnly ? "Bài tập" : "Bài học"}
+                  {lesson.subjectName ? (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span className="lesson-reader-hero-subject">{lesson.subjectName}</span>
+                    </>
+                  ) : null}
+                </div>
+                <h1 className="lesson-reader-hero-title">{lesson.title}</h1>
+                {lesson.summary ? <p className="lesson-reader-hero-summary">{lesson.summary}</p> : null}
               </div>
-              <h1 className="lesson-reader-hero-title">{lesson.title}</h1>
-              {lesson.summary ? <p className="lesson-reader-hero-summary">{lesson.summary}</p> : null}
+              {showHeroPracticeBanner ? (
+                <div className="lesson-reader-hero-aside">
+                  <PracticeAttemptBanner
+                    latest={practiceAttemptBanner.latest}
+                    onReview={practiceAttemptBanner.onReview}
+                  />
+                </div>
+              ) : null}
             </header>
           ) : null}
 
@@ -377,6 +398,8 @@ export function LessonReaderPage() {
               subjectName={lesson.subjectName}
               practiceBlocks={practiceBlocks}
               nextLessonTitle={nextLesson?.title}
+              attemptBannerPlacement="hero"
+              onAttemptBanner={handleAttemptBanner}
               onViewChange={setExerciseView}
               onProgressChange={handleExerciseProgress}
               onContinueStudy={handleContinueAfterExercise}

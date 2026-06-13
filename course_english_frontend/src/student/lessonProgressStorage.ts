@@ -11,6 +11,7 @@ export type LessonProgressEntry = {
   scrollPercent: number;
   /** Tab cuối cùng học sinh mở — dùng cho Tiếp tục học */
   lastTab?: LessonPlayerTab;
+  coverImageUrl?: string;
   updatedAt: string;
 };
 

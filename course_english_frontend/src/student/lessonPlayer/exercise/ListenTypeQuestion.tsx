@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import VolumeUpOutlinedIcon from "@mui/icons-material/VolumeUpOutlined";
 import type { ListenTypeQuestion as ListenTypeQuestionModel } from "./types";
 
@@ -25,6 +26,11 @@ export function ListenTypeQuestion({
 }: ListenTypeQuestionProps) {
   const accentLabel = question.audioAccent === "US" ? "US" : "UK";
   const promptText = question.prompt?.text?.trim() || "Nghe và gõ từ tiếng Anh";
+
+  useEffect(() => {
+    if (showResult || !question.audioUrl) return;
+    playAudio(question.audioUrl);
+  }, [question.id, question.audioUrl, showResult]);
 
   return (
     <div className="exercise-typed exercise-listen-type">

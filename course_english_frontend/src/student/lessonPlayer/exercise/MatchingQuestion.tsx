@@ -1,5 +1,6 @@
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import type { MatchingQuestion as MatchingQuestionType } from "./types";
 
 type MatchingQuestionProps = {
@@ -10,6 +11,7 @@ type MatchingQuestionProps = {
   showResult?: boolean;
   onSelectLeft: (left: string) => void;
   onSelectRight: (right: string) => void;
+  onReset: () => void;
 };
 
 export function MatchingQuestion({
@@ -20,14 +22,13 @@ export function MatchingQuestion({
   showResult = false,
   onSelectLeft,
   onSelectRight,
+  onReset,
 }: MatchingQuestionProps) {
   const leftItems = question.pairs.map((pair) => pair.left);
   const rightItems = question.rightDisplayOrder ?? question.pairs.map((pair) => pair.right);
   const correctByLeft = Object.fromEntries(question.pairs.map((pair) => [pair.left, pair.right]));
-  const promptText = question.prompt?.text?.trim();
-  const totalPairs = question.pairs.length;
   const pairedCount = Object.keys(selections).length;
-  const progressPct = totalPairs > 0 ? Math.round((pairedCount / totalPairs) * 100) : 0;
+  const canReset = !showResult && !disabled && (pairedCount > 0 || activeLeft !== null);
 
   const rightUsedBy = (right: string): string | null => {
     for (const [left, value] of Object.entries(selections)) {
@@ -38,33 +39,23 @@ export function MatchingQuestion({
 
   return (
     <div className="exercise-matching">
-      {promptText ? <p className="exercise-matching-prompt">{promptText}</p> : null}
-      <p className="exercise-matching-hint">
-        {showResult
-          ? "Kết quả ghép cặp"
-          : "Chọn từ bên trái, rồi chọn nghĩa tương ứng bên phải"}
-      </p>
-
       {!showResult ? (
-        <div className="exercise-matching-progress">
-          <div className="exercise-matching-progress-head">
-            <span className="exercise-matching-progress-label">Tiến độ ghép cặp</span>
-            <span className="exercise-matching-progress-count">
-              {pairedCount}/{totalPairs} cặp
-            </span>
-          </div>
-          <div className="exercise-matching-progress-track">
-            <div
-              className="exercise-matching-progress-fill"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
+        <div className="exercise-matching-toolbar">
+          <button
+            type="button"
+            className="exercise-matching-reset"
+            disabled={!canReset}
+            title="Chọn lại từ đầu"
+            aria-label="Chọn lại từ đầu"
+            onClick={onReset}
+          >
+            <RestartAltIcon className="exercise-matching-reset-icon" />
+          </button>
         </div>
       ) : null}
 
       <div className="exercise-matching-board">
-        <div className="exercise-matching-col">
-          <span className="exercise-matching-col-label">Tiếng Anh</span>
+        <div className="exercise-matching-col exercise-matching-col--left">
           {leftItems.map((left, index) => {
             const pairedRight = selections[left];
             const isActive = activeLeft === left;
@@ -103,8 +94,7 @@ export function MatchingQuestion({
           })}
         </div>
 
-        <div className="exercise-matching-col">
-          <span className="exercise-matching-col-label">Tiếng Việt</span>
+        <div className="exercise-matching-col exercise-matching-col--right">
           {rightItems.map((right, index) => {
             const linkedLeft = rightUsedBy(right);
             const isCorrect =

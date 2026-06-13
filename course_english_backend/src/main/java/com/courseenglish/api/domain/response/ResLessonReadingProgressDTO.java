@@ -17,5 +17,7 @@ public class ResLessonReadingProgressDTO {
     private String lastTab;
     private String lessonTitle;
     private String subjectName;
+    private String lessonSlug;
+    private String coverImageUrl;
     private Instant updatedAt;
 }

@@ -5,14 +5,14 @@ import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import type { ReactNode } from "react";
+import type { SvgIconComponent } from "@mui/icons-material";
 import { paths, studentRoutePaths } from "../../shared/constants/paths";
 
 export type StudentNavItem = {
   id: string;
   label: string;
   to: string;
-  icon: ReactNode;
+  icon: SvgIconComponent;
   bottomNavLabel?: string;
   showInSidebar: boolean;
   showInBottomNav: boolean;
@@ -26,7 +26,7 @@ export const studentNavItems: StudentNavItem[] = [
     label: "Trang chủ",
     bottomNavLabel: "Home",
     to: studentRoutePaths.home,
-    icon: <DashboardCustomizeOutlinedIcon />,
+    icon: DashboardCustomizeOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
   },
@@ -35,7 +35,7 @@ export const studentNavItems: StudentNavItem[] = [
     label: "Lộ trình",
     bottomNavLabel: "Path",
     to: studentRoutePaths.path,
-    icon: <MapOutlinedIcon />,
+    icon: MapOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
   },
@@ -44,7 +44,7 @@ export const studentNavItems: StudentNavItem[] = [
     label: "Bài học",
     bottomNavLabel: "Lessons",
     to: studentRoutePaths.lessons,
-    icon: <ArticleOutlinedIcon />,
+    icon: ArticleOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: false,
   },
@@ -53,7 +53,7 @@ export const studentNavItems: StudentNavItem[] = [
     label: "Từ vựng",
     bottomNavLabel: "Vocab",
     to: studentRoutePaths.vocab,
-    icon: <MenuBookOutlinedIcon />,
+    icon: MenuBookOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
   },
@@ -62,7 +62,7 @@ export const studentNavItems: StudentNavItem[] = [
     label: "Xếp hạng",
     bottomNavLabel: "Rank",
     to: studentRoutePaths.leaderboard,
-    icon: <LeaderboardOutlinedIcon />,
+    icon: LeaderboardOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
   },
@@ -71,7 +71,7 @@ export const studentNavItems: StudentNavItem[] = [
     label: "Hồ sơ",
     bottomNavLabel: "Profile",
     to: studentRoutePaths.profile,
-    icon: <PersonOutlineOutlinedIcon />,
+    icon: PersonOutlineOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
   },
@@ -79,7 +79,7 @@ export const studentNavItems: StudentNavItem[] = [
     id: "usage-guide",
     label: "Hướng dẫn",
     to: studentRoutePaths.usageGuide,
-    icon: <HelpOutlineOutlinedIcon />,
+    icon: HelpOutlineOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: false,
   },

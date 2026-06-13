@@ -1,3 +1,5 @@
+import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
+import { IconButton } from "@mui/material";
 import type { ReorderSentenceQuestion as ReorderType } from "./types";
 import { getPoolTokenIds, getTokenById } from "../../../shared/lesson/reorderSentenceUtils";
 
@@ -24,21 +26,11 @@ export function ReorderSentenceQuestion({
 }: ReorderSentenceQuestionProps) {
   const promptText = question.prompt?.text?.trim() || "Sắp xếp các mảnh thành câu đúng";
   const poolIds = getPoolTokenIds(question.tokens, selectedOrder, question.poolDisplayOrder);
-  const total = question.tokens.length;
-  const placed = selectedOrder.length;
+  const showPool = poolIds.length > 0 || showResult;
 
   return (
     <div className="exercise-reorder">
       <p className="exercise-reorder-prompt">{promptText}</p>
-      {question.sourceSentence?.trim() ? (
-        <p className="exercise-reorder-hint">Gợi ý: {question.sourceSentence.trim()}</p>
-      ) : null}
-
-      {!showResult ? (
-        <p className="exercise-reorder-meta">
-          Đã xếp {placed}/{total} mảnh — bấm từ bên dưới để thêm vào câu
-        </p>
-      ) : null}
 
       <div
         className={`exercise-reorder-sentence${showResult ? (isCorrect ? " is-correct" : " is-wrong") : ""}`}
@@ -71,21 +63,23 @@ export function ReorderSentenceQuestion({
 
       {!showResult && selectedOrder.length > 0 && onClear ? (
         <div className="exercise-reorder-actions">
-          <button type="button" className="exercise-reorder-clear" disabled={disabled} onClick={onClear}>
-            Xóa hết
-          </button>
+          <IconButton
+            type="button"
+            className="exercise-reorder-clear"
+            disabled={disabled}
+            onClick={onClear}
+            aria-label="Xóa hết"
+            size="small"
+          >
+            <RestartAltOutlinedIcon sx={{ fontSize: 22 }} />
+          </IconButton>
         </div>
       ) : null}
 
-      <div className="exercise-reorder-pool">
-        <span className="exercise-reorder-pool-label">Từ còn lại</span>
-        <div className="exercise-reorder-pool-chips">
-          {poolIds.length === 0 ? (
-            <span className="exercise-reorder-pool-empty">
-              {showResult ? "—" : "Đã dùng hết mảnh"}
-            </span>
-          ) : (
-            poolIds.map((tokenId) => {
+      {showPool ? (
+        <div className="exercise-reorder-pool">
+          <div className="exercise-reorder-pool-chips">
+            {poolIds.map((tokenId) => {
               const token = getTokenById(question.tokens, tokenId);
               if (!token) return null;
               return (
@@ -99,10 +93,10 @@ export function ReorderSentenceQuestion({
                   {token.text}
                 </button>
               );
-            })
-          )}
+            })}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {showResult ? (
         <p className="exercise-reorder-reveal">

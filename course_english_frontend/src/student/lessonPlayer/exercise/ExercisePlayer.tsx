@@ -14,7 +14,6 @@ import {
   type LessonPracticeAttemptRecord,
 } from "../../../shared/api/lessonPracticeAttempt";
 import { buildStructuredSnapshot, parseAttemptSnapshot } from "../../../shared/lesson/attemptSnapshot";
-import { ExerciseFeedbackTray } from "./ExerciseFeedbackTray";
 import { ExerciseResultScreen } from "./ExerciseResultScreen";
 import { ExerciseReviewScreen } from "./ExerciseReviewScreen";
 import { PracticeAttemptBanner } from "./PracticeAttemptBanner";
@@ -44,12 +43,19 @@ import type {
   TrueFalseQuestion as TrueFalseType,
 } from "./types";
 
+export type PracticeAttemptBannerContext = {
+  latest: LessonPracticeAttemptRecord | null;
+  onReview: () => void;
+};
+
 type ExercisePlayerProps = {
   lessonId: string;
   lessonTitle: string;
   subjectName?: string;
   practiceBlocks: LessonBlockRecord[];
   nextLessonTitle?: string;
+  attemptBannerPlacement?: "inline" | "hero";
+  onAttemptBanner?: (ctx: PracticeAttemptBannerContext | null) => void;
   onViewChange?: (view: "exercise" | "result" | "review") => void;
   onProgressChange?: (current: number, total: number) => void;
   onContinueStudy?: () => void;
@@ -65,6 +71,8 @@ export function ExercisePlayer({
   subjectName,
   practiceBlocks,
   nextLessonTitle,
+  attemptBannerPlacement = "inline",
+  onAttemptBanner,
   onViewChange,
   onProgressChange,
   onContinueStudy,
@@ -99,7 +107,8 @@ export function ExercisePlayer({
   const passScorePercent = plan.passScorePercent;
 
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+  /** Lựa chọn đang chọn theo từng câu — tránh dùng chung id a/b/c/d giữa các câu */
+  const [choiceDrafts, setChoiceDrafts] = useState<Record<string, string>>({});
   const [typedAnswer, setTypedAnswer] = useState("");
   const [fillBlankAnswers, setFillBlankAnswers] = useState<Record<string, string>>({});
   const [reorderTokenOrder, setReorderTokenOrder] = useState<string[]>([]);
@@ -162,7 +171,7 @@ export function ExercisePlayer({
       setElapsedMs(0);
     }
 
-    setSelectedChoiceId(null);
+    setChoiceDrafts({});
     setTypedAnswer("");
     setFillBlankAnswers({});
     setReorderTokenOrder([]);
@@ -206,6 +215,22 @@ export function ExercisePlayer({
       ? (current.displayQuestion as TrueFalseType)
       : null;
 
+  const currentQuestionId = current?.displayQuestion.id;
+  const selectedChoiceId =
+    phase === "feedback" && currentQuestionId
+      ? answers[currentQuestionId]?.selectedChoiceId ?? null
+      : currentQuestionId
+        ? choiceDrafts[currentQuestionId] ?? null
+        : null;
+
+  const handleSelectChoice = useCallback(
+    (choiceId: string) => {
+      if (phase !== "answer" || !currentQuestionId) return;
+      setChoiceDrafts((prev) => ({ ...prev, [currentQuestionId]: choiceId }));
+    },
+    [phase, currentQuestionId],
+  );
+
   useEffect(() => {
     if (!onProgressChange || total <= 0) return;
     onProgressChange(questionIndex + 1, total);
@@ -215,7 +240,6 @@ export function ExercisePlayer({
     if (!current) return;
     const saved = answers[current.displayQuestion.id];
     if (currentMcq || currentListen || currentTrueFalse) {
-      setSelectedChoiceId(saved?.selectedChoiceId ?? null);
       setTypedAnswer("");
       setFillBlankAnswers({});
       setReorderTokenOrder([]);
@@ -227,7 +251,6 @@ export function ExercisePlayer({
       setTypedAnswer(saved?.typedAnswer ?? "");
       setFillBlankAnswers({});
       setReorderTokenOrder([]);
-      setSelectedChoiceId(null);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
       return;
@@ -236,7 +259,6 @@ export function ExercisePlayer({
       setFillBlankAnswers(saved?.fillBlankAnswers ?? {});
       setReorderTokenOrder([]);
       setTypedAnswer("");
-      setSelectedChoiceId(null);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
       return;
@@ -245,7 +267,6 @@ export function ExercisePlayer({
       setReorderTokenOrder(saved?.reorderTokenOrder ?? []);
       setFillBlankAnswers({});
       setTypedAnswer("");
-      setSelectedChoiceId(null);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
       return;
@@ -255,7 +276,6 @@ export function ExercisePlayer({
       setFillBlankAnswers({});
       setReorderTokenOrder([]);
       setActiveMatchingLeft(null);
-      setSelectedChoiceId(null);
     }
   }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentTrueFalse, currentSpelling, currentListenType, currentFillBlank, currentReorder, currentMatching, answers]);
 
@@ -377,6 +397,24 @@ export function ExercisePlayer({
     setReviewAnswers(parsed.answers);
     setPhase("review");
   }, [answers, serverLatestAttempt, practiceBlocks]);
+
+  const showInlineAttemptBanner =
+    attemptBannerPlacement === "inline" && (phase === "answer" || phase === "feedback");
+
+  useEffect(() => {
+    if (attemptBannerPlacement !== "hero" || !onAttemptBanner) return;
+
+    const visible = phase === "answer" || phase === "feedback";
+    if (visible && serverLatestAttempt) {
+      onAttemptBanner({ latest: serverLatestAttempt, onReview: handleReview });
+    } else {
+      onAttemptBanner(null);
+    }
+
+    return () => {
+      onAttemptBanner(null);
+    };
+  }, [attemptBannerPlacement, onAttemptBanner, serverLatestAttempt, handleReview, phase]);
 
   const handleCheck = () => {
     if (!current) return;
@@ -520,6 +558,12 @@ export function ExercisePlayer({
     setActiveMatchingLeft(null);
   };
 
+  const handleResetMatching = () => {
+    if (phase !== "answer") return;
+    setMatchingSelections({});
+    setActiveMatchingLeft(null);
+  };
+
   const handleNext = () => {
     if (questionIndex >= total - 1) {
       const startedAt = ensureStartedAt();
@@ -532,7 +576,7 @@ export function ExercisePlayer({
     }
     const next = questionIndex + 1;
     setQuestionIndex(next);
-    setSelectedChoiceId(null);
+    setChoiceDrafts({});
     setTypedAnswer("");
     setFillBlankAnswers({});
     setReorderTokenOrder([]);
@@ -551,7 +595,7 @@ export function ExercisePlayer({
     setQuestionIdsOverride(null);
     setIsWrongOnlyRetry(false);
     setQuestionIndex(0);
-    setSelectedChoiceId(null);
+    setChoiceDrafts({});
     setTypedAnswer("");
     setFillBlankAnswers({});
     setReorderTokenOrder([]);
@@ -583,7 +627,7 @@ export function ExercisePlayer({
     setQuestionIdsOverride(wrongIds);
     setIsWrongOnlyRetry(true);
     setQuestionIndex(0);
-    setSelectedChoiceId(null);
+    setChoiceDrafts({});
     setTypedAnswer("");
     setFillBlankAnswers({});
     setReorderTokenOrder([]);
@@ -672,7 +716,6 @@ export function ExercisePlayer({
         nextLessonTitle={nextLessonTitle}
         onReview={handleReview}
         onRetry={handleRetry}
-        onRetryWrong={wrongCount > 0 ? handleRetryWrong : undefined}
         onContinueStudy={onContinueStudy}
         onBackToLessons={onBackToLessons}
       />
@@ -698,32 +741,31 @@ export function ExercisePlayer({
   }
 
   const showFeedback = phase === "feedback";
-  const feedbackCorrect =
-    showFeedback && current ? answers[current.displayQuestion.id]?.correct === true : false;
-
-  const showServerBanner =
-    phase === "answer" || phase === "feedback";
 
   return (
     <div className="exercise-player">
-      {showServerBanner ? (
+      {showInlineAttemptBanner ? (
         <PracticeAttemptBanner latest={serverLatestAttempt} onReview={handleReview} />
       ) : null}
       <QuestionProgressBar current={questionIndex + 1} total={total} />
 
-      <header className="exercise-player-head">
+      <header className={`exercise-player-head${currentMatching || currentReorder ? " exercise-player-head--compact" : ""}`}>
         <div className="exercise-player-eyebrow">
           <QuizOutlinedIcon sx={{ fontSize: 18 }} />
           {current.blockTitle || lessonTitle}
         </div>
-        {current.instruction ? <p className="exercise-player-instruction">{current.instruction}</p> : null}
+        {current.instruction && !currentMatching && !currentReorder ? (
+          <p className="exercise-player-instruction">{current.instruction}</p>
+        ) : null}
         {isWrongOnlyRetry ? (
           <p className="vq-exercise-mode-note">Luyện lại {total} câu đã trả lời sai</p>
         ) : null}
-        <p className="exercise-player-meta">
-          Cần đạt {passScorePercent}% để hoàn thành
-          {answeredCount > 0 ? ` · Đúng ${correctCount}/${answeredCount} câu đã làm` : null}
-        </p>
+        {!currentMatching && !currentListen && !currentReorder ? (
+          <p className="exercise-player-meta">
+            Cần đạt {passScorePercent}% để hoàn thành
+            {answeredCount > 0 ? ` · Đúng ${correctCount}/${answeredCount} câu đã làm` : null}
+          </p>
+        ) : null}
       </header>
 
       {currentTrueFalse ? (
@@ -732,7 +774,7 @@ export function ExercisePlayer({
           selectedId={selectedChoiceId}
           disabled={showFeedback}
           showResult={showFeedback}
-          onSelect={setSelectedChoiceId}
+          onSelect={handleSelectChoice}
         />
       ) : null}
 
@@ -742,7 +784,7 @@ export function ExercisePlayer({
           selectedId={selectedChoiceId}
           disabled={showFeedback}
           showResult={showFeedback}
-          onSelect={setSelectedChoiceId}
+          onSelect={handleSelectChoice}
         />
       ) : null}
 
@@ -752,7 +794,7 @@ export function ExercisePlayer({
           selectedId={selectedChoiceId}
           disabled={showFeedback}
           showResult={showFeedback}
-          onSelect={setSelectedChoiceId}
+          onSelect={handleSelectChoice}
         />
       ) : null}
 
@@ -813,14 +855,13 @@ export function ExercisePlayer({
           showResult={showFeedback}
           onSelectLeft={handleSelectMatchingLeft}
           onSelectRight={handleSelectMatchingRight}
+          onReset={handleResetMatching}
         />
       ) : null}
 
       {showFeedback && showExplanation && currentExplanation?.trim() ? (
         <QuestionExplanationPanel explanation={currentExplanation} />
       ) : null}
-
-      {showFeedback ? <ExerciseFeedbackTray correct={feedbackCorrect} /> : null}
 
       <div className={`exercise-player-actions${showFeedback ? " exercise-player-actions--row" : ""}`}>
         {!showFeedback ? (

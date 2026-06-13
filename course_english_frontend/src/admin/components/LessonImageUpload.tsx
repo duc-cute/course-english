@@ -9,6 +9,7 @@ type LessonImageUploadProps = {
   uploading?: boolean;
   caption?: string;
   onCaptionChange?: (caption: string) => void;
+  label?: string;
 };
 
 export function LessonImageUpload({
@@ -17,6 +18,7 @@ export function LessonImageUpload({
   uploading = false,
   caption,
   onCaptionChange,
+  label = "Ảnh minh họa",
 }: LessonImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -39,7 +41,7 @@ export function LessonImageUpload({
 
   return (
     <Box>
-      <Typography sx={{ ...muFieldLabel, mb: 0.5 }}>Ảnh minh họa</Typography>
+      <Typography sx={{ ...muFieldLabel, mb: 0.5 }}>{label}</Typography>
       <Box
         onDragOver={(e) => {
           e.preventDefault();

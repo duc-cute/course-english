@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import VolumeUpOutlinedIcon from "@mui/icons-material/VolumeUpOutlined";
 import type { ListenChooseQuestion as ListenChooseType } from "./types";
 
@@ -26,11 +27,13 @@ export function ListenChooseQuestion({
   const answeredWrong = showResult && selectedId !== question.correctChoiceId;
   const accentLabel = question.audioAccent === "US" ? "US" : "UK";
 
+  useEffect(() => {
+    if (showResult || !question.audioUrl) return;
+    playAudio(question.audioUrl);
+  }, [question.id, question.audioUrl, showResult]);
+
   return (
     <div className="exercise-listen">
-      <p className="exercise-listen-prompt">
-        {question.prompt?.text?.trim() || "Nghe và chọn nghĩa tiếng Việt đúng"}
-      </p>
       <button
         type="button"
         className="exercise-listen-play"

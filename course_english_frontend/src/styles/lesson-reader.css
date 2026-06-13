@@ -278,6 +278,11 @@
 /* Hero — light glass on neuro-grey (audit style) */
 .lesson-reader-hero {
   position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
   margin-bottom: 32px;
   padding: 28px 28px 24px;
   border-radius: var(--eng-radius-xl, 24px);
@@ -285,6 +290,25 @@
   background: #fff;
   border: 1px solid var(--eng-outline-variant, #bcc9c6);
   box-shadow: 0 12px 40px var(--eng-teal-glow, rgba(13, 148, 136, 0.1));
+}
+
+.lesson-reader-hero-content {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.lesson-reader-hero-aside {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 340px;
+  min-width: min(100%, 280px);
+  align-self: center;
+}
+
+.lesson-reader-hero-aside .practice-attempt-banner {
+  margin-bottom: 0;
 }
 
 .lesson-reader-hero::before {

@@ -127,6 +127,7 @@ public class LessonServiceImpl implements LessonService {
         entity.setTitle(request.getTitle() == null ? "" : request.getTitle().trim());
         entity.setSlug(assignUniqueSlug(entity.getTitle(), null));
         entity.setSummary(request.getSummary());
+        entity.setCoverImageUrl(normalizeCoverImageUrl(request.getCoverImageUrl()));
         entity.setDisplayOrder(request.getDisplayOrder());
         entity.setStatus(LessonStatusEnum.DRAFT);
         entity.setSubject(subject);
@@ -139,6 +140,7 @@ public class LessonServiceImpl implements LessonService {
                 .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
         entity.setTitle(request.getTitle() == null ? "" : request.getTitle().trim());
         entity.setSummary(request.getSummary());
+        entity.setCoverImageUrl(normalizeCoverImageUrl(request.getCoverImageUrl()));
         entity.setDisplayOrder(request.getDisplayOrder());
         if (request.getSubjectId() != null || request.getSubject() != null) {
             entity.setSubject(resolveSubject(request));
@@ -223,10 +225,19 @@ public class LessonServiceImpl implements LessonService {
         dto.setTitle(lesson.getTitle());
         dto.setSlug(lesson.getSlug());
         dto.setSummary(lesson.getSummary());
+        dto.setCoverImageUrl(lesson.getCoverImageUrl());
         dto.setStatus(lesson.getStatus());
         dto.setDisplayOrder(lesson.getDisplayOrder());
         dto.setSubjectId(lesson.getSubject() != null ? lesson.getSubject().getId() : null);
         dto.setSubjectName(lesson.getSubject() != null ? lesson.getSubject().getName() : null);
         dto.setBlockCount(lessonBlockRepository.countByLesson_IdAndVoidedFalse(lesson.getId()));
+    }
+
+    private String normalizeCoverImageUrl(String url) {
+        if (url == null) {
+            return null;
+        }
+        String trimmed = url.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
