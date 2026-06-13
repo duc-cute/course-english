@@ -1,0 +1,70 @@
+/* Vibrant Scholar — student design tokens (stitch_quest / DESIGN.md) */
+
+.student-zone-root {
+  /* Primary palette */
+  --vq-primary: #2d4bd7;
+  --vq-primary-shadow: #0932c3;
+  --vq-primary-container: #4b66f1;
+  --vq-on-primary: #ffffff;
+  --vq-secondary: #7b24dc;
+  --vq-secondary-container: #9547f7;
+  --vq-secondary-fixed: #eddcff;
+  --vq-on-secondary-fixed: #290055;
+  --vq-on-secondary-fixed-variant: #6200bc;
+  --vq-tertiary: #368400;
+  --vq-tertiary-container: #368400;
+  --vq-tertiary-fixed: #87fe45;
+  --vq-on-tertiary-fixed: #082100;
+
+  /* Surfaces */
+  --vq-background: #fbf8ff;
+  --vq-surface: #fbf8ff;
+  --vq-surface-container: #eeedf9;
+  --vq-surface-container-low: #f4f2fe;
+  --vq-surface-container-high: #e8e7f3;
+  --vq-surface-container-lowest: #ffffff;
+  --vq-surface-variant: #e2e1ed;
+  --vq-on-surface: #1a1b23;
+  --vq-on-surface-variant: #444655;
+  --vq-outline: #757686;
+  --vq-outline-variant: #c5c5d7;
+
+  /* Typography */
+  --vq-font-display: "Quicksand", "Segoe UI", sans-serif;
+  --vq-font-body: "Nunito Sans", "Segoe UI", sans-serif;
+
+  /* Radius & spacing */
+  --vq-radius: 1rem;
+  --vq-radius-lg: 2rem;
+  --vq-gutter: 20px;
+  --vq-margin-mobile: 16px;
+  --vq-margin-desktop: 40px;
+
+  /* Shell */
+  --vq-sidebar-width: 256px;
+  --vq-bottom-nav-height: 72px;
+  --vq-top-bar-height: 64px;
+
+  /* Legacy aliases — old pages keep working during migration */
+  --eng-teal: var(--vq-primary);
+  --eng-teal-dark: var(--vq-primary-shadow);
+  --eng-teal-container: #dee0ff;
+  --eng-neuro-grey: var(--vq-background);
+  --eng-surface: var(--vq-surface);
+  --eng-on-surface: var(--vq-on-surface);
+  --eng-on-surface-variant: var(--vq-on-surface-variant);
+  --eng-outline-variant: var(--vq-outline-variant);
+}
+
+.student-zone-root {
+  font-family: var(--vq-font-body);
+  color: var(--vq-on-surface);
+  background: var(--vq-background);
+}
+
+.student-zone-root h1,
+.student-zone-root h2,
+.student-zone-root h3,
+.student-zone-root .vq-display {
+  font-family: var(--vq-font-display);
+}

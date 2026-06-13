@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LingoQuest - Unscramble</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&amp;family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#dee0ff",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#bac3ff",
+                        "surface-container": "#eeedf9",
+                        "background": "#fbf8ff",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#dad9e5",
+                        "surface-variant": "#e2e1ed",
+                        "primary-container": "#4b66f1",
+                        "on-primary-container": "#fdfaff",
+                        "surface-tint": "#324eda",
+                        "on-error": "#ffffff",
+                        "tertiary": "#296800",
+                        "on-secondary-fixed-variant": "#6200bc",
+                        "inverse-on-surface": "#f1effb",
+                        "surface": "#fbf8ff",
+                        "tertiary-fixed-dim": "#6be026",
+                        "outline-variant": "#c5c5d7",
+                        "on-tertiary-fixed-variant": "#1f5100",
+                        "on-surface": "#1a1b23",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#757686",
+                        "tertiary-fixed": "#87fe45",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#fbf8ff",
+                        "tertiary-container": "#368400",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#0932c3",
+                        "on-tertiary-container": "#f3ffe5",
+                        "inverse-surface": "#2f3039",
+                        "secondary": "#7b24dc",
+                        "on-secondary-container": "#fffbff",
+                        "secondary-container": "#9547f7",
+                        "secondary-fixed": "#eddcff",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#444655",
+                        "on-primary-fixed": "#00105a",
+                        "secondary-fixed-dim": "#d8b9ff",
+                        "surface-container-highest": "#e2e1ed",
+                        "surface-container-high": "#e8e7f3",
+                        "on-secondary-fixed": "#290055",
+                        "primary": "#2d4bd7",
+                        "surface-container-low": "#f4f2fe",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#bac3ff",
+                        "on-tertiary-fixed": "#082100",
+                        "on-background": "#1a1b23"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "48px",
+                        "xl": "80px",
+                        "xs": "4px",
+                        "gutter": "20px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px",
+                        "sm": "12px",
+                        "md": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Quicksand"],
+                        "label-md": ["Nunito Sans"],
+                        "headline-md": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "label-lg": ["Nunito Sans"],
+                        "display-lg-mobile": ["Quicksand"],
+                        "body-lg": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "800"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .drag-ghost {
+            opacity: 0.4;
+            transform: scale(0.9);
+        }
+        .tile-press {
+            box-shadow: 0 4px 0 0 rgba(9, 50, 195, 1);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .tile-press:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 0 rgba(9, 50, 195, 1);
+        }
+        .correct-animation {
+            animation: bounce 0.5s cubic-bezier(0.36, 0, 0.66, -0.56) infinite alternate;
+        }
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md text-body-md overflow-x-hidden">
+<!-- Header / TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface-container-low shadow-sm">
+<div class="flex items-center gap-sm">
+<button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-primary-container/10 rounded-full transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="flex-1 min-w-[120px] md:min-w-[300px]">
+<div class="h-4 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container w-2/3 rounded-full relative transition-all duration-500">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-6 h-6 bg-tertiary rounded-full border-2 border-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-white" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs text-primary font-bold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-label-lg text-label-lg">12</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden">
+<img alt="Student avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcCTeakedV0TCTTQURBbSaZAtNYFHKobKhJVQhq64aAkGxcHqqdS0MprlHx99cP67Da7ictnTZTE-M8OU1TGY9352FE94nvPga4o66RC0OfuLziNVCTfa_q0xsoGrFMlNnF-cE3VLU2pX-MoDO313ruUAq7VbbKG8wG29GDVoJQcLAHUHId7cEDbO1mu5pjb_LRhtSKJQCxNmF7k3nRjK_Xxx2RZzO-b5mElLpU6XLaIzRZkacE2b49EgYEyjaUfQRQcn_csE67TCm"/>
+</div>
+</div>
+</header>
+<main class="flex-1 flex flex-col items-center justify-center pt-24 pb-32 px-margin-mobile max-w-4xl mx-auto w-full">
+<!-- Character / Mascot Helper -->
+<div class="w-full flex justify-start mb-md">
+<div class="flex items-end gap-sm">
+<div class="w-20 h-20 relative">
+<img alt="Mascot Owl" class="w-full h-full object-contain" data-alt="A charming and friendly 3D cartoon owl mascot for a children's educational app. The owl has large curious eyes and is wearing a tiny explorer's hat. It is rendered in a soft, high-quality Pixar-style aesthetic with vibrant blues and yellows, set against a clean minimalist background that suggests a playful learning environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoSO09ss12l0-4rVH9A-vanZo5UtQ1--dnFDKEGfYS7bIo54QsUoCtpE7_5YGBaMcpF7PCAOvxQ-wshx4KnCeWVG23r_cWbQtwJGpg-Y5zWC5BB5BYX7WVnFZl3zVB144i7UEUd50ltRUgx4_E3VpKXfh_0qp-SUEw3tb8JtpsFKHlYwRGpIlVmAqv40wq_H9S4SQrC3_9TOtN4X4NAtqRO3ejCu8fZsqptLzKo0N6R2Hr-wVT1VykeX1xvklRYNkuFi_VtNhDMYOq"/>
+</div>
+<div class="bg-white border-2 border-surface-variant p-md rounded-lg relative shadow-sm max-w-[280px]">
+<p class="font-headline-md text-headline-md-mobile text-on-surface">Unscramble the word!</p>
+<div class="absolute -left-2 bottom-4 w-4 h-4 bg-white border-l-2 border-b-2 border-surface-variant rotate-45"></div>
+</div>
+</div>
+</div>
+<!-- Content Area (The Apple) -->
+<div class="w-full aspect-square max-w-[280px] bg-white rounded-lg border-2 border-primary/20 shadow-lg flex items-center justify-center p-lg mb-xl relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<img alt="Apple" class="w-full h-full object-contain drop-shadow-xl" data-alt="A bright, shiny red apple with a single green leaf, illustrated in a high-gloss, friendly cartoon style. The apple has soft reflections and tactile depth, looking slightly squishy and inviting. It is centered in a high-key studio lighting setup with a soft pastel blue gradient background, maintaining a cheerful and modern educational aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyfU2ZJXfqTfaJcCb4LHiPfSPHjskC37C42EeL6hmfN70pAyPIvujwp3KUabbYMCIBui70TyGw20_p6_vOdxMPSwvRH1N9xW1LYyYQj2Im_Cm0R6GQPn0IdaI_qI75LlFXG13DqP288JpFeANdvB6ID_uX_TT6gOlxUuLZVPnNKBLlqxzdZWKkiK7r7Jn6Ccn1Y53ZvL1zEMxujxkRGiaPBtiYJgERHaJlvIZ7TVDH2ECnLOYOCIH7ImfCrCuDXOWD8yl4rPHhjzYy"/>
+</div>
+<!-- Drag-and-Drop Drop Slots -->
+<div class="flex gap-sm md:gap-md mb-xl" id="drop-zone">
+<div class="slot w-14 h-16 md:w-20 md:h-24 bg-surface-container-high rounded-lg border-b-4 border-outline-variant flex items-center justify-center text-display-lg-mobile md:text-display-lg text-primary transition-all" data-slot="0"></div>
+<div class="slot w-14 h-16 md:w-20 md:h-24 bg-surface-container-high rounded-lg border-b-4 border-outline-variant flex items-center justify-center text-display-lg-mobile md:text-display-lg text-primary transition-all" data-slot="1"></div>
+<div class="slot w-14 h-16 md:w-20 md:h-24 bg-surface-container-high rounded-lg border-b-4 border-outline-variant flex items-center justify-center text-display-lg-mobile md:text-display-lg text-primary transition-all" data-slot="2"></div>
+<div class="slot w-14 h-16 md:w-20 md:h-24 bg-surface-container-high rounded-lg border-b-4 border-outline-variant flex items-center justify-center text-display-lg-mobile md:text-display-lg text-primary transition-all" data-slot="3"></div>
+<div class="slot w-14 h-16 md:w-20 md:h-24 bg-surface-container-high rounded-lg border-b-4 border-outline-variant flex items-center justify-center text-display-lg-mobile md:text-display-lg text-primary transition-all" data-slot="4"></div>
+</div>
+<!-- Scrambled Letters (Interactive Tiles) -->
+<div class="flex flex-wrap justify-center gap-sm md:gap-md" id="letter-pool">
+<button class="tile w-14 h-14 md:w-16 md:h-16 bg-white border-2 border-surface-variant rounded-lg tile-press flex items-center justify-center text-headline-md md:text-headline-lg text-on-surface cursor-grab active:cursor-grabbing" data-letter="P" draggable="true">P</button>
+<button class="tile w-14 h-14 md:w-16 md:h-16 bg-white border-2 border-surface-variant rounded-lg tile-press flex items-center justify-center text-headline-md md:text-headline-lg text-on-surface cursor-grab active:cursor-grabbing" data-letter="L" draggable="true">L</button>
+<button class="tile w-14 h-14 md:w-16 md:h-16 bg-white border-2 border-surface-variant rounded-lg tile-press flex items-center justify-center text-headline-md md:text-headline-lg text-on-surface cursor-grab active:cursor-grabbing" data-letter="A" draggable="true">A</button>
+<button class="tile w-14 h-14 md:w-16 md:h-16 bg-white border-2 border-surface-variant rounded-lg tile-press flex items-center justify-center text-headline-md md:text-headline-lg text-on-surface cursor-grab active:cursor-grabbing" data-letter="E" draggable="true">E</button>
+<button class="tile w-14 h-14 md:w-16 md:h-16 bg-white border-2 border-surface-variant rounded-lg tile-press flex items-center justify-center text-headline-md md:text-headline-lg text-on-surface cursor-grab active:cursor-grabbing" data-letter="P" draggable="true">P</button>
+</div>
+</main>
+<!-- Footer Action Bar -->
+<footer class="fixed bottom-0 left-0 w-full bg-white border-t-2 border-surface-variant px-margin-mobile py-md flex justify-between items-center z-50">
+<button class="px-lg py-sm rounded-lg font-label-lg text-label-lg text-outline-variant hover:text-on-surface transition-colors">
+            SKIP
+        </button>
+<button class="px-xl py-md bg-primary text-white rounded-lg font-label-lg text-label-lg shadow-[0_4px_0_0_rgba(9,50,195,1)] hover:bg-primary-container active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed" id="check-btn">
+            CHECK
+        </button>
+</footer>
+<!-- Result Feedback Overlay (Hidden) -->
+<div class="fixed inset-x-0 bottom-0 translate-y-full bg-tertiary-fixed text-on-tertiary-fixed px-margin-mobile py-lg transition-transform duration-300 z-50 flex flex-col md:flex-row items-center justify-between gap-md border-t-4 border-tertiary" id="feedback-tray">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-tertiary-fixed">Great job!</h3>
+<p class="font-body-md text-body-md opacity-80">You're becoming a real word master!</p>
+</div>
+</div>
+<button class="w-full md:w-auto px-xl py-md bg-tertiary text-white rounded-lg font-label-lg text-label-lg shadow-[0_4px_0_0_rgba(8,33,0,1)] active:translate-y-1 active:shadow-none transition-all" onclick="window.location.reload()">
+            CONTINUE
+        </button>
+</div>
+<script>
+        const tiles = document.querySelectorAll('.tile');
+        const slots = document.querySelectorAll('.slot');
+        const checkBtn = document.getElementById('check-btn');
+        const feedbackTray = document.getElementById('feedback-tray');
+        let currentWord = ['', '', '', '', ''];
+        const correctWord = 'APPLE';
+
+        // Simulation of drag and drop for a high-end feel
+        tiles.forEach(tile => {
+            tile.addEventListener('click', () => {
+                const letter = tile.getAttribute('data-letter');
+                const emptySlotIndex = currentWord.findIndex(l => l === '');
+                
+                if (emptySlotIndex !== -1 && !tile.classList.contains('used')) {
+                    tile.classList.add('opacity-0', 'pointer-events-none', 'used');
+                    currentWord[emptySlotIndex] = letter;
+                    const slot = slots[emptySlotIndex];
+                    slot.textContent = letter;
+                    slot.classList.replace('bg-surface-container-high', 'bg-primary-fixed');
+                    slot.classList.replace('border-outline-variant', 'border-primary');
+                    
+                    // Add a tiny bounce
+                    slot.animate([
+                        { transform: 'scale(1)' },
+                        { transform: 'scale(1.1)' },
+                        { transform: 'scale(1)' }
+                    ], { duration: 200 });
+                }
+            });
+        });
+
+        slots.forEach((slot, index) => {
+            slot.addEventListener('click', () => {
+                if (currentWord[index] !== '') {
+                    const letter = currentWord[index];
+                    const originalTile = Array.from(tiles).find(t => t.getAttribute('data-letter') === letter && t.classList.contains('used'));
+                    
+                    if (originalTile) {
+                        originalTile.classList.remove('opacity-0', 'pointer-events-none', 'used');
+                        currentWord[index] = '';
+                        slot.textContent = '';
+                        slot.classList.replace('bg-primary-fixed', 'bg-surface-container-high');
+                        slot.classList.replace('border-primary', 'border-outline-variant');
+                    }
+                }
+            });
+        });
+
+        checkBtn.addEventListener('click', () => {
+            const result = currentWord.join('');
+            if (result === correctWord) {
+                // Correct path
+                checkBtn.textContent = 'AWESOME!';
+                feedbackTray.classList.remove('translate-y-full');
+                
+                // Celebration animation on slots
+                slots.forEach((s, i) => {
+                    setTimeout(() => {
+                        s.classList.add('correct-animation');
+                    }, i * 100);
+                });
+            } else {
+                // Wrong path - simple shake
+                document.getElementById('drop-zone').animate([
+                    { transform: 'translateX(0)' },
+                    { transform: 'translateX(-10px)' },
+                    { transform: 'translateX(10px)' },
+                    { transform: 'translateX(0)' }
+                ], { duration: 300 });
+                
+                checkBtn.classList.replace('bg-primary', 'bg-error');
+                checkBtn.textContent = 'TRY AGAIN';
+                setTimeout(() => {
+                    checkBtn.classList.replace('bg-error', 'bg-primary');
+                    checkBtn.textContent = 'CHECK';
+                }, 1000);
+            }
+        });
+
+        // Initialize empty states
+        checkBtn.disabled = false; // Enabled for the demo
+    </script>
+</body></html>

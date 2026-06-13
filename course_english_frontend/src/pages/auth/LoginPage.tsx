@@ -8,6 +8,7 @@ import { apiLogin } from "../../shared/api/user";
 import { setAccessToken } from "../../shared/auth/token";
 import { paths } from "../../shared/constants/paths";
 import { useFeatureFlags } from "../../shared/featureFlags/useFeatureFlags";
+import { resolvePostLoginRedirect } from "../../student/shared/auth/resolvePostLoginRedirect";
 
 type LoginForm = {
   username: string;
@@ -20,7 +21,7 @@ export function LoginPage() {
   const { control, handleSubmit } = useForm<LoginForm>();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? `/${paths.ADMIN}`;
+  const redirectTo = resolvePostLoginRedirect((location.state as { from?: string } | null)?.from);
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -60,7 +61,7 @@ export function LoginPage() {
           Đăng nhập
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Cell Architecture Studio — quản trị hoặc học tập
+          Course English — đăng nhập để vào khu vực học sinh hoặc quản trị.
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>

@@ -68,3 +68,14 @@ export async function apiDeleteEnrollment(id: number | string) {
   const response = (await api.delete(`/enrollments/${id}`)) as ApiResponse;
   return unwrapResponse(response);
 }
+
+/** Ghi danh ACTIVE của học sinh đang đăng nhập */
+export async function apiGetMyEnrollments() {
+  const response = (await api.post("/enrollments/search", {
+    mine: true,
+    status: "ACTIVE",
+    page: 0,
+    size: 50,
+  })) as ApiResponse<EnrollmentsPaginationResult>;
+  return unwrapResponse(response);
+}

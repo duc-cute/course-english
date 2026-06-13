@@ -9,7 +9,8 @@ export type QuestionType =
   | "TRUE_FALSE"
   | "LISTEN_CHOOSE"
   | "SPELLING"
-  | "LISTEN_TYPE";
+  | "LISTEN_TYPE"
+  | "REORDER_SENTENCE";
 
 export type QuestionChoiceRecord = {
   id?: string;

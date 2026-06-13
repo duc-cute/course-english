@@ -12,11 +12,13 @@ import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.service.LessonAssetService;
 import com.courseenglish.api.service.LessonBlockService;
 import com.courseenglish.api.service.LessonService;
+import com.courseenglish.api.service.StudentEnrollmentAccessService;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
 import com.courseenglish.api.util.annotation.ApiMessage;
 import com.courseenglish.api.util.error.IdInvalidException;
 import jakarta.validation.Valid;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,21 +32,30 @@ public class LessonController {
     private final LessonService lessonService;
     private final LessonBlockService lessonBlockService;
     private final LessonAssetService lessonAssetService;
+    private final StudentEnrollmentAccessService studentEnrollmentAccessService;
 
     public LessonController(
             LessonService lessonService,
             LessonBlockService lessonBlockService,
-            LessonAssetService lessonAssetService) {
+            LessonAssetService lessonAssetService,
+            StudentEnrollmentAccessService studentEnrollmentAccessService) {
         this.lessonService = lessonService;
         this.lessonBlockService = lessonBlockService;
         this.lessonAssetService = lessonAssetService;
+        this.studentEnrollmentAccessService = studentEnrollmentAccessService;
     }
 
     @PostMapping("/search")
     @ApiMessage("Fetch all lessons")
-    public ResponseEntity<ResultPaginationDTO> paging(@RequestBody(required = false) ReqSearchLessonDTO req) {
+    public ResponseEntity<ResultPaginationDTO> paging(@RequestBody(required = false) ReqSearchLessonDTO req)
+            throws IdInvalidException {
         ReqSearchLessonDTO payload = req == null ? new ReqSearchLessonDTO() : req;
-        var spec = CatalogSearchSpecs.lessonSearch(payload);
+        Specification<Lesson> spec = CatalogSearchSpecs.lessonSearch(payload);
+        if (Boolean.TRUE.equals(payload.getEnrolledOnly())) {
+            List<UUID> subjectIds = studentEnrollmentAccessService.resolveEnrolledSubjectIds(payload.getClassroomId());
+            Specification<Lesson> enrolledSpec = CatalogSearchSpecs.lessonSubjectIdsIn(subjectIds);
+            spec = spec == null ? enrolledSpec : spec.and(enrolledSpec);
+        }
         var pageable = PagingSearchUtil.toPageable(payload);
         return ResponseEntity.ok(lessonService.getAll(spec, pageable));
     }

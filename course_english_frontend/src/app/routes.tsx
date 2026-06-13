@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { Navigate, createBrowserRouter } from "react-router-dom";
+import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
 import { RequireAuth } from "../shared/auth/RequireAuth";
 import { paths } from "../shared/constants/paths";
 import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage";
@@ -21,6 +21,11 @@ import { StudentHomePage } from "../pages/student/StudentHomePage";
 import { StudentLessonListPage } from "../pages/student/StudentLessonListPage";
 import { StudentUsageGuidePage } from "../pages/student/StudentUsageGuidePage";
 import { LessonReaderPage } from "../pages/student/LessonReaderPage";
+import { StudentPathPage } from "../pages/student/StudentPathPage";
+import { StudentVocabPage } from "../pages/student/StudentVocabPage";
+import { StudentVocabSetPage } from "../pages/student/StudentVocabSetPage";
+import { StudentProfilePage } from "../pages/student/StudentProfilePage";
+import { StudentLeaderboardPage } from "../pages/student/StudentLeaderboardPage";
 import { TeacherUsageGuidePage } from "../pages/admin/TeacherUsageGuidePage";
 
 const LazyAdminLayout = lazy(async () => {
@@ -28,9 +33,14 @@ const LazyAdminLayout = lazy(async () => {
   return { default: module.AdminLayout };
 });
 
-const LazyStudentLayout = lazy(async () => {
-  const module = await import("../layouts/student/StudentLayout");
-  return { default: module.StudentLayout };
+const LazyStudentAppLayout = lazy(async () => {
+  const module = await import("../layouts/student/StudentAppLayout");
+  return { default: module.StudentAppLayout };
+});
+
+const LazyStudentPlayerLayout = lazy(async () => {
+  const module = await import("../layouts/student/StudentPlayerLayout");
+  return { default: module.StudentPlayerLayout };
 });
 
 const studentHome = `/${paths.STUDENT}`;
@@ -52,25 +62,55 @@ export const appRouter = createBrowserRouter([
     path: paths.STUDENT,
     element: (
       <RequireAuth>
-        <LazyStudentLayout />
+        <Outlet />
       </RequireAuth>
     ),
     children: [
       {
-        index: true,
-        element: <StudentHomePage />,
+        element: <LazyStudentAppLayout />,
+        children: [
+          {
+            index: true,
+            element: <StudentHomePage />,
+          },
+          {
+            path: paths.STUDENT_LESSONS,
+            element: <StudentLessonListPage />,
+          },
+          {
+            path: paths.STUDENT_PATH,
+            element: <StudentPathPage />,
+          },
+          {
+            path: paths.STUDENT_VOCAB,
+            element: <StudentVocabPage />,
+          },
+          {
+            path: `${paths.STUDENT_VOCAB}/:setId`,
+            element: <StudentVocabSetPage />,
+          },
+          {
+            path: paths.STUDENT_PROFILE,
+            element: <StudentProfilePage />,
+          },
+          {
+            path: paths.STUDENT_LEADERBOARD,
+            element: <StudentLeaderboardPage />,
+          },
+          {
+            path: paths.USAGE_GUIDE,
+            element: <StudentUsageGuidePage />,
+          },
+        ],
       },
       {
-        path: paths.STUDENT_LESSONS,
-        element: <StudentLessonListPage />,
-      },
-      {
-        path: paths.STUDENT_LESSON_READ,
-        element: <LessonReaderPage />,
-      },
-      {
-        path: paths.USAGE_GUIDE,
-        element: <StudentUsageGuidePage />,
+        element: <LazyStudentPlayerLayout />,
+        children: [
+          {
+            path: paths.STUDENT_LESSON_READ,
+            element: <LessonReaderPage />,
+          },
+        ],
       },
     ],
   },

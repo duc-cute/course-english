@@ -15,6 +15,7 @@ export async function findNextPublishedLesson(current: LessonDetailRecord): Prom
     size: 100,
     sort: "displayOrder,asc",
     status: "PUBLISHED",
+    enrolledOnly: true,
     subjectId: current.subjectId,
   })) as ApiResponse<LessonsPaginationResult>;
 

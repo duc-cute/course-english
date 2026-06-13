@@ -1,4 +1,5 @@
 import type { LessonBlockRecord } from "../../../shared/api/lesson";
+import type { ExerciseAnswerSnapshot } from "../exerciseSessionStorage";
 import { parseExerciseSetPayload } from "./parseExerciseSet";
 import { parseQuestionRefPayload } from "./parseQuestionRef";
 import { shuffleArray, reorderChoicesByIds } from "./exerciseShuffle";
@@ -10,6 +11,7 @@ import type {
   ListenChooseQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
+  ReorderSentenceQuestion,
 } from "./types";
 
 export type BlockExerciseSettings = {
@@ -99,6 +101,30 @@ function applyMatchingShuffle(
   };
 }
 
+function applyReorderShuffle(
+  question: ReorderSentenceQuestion,
+  shuffleOptions: boolean,
+  savedPoolOrder?: string[],
+): { display: ReorderSentenceQuestion; choiceOrder: string[] } {
+  const defaultOrder = question.tokens.map((token) => token.id);
+
+  if (!shuffleOptions) {
+    return { display: question, choiceOrder: [] };
+  }
+
+  const poolOrder =
+    savedPoolOrder &&
+    savedPoolOrder.length === defaultOrder.length &&
+    sameStringSet(savedPoolOrder, defaultOrder)
+      ? savedPoolOrder
+      : shuffleArray(defaultOrder);
+
+  return {
+    display: { ...question, poolDisplayOrder: poolOrder },
+    choiceOrder: poolOrder,
+  };
+}
+
 function applyQuestionDisplay(
   question: ExerciseQuestion,
   shuffleOptions: boolean,
@@ -109,6 +135,9 @@ function applyQuestionDisplay(
   }
   if (question.type === "MATCHING") {
     return applyMatchingShuffle(question, shuffleOptions, savedChoiceOrder);
+  }
+  if (question.type === "REORDER_SENTENCE") {
+    return applyReorderShuffle(question, shuffleOptions, savedChoiceOrder);
   }
   return { display: question, choiceOrder: [] };
 }
@@ -219,4 +248,12 @@ export function prepareExercisePlan(
     choiceOrders,
     passScorePercent,
   };
+}
+
+/** Chỉ giữ câu trả lời sai — dùng cho chế độ luyện lại câu sai. */
+export function filterWrongExerciseItems(
+  items: PreparedExerciseItem[],
+  answers: Record<string, ExerciseAnswerSnapshot>,
+): PreparedExerciseItem[] {
+  return items.filter((item) => answers[item.displayQuestion.id]?.correct === false);
 }

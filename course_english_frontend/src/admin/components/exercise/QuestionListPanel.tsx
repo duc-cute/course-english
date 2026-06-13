@@ -22,6 +22,7 @@ import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
 import KeyboardOutlinedIcon from "@mui/icons-material/KeyboardOutlined";
 import LinkIcon from "@mui/icons-material/Link";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
+import ReorderIcon from "@mui/icons-material/Reorder";
 import ShortTextOutlinedIcon from "@mui/icons-material/ShortTextOutlined";
 import SpellcheckOutlinedIcon from "@mui/icons-material/SpellcheckOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -48,6 +49,7 @@ type QuestionListPanelProps = {
   onAddMcq: () => void;
   onAddMatching: () => void;
   onAddFillBlank: () => void;
+  onAddReorder: () => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
 };
 
@@ -89,7 +91,9 @@ function SortableQuestionItem({
             ? KeyboardOutlinedIcon
             : question.type === "FILL_BLANK"
               ? ShortTextOutlinedIcon
-              : QuizOutlinedIcon;
+              : question.type === "REORDER_SENTENCE"
+                ? ReorderIcon
+                : QuizOutlinedIcon;
 
   return (
     <Box
@@ -201,6 +205,7 @@ export function QuestionListPanel({
   onAddMcq,
   onAddMatching,
   onAddFillBlank,
+  onAddReorder,
   onReorder,
 }: QuestionListPanelProps) {
   const [search, setSearch] = useState("");
@@ -344,6 +349,23 @@ export function QuestionListPanel({
           onClick={onAddFillBlank}
         >
           Thêm điền khuyết
+        </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<ReorderIcon />}
+          sx={{
+            py: 1,
+            borderRadius: "10px",
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: "none",
+            borderColor: "#0C447C",
+            color: "#0C447C",
+          }}
+          onClick={onAddReorder}
+        >
+          Thêm sắp xếp câu
         </Button>
       </Box>
     </Box>

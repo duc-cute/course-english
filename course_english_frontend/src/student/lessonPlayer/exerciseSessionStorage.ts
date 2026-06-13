@@ -9,6 +9,8 @@ export type ExerciseAnswerSnapshot = {
   fillBlankAnswers?: Record<string, string>;
   /** left → right (MATCHING) */
   matchingSelections?: Record<string, string>;
+  /** token ids đã xếp (REORDER_SENTENCE) */
+  reorderTokenOrder?: string[];
 };
 
 export type ExerciseSessionSnapshot = {

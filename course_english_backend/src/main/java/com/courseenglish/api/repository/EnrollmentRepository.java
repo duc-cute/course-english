@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +14,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID>, J
     Optional<Enrollment> findByIdAndVoidedFalse(UUID id);
 
     boolean existsByClassroom_IdAndStudent_IdAndVoidedFalse(UUID classroomId, UUID studentId);
+
+    List<Enrollment> findByStudent_IdAndStatusIgnoreCaseAndVoidedFalse(UUID studentId, String status);
 }

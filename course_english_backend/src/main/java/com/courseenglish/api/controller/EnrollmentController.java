@@ -8,6 +8,7 @@ import com.courseenglish.api.domain.request.ReqSearchEnrollmentDTO;
 import com.courseenglish.api.domain.response.ResEnrollmentDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.service.EnrollmentService;
+import com.courseenglish.api.service.StudentEnrollmentAccessService;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
 import com.courseenglish.api.util.annotation.ApiMessage;
@@ -24,15 +25,25 @@ import java.util.UUID;
 @RequestMapping("/api/v1/enrollments")
 public class EnrollmentController {
     private final EnrollmentService enrollmentService;
+    private final StudentEnrollmentAccessService studentEnrollmentAccessService;
 
-    public EnrollmentController(EnrollmentService enrollmentService) {
+    public EnrollmentController(
+            EnrollmentService enrollmentService,
+            StudentEnrollmentAccessService studentEnrollmentAccessService) {
         this.enrollmentService = enrollmentService;
+        this.studentEnrollmentAccessService = studentEnrollmentAccessService;
     }
 
     @PostMapping("/search")
     @ApiMessage("Fetch all enrollments")
-    public ResponseEntity<ResultPaginationDTO> paging(@RequestBody(required = false) ReqSearchEnrollmentDTO req) {
+    public ResponseEntity<ResultPaginationDTO> paging(@RequestBody(required = false) ReqSearchEnrollmentDTO req)
+            throws IdInvalidException {
         ReqSearchEnrollmentDTO payload = req == null ? new ReqSearchEnrollmentDTO() : req;
+        if (Boolean.TRUE.equals(payload.getMine())) {
+            UUID studentId = studentEnrollmentAccessService.currentStudentId()
+                    .orElseThrow(() -> new IdInvalidException("Cần đăng nhập để xem ghi danh."));
+            payload.setStudentId(studentId);
+        }
         var spec = CatalogSearchSpecs.enrollmentSearch(payload);
         var pageable = PagingSearchUtil.toPageable(payload);
         return ResponseEntity.status(HttpStatus.OK).body(enrollmentService.getAll(spec, pageable));

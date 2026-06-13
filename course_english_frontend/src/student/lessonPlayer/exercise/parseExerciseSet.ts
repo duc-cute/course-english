@@ -147,6 +147,86 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
     };
   }
 
+  if (raw.type === "REORDER_SENTENCE") {
+    const tokensRaw = Array.isArray(raw.tokens) ? raw.tokens : [];
+    const tokens = tokensRaw
+      .filter(isRecord)
+      .map((t, index) => {
+        const id = typeof t.id === "string" && t.id.trim() ? t.id.trim() : `t${index + 1}`;
+        const text = typeof t.text === "string" ? t.text.trim() : "";
+        return { id, text };
+      })
+      .filter((t) => t.text);
+
+    if (tokens.length < 3) return null;
+
+    const tokenIds = new Set(tokens.map((t) => t.id));
+    const orderRaw = Array.isArray(raw.correctOrder) ? raw.correctOrder : [];
+    const correctOrder = orderRaw
+      .map((id) => String(id ?? "").trim())
+      .filter((id) => tokenIds.has(id));
+
+    const finalOrder =
+      correctOrder.length === tokens.length && new Set(correctOrder).size === tokens.length
+        ? correctOrder
+        : tokens.map((t) => t.id);
+
+    const prompt = isRecord(raw.prompt)
+      ? { text: String(raw.prompt.text ?? ""), lang: raw.prompt.lang ? String(raw.prompt.lang) : undefined }
+      : undefined;
+
+    return {
+      id: raw.id,
+      type: "REORDER_SENTENCE",
+      prompt: prompt?.text?.trim() ? prompt : { text: "Sắp xếp các mảnh thành câu đúng", lang: "vi" },
+      tokens,
+      correctOrder: finalOrder,
+      sourceSentence: typeof raw.sourceSentence === "string" ? raw.sourceSentence : undefined,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
+  if (raw.type === "TRUE_FALSE") {
+    const prompt = isRecord(raw.prompt)
+      ? { text: String(raw.prompt.text ?? ""), lang: raw.prompt.lang ? String(raw.prompt.lang) : undefined }
+      : { text: "" };
+
+    if (!prompt.text.trim()) return null;
+
+    let correctAnswer: boolean | null = null;
+
+    if (typeof raw.correctAnswer === "boolean") {
+      correctAnswer = raw.correctAnswer;
+    } else if (raw.correctAnswer === "true") {
+      correctAnswer = true;
+    } else if (raw.correctAnswer === "false") {
+      correctAnswer = false;
+    } else if (raw.correctChoiceId === "true") {
+      correctAnswer = true;
+    } else if (raw.correctChoiceId === "false") {
+      correctAnswer = false;
+    } else if (Array.isArray(raw.choices)) {
+      const choices = raw.choices.filter(isRecord);
+      const correctChoice = choices.find((c) => c.correct === true);
+      if (correctChoice) {
+        const key = String(correctChoice.id ?? correctChoice.choiceKey ?? "").toLowerCase();
+        if (key === "true" || key === "false") {
+          correctAnswer = key === "true";
+        }
+      }
+    }
+
+    if (correctAnswer === null) return null;
+
+    return {
+      id: raw.id,
+      type: "TRUE_FALSE",
+      prompt,
+      correctAnswer,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
   if (raw.type === "LISTEN_TYPE") {
     const audioUrl = typeof raw.audioUrl === "string" ? raw.audioUrl.trim() : "";
     const correctAnswer = typeof raw.correctAnswer === "string" ? raw.correctAnswer.trim() : "";

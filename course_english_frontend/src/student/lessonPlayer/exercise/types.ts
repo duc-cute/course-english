@@ -6,7 +6,8 @@ export type ExerciseQuestionType =
   | "TRUE_FALSE"
   | "LISTEN_CHOOSE"
   | "SPELLING"
-  | "LISTEN_TYPE";
+  | "LISTEN_TYPE"
+  | "REORDER_SENTENCE";
 
 export type ExerciseChoice = {
   id: string;
@@ -98,13 +99,44 @@ export type FillBlankQuestion = {
   explanation?: string;
 };
 
+export type ReorderToken = {
+  id: string;
+  text: string;
+};
+
+export type ReorderSentenceQuestion = {
+  id: string;
+  type: "REORDER_SENTENCE";
+  prompt?: ExercisePrompt;
+  tokens: ReorderToken[];
+  correctOrder: string[];
+  sourceSentence?: string;
+  /** Thứ tự chip trong pool sau shuffle — gán lúc prepare */
+  poolDisplayOrder?: string[];
+  explanation?: string;
+};
+
+/** choice id "true" | "false" — khớp selectedChoiceId trong snapshot */
+export const TRUE_FALSE_TRUE_ID = "true";
+export const TRUE_FALSE_FALSE_ID = "false";
+
+export type TrueFalseQuestion = {
+  id: string;
+  type: "TRUE_FALSE";
+  prompt: ExercisePrompt;
+  correctAnswer: boolean;
+  explanation?: string;
+};
+
 export type ExerciseQuestion =
   | MultipleChoiceQuestion
   | MatchingQuestion
   | ListenChooseQuestion
   | SpellingQuestion
   | ListenTypeQuestion
-  | FillBlankQuestion;
+  | FillBlankQuestion
+  | ReorderSentenceQuestion
+  | TrueFalseQuestion;
 
 export type ExercisePresentation = "stepped" | "inline";
 

@@ -1,0 +1,290 @@
+/* S7 — Vocab center */
+
+.vq-vocab-page {
+  padding-bottom: 32px;
+}
+
+.vq-vocab-header {
+  margin-bottom: 20px;
+}
+
+.vq-vocab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vq-vocab-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 2px solid var(--vq-outline-variant);
+  border-radius: var(--vq-radius);
+  background: var(--vq-surface-container-lowest);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.04);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 100ms ease, box-shadow 100ms ease, border-color 120ms ease;
+}
+
+.vq-vocab-card:hover {
+  border-color: var(--vq-primary);
+}
+
+.vq-vocab-card:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.vq-vocab-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: calc(var(--vq-radius) - 6px);
+  background: rgba(45, 75, 215, 0.1);
+  color: var(--vq-primary);
+}
+
+.vq-vocab-card__title {
+  margin: 0;
+  font-family: var(--vq-font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--vq-on-surface);
+}
+
+.vq-vocab-card__desc {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--vq-on-surface-variant);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vq-vocab-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vq-vocab-card__count {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--vq-on-surface-variant);
+}
+
+.vq-vocab-card__cta {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--vq-primary);
+  white-space: nowrap;
+}
+
+.vq-vocab-card--skeleton {
+  min-height: 96px;
+  background: linear-gradient(
+    90deg,
+    var(--vq-surface-container) 25%,
+    var(--vq-surface-container-low) 50%,
+    var(--vq-surface-container) 75%
+  );
+  background-size: 200% 100%;
+  animation: vq-vocab-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes vq-vocab-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Practice page */
+.vq-vocab-practice__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  color: var(--vq-primary);
+  text-decoration: none;
+}
+
+.vq-vocab-practice__head {
+  margin-bottom: 16px;
+}
+
+.vq-vocab-practice__title {
+  margin: 0;
+  font-family: var(--vq-font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--vq-on-surface);
+}
+
+.vq-vocab-practice__subject {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--vq-primary);
+}
+
+.vq-vocab-practice__desc {
+  margin: 8px 0 0;
+  font-size: 0.9375rem;
+  color: var(--vq-on-surface-variant);
+}
+
+.vq-vocab-practice__skeleton {
+  min-height: 280px;
+  border-radius: var(--vq-radius);
+  background: var(--vq-surface-container);
+}
+
+.vq-vocab-mode-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: var(--vq-surface-container);
+  border-radius: 999px;
+  border: 2px solid var(--vq-outline-variant);
+}
+
+.vq-vocab-mode-tabs__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--vq-font-body);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vq-on-surface-variant);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.vq-vocab-mode-tabs__btn.is-active {
+  background: var(--vq-primary);
+  color: var(--vq-on-primary);
+  box-shadow: 0 3px 0 var(--vq-primary-shadow);
+}
+
+.vq-vocab-flashcard-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.vq-vocab-flashcard-hint {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--vq-on-surface-variant);
+}
+
+/* Flashcard — Vibrant Scholar overrides (class names from lesson player) */
+.vq-vocab-page .vocabulary-flashcard-card {
+  border: 2px solid var(--vq-outline-variant);
+  border-radius: var(--vq-radius);
+  background: var(--vq-surface-container-lowest);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.06);
+  min-height: 220px;
+}
+
+.vq-vocab-page .vocabulary-flashcard-face {
+  font-family: var(--vq-font-display);
+}
+
+.vq-vocab-page .vocabulary-flashcard-word {
+  color: var(--vq-on-surface);
+}
+
+.vq-vocab-page .vocabulary-flashcard-meaning {
+  color: var(--vq-primary);
+}
+
+.vq-vocab-page .vocabulary-flashcard-nav-btn {
+  border: 2px solid var(--vq-outline-variant);
+  border-radius: 999px;
+  font-weight: 800;
+  color: var(--vq-primary);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.vq-vocab-page .vocabulary-flashcard-progress-fill {
+  background: var(--vq-primary);
+}
+
+/* Word list */
+.vq-vocab-word-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vq-vocab-word-list__item {
+  padding: 14px 16px;
+  border: 2px solid var(--vq-outline-variant);
+  border-radius: calc(var(--vq-radius) - 4px);
+  background: var(--vq-surface-container-lowest);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.04);
+}
+
+.vq-vocab-word-list__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.vq-vocab-word-list__en {
+  font-family: var(--vq-font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--vq-on-surface);
+}
+
+.vq-vocab-word-list__phonetic {
+  font-size: 0.875rem;
+  color: var(--vq-on-surface-variant);
+}
+
+.vq-vocab-word-list__vi {
+  margin: 6px 0 0;
+  font-size: 0.9375rem;
+  color: var(--vq-on-surface);
+}
+
+@media (max-width: 640px) {
+  .vq-vocab-card {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .vq-vocab-card__cta {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

@@ -6,6 +6,9 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.List;
+import java.util.UUID;
+
 public final class CatalogSearchSpecs {
     private CatalogSearchSpecs() {
     }
@@ -61,8 +64,19 @@ public final class CatalogSearchSpecs {
     public static Specification<VocabularySet> vocabularySetSearch(ReqSearchVocabularySetDTO req) {
         return and(
                 vocabularySetKeywordLike(req.getKeyword()),
-                vocabularySetStatusEquals(req.getStatus())
+                vocabularySetStatusEquals(req.getStatus()),
+                vocabularySetSubjectIdEquals(req.getSubjectId())
         );
+    }
+
+    public static Specification<VocabularySet> vocabularySetSubjectIdsIn(List<UUID> subjectIds) {
+        if (subjectIds == null || subjectIds.isEmpty()) {
+            return (root, query, cb) -> cb.disjunction();
+        }
+        return (root, query, cb) -> {
+            Join<VocabularySet, Subject> subjectJoin = root.join("subject", JoinType.INNER);
+            return subjectJoin.get("id").in(subjectIds);
+        };
     }
 
     public static Specification<VocabularyWord> vocabularyWordSearch(ReqSearchVocabularyWordDTO req) {
@@ -114,6 +128,16 @@ public final class CatalogSearchSpecs {
         }
         String normalized = status.trim().toUpperCase();
         return (root, query, cb) -> cb.equal(cb.upper(root.get("status")), normalized);
+    }
+
+    private static Specification<VocabularySet> vocabularySetSubjectIdEquals(java.util.UUID subjectId) {
+        if (subjectId == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            Join<VocabularySet, Subject> subjectJoin = root.join("subject", JoinType.INNER);
+            return cb.equal(subjectJoin.get("id"), subjectId);
+        };
     }
 
     private static Specification<Question> questionKeywordLike(String keyword) {
@@ -175,6 +199,17 @@ public final class CatalogSearchSpecs {
         return (root, query, cb) -> {
             Join<Lesson, Subject> subjectJoin = root.join("subject", JoinType.INNER);
             return cb.equal(subjectJoin.get("id"), subjectId);
+        };
+    }
+
+    /** Lọc lesson theo danh sách subject — list rỗng → không trả kết quả. */
+    public static Specification<Lesson> lessonSubjectIdsIn(List<UUID> subjectIds) {
+        if (subjectIds == null || subjectIds.isEmpty()) {
+            return (root, query, cb) -> cb.disjunction();
+        }
+        return (root, query, cb) -> {
+            Join<Lesson, Subject> subjectJoin = root.join("subject", JoinType.INNER);
+            return subjectJoin.get("id").in(subjectIds);
         };
     }
 

@@ -14,6 +14,7 @@ import {
   type LessonPracticeAttemptRecord,
 } from "../../../shared/api/lessonPracticeAttempt";
 import { buildStructuredSnapshot, parseAttemptSnapshot } from "../../../shared/lesson/attemptSnapshot";
+import { ExerciseFeedbackTray } from "./ExerciseFeedbackTray";
 import { ExerciseResultScreen } from "./ExerciseResultScreen";
 import { ExerciseReviewScreen } from "./ExerciseReviewScreen";
 import { PracticeAttemptBanner } from "./PracticeAttemptBanner";
@@ -23,19 +24,24 @@ import { ListenTypeQuestion } from "./ListenTypeQuestion";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion";
 import { FillBlankQuestion } from "./FillBlankQuestion";
+import { ReorderSentenceQuestion } from "./ReorderSentenceQuestion";
 import { SpellingQuestion } from "./SpellingQuestion";
-import { prepareExercisePlan, type PreparedExerciseItem } from "./prepareExerciseItems";
+import { TrueFalseQuestion, trueFalseCorrectChoiceId } from "./TrueFalseQuestion";
+import { prepareExercisePlan, filterWrongExerciseItems, type PreparedExerciseItem } from "./prepareExerciseItems";
 import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 import { QuestionProgressBar } from "./QuestionProgressBar";
 import { compareTypedAnswers } from "../../../shared/lesson/answerNormalize";
 import { compareFillBlankAnswers, isFillBlankComplete } from "../../../shared/lesson/fillBlankUtils";
+import { compareReorderOrder, isReorderComplete } from "../../../shared/lesson/reorderSentenceUtils";
 import type {
   ListenChooseQuestion as ListenChooseType,
   FillBlankQuestion as FillBlankType,
   ListenTypeQuestion as ListenTypeQuestionModel,
   MatchingQuestion as MatchingType,
   MultipleChoiceQuestion as McqType,
+  ReorderSentenceQuestion as ReorderType,
   SpellingQuestion as SpellingType,
+  TrueFalseQuestion as TrueFalseType,
 } from "./types";
 
 type ExercisePlayerProps = {
@@ -45,6 +51,7 @@ type ExercisePlayerProps = {
   practiceBlocks: LessonBlockRecord[];
   nextLessonTitle?: string;
   onViewChange?: (view: "exercise" | "result" | "review") => void;
+  onProgressChange?: (current: number, total: number) => void;
   onContinueStudy?: () => void;
   onBackToLessons?: () => void;
 };
@@ -59,6 +66,7 @@ export function ExercisePlayer({
   practiceBlocks,
   nextLessonTitle,
   onViewChange,
+  onProgressChange,
   onContinueStudy,
   onBackToLessons,
 }: ExercisePlayerProps) {
@@ -66,6 +74,8 @@ export function ExercisePlayer({
   const blockIds = useMemo(() => practiceBlocks.map((b) => b.id), [practiceBlocks]);
 
   const [sessionSeed, setSessionSeed] = useState(0);
+  const [questionIdsOverride, setQuestionIdsOverride] = useState<string[] | null>(null);
+  const [isWrongOnlyRetry, setIsWrongOnlyRetry] = useState(false);
   const initializedRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
   const attemptSubmitLockRef = useRef(false);
@@ -75,14 +85,14 @@ export function ExercisePlayer({
     const canRestore =
       saved &&
       saved.blockIds.join(",") === blockIdsKey &&
-      sessionSeed === 0;
+      sessionSeed === 0 &&
+      !questionIdsOverride;
 
-    return prepareExercisePlan(
-      practiceBlocks,
-      canRestore ? saved.questionIdsOrder : undefined,
-      canRestore ? saved.choiceOrders : undefined,
-    );
-  }, [practiceBlocks, lessonId, blockIdsKey, sessionSeed]);
+    const savedOrder = questionIdsOverride ?? (canRestore ? saved.questionIdsOrder : undefined);
+    const savedChoices = canRestore ? saved.choiceOrders : undefined;
+
+    return prepareExercisePlan(practiceBlocks, savedOrder, savedChoices);
+  }, [practiceBlocks, lessonId, blockIdsKey, sessionSeed, questionIdsOverride]);
 
   const items = plan.items;
   const total = items.length;
@@ -92,6 +102,7 @@ export function ExercisePlayer({
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
   const [typedAnswer, setTypedAnswer] = useState("");
   const [fillBlankAnswers, setFillBlankAnswers] = useState<Record<string, string>>({});
+  const [reorderTokenOrder, setReorderTokenOrder] = useState<string[]>([]);
   const [matchingSelections, setMatchingSelections] = useState<Record<string, string>>({});
   const [activeMatchingLeft, setActiveMatchingLeft] = useState<string | null>(null);
   const [phase, setPhase] = useState<PlayerPhase>("answer");
@@ -154,6 +165,7 @@ export function ExercisePlayer({
     setSelectedChoiceId(null);
     setTypedAnswer("");
     setFillBlankAnswers({});
+    setReorderTokenOrder([]);
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setShowExplanation(false);
@@ -185,13 +197,28 @@ export function ExercisePlayer({
     current?.displayQuestion.type === "MATCHING"
       ? (current.displayQuestion as MatchingType)
       : null;
+  const currentReorder =
+    current?.displayQuestion.type === "REORDER_SENTENCE"
+      ? (current.displayQuestion as ReorderType)
+      : null;
+  const currentTrueFalse =
+    current?.displayQuestion.type === "TRUE_FALSE"
+      ? (current.displayQuestion as TrueFalseType)
+      : null;
+
+  useEffect(() => {
+    if (!onProgressChange || total <= 0) return;
+    onProgressChange(questionIndex + 1, total);
+  }, [onProgressChange, questionIndex, total]);
 
   useEffect(() => {
     if (!current) return;
     const saved = answers[current.displayQuestion.id];
-    if (currentMcq || currentListen) {
+    if (currentMcq || currentListen || currentTrueFalse) {
       setSelectedChoiceId(saved?.selectedChoiceId ?? null);
       setTypedAnswer("");
+      setFillBlankAnswers({});
+      setReorderTokenOrder([]);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
       return;
@@ -199,6 +226,7 @@ export function ExercisePlayer({
     if (currentSpelling || currentListenType) {
       setTypedAnswer(saved?.typedAnswer ?? "");
       setFillBlankAnswers({});
+      setReorderTokenOrder([]);
       setSelectedChoiceId(null);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
@@ -206,6 +234,16 @@ export function ExercisePlayer({
     }
     if (currentFillBlank) {
       setFillBlankAnswers(saved?.fillBlankAnswers ?? {});
+      setReorderTokenOrder([]);
+      setTypedAnswer("");
+      setSelectedChoiceId(null);
+      setMatchingSelections({});
+      setActiveMatchingLeft(null);
+      return;
+    }
+    if (currentReorder) {
+      setReorderTokenOrder(saved?.reorderTokenOrder ?? []);
+      setFillBlankAnswers({});
       setTypedAnswer("");
       setSelectedChoiceId(null);
       setMatchingSelections({});
@@ -214,10 +252,12 @@ export function ExercisePlayer({
     }
     if (currentMatching) {
       setMatchingSelections(saved?.matchingSelections ?? {});
+      setFillBlankAnswers({});
+      setReorderTokenOrder([]);
       setActiveMatchingLeft(null);
       setSelectedChoiceId(null);
     }
-  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentSpelling, currentListenType, currentFillBlank, currentMatching, answers]);
+  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentTrueFalse, currentSpelling, currentListenType, currentFillBlank, currentReorder, currentMatching, answers]);
 
   useEffect(() => {
     if (phase === "done" || phase === "review") {
@@ -356,6 +396,20 @@ export function ExercisePlayer({
       return;
     }
 
+    if (currentTrueFalse && selectedChoiceId) {
+      const correctId = trueFalseCorrectChoiceId(currentTrueFalse);
+      const correct = selectedChoiceId === correctId;
+      const nextAnswers = {
+        ...answers,
+        [currentTrueFalse.id]: { correct, selectedChoiceId },
+      };
+      setAnswers(nextAnswers);
+      setShowExplanation(false);
+      setPhase("feedback");
+      persistSession(questionIndex, false, nextAnswers);
+      return;
+    }
+
     const typedQuestion = currentSpelling ?? currentListenType;
     if (typedQuestion && typedAnswer.trim()) {
       const correct = compareTypedAnswers(typedAnswer, typedQuestion.correctAnswer, {
@@ -392,6 +446,25 @@ export function ExercisePlayer({
       return;
     }
 
+    if (
+      currentReorder &&
+      isReorderComplete(reorderTokenOrder, currentReorder.tokens.length)
+    ) {
+      const correct = compareReorderOrder(reorderTokenOrder, currentReorder.correctOrder);
+      const nextAnswers = {
+        ...answers,
+        [currentReorder.id]: {
+          correct,
+          reorderTokenOrder: [...reorderTokenOrder],
+        },
+      };
+      setAnswers(nextAnswers);
+      setShowExplanation(false);
+      setPhase("feedback");
+      persistSession(questionIndex, false, nextAnswers);
+      return;
+    }
+
     if (currentMatching && isMatchingComplete(currentMatching.pairs, matchingSelections)) {
       const correct = scoreMatchingAnswer(currentMatching.pairs, matchingSelections);
       const nextAnswers = {
@@ -407,6 +480,26 @@ export function ExercisePlayer({
       setPhase("feedback");
       persistSession(questionIndex, false, nextAnswers);
     }
+  };
+
+  const handleTapReorderPool = (tokenId: string) => {
+    if (phase !== "answer" || !currentReorder) return;
+    if (reorderTokenOrder.includes(tokenId)) return;
+    setReorderTokenOrder((prev) => [...prev, tokenId]);
+  };
+
+  const handleTapReorderSentence = (tokenId: string) => {
+    if (phase !== "answer") return;
+    setReorderTokenOrder((prev) => {
+      const index = prev.indexOf(tokenId);
+      if (index < 0) return prev;
+      return [...prev.slice(0, index), ...prev.slice(index + 1)];
+    });
+  };
+
+  const handleClearReorder = () => {
+    if (phase !== "answer") return;
+    setReorderTokenOrder([]);
   };
 
   const handleSelectMatchingLeft = (left: string) => {
@@ -442,6 +535,7 @@ export function ExercisePlayer({
     setSelectedChoiceId(null);
     setTypedAnswer("");
     setFillBlankAnswers({});
+    setReorderTokenOrder([]);
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setShowExplanation(false);
@@ -454,10 +548,13 @@ export function ExercisePlayer({
     initializedRef.current = false;
     startedAtRef.current = null;
     attemptSubmitLockRef.current = false;
+    setQuestionIdsOverride(null);
+    setIsWrongOnlyRetry(false);
     setQuestionIndex(0);
     setSelectedChoiceId(null);
     setTypedAnswer("");
     setFillBlankAnswers({});
+    setReorderTokenOrder([]);
     setMatchingSelections({});
     setActiveMatchingLeft(null);
     setPhase("answer");
@@ -469,22 +566,58 @@ export function ExercisePlayer({
     setSessionSeed((s) => s + 1);
   };
 
-  const canCheck = currentMcq || currentListen
+  const wrongCount = Object.values(answers).filter((a) => !a.correct).length;
+
+  const handleRetryWrong = useCallback(() => {
+    const sourceItems = reviewItems ?? items;
+    const sourceAnswers = reviewAnswers ?? answers;
+    const wrongItems = filterWrongExerciseItems(sourceItems, sourceAnswers);
+    const wrongIds = wrongItems.map((item) => item.displayQuestion.id);
+
+    if (wrongIds.length === 0) return;
+
+    clearExerciseSession(lessonId);
+    initializedRef.current = false;
+    startedAtRef.current = null;
+    attemptSubmitLockRef.current = false;
+    setQuestionIdsOverride(wrongIds);
+    setIsWrongOnlyRetry(true);
+    setQuestionIndex(0);
+    setSelectedChoiceId(null);
+    setTypedAnswer("");
+    setFillBlankAnswers({});
+    setReorderTokenOrder([]);
+    setMatchingSelections({});
+    setActiveMatchingLeft(null);
+    setPhase("answer");
+    setAnswers({});
+    setShowExplanation(false);
+    setElapsedMs(0);
+    setReviewItems(null);
+    setReviewAnswers(null);
+    setSessionSeed((s) => s + 1);
+  }, [answers, items, lessonId, reviewAnswers, reviewItems]);
+
+  const canCheck = currentMcq || currentListen || currentTrueFalse
     ? Boolean(selectedChoiceId)
     : currentSpelling || currentListenType
       ? Boolean(typedAnswer.trim())
       : currentFillBlank
         ? isFillBlankComplete(fillBlankAnswers, currentFillBlank.blanks)
-        : currentMatching
-          ? isMatchingComplete(currentMatching.pairs, matchingSelections)
-          : false;
+        : currentReorder
+          ? isReorderComplete(reorderTokenOrder, currentReorder.tokens.length)
+          : currentMatching
+            ? isMatchingComplete(currentMatching.pairs, matchingSelections)
+            : false;
 
   const currentExplanation =
     currentMcq?.explanation ??
     currentListen?.explanation ??
+    currentTrueFalse?.explanation ??
     currentSpelling?.explanation ??
     currentListenType?.explanation ??
     currentFillBlank?.explanation ??
+    currentReorder?.explanation ??
     currentMatching?.explanation;
 
   const typedShowResult = phase === "feedback";
@@ -513,6 +646,8 @@ export function ExercisePlayer({
         lessonTitle={lessonTitle}
         items={displayItems}
         answers={displayAnswers}
+        wrongCount={Object.values(displayAnswers).filter((a) => !a.correct).length}
+        onRetryWrong={handleRetryWrong}
         onBack={() => {
           setReviewItems(null);
           setReviewAnswers(null);
@@ -529,12 +664,15 @@ export function ExercisePlayer({
         subjectName={subjectName}
         correctCount={correctCount}
         total={total}
+        wrongCount={wrongCount}
         passScorePercent={passScorePercent}
         elapsedMs={elapsedMs}
         passed={passed}
+        isWrongOnlyRetry={isWrongOnlyRetry}
         nextLessonTitle={nextLessonTitle}
         onReview={handleReview}
         onRetry={handleRetry}
+        onRetryWrong={wrongCount > 0 ? handleRetryWrong : undefined}
         onContinueStudy={onContinueStudy}
         onBackToLessons={onBackToLessons}
       />
@@ -546,7 +684,12 @@ export function ExercisePlayer({
       ? answers[currentFillBlank.id]?.correct === true
       : false;
 
-  if (!current || (!currentMcq && !currentListen && !currentSpelling && !currentListenType && !currentFillBlank && !currentMatching)) {
+  const reorderIsCorrect =
+    typedShowResult && currentReorder
+      ? answers[currentReorder.id]?.correct === true
+      : false;
+
+  if (!current || (!currentMcq && !currentListen && !currentSpelling && !currentListenType && !currentFillBlank && !currentReorder && !currentMatching && !currentTrueFalse)) {
     return (
       <Alert severity="warning" sx={{ borderRadius: "14px" }}>
         Dạng câu <strong>{current?.displayQuestion.type ?? "unknown"}</strong> sẽ hỗ trợ ở bản tiếp theo.
@@ -555,6 +698,8 @@ export function ExercisePlayer({
   }
 
   const showFeedback = phase === "feedback";
+  const feedbackCorrect =
+    showFeedback && current ? answers[current.displayQuestion.id]?.correct === true : false;
 
   const showServerBanner =
     phase === "answer" || phase === "feedback";
@@ -572,11 +717,24 @@ export function ExercisePlayer({
           {current.blockTitle || lessonTitle}
         </div>
         {current.instruction ? <p className="exercise-player-instruction">{current.instruction}</p> : null}
+        {isWrongOnlyRetry ? (
+          <p className="vq-exercise-mode-note">Luyện lại {total} câu đã trả lời sai</p>
+        ) : null}
         <p className="exercise-player-meta">
           Cần đạt {passScorePercent}% để hoàn thành
           {answeredCount > 0 ? ` · Đúng ${correctCount}/${answeredCount} câu đã làm` : null}
         </p>
       </header>
+
+      {currentTrueFalse ? (
+        <TrueFalseQuestion
+          question={currentTrueFalse}
+          selectedId={selectedChoiceId}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          onSelect={setSelectedChoiceId}
+        />
+      ) : null}
 
       {currentMcq ? (
         <MultipleChoiceQuestion
@@ -633,6 +791,19 @@ export function ExercisePlayer({
         />
       ) : null}
 
+      {currentReorder ? (
+        <ReorderSentenceQuestion
+          question={currentReorder}
+          selectedOrder={reorderTokenOrder}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          isCorrect={reorderIsCorrect}
+          onTapPool={handleTapReorderPool}
+          onTapSentence={handleTapReorderSentence}
+          onClear={handleClearReorder}
+        />
+      ) : null}
+
       {currentMatching ? (
         <MatchingQuestion
           question={currentMatching}
@@ -648,6 +819,8 @@ export function ExercisePlayer({
       {showFeedback && showExplanation && currentExplanation?.trim() ? (
         <QuestionExplanationPanel explanation={currentExplanation} />
       ) : null}
+
+      {showFeedback ? <ExerciseFeedbackTray correct={feedbackCorrect} /> : null}
 
       <div className={`exercise-player-actions${showFeedback ? " exercise-player-actions--row" : ""}`}>
         {!showFeedback ? (

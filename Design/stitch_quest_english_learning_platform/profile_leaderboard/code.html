@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LingoQuest | Student Profile &amp; Leaderboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&amp;family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#dee0ff",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#bac3ff",
+                    "surface-container": "#eeedf9",
+                    "background": "#fbf8ff",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#dad9e5",
+                    "surface-variant": "#e2e1ed",
+                    "primary-container": "#4b66f1",
+                    "on-primary-container": "#fdfaff",
+                    "surface-tint": "#324eda",
+                    "on-error": "#ffffff",
+                    "tertiary": "#296800",
+                    "on-secondary-fixed-variant": "#6200bc",
+                    "inverse-on-surface": "#f1effb",
+                    "surface": "#fbf8ff",
+                    "tertiary-fixed-dim": "#6be026",
+                    "outline-variant": "#c5c5d7",
+                    "on-tertiary-fixed-variant": "#1f5100",
+                    "on-surface": "#1a1b23",
+                    "on-tertiary": "#ffffff",
+                    "outline": "#757686",
+                    "tertiary-fixed": "#87fe45",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#fbf8ff",
+                    "tertiary-container": "#368400",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#0932c3",
+                    "on-tertiary-container": "#f3ffe5",
+                    "inverse-surface": "#2f3039",
+                    "secondary": "#7b24dc",
+                    "on-secondary-container": "#fffbff",
+                    "secondary-container": "#9547f7",
+                    "secondary-fixed": "#eddcff",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#444655",
+                    "on-primary-fixed": "#00105a",
+                    "secondary-fixed-dim": "#d8b9ff",
+                    "surface-container-highest": "#e2e1ed",
+                    "surface-container-high": "#e8e7f3",
+                    "on-secondary-fixed": "#290055",
+                    "primary": "#2d4bd7",
+                    "surface-container-low": "#f4f2fe",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#bac3ff",
+                    "on-tertiary-fixed": "#082100",
+                    "on-background": "#1a1b23"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "48px",
+                    "xl": "80px",
+                    "xs": "4px",
+                    "gutter": "20px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "40px",
+                    "sm": "12px",
+                    "md": "24px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Quicksand"],
+                    "label-md": ["Nunito Sans"],
+                    "headline-md": ["Quicksand"],
+                    "headline-lg": ["Quicksand"],
+                    "label-lg": ["Nunito Sans"],
+                    "display-lg-mobile": ["Quicksand"],
+                    "body-lg": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "800"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bounce-hover:hover {
+            transform: translateY(-4px);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .press-effect:active {
+            transform: translateY(4px);
+        }
+        .tactile-card {
+            box-shadow: 0 4px 0 0 rgba(45, 75, 215, 0.1);
+        }
+        .leaderboard-item-active {
+            box-shadow: 0 4px 0 0 rgba(9, 50, 195, 1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface-container-low dark:bg-surface-container-high shadow-[0_4px_0_0_rgba(45,75,215,0.1)]">
+<div class="flex items-center gap-sm">
+<span class="font-display-lg-mobile text-display-lg-mobile text-primary dark:text-primary-fixed tracking-tight">LingoQuest</span>
+</div>
+<div class="flex items-center gap-md">
+<div class="hidden md:flex items-center gap-lg">
+<nav class="flex gap-md">
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg text-label-lg hover:bg-primary-container/10 transition-colors px-2 py-1 rounded-md" href="#">Home</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg text-label-lg hover:bg-primary-container/10 transition-colors px-2 py-1 rounded-md" href="#">Path</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-label-lg text-label-lg hover:bg-primary-container/10 transition-colors px-2 py-1 rounded-md" href="#">Vocab</a>
+<a class="text-primary dark:text-primary-fixed font-bold font-label-lg text-label-lg translate-y-0.5 transition-transform" href="#">Leaderboard</a>
+</nav>
+</div>
+<div class="flex items-center gap-sm">
+<div class="flex items-center gap-xs text-primary font-bold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-label-lg">12</span>
+</div>
+<div class="flex items-center gap-xs text-tertiary font-bold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-label-lg">1.2k</span>
+</div>
+<img alt="Student avatar" class="w-8 h-8 rounded-full border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwVUm9_6IYUTnFImA1pagOflYStT0wC0ldJ795bHz4iT8Wr3xadSRD4DivmzTYqhwikiIRsllrTVo6XT5dSgu-SZ7j7oYHkmHHW1qjRR4kMCe_5WbJbO7AKYetT_hJFMKfhr2WL2j-UEc6Eh_sW-J4hD4Goz8fpVKGjjnJPpwbQvGQGdxYgg9MUm1SNdzXsPuFCpgnI5vBes7QVtrbfG2Qt67S-BkzopjBkfL-iX8pZnLtDOr5H0GO6i48L6iLcqOSPW4DwN1Btevy"/>
+</div>
+</div>
+</header>
+<div class="flex pt-16 min-h-screen">
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden md:flex flex-col py-md px-sm gap-md fixed left-0 h-full w-64 bg-surface-container-low dark:bg-surface-container-highest border-r-4 border-surface-variant dark:border-outline-variant z-40">
+<div class="mb-lg px-sm">
+<h1 class="font-display-lg text-display-lg text-primary dark:text-primary-fixed">LingoQuest</h1>
+<p class="font-label-lg text-label-lg text-on-surface-variant">Junior Explorer</p>
+</div>
+<nav class="flex flex-col gap-sm">
+<a class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label-lg text-label-lg">Path</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-lg text-label-lg">Vocab</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-md text-primary dark:text-primary-fixed border-b-4 border-primary dark:border-primary-fixed scale-95 transition-transform bg-primary-container/5 rounded-t-lg" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-label-lg text-label-lg">Leaderboard</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-md text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 w-full md:ml-64 px-margin-mobile md:px-margin-desktop py-md pb-32">
+<div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-md">
+<!-- Left: Profile & Stats (4 columns) -->
+<section class="lg:col-span-5 flex flex-col gap-md">
+<!-- Profile Card -->
+<div class="bg-surface-container-lowest rounded-lg p-md tactile-card border border-primary-container/20 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+<div class="flex flex-col items-center text-center gap-sm relative z-10">
+<div class="relative">
+<img class="w-32 h-32 rounded-full border-4 border-primary-fixed shadow-lg" data-alt="A friendly, high-quality 3D render of a young student avatar with a cheerful expression, wearing a digital explorer outfit in a bright, modern learning app aesthetic. The background is a soft blue with floating geometric shapes, maintaining a high-energy, gamified educational mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE26r_oNYchNFa0Pq7XGq0TSfLB_OcNOyWl1f7--oHeCPYuAwmmbS24V61pzPqHADEVCHn2arCoRtAL69n7T-vkErZfRcoGePD6k6M1dNySPqq4d-FIKpauxJSYAubFmzUneMVSCfMcPfU221zQYgNudPfO8UAtS3NbZE3arH8GNzN6F2hUUVxB5353tmebI-nsxArUGI_TzjkA1L9b3gm87Z08R8dAYMmNMpJG_Waat3Zg-NkyKoN5CqNKxMDSL548FIqlKZya1Tb"/>
+<div class="absolute -bottom-2 -right-2 bg-tertiary-container text-on-tertiary-container p-2 rounded-full shadow-md">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg">Alex Explorer</h2>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-widest">Junior Explorer • Level 14</p>
+</div>
+<div class="w-full bg-surface-container-high h-4 rounded-full mt-sm overflow-hidden">
+<div class="bg-tertiary-container h-full w-3/4 rounded-full relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full mr-1 shadow-sm"></div>
+</div>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant">450 / 600 XP to next rank</p>
+</div>
+<div class="grid grid-cols-3 gap-sm mt-md">
+<div class="bg-primary-container/5 p-sm rounded-md flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-primary mb-xs" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-headline-md text-headline-md text-primary">1,240</span>
+<span class="font-label-md text-label-md opacity-70">Total XP</span>
+</div>
+<div class="bg-secondary-container/5 p-sm rounded-md flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-secondary mb-xs" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-headline-md text-headline-md text-secondary">12</span>
+<span class="font-label-md text-label-md opacity-70">Day Streak</span>
+</div>
+<div class="bg-tertiary-container/5 p-sm rounded-md flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-tertiary mb-xs" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+<span class="font-headline-md text-headline-md text-tertiary">#4</span>
+<span class="font-label-md text-label-md opacity-70">League Rank</span>
+</div>
+</div>
+</div>
+<!-- Achievements Section -->
+<div class="bg-surface-container-lowest rounded-lg p-md tactile-card border border-outline-variant/30">
+<div class="flex justify-between items-center mb-sm">
+<h3 class="font-headline-md text-headline-md">Badges</h3>
+<button class="text-primary font-bold text-label-lg hover:underline transition-all">View All</button>
+</div>
+<div class="flex gap-md overflow-x-auto pb-2">
+<div class="flex-shrink-0 w-16 h-16 bg-primary-fixed rounded-full flex items-center justify-center bounce-hover cursor-help">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+</div>
+<div class="flex-shrink-0 w-16 h-16 bg-tertiary-fixed rounded-full flex items-center justify-center bounce-hover cursor-help">
+<span class="material-symbols-outlined text-tertiary text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div class="flex-shrink-0 w-16 h-16 bg-secondary-fixed rounded-full flex items-center justify-center bounce-hover cursor-help opacity-50 grayscale">
+<span class="material-symbols-outlined text-secondary text-3xl">psychology</span>
+</div>
+<div class="flex-shrink-0 w-16 h-16 bg-primary-fixed rounded-full flex items-center justify-center bounce-hover cursor-help opacity-50 grayscale">
+<span class="material-symbols-outlined text-primary text-3xl">group</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right: Leaderboard (8 columns) -->
+<section class="lg:col-span-7 flex flex-col gap-md">
+<div class="bg-surface-container-lowest rounded-lg tactile-card border border-primary-container/20 overflow-hidden">
+<div class="bg-primary-container p-md text-on-primary-container flex justify-between items-end">
+<div>
+<p class="font-label-lg text-label-lg uppercase opacity-80 mb-xs">Competition</p>
+<h3 class="font-headline-lg text-headline-lg">Weekly League</h3>
+</div>
+<div class="flex items-center gap-xs bg-white/20 px-sm py-xs rounded-full backdrop-blur-md">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-label-md text-label-md">Ends in 2d 14h</span>
+</div>
+</div>
+<!-- Top 3 Podium (Visual) -->
+<div class="grid grid-cols-3 gap-sm p-md bg-primary-container/10 border-b border-primary-container/20">
+<!-- 2nd -->
+<div class="flex flex-col items-center justify-end gap-xs pt-md">
+<div class="relative">
+<img class="w-14 h-14 rounded-full border-4 border-surface-variant shadow-md" data-alt="A stylized 3D avatar of a friendly competitor student for a leaderboard podium, featuring a high-energy and clean vector style. Soft lighting and vibrant primary colors maintain the educational game aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClAAswlK4tIWDAi9i8ILXAcdMGPzIffNZ43GFAXnDcQrIdvV4QwpHGY_vKp7tpfozfD3Wnlf4AxSgBcecbMEpY3lt-5QaAkug49keI1T3iBFj8ilGE_p1qOX5TW56Rqf3jziYPwjU7Hv6ewdmZTdA8tpJHlgUgDksKMSc7JvhCCnxxRJihGvmEM9lKAT-kgpBRyfHQyrX_jjDoAzWk5AWqp8l3vuO1zf8ydS8rivb0ez-CpVooZXKeqGMXNgASRN-Z8ODwYkKkRxaR"/>
+<div class="absolute -top-1 -right-1 bg-surface-variant w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shadow-sm">2</div>
+</div>
+<span class="font-label-lg text-label-lg truncate w-full text-center">Leo_V</span>
+<span class="bg-primary-container/20 px-2 py-0.5 rounded-full text-primary font-bold text-xs">980 XP</span>
+</div>
+<!-- 1st -->
+<div class="flex flex-col items-center justify-end gap-xs">
+<span class="material-symbols-outlined text-tertiary mb-xs scale-125" style="font-variation-settings: 'FILL' 1;">crown</span>
+<div class="relative">
+<img class="w-20 h-20 rounded-full border-4 border-tertiary-container shadow-xl" data-alt="A premium 3D avatar of the top-ranking student on a leaderboard podium, wearing a golden crown. The lighting is dramatic and bright, following a playful modernism aesthetic with high chroma colors and soft geometric depth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVhwOkcgJmXTkNqYyhJn6FjFivRYdWmlsLgTYVmLrG7YkolbueoyqqjNK2Y6buzIp1hQuXx8UwHnnHFz7vl4k3I3Z5pWNDft4QyfkNe7mBKKZ5Lnxj22RBAqXaCrVjAkF6k-zaJ3utXXqU3y0wGTc9qkGm2t1B93rnu-z1FynxMnrTkFWimM2dmIjD-sY85-Ti0cO88jANeXba4IfXjWRFud0X5OkQU3jJNtnNGDwnVu4JT9NMALFUO7vGl9tHsqQwfTL3txQyXbiM"/>
+<div class="absolute -top-1 -right-1 bg-tertiary-container text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-lg">1</div>
+</div>
+<span class="font-label-lg text-label-lg font-black truncate w-full text-center">SuperSarah</span>
+<span class="bg-tertiary-container px-3 py-1 rounded-full text-white font-black text-xs shadow-md">1,420 XP</span>
+</div>
+<!-- 3rd -->
+<div class="flex flex-col items-center justify-end gap-xs pt-md">
+<div class="relative">
+<img class="w-14 h-14 rounded-full border-4 border-[#CD7F32] shadow-md" data-alt="A friendly 3D student avatar for a competition leaderboard, designed with soft tactile depth and high contrast colors. The mood is encouraging and playful, fitting for a modern language learning app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaitJQQbjrFSodKIOJDz_6DlYTXTShvgezWQOWKkmkhyG1ypnT1yc-3jmrZCtQUU4SqnTq7FvgajDQnUCLqYqbjavooVkrsVO3CthU_-SSWUjHXqFvwjNwLzYYu1NbD0gN2Wosx31DqZwneZBwFX4Jh35DiFE9YOhn1jaHZPP8ueG_2cexXkatujiFQDofleime2usaghbFRbPYy494B3-yZST8N6P3gIwU__xigcrb_Nhbns4BYtVUgIK6riDuqZyoeiEJX-b_Ong"/>
+<div class="absolute -top-1 -right-1 bg-[#CD7F32] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shadow-sm">3</div>
+</div>
+<span class="font-label-lg text-label-lg truncate w-full text-center">Juju_Bee</span>
+<span class="bg-primary-container/20 px-2 py-0.5 rounded-full text-primary font-bold text-xs">845 XP</span>
+</div>
+</div>
+<!-- List Items -->
+<div class="p-sm flex flex-col gap-sm">
+<!-- User Item (Highlighted) -->
+<div class="flex items-center gap-md p-sm bg-primary-container dark:bg-primary text-on-primary-container rounded-lg leaderboard-item-active translate-y-1 transition-all">
+<span class="font-black text-headline-md w-8 text-center">4</span>
+<div class="relative">
+<img alt="Your avatar" class="w-10 h-10 rounded-full border-2 border-white/50" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkrmPjBc8to83dJJeEgOCeLVLwA150BbuhSQheyYQgboGJItGbGTeXk8D_cIFXcx9n-HBdusBEo7c1QD9udhT_sVnArtLegYTtZHGeTjtcFECm66MBMsz_1awIZPyWgOHC0PHRPkq-JehEQUDFlsKb8Zy2PH8AcSKCmColxwI4YyUOBPIP3n6baV214CkQ8zYVdkXHELt7025dpP0KAjAZeISDaDuqIpY3p6YShbQEe89VH1vIES6gxLgifuHoifGLjVN7m37ZtjfW"/>
+<div class="absolute -bottom-1 -right-1 bg-tertiary text-[10px] px-1 rounded-full border border-white">YOU</div>
+</div>
+<div class="flex-1">
+<p class="font-bold text-label-lg">Alex Explorer (Me)</p>
+<div class="flex items-center gap-xs opacity-80">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-xs">12 day streak</span>
+</div>
+</div>
+<span class="font-black text-headline-md">750 XP</span>
+</div>
+<!-- Others -->
+<div class="flex items-center gap-md p-sm hover:bg-surface-container-high transition-colors rounded-lg group">
+<span class="font-bold text-headline-md w-8 text-center text-on-surface-variant">5</span>
+<img alt="Student avatar" class="w-10 h-10 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuDfAVityagAGaQSCYbpxeH7N6tsLLatnacLjRW5SL01rmhyK99S-gseN-LENX6ydiYfjwStmvTuA5gESuXxtER1nD7Gxw6d66RZ0dSmDwydCeXpk6wFqhCIJZxhexitfEZ407BHkYx5tuI7jktM8i9pF5QEc7U0JnaBP4HiOOl6tZiwM4Y5R1LacGmKztbpzuExwnO-rfmB78-oh_ZjbvqFNlYUyxG350tKSr20Yqe60IqBhtLFDis3EkQXa3fzJB2cs0X1KlEHN_"/>
+<div class="flex-1">
+<p class="font-bold text-label-lg group-hover:text-primary transition-colors">Marvin_M</p>
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-xs">local_fire_department</span>
+<span class="text-xs">8 day streak</span>
+</div>
+</div>
+<span class="font-bold text-headline-md text-on-surface-variant group-hover:text-primary transition-colors">720 XP</span>
+</div>
+<div class="flex items-center gap-md p-sm hover:bg-surface-container-high transition-colors rounded-lg group">
+<span class="font-bold text-headline-md w-8 text-center text-on-surface-variant">6</span>
+<img alt="Student avatar" class="w-10 h-10 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADe1KOy6u8fr2mXLxYdHQzCAkuViRu2_ns_2Px6YKbe_QtupVDVP4tskD6DzsjvkuFj5mNFZWBcIZAZHe7Vm-ST1FEv88PuqSbpsIYqm7Jbo-CqNTyVzjfKbL5tSQIEz_4vQwCP7nSbtCUNI8c7Q8dQspJ-EEUUWflUMRgg6bwesgYLpCb3zYCzoyoUw9IbE1YtsW8e3uWzAwKlCdrWJqn1BknMLAnfW0h-anViObuff1nTMy7W0RC66y9S3pdQCMqyKU7feQkB1W4"/>
+<div class="flex-1">
+<p class="font-bold text-label-lg group-hover:text-primary transition-colors">Nina_P</p>
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-xs">24 day streak</span>
+</div>
+</div>
+<span class="font-bold text-headline-md text-on-surface-variant group-hover:text-primary transition-colors">680 XP</span>
+</div>
+<div class="flex items-center gap-md p-sm hover:bg-surface-container-high transition-colors rounded-lg group">
+<span class="font-bold text-headline-md w-8 text-center text-on-surface-variant">7</span>
+<img alt="Student avatar" class="w-10 h-10 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV3Q6iY3s5PNmXSJodnlqK9n6Ly91J18kjZZTIjWdv-XQ4Ry3wpLaxpDktUum7dpDbGpitHlDqexHBRtKErluUjCf4--IY5oEO71vBhiYiJXISYpbr2AtVHUTBH9u3Y-cM0ruQokjlYYHFjJhZpgi_gusCAqGPHwMzuP18inUU0iVb42on1vvF2vsTmtZJ_KXYDWwDPjcsgAjho7CZrfXJP2oynP5Juxzzm2X96hTA58dgMzBOUgU1Mzf2vv1ROcQxhJsNkTeiwU2U"/>
+<div class="flex-1">
+<p class="font-bold text-label-lg group-hover:text-primary transition-colors">Chris_K</p>
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-xs">local_fire_department</span>
+<span class="text-xs">3 day streak</span>
+</div>
+</div>
+<span class="font-bold text-headline-md text-on-surface-variant group-hover:text-primary transition-colors">590 XP</span>
+</div>
+<!-- View more button -->
+<button class="w-full py-md mt-sm border-2 border-dashed border-outline-variant rounded-lg text-on-surface-variant font-bold hover:bg-surface-container-low hover:border-primary-container/40 transition-all">
+                                Load Full Leaderboard
+                            </button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile pb-4 pt-2 md:hidden bg-surface dark:bg-surface-container-highest shadow-[0_-4px_0_0_rgba(0,0,0,0.05)] rounded-t-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md-mobile text-label-md-mobile">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 transition-all" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-label-md-mobile text-label-md-mobile">Path</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 transition-all" href="#">
+<span class="material-symbols-outlined">dictionary</span>
+<span class="font-label-md-mobile text-label-md-mobile">Vocab</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1.5 shadow-[0_4px_0_0_rgba(9,50,195,1)] translate-y-1 transition-all duration-100" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="font-label-md-mobile text-label-md-mobile">Ranks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 transition-all" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-md-mobile text-label-md-mobile">Me</span>
+</a>
+</nav>
+<!-- Interactive Layer -->
+<script>
+        // Simple micro-interactions for tactile feel
+        document.querySelectorAll('.press-effect, .tactile-card').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.style.transform = 'translateY(4px)';
+            });
+            el.addEventListener('mouseup', () => {
+                el.style.transform = '';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = '';
+            });
+        });
+
+        // Toggle Dark Mode (Optional utility for demo)
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+    </script>
+</body></html>

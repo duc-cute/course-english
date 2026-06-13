@@ -252,6 +252,9 @@ public class LessonPublishValidator {
         if ("FILL_BLANK".equals(type)) {
             return isValidFillBlank(question);
         }
+        if ("REORDER_SENTENCE".equals(type)) {
+            return isValidReorderSentence(question);
+        }
         return false;
     }
 
@@ -349,6 +352,36 @@ public class LessonPublishValidator {
         String audioUrl = question.path("audioUrl").asText("");
         String correctAnswer = question.path("correctAnswer").asText("");
         return !audioUrl.isBlank() && !correctAnswer.isBlank();
+    }
+
+    private boolean isValidReorderSentence(JsonNode question) {
+        JsonNode tokens = question.get("tokens");
+        if (tokens == null || !tokens.isArray() || tokens.size() < 3) {
+            return false;
+        }
+        java.util.Set<String> tokenIds = new java.util.HashSet<>();
+        for (JsonNode token : tokens) {
+            if (token == null || token.isNull()) {
+                return false;
+            }
+            String id = token.path("id").asText("").trim();
+            String text = token.path("text").asText("").trim();
+            if (id.isBlank() || text.isBlank() || !tokenIds.add(id)) {
+                return false;
+            }
+        }
+        JsonNode correctOrder = question.get("correctOrder");
+        if (correctOrder == null || !correctOrder.isArray() || correctOrder.size() != tokenIds.size()) {
+            return false;
+        }
+        java.util.Set<String> orderIds = new java.util.HashSet<>();
+        for (JsonNode idNode : correctOrder) {
+            String id = idNode != null && !idNode.isNull() ? idNode.asText("").trim() : "";
+            if (id.isBlank() || !tokenIds.contains(id) || !orderIds.add(id)) {
+                return false;
+            }
+        }
+        return orderIds.size() == tokenIds.size();
     }
 
     private boolean isValidFillBlank(JsonNode question) {

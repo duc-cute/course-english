@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LingoQuest - Learning Path</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;family=Nunito+Sans:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .path-node-active {
+            filter: drop-shadow(0 4px 0 #0932c3);
+        }
+        .path-node-completed {
+            filter: drop-shadow(0 4px 0 #368400);
+        }
+        .path-node-locked {
+            filter: drop-shadow(0 4px 0 #757686);
+        }
+        .bouncy {
+            animation: bounce 2s infinite ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+        .floating-mascot {
+            animation: float 3s infinite ease-in-out;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        /* Custom scrollbar for path */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed": "#dee0ff",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#bac3ff",
+                      "surface-container": "#eeedf9",
+                      "background": "#fbf8ff",
+                      "error": "#ba1a1a",
+                      "surface-dim": "#dad9e5",
+                      "surface-variant": "#e2e1ed",
+                      "primary-container": "#4b66f1",
+                      "on-primary-container": "#fdfaff",
+                      "surface-tint": "#324eda",
+                      "on-error": "#ffffff",
+                      "tertiary": "#296800",
+                      "on-secondary-fixed-variant": "#6200bc",
+                      "inverse-on-surface": "#f1effb",
+                      "surface": "#fbf8ff",
+                      "tertiary-fixed-dim": "#6be026",
+                      "outline-variant": "#c5c5d7",
+                      "on-tertiary-fixed-variant": "#1f5100",
+                      "on-surface": "#1a1b23",
+                      "on-tertiary": "#ffffff",
+                      "outline": "#757686",
+                      "tertiary-fixed": "#87fe45",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#fbf8ff",
+                      "tertiary-container": "#368400",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#0932c3",
+                      "on-tertiary-container": "#f3ffe5",
+                      "inverse-surface": "#2f3039",
+                      "secondary": "#7b24dc",
+                      "on-secondary-container": "#fffbff",
+                      "secondary-container": "#9547f7",
+                      "secondary-fixed": "#eddcff",
+                      "on-error-container": "#93000a",
+                      "on-surface-variant": "#444655",
+                      "on-primary-fixed": "#00105a",
+                      "secondary-fixed-dim": "#d8b9ff",
+                      "surface-container-highest": "#e2e1ed",
+                      "surface-container-high": "#e8e7f3",
+                      "on-secondary-fixed": "#290055",
+                      "primary": "#2d4bd7",
+                      "surface-container-low": "#f4f2fe",
+                      "on-primary": "#ffffff",
+                      "primary-fixed-dim": "#bac3ff",
+                      "on-tertiary-fixed": "#082100",
+                      "on-background": "#1a1b23"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "48px",
+                      "xl": "80px",
+                      "xs": "4px",
+                      "gutter": "20px",
+                      "base": "8px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "40px",
+                      "sm": "12px",
+                      "md": "24px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Quicksand"],
+                      "label-md": ["Nunito Sans"],
+                      "headline-md": ["Quicksand"],
+                      "headline-lg": ["Quicksand"],
+                      "label-lg": ["Nunito Sans"],
+                      "display-lg-mobile": ["Quicksand"],
+                      "body-lg": ["Nunito Sans"],
+                      "body-md": ["Nunito Sans"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "800"}],
+                      "display-lg-mobile": ["32px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden no-scrollbar">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface-container-low dark:bg-surface-container-high shadow-sm">
+<div class="flex items-center gap-2">
+<span class="font-display-lg-mobile text-display-lg-mobile text-primary tracking-tight">LingoQuest</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1 px-3 py-1 bg-surface-container rounded-full text-error font-bold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-label-lg text-label-lg">12</span>
+</div>
+<div class="flex items-center gap-1 px-3 py-1 bg-surface-container rounded-full text-tertiary-container font-bold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="font-label-lg text-label-lg">450</span>
+</div>
+<img alt="Student avatar" class="w-10 h-10 rounded-full border-2 border-primary-container" data-alt="A charming 3D stylized avatar of a young student explorer wearing a small explorer hat and round glasses, set against a vibrant soft blue background. The style is playful and friendly, matching a high-quality animation studio look with soft lighting and rounded shapes. The color palette is composed of bright blues, gentle whites, and warm skin tones, conveying a sense of enthusiasm and academic adventure." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCodXLGz-xrY9JyZ317wMdTFYv2SReaUEvhuLcl32OlCMF8dYUTFktC8CaF3M_gOUUkOlwRUrZ-MDCAHDkYgx_OALqojXNfNvtqKhuypL7hBJfSdi9erXZX1Pgju_TUg669LvHwkMjH16n65PRwyeLNfCuAiLEEki9YWJAQTTeiTg-vPsw1q50LVTLwM4ktFM3JQeDyL0LbqqPcvTie9YfcDQAu0kgFxWv3Z9VMLSje0gPP5lb9dyACf95oaass11wOcbgKGOaiSoIJ"/>
+</div>
+</header>
+<!-- Side Nav (Desktop Only) -->
+<aside class="hidden md:flex flex-col fixed left-0 h-full w-64 bg-surface-container-low py-md px-sm gap-md border-r-4 border-surface-variant z-40 pt-24">
+<nav class="space-y-4">
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-primary border-b-4 border-primary pb-1 scale-95 transition-transform bg-primary-container/10" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label-lg text-label-lg">Path</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-lg text-label-lg">Vocab</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-label-lg text-label-lg">Leaderboard</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<div class="mt-auto p-4 bg-tertiary-container/10 rounded-lg border-2 border-tertiary-container/30">
+<p class="font-label-md text-tertiary-container">Current Rank</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+<span class="font-headline-md text-headline-md text-tertiary">Junior Explorer</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-20 pb-32 min-h-screen relative overflow-hidden">
+<!-- Background Atmospheric Element -->
+<div class="absolute inset-0 pointer-events-none opacity-30">
+
+</div>
+<!-- Unit Header Container -->
+<section class="max-w-2xl mx-auto px-margin-mobile relative z-10">
+<div class="bg-primary-container text-on-primary-container p-6 rounded-lg shadow-[0_8px_0_0_rgba(9,50,195,1)] mb-16 relative overflow-hidden">
+<div class="relative z-10">
+<p class="font-label-lg text-label-lg opacity-90 uppercase tracking-widest mb-1">Unit 1</p>
+<h1 class="font-headline-lg text-headline-lg mb-2">Hello World!</h1>
+<p class="font-body-md opacity-80 max-w-xs">Learn basic greetings and how to introduce yourself to others.</p>
+</div>
+<div class="absolute right-[-20px] top-[-10px] opacity-20">
+<span class="material-symbols-outlined text-[120px]">public</span>
+</div>
+<div class="mt-4 flex items-center gap-3 bg-on-primary-container/20 p-3 rounded-lg backdrop-blur-sm">
+<div class="w-full h-3 bg-white/30 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed w-1/3 rounded-full"></div>
+</div>
+<span class="font-label-md text-label-md shrink-0">4 / 12 Lessons</span>
+</div>
+</div>
+<!-- The Learning Path -->
+<div class="relative flex flex-col items-center gap-12 py-10">
+<!-- Winding Path SVG Line (Background) -->
+<svg class="absolute top-0 w-full h-[1500px] z-0 pointer-events-none" fill="none" viewbox="0 0 400 1500" xmlns="http://www.w3.org/2000/svg">
+<path d="M200 0C200 100 350 150 350 250C350 350 50 400 50 500C50 600 350 650 350 750C350 850 50 900 50 1000C50 1100 350 1150 350 1250" stroke="#c5c5d7" stroke-dasharray="1 24" stroke-linecap="round" stroke-width="12"></path>
+</svg>
+<!-- Node 1: Completed -->
+<div class="relative z-10 translate-x-[0px]">
+<div class="group cursor-pointer">
+<div class="w-20 h-20 bg-tertiary rounded-full flex items-center justify-center path-node-completed active:translate-y-1 transition-all border-b-4 border-tertiary-container">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white px-3 py-1 rounded-full shadow-sm border border-outline-variant scale-0 group-hover:scale-100 transition-transform">
+<span class="font-label-md text-label-md">Introduction</span>
+</div>
+</div>
+</div>
+<!-- Node 2: Completed -->
+<div class="relative z-10 translate-x-[80px]">
+<div class="group cursor-pointer">
+<div class="w-20 h-20 bg-tertiary rounded-full flex items-center justify-center path-node-completed active:translate-y-1 transition-all border-b-4 border-tertiary-container">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white px-3 py-1 rounded-full shadow-sm border border-outline-variant scale-0 group-hover:scale-100 transition-transform">
+<span class="font-label-md text-label-md">Saying Hi</span>
+</div>
+</div>
+</div>
+<!-- Node 3: Current Active -->
+<div class="relative z-20 translate-x-[40px]">
+<!-- Floating Mascot Tooltip -->
+<div class="absolute -top-32 -left-24 flex flex-col items-center floating-mascot">
+<div class="bg-white p-3 rounded-lg shadow-lg border-2 border-primary-container relative mb-3">
+<p class="font-label-lg text-primary text-center leading-tight">Ready for more<br/>grammar fun?</p>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-2 border-b-2 border-primary-container rotate-45"></div>
+</div>
+<img alt="Mascot" class="w-20 h-20" data-alt="A cute, colorful 3D owl mascot character with big curious eyes and a small explorer's scarf. The mascot is designed in a modern, friendly toy-like aesthetic with soft lighting and smooth surfaces. It appears bright and encouraging, using a primary color palette of yellow, teal, and blue. The background is slightly blurred to emphasize the character." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_s329gN6R0EtZA5kV7p5vTe882MJTdO-fefkKq525TD2NBJNVsATY4czbKEns9F80DO2EaVfCTu-ZSpsSkvbdp2-uC8vNXoVOVpht-x5jrVpjA5gqreVEiEF4AMcZXmLwtFyNekbFNKiWc5dKg3xZmye5A-LV6Eb0qJSFLsboXc2Me4dj7W3jgOu_9hKjnvRdS5R0-BzzZe4CL_KK6YcQeN26XgSTNQd617b909SOlqSkiO5oztder_gL6K93bD44QEuxLWzXU4-y"/>
+</div>
+<div class="group cursor-pointer">
+<div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center path-node-active active:translate-y-1 transition-all border-b-8 border-on-primary-fixed-variant bouncy">
+<span class="material-symbols-outlined text-white text-4xl" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+</div>
+<div class="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-primary-container text-white px-4 py-1.5 rounded-full shadow-md font-bold">
+<span class="font-label-md text-label-md">Current: Basic Grammar</span>
+</div>
+</div>
+</div>
+<!-- Node 4: Locked -->
+<div class="relative z-10 translate-x-[-60px] opacity-60">
+<div class="w-20 h-20 bg-surface-variant rounded-full flex items-center justify-center path-node-locked border-b-4 border-outline">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">lock</span>
+</div>
+</div>
+<!-- Node 5: Locked -->
+<div class="relative z-10 translate-x-[-100px] opacity-60">
+<div class="w-20 h-20 bg-surface-variant rounded-full flex items-center justify-center path-node-locked border-b-4 border-outline">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">lock</span>
+</div>
+</div>
+<!-- Checkpoint Node -->
+<div class="relative z-10 translate-x-[20px]">
+<div class="group cursor-pointer">
+<div class="w-28 h-28 bg-secondary-container rounded-lg rotate-12 flex flex-col items-center justify-center shadow-[0_8px_0_0_#6200bc] active:translate-y-1 transition-all">
+<span class="material-symbols-outlined text-white text-5xl mb-1" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-md text-on-secondary-container bg-secondary px-2 py-0.5 rounded-full">Unit Chest</span>
+</div>
+</div>
+</div>
+<!-- Node 6: Next Unit Teaser -->
+<div class="relative z-10 translate-x-[80px] opacity-40 mt-12">
+<div class="w-20 h-20 bg-surface-variant rounded-full flex items-center justify-center path-node-locked border-b-4 border-outline">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">restaurant</span>
+</div>
+</div>
+<div class="mt-8 text-center">
+<div class="bg-surface-container-highest p-8 rounded-xl border-4 border-dashed border-outline-variant max-w-sm">
+<span class="material-symbols-outlined text-5xl text-outline-variant mb-4">mountain_flag</span>
+<h3 class="font-headline-md text-headline-md text-on-surface-variant">Unit 2: At the Cafe</h3>
+<p class="font-body-md text-on-surface-variant opacity-60">Reach the end of Unit 1 to unlock more adventures!</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-6 md:right-12 z-50 w-16 h-16 bg-primary text-white rounded-full shadow-[0_6px_0_0_#0932c3] active:translate-y-1 flex items-center justify-center transition-all group overflow-hidden">
+<span class="material-symbols-outlined text-3xl">chat</span>
+<div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</button>
+</main>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile pb-4 pt-2 md:hidden bg-surface shadow-[0_-4px_0_0_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md-mobile text-label-md-mobile">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1.5 shadow-[0_4px_0_0_rgba(9,50,195,1)] translate-y-1 transition-all duration-100" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<span class="font-label-md-mobile text-label-md-mobile">Path</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">dictionary</span>
+<span class="font-label-md-mobile text-label-md-mobile">Vocab</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="font-label-md-mobile text-label-md-mobile">Ranks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:bg-primary-fixed-dim/20 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-md-mobile text-label-md-mobile">Me</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions and simple UI logic
+        document.querySelectorAll('.group.cursor-pointer').forEach(node => {
+            node.addEventListener('click', () => {
+                // Flash interaction
+                const icon = node.querySelector('.material-symbols-outlined');
+                icon.classList.add('scale-125');
+                setTimeout(() => icon.classList.remove('scale-125'), 200);
+            });
+        });
+
+        // Simple scroll parallax for the mascot
+        window.addEventListener('scroll', () => {
+            const mascot = document.querySelector('.floating-mascot');
+            if (mascot) {
+                const scrolled = window.pageYOffset;
+                mascot.style.transform = `translateY(${scrolled * 0.1}px)`;
+            }
+        });
+    </script>
+</body></html>

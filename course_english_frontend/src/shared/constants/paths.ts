@@ -5,6 +5,10 @@ export const paths = {
   STUDENT: "student",
   STUDENT_LESSONS: "lessons",
   STUDENT_LESSON_READ: "lessons/:lessonSlug",
+  STUDENT_PATH: "path",
+  STUDENT_VOCAB: "vocab",
+  STUDENT_PROFILE: "profile",
+  STUDENT_LEADERBOARD: "leaderboard",
   MANAGE_USER: "manage-user",
   MANAGE_ROLE: "manage-role",
   MANAGE_CLASSROOM: "manage-classroom",
@@ -18,4 +22,17 @@ export const paths = {
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",
   USAGE_GUIDE: "huong-dan",
+} as const;
+
+/** Absolute paths for student zone routing & links. */
+export const studentRoutePaths = {
+  home: `/${paths.STUDENT}`,
+  lessons: `/${paths.STUDENT}/${paths.STUDENT_LESSONS}`,
+  lessonRead: (lessonSlug: string) => `/${paths.STUDENT}/lessons/${lessonSlug}`,
+  path: `/${paths.STUDENT}/${paths.STUDENT_PATH}`,
+  vocab: `/${paths.STUDENT}/${paths.STUDENT_VOCAB}`,
+  vocabSet: (setId: string) => `/${paths.STUDENT}/${paths.STUDENT_VOCAB}/${setId}`,
+  profile: `/${paths.STUDENT}/${paths.STUDENT_PROFILE}`,
+  leaderboard: `/${paths.STUDENT}/${paths.STUDENT_LEADERBOARD}`,
+  usageGuide: `/${paths.STUDENT}/${paths.USAGE_GUIDE}`,
 } as const;

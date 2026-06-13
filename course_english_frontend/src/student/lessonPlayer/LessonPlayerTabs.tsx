@@ -13,13 +13,13 @@ export function LessonPlayerTabs({ activeTab, onTabChange, showStudy, showPracti
   if (!showStudy && showPractice) return null;
 
   return (
-    <div className="lesson-player-tabs" role="tablist" aria-label="Chế độ bài học">
+    <div className="lesson-player-tabs vq-lesson-player-tabs" role="tablist" aria-label="Chế độ bài học">
       {showStudy ? (
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "study"}
-          className={`lesson-player-tab${activeTab === "study" ? " is-active" : ""}`}
+          className={`lesson-player-tab vq-lesson-player-tab${activeTab === "study" ? " is-active" : ""}`}
           onClick={() => onTabChange("study")}
         >
           Bài học
@@ -30,7 +30,7 @@ export function LessonPlayerTabs({ activeTab, onTabChange, showStudy, showPracti
           type="button"
           role="tab"
           aria-selected={activeTab === "practice"}
-          className={`lesson-player-tab${activeTab === "practice" ? " is-active" : ""}`}
+          className={`lesson-player-tab vq-lesson-player-tab${activeTab === "practice" ? " is-active" : ""}`}
           onClick={() => onTabChange("practice")}
         >
           Bài tập

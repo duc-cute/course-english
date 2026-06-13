@@ -1,6 +1,7 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import ReplayOutlinedIcon from "@mui/icons-material/ReplayOutlined";
 import type { ExerciseAnswerSnapshot } from "../exerciseSessionStorage";
 import type { PreparedExerciseItem } from "./prepareExerciseItems";
 import type {
@@ -9,9 +10,14 @@ import type {
   ListenTypeQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
+  ReorderSentenceQuestion,
   SpellingQuestion,
+  TrueFalseQuestion,
 } from "./types";
+import { TrueFalseQuestion as TrueFalseReview, trueFalseCorrectChoiceId } from "./TrueFalseQuestion";
+import { VqButton } from "../../ui/VqButton";
 import { FillBlankQuestion as FillBlankReview } from "./FillBlankQuestion";
+import { ReorderSentenceQuestion as ReorderReview } from "./ReorderSentenceQuestion";
 import { ListenChooseQuestion as ListenChooseReview } from "./ListenChooseQuestion";
 import { ListenTypeQuestion as ListenTypeReview } from "./ListenTypeQuestion";
 import { SpellingQuestion as SpellingReview } from "./SpellingQuestion";
@@ -21,12 +27,23 @@ type ExerciseReviewScreenProps = {
   lessonTitle: string;
   items: PreparedExerciseItem[];
   answers: Record<string, ExerciseAnswerSnapshot>;
+  wrongCount?: number;
+  onRetryWrong?: () => void;
   onBack: () => void;
 };
 
-export function ExerciseReviewScreen({ lessonTitle, items, answers, onBack }: ExerciseReviewScreenProps) {
+export function ExerciseReviewScreen({
+  lessonTitle,
+  items,
+  answers,
+  wrongCount: wrongCountProp,
+  onRetryWrong,
+  onBack,
+}: ExerciseReviewScreenProps) {
+  const wrongCount = wrongCountProp ?? Object.values(answers).filter((a) => !a.correct).length;
+
   return (
-    <div className="exercise-review">
+    <div className="vq-exercise-review exercise-review">
       <header className="exercise-review-head">
         <button type="button" className="exercise-review-back" onClick={onBack}>
           <ArrowBackIcon sx={{ fontSize: 20 }} />
@@ -258,6 +275,92 @@ export function ExerciseReviewScreen({ lessonTitle, items, answers, onBack }: Ex
             );
           }
 
+          if (question.type === "REORDER_SENTENCE") {
+            const reorder = question as ReorderSentenceQuestion;
+            const answer = answers[reorder.id];
+            const isCorrect = answer?.correct === true;
+
+            return (
+              <li key={reorder.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Sắp xếp câu</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> Đúng
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> Sai
+                      </>
+                    )}
+                  </span>
+                </div>
+                <ReorderReview
+                  question={reorder}
+                  selectedOrder={answer?.reorderTokenOrder ?? []}
+                  showResult
+                  isCorrect={isCorrect}
+                  onTapPool={() => undefined}
+                  onTapSentence={() => undefined}
+                />
+                {reorder.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={reorder.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
+          if (question.type === "TRUE_FALSE") {
+            const tf = question as TrueFalseQuestion;
+            const answer = answers[tf.id];
+            const selectedId = answer?.selectedChoiceId ?? null;
+            const isCorrect = answer?.correct === true;
+            const correctId = trueFalseCorrectChoiceId(tf);
+
+            return (
+              <li key={tf.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Đúng/Sai</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> Đúng
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> Sai
+                      </>
+                    )}
+                  </span>
+                </div>
+                <TrueFalseReview
+                  question={tf}
+                  selectedId={selectedId}
+                  showResult
+                  onSelect={() => undefined}
+                />
+                {!selectedId ? (
+                  <p className="exercise-review-missing">Không có dữ liệu lựa chọn cho câu này.</p>
+                ) : null}
+                {!isCorrect && selectedId ? (
+                  <p className="exercise-review-tf-answer">
+                    Đáp án đúng: <strong>{correctId === "true" ? "Đúng" : "Sai"}</strong>
+                  </p>
+                ) : null}
+                {tf.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={tf.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
           if (question.type === "MATCHING") {
             const matching = question as MatchingQuestion;
             const answer = answers[matching.id];
@@ -322,6 +425,15 @@ export function ExerciseReviewScreen({ lessonTitle, items, answers, onBack }: Ex
           return null;
         })}
       </ol>
+
+      {onRetryWrong && wrongCount > 0 ? (
+        <footer className="vq-exercise-review__footer">
+          <VqButton fullWidth onClick={onRetryWrong}>
+            <ReplayOutlinedIcon sx={{ fontSize: 20 }} />
+            Luyện lại {wrongCount} câu sai
+          </VqButton>
+        </footer>
+      ) : null}
     </div>
   );
 }

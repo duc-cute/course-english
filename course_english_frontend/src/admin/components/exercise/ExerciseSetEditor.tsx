@@ -19,6 +19,7 @@ import {
   createEmptyFillBlankQuestion,
   createEmptyMatchingQuestion,
   createEmptyMcqQuestion,
+  createEmptyReorderQuestion,
   generateQuestionId,
   validateExerciseSetPayload,
 } from "../../../shared/lesson/exercisePayload";
@@ -31,9 +32,11 @@ import type {
   ListenTypeQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
+  ReorderSentenceQuestion,
   SpellingQuestion,
 } from "../../../student/lessonPlayer/exercise/types";
 import { FillBlankQuestionCanvas } from "./FillBlankQuestionCanvas";
+import { ReorderSentenceQuestionCanvas } from "./ReorderSentenceQuestionCanvas";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
 import { ExerciseSetSettings } from "./ExerciseSetSettings";
@@ -113,14 +116,16 @@ export function ExerciseSetEditor({
     setQuestions((list) => list.map((q, i) => (i === index ? next : q)));
   };
 
-  const addQuestion = (type: "MULTIPLE_CHOICE" | "MATCHING" | "FILL_BLANK") => {
+  const addQuestion = (type: "MULTIPLE_CHOICE" | "MATCHING" | "FILL_BLANK" | "REORDER_SENTENCE") => {
     setQuestions((list) => {
       const next =
         type === "MATCHING"
           ? [...list, createEmptyMatchingQuestion()]
           : type === "FILL_BLANK"
             ? [...list, createEmptyFillBlankQuestion()]
-            : [...list, createEmptyMcqQuestion()];
+            : type === "REORDER_SENTENCE"
+              ? [...list, createEmptyReorderQuestion()]
+              : [...list, createEmptyMcqQuestion()];
       setActiveIndex(next.length - 1);
       return next;
     });
@@ -160,6 +165,13 @@ export function ExerciseSetEditor({
             ...b,
             acceptedAnswers: [...b.acceptedAnswers],
           })),
+        };
+      } else if (source.type === "REORDER_SENTENCE") {
+        copy = {
+          ...(source as ReorderSentenceQuestion),
+          id: generateQuestionId(),
+          tokens: (source as ReorderSentenceQuestion).tokens.map((t) => ({ ...t })),
+          correctOrder: [...(source as ReorderSentenceQuestion).correctOrder],
         };
       } else {
         copy = {
@@ -255,6 +267,7 @@ export function ExerciseSetEditor({
           onAddMcq={() => addQuestion("MULTIPLE_CHOICE")}
           onAddMatching={() => addQuestion("MATCHING")}
           onAddFillBlank={() => addQuestion("FILL_BLANK")}
+          onAddReorder={() => addQuestion("REORDER_SENTENCE")}
           onReorder={reorderQuestions}
         />
 
@@ -304,6 +317,15 @@ export function ExerciseSetEditor({
           ) : activeQuestion?.type === "FILL_BLANK" ? (
             <FillBlankQuestionCanvas
               question={activeQuestion as FillBlankQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
+              onChange={(next) => updateQuestion(activeIndex, next)}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "REORDER_SENTENCE" ? (
+            <ReorderSentenceQuestionCanvas
+              question={activeQuestion as ReorderSentenceQuestion}
               index={activeIndex}
               canDelete={questions.length > 1}
               onChange={(next) => updateQuestion(activeIndex, next)}

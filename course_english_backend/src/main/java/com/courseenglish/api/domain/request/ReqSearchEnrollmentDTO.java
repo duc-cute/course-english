@@ -12,4 +12,6 @@ public class ReqSearchEnrollmentDTO extends ReqPagingSearchDTO {
     private UUID classroomId;
     private UUID studentId;
     private String status;
+    /** true → lấy enrollment của user đang đăng nhập (bỏ qua studentId client gửi) */
+    private Boolean mine;
 }

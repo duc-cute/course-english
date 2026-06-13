@@ -78,6 +78,73 @@ export function getLessonReaderProTip(blocks: LessonBlockRecord[]): string {
   return "Dùng mục lục để nhảy nhanh giữa các phần. Thanh tiến độ phản ánh mức bạn đã cuộn trong bài.";
 }
 
+export type MascotTipContent = {
+  label: string;
+  text: string;
+};
+
+export function getActiveBlockMascotTip(
+  blocks: LessonBlockRecord[],
+  activeBlockId: string | null,
+): MascotTipContent {
+  const fallback = { label: "Gợi ý", text: getLessonReaderProTip(blocks) };
+  if (!activeBlockId) return fallback;
+
+  const block = blocks.find((b) => b.id === activeBlockId);
+  if (!block) return fallback;
+
+  if (block.blockType === "CALLOUT") {
+    const payload = parseCalloutBlockPayload(block.payloadJson);
+    const labels: Record<string, string> = {
+      tip: "Mẹo nhớ!",
+      warning: "Chú ý!",
+      definition: "Định nghĩa",
+    };
+    const plain = stripHtml(payload.html);
+    return {
+      label: labels[payload.variant] ?? "Gợi ý",
+      text: payload.title?.trim() || plain.slice(0, 140) || fallback.text,
+    };
+  }
+
+  if (block.blockType === "VOCABULARY") {
+    return {
+      label: "Từ vựng",
+      text: "Lật thẻ và nghe phát âm — thử đoán nghĩa trước khi lật!",
+    };
+  }
+
+  if (block.blockType === "SUMMARY") {
+    return {
+      label: "Tóm tắt",
+      text: "Ôn lại các ý chính trước khi chuyển sang phần tiếp theo.",
+    };
+  }
+
+  if (block.blockType === "AUDIO") {
+    return {
+      label: "Nghe",
+      text: "Nghe kỹ và lặp lại đoạn khó — bạn có thể tua lại nhiều lần.",
+    };
+  }
+
+  if (block.blockType === "VIDEO") {
+    return {
+      label: "Video",
+      text: "Xem video đến hết, sau đó đọc lại phần ghi chú bên dưới.",
+    };
+  }
+
+  if (block.blockType === "IMAGE") {
+    return {
+      label: "Hình ảnh",
+      text: "Đọc chú thích trên hình — nó thường chứa từ khóa quan trọng.",
+    };
+  }
+
+  return fallback;
+}
+
 export function estimateReadingMinutes(blocks: LessonBlockRecord[]): number {
   let words = 0;
   let vocabItems = 0;

@@ -4,14 +4,20 @@ import com.courseenglish.api.domain.request.ReqSearchVocabularySetDTO;
 import com.courseenglish.api.domain.request.ReqVocabularySetDTO;
 import com.courseenglish.api.domain.response.ResVocabularySetDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
+import com.courseenglish.api.service.StudentEnrollmentAccessService;
 import com.courseenglish.api.service.VocabularySetService;
 import com.courseenglish.api.util.annotation.ApiMessage;
 import com.courseenglish.api.util.error.IdInvalidException;
 import jakarta.validation.Valid;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.courseenglish.api.domain.VocabularySet;
+import com.courseenglish.api.util.CatalogSearchSpecs;
+
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -19,15 +25,27 @@ import java.util.UUID;
 public class VocabularySetController {
 
     private final VocabularySetService vocabularySetService;
+    private final StudentEnrollmentAccessService studentEnrollmentAccessService;
 
-    public VocabularySetController(VocabularySetService vocabularySetService) {
+    public VocabularySetController(
+            VocabularySetService vocabularySetService,
+            StudentEnrollmentAccessService studentEnrollmentAccessService) {
         this.vocabularySetService = vocabularySetService;
+        this.studentEnrollmentAccessService = studentEnrollmentAccessService;
     }
 
     @PostMapping("/search")
     @ApiMessage("Search vocabulary sets")
-    public ResponseEntity<ResultPaginationDTO> search(@RequestBody(required = false) ReqSearchVocabularySetDTO req) {
-        return ResponseEntity.ok(vocabularySetService.search(req));
+    public ResponseEntity<ResultPaginationDTO> search(@RequestBody(required = false) ReqSearchVocabularySetDTO req)
+            throws IdInvalidException {
+        ReqSearchVocabularySetDTO payload = req == null ? new ReqSearchVocabularySetDTO() : req;
+        Specification<VocabularySet> spec = CatalogSearchSpecs.vocabularySetSearch(payload);
+        if (Boolean.TRUE.equals(payload.getEnrolledOnly())) {
+            List<UUID> subjectIds = studentEnrollmentAccessService.resolveEnrolledSubjectIds(payload.getClassroomId());
+            Specification<VocabularySet> enrolledSpec = CatalogSearchSpecs.vocabularySetSubjectIdsIn(subjectIds);
+            spec = spec == null ? enrolledSpec : spec.and(enrolledSpec);
+        }
+        return ResponseEntity.ok(vocabularySetService.searchWithSpec(payload, spec));
     }
 
     @GetMapping("/{id}")
