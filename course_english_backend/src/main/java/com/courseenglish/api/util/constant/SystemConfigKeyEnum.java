@@ -20,7 +20,11 @@ public enum SystemConfigKeyEnum {
     STUDENT_SELF_REGISTRATION_ENABLED(
             "STUDENT_SELF_REGISTRATION_ENABLED",
             "true",
-            "Cho phép học sinh tự đăng ký tài khoản (true/1=bật)");
+            "Cho phép học sinh tự đăng ký tài khoản (true/1=bật)"),
+    NOTIFICATION_EMAIL_ENABLED(
+            "NOTIFICATION_EMAIL_ENABLED",
+            "false",
+            "Gửi email cho HS khi GV publish bài học (true/1=bật, cần cấu hình SMTP)");
 
     private final String key;
     private final String defaultValue;

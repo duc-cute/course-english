@@ -179,12 +179,12 @@
         <h1>Kế hoạch thông báo HS khi GV publish lesson</h1>
         <p class="lead">
           Lộ trình: <strong>Phase 1</strong> in-app → <strong>1.5</strong> email → <strong>2</strong> WebSocket →
-          <strong>3</strong> Redis cache → <strong>4</strong> RabbitMQ. Cập nhật <strong>13/06/2026</strong>.
+          <strong>3</strong> Redis cache → <strong>4</strong> RabbitMQ. Cập nhật <strong>15/06/2026</strong>.
         </p>
         <div class="meta">
-          <span class="badge info">Đang làm: Phase 1</span>
+          <span class="badge ok">Xong: Phase 1 + 1.5</span>
+          <span class="badge info">Tiếp theo: Phase 2 WebSocket</span>
           <span class="badge warn">Trigger MVP: publish only</span>
-          <span class="badge ok">Enrollment ACTIVE</span>
         </div>
       </header>
 
@@ -203,9 +203,9 @@
       <h2 class="section" id="overview">1. Tổng quan lộ trình</h2>
       <div class="roadmap">
         <div class="phase">
-          <div class="phase-num current">1</div>
+          <div class="phase-num">1</div>
           <div>
-            <h4>Phase 1 — DB + API in-app + chuông (poll)</h4>
+            <h4>Phase 1 — DB + API in-app + chuông (poll) ✓</h4>
             <p>
               Bảng <code>notifications</code>, fan-out khi GV publish, API đọc/đánh dấu, FE chuông trên topbar.
               Không email, không socket, không queue.
@@ -215,14 +215,15 @@
         <div class="phase">
           <div class="phase-num">1.5</div>
           <div>
-            <h4>Phase 1.5 — Email khi publish</h4>
+            <h4>Phase 1.5 — Email khi publish ✓</h4>
             <p>
-              Cùng trigger publish. SMTP / SendGrid qua <code>@Async</code>. Template HTML + deep link bài học.
+              <code>LessonPublishedNotifier</code>, SMTP/Gmail, template Thymeleaf, log
+              <code>notification_email_logs</code>, flag <code>NOTIFICATION_EMAIL_ENABLED</code>.
             </p>
           </div>
         </div>
         <div class="phase">
-          <div class="phase-num">2</div>
+          <div class="phase-num current">2</div>
           <div>
             <h4>Phase 2 — WebSocket realtime</h4>
             <p>
@@ -250,9 +251,9 @@
         </div>
       </div>
 
-      <div class="ascii">Phase 1 ──► Phase 1.5 ──► Phase 2 ──► Phase 3 ──► Phase 4
- in-app       email        socket       redis         queue
- (NOW)</div>
+      <div class="ascii">Phase 1 ✓ ──► Phase 1.5 ✓ ──► Phase 2 ──► Phase 3 ──► Phase 4
+ in-app          email           socket       redis         queue
+                                 (NEXT)</div>
 
       <h2 class="section" id="phase1">2. Phase 1 — Chi tiết triển khai</h2>
 
@@ -363,19 +364,94 @@ HS GET /notifications (poll 60s)
         </tbody>
       </table>
 
-      <h2 class="section" id="phase15">3. Phase 1.5 — Email (publish only)</h2>
-      <ul>
-        <li>Trigger: cùng publish Phase 1</li>
-        <li>SMTP / SendGrid, template HTML, deep link</li>
-        <li><code>@Async</code> song song fan-out in-app — lỗi email không rollback publish</li>
-        <li>Phase 4: chuyển sang queue <code>notification.email</code></li>
+      <h2 class="section" id="phase15">3. Phase 1.5 — Email (publish only) ✓</h2>
+      <ul class="checklist">
+        <li class="done">Trigger: cùng publish Phase 1 qua <code>LessonPublishedNotifier</code></li>
+        <li class="done">SMTP + Thymeleaf template (<code>Design/noti_email/</code>)</li>
+        <li class="done">Migration <code>014_notification_email_logs</code> + idempotency SENT</li>
+        <li class="done"><code>NOTIFICATION_EMAIL_ENABLED</code> SystemConfig</li>
+        <li class="done">Lỗi email không rollback publish / in-app</li>
+      </ul>
+      <p>Env: <code>MAIL_*</code>, <code>FRONTEND_BASE_URL</code>, <code>API_PUBLIC_BASE_URL</code> (ảnh avatar/cover trong email).</p>
+
+      <h2 class="section" id="phase2">4. Phase 2 — WebSocket (kế hoạch chi tiết)</h2>
+
+      <div class="card info">
+        <strong>Mục tiêu</strong> — HS online nhận notify <strong>ngay</strong> khi GV publish (badge + toast),
+        không chờ poll 60s. DB <code>notifications</code> vẫn là nguồn sự thật; WebSocket chỉ push UX.
+      </div>
+
+      <h3>4.1 Luồng</h3>
+      <div class="ascii">GV publish
+    │
+    ├─► INSERT notifications (Phase 1, giữ nguyên)
+    ├─► Email async (Phase 1.5, giữ nguyên)
+    └─► NotificationPushService.pushToOnlineUsers(userIds, payload)
+
+HS FE (sau login)
+    │
+    ├─► WS connect + JWT auth
+    ├─► Nhận event NOTIFICATION_CREATED → bump badge + prepend item
+    └─► Poll 60s vẫn chạy (fallback khi socket disconnect)</div>
+
+      <h3>4.2 Backend</h3>
+      <table>
+        <thead><tr><th>Thành phần</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td><code>WebSocketConfig</code></td><td>STOMP + SockJS <code>/ws</code> (hoặc raw WS <code>/ws/notifications</code>)</td></tr>
+          <tr><td><code>JwtHandshakeInterceptor</code></td><td>Auth token lúc connect — map <code>session → userId</code></td></tr>
+          <tr><td><code>NotificationSessionRegistry</code></td><td>In-memory: userId → Set&lt;sessionId&gt; (Phase 2); Redis sau nếu scale</td></tr>
+          <tr><td><code>NotificationPushService</code></td><td>Sau fan-out INSERT → gửi JSON tới online recipients</td></tr>
+          <tr><td>Hook</td><td><code>LessonNotificationServiceImpl</code> gọi push sau batch save</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.3 Payload WS (gợi ý)</h3>
+      <pre>{
+  "type": "NOTIFICATION_CREATED",
+  "notification": {
+    "id", "type", "title", "body", "linkPath",
+    "payloadJson", "createdAt", "readAt"
+  },
+  "unreadCount": 3
+}</pre>
+
+      <h3>4.4 Frontend</h3>
+      <table>
+        <thead><tr><th>File</th><th>Việc</th></tr></thead>
+        <tbody>
+          <tr><td><code>shared/ws/notificationSocket.ts</code></td><td>Connect/reconnect + heartbeat</td></tr>
+          <tr><td><code>useNotifications.ts</code></td><td>Merge WS event vào state; giảm poll → 5 phút fallback</td></tr>
+          <tr><td><code>NotificationBell.tsx</code></td><td>Toast nhẹ khi có bài mới (optional)</td></tr>
+          <tr><td><code>StudentShell</code></td><td>Connect WS sau login, disconnect logout</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.5 Acceptance criteria</h3>
+      <ul class="checklist">
+        <li>HS tab mở + online → badge tăng trong ≤ 3s sau publish (không cần F5)</li>
+        <li>HS offline → vẫn thấy notify khi mở app (DB + poll/refresh)</li>
+        <li>Socket disconnect → poll fallback vẫn hoạt động</li>
+        <li>Chỉ user nhận fan-out mới được push (đúng userId JWT)</li>
+        <li>Không breaking API REST Phase 1</li>
       </ul>
 
-      <h2 class="section" id="phase2">4. Phase 2 — WebSocket</h2>
+      <h3>4.6 Task breakdown (~ 4 ngày)</h3>
+      <table>
+        <thead><tr><th>Ngày</th><th>Việc</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>WebSocketConfig + JWT handshake + SessionRegistry</td></tr>
+          <tr><td>2</td><td>NotificationPushService + hook sau fan-out</td></tr>
+          <tr><td>3</td><td>FE socket client + integrate useNotifications</td></tr>
+          <tr><td>4</td><td>QA: 2 tab, disconnect, publish batch, security</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.7 Out of scope Phase 2</h3>
       <ul>
-        <li><code>WS /notifications?token=...</code></li>
-        <li>Sau INSERT DB → push nếu user online</li>
-        <li>FE: connect sau login, toast + bump badge</li>
+        <li>Redis pub/sub multi-instance (Phase 3+ hoặc khi deploy nhiều pod)</li>
+        <li>Push notify loại khác (lesson result — xem <code>Design/noti_result_lesson/</code> phase sau)</li>
+        <li>Thay thế email / queue (Phase 4)</li>
       </ul>
 
       <h2 class="section" id="phase3">5. Phase 3 — Redis</h2>

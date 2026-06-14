@@ -171,6 +171,9 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         AppConstants.studentSelfRegistrationEnabled = readBoolean(
                 findValue(all, SystemConfigKeyEnum.STUDENT_SELF_REGISTRATION_ENABLED.getKey()),
                 true);
+        AppConstants.notificationEmailEnabled = readBoolean(
+                findValue(all, SystemConfigKeyEnum.NOTIFICATION_EMAIL_ENABLED.getKey()),
+                false);
     }
 
     private String findValue(List<SystemConfig> all, String key) {

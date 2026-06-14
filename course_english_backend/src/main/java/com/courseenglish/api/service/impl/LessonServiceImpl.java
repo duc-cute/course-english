@@ -19,7 +19,7 @@ import com.courseenglish.api.repository.LessonRepository;
 import com.courseenglish.api.repository.SubjectRepository;
 import com.courseenglish.api.service.LessonAssetService;
 import com.courseenglish.api.service.LessonBlockService;
-import com.courseenglish.api.service.LessonNotificationService;
+import com.courseenglish.api.service.LessonPublishedNotifier;
 import com.courseenglish.api.service.LessonPublishValidator;
 import com.courseenglish.api.service.LessonService;
 import com.courseenglish.api.service.QuestionRefResolverService;
@@ -40,7 +40,7 @@ public class LessonServiceImpl implements LessonService {
     private final QuestionRefResolverService questionRefResolverService;
     private final VocabularyBlockResolverService vocabularyBlockResolverService;
     private final LessonPublishValidator lessonPublishValidator;
-    private final LessonNotificationService lessonNotificationService;
+    private final LessonPublishedNotifier lessonPublishedNotifier;
 
     public LessonServiceImpl(
             LessonRepository lessonRepository,
@@ -51,7 +51,7 @@ public class LessonServiceImpl implements LessonService {
             QuestionRefResolverService questionRefResolverService,
             VocabularyBlockResolverService vocabularyBlockResolverService,
             LessonPublishValidator lessonPublishValidator,
-            LessonNotificationService lessonNotificationService) {
+            LessonPublishedNotifier lessonPublishedNotifier) {
         this.lessonRepository = lessonRepository;
         this.subjectRepository = subjectRepository;
         this.lessonBlockRepository = lessonBlockRepository;
@@ -60,7 +60,7 @@ public class LessonServiceImpl implements LessonService {
         this.questionRefResolverService = questionRefResolverService;
         this.vocabularyBlockResolverService = vocabularyBlockResolverService;
         this.lessonPublishValidator = lessonPublishValidator;
-        this.lessonNotificationService = lessonNotificationService;
+        this.lessonPublishedNotifier = lessonPublishedNotifier;
     }
 
     @Override
@@ -171,7 +171,7 @@ public class LessonServiceImpl implements LessonService {
         Lesson saved = lessonRepository.save(entity);
         if (previousStatus != LessonStatusEnum.PUBLISHED) {
             UUID actorUserId = SercurityUtil.getCurrentUserId().orElse(null);
-            lessonNotificationService.notifyLessonPublishedAsync(saved.getId(), actorUserId);
+            lessonPublishedNotifier.dispatchLessonPublishedAsync(saved.getId(), actorUserId);
         }
         return toDto(saved);
     }

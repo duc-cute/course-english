@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title th:text="'Bài mới: ' + ${lessonTitle}">Bài mới</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap');
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    @media only screen and (max-width: 620px) {
+      .email-container { width: 100% !important; }
+      .stack-pad { padding-left: 20px !important; padding-right: 20px !important; }
+      .hero-title { font-size: 24px !important; line-height: 1.3 !important; }
+      .badge-hide-mobile { display: none !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f8f9ff;font-family:'Nunito Sans',Segoe UI,Helvetica,Arial,sans-serif;color:#0b1c30;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
+    <span th:text="|${actorName} vừa publish bài ${lessonTitle}. Mở bài học ngay.|">Giáo viên vừa publish bài mới.</span>
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f8f9ff;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" class="email-container" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td class="stack-pad" style="padding:8px 0 24px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="left" valign="middle">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td valign="middle" style="padding-right:10px;">
+                          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 100%);text-align:center;line-height:40px;">
+                            <span style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:14px;font-weight:800;color:#ffffff;">CE</span>
+                          </div>
+                        </td>
+                        <td valign="middle">
+                          <span style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:22px;font-weight:700;color:#2151da;letter-spacing:-0.02em;">Course English</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td class="badge-hide-mobile" align="right" valign="middle">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td style="background-color:#e5eeff;border-radius:9999px;padding:8px 16px;">
+                          <span style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#0037b0;text-transform:uppercase;letter-spacing:0.08em;">&#128218; B&#224;i m&#7899;i</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background-color:#ffffff;border-radius:24px;border:1px solid #c4c5d7;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+
+                <!-- Hero -->
+                <tr>
+                  <td class="stack-pad" style="padding:40px 40px 24px;background:linear-gradient(180deg,#eff4ff 0%,#ffffff 100%);text-align:center;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr th:if="${coverImageUrl != null and !#strings.isEmpty(coverImageUrl)}">
+                        <td align="center" style="padding-bottom:20px;">
+                          <img th:src="${coverImageUrl}" th:alt="${lessonTitle}" width="400" style="max-width:100%;width:400px;height:auto;border-radius:16px;display:block;margin:0 auto;border:1px solid #c4c5d7;" />
+                        </td>
+                      </tr>
+                      <tr th:if="${coverImageUrl == null or #strings.isEmpty(coverImageUrl)}">
+                        <td align="center" style="padding-bottom:20px;">
+                          <div style="width:120px;height:120px;margin:0 auto;border-radius:24px;background:linear-gradient(135deg,#e5eeff 0%,#d3e4fe 100%);line-height:120px;text-align:center;font-size:48px;">
+                            &#127891;
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center">
+                          <h1 class="hero-title" style="margin:0 0 12px;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:28px;line-height:1.3;font-weight:700;color:#0b1c30;">
+                            &#127881; C&#243; b&#224;i h&#7885;c m&#7899;i!
+                          </h1>
+                          <p style="margin:0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:18px;line-height:1.6;color:#434655;max-width:480px;display:inline-block;">
+                            Xin ch&#224;o <strong th:text="${studentName}" style="color:#0b1c30;">b&#7841;n</strong>,
+                            gi&#225;o vi&#234;n v&#7919;a publish b&#224;i m&#7899;i. Ti&#7871;p t&#7909;c h&#7885;c v&#224; c&#7843;i thi&#7879;n ti&#7871;ng Anh m&#7895;i ng&#224;y nh&#233;!
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Lesson card -->
+                <tr>
+                  <td class="stack-pad" style="padding:0 40px 32px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #c4c5d7;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+                      <tr>
+                        <td style="padding:24px;">
+
+                          <!-- Chips -->
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:16px;">
+                            <tr>
+                              <td th:if="${subjectName != null and !#strings.isEmpty(subjectName)}" style="padding-right:8px;padding-bottom:8px;">
+                                <span style="display:inline-block;background-color:#e5eeff;color:#0037b0;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:14px;font-weight:600;padding:6px 12px;border-radius:9999px;">
+                                  &#127760; <span th:text="${subjectName}">Ti&#7871;ng Anh</span>
+                                </span>
+                              </td>
+                              <td th:if="${classroomName != null and !#strings.isEmpty(classroomName)}" style="padding-bottom:8px;">
+                                <span style="display:inline-block;background-color:#6cf8bb;color:#00714d;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:14px;font-weight:600;padding:6px 12px;border-radius:9999px;">
+                                  &#127979; <span th:text="${classroomName}">L&#7899;p 10A1</span>
+                                </span>
+                              </td>
+                            </tr>
+                          </table>
+
+                          <!-- Lesson title -->
+                          <h2 style="margin:0 0 16px;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:24px;line-height:1.4;font-weight:700;color:#0b1c30;" th:text="${lessonTitle}">
+                            Daily Words Vocabulary
+                          </h2>
+
+                          <!-- Actor row -->
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top:1px solid #c4c5d7;padding-top:16px;">
+                            <tr>
+                              <td th:if="${actorAvatarUrl != null and !#strings.isEmpty(actorAvatarUrl)}" width="44" valign="top" style="padding-right:12px;">
+                                <img th:src="${actorAvatarUrl}" th:alt="${actorName}" width="44" height="44" style="width:44px;height:44px;border-radius:9999px;object-fit:cover;border:2px solid #e5eeff;display:block;" />
+                              </td>
+                              <td valign="middle">
+                                <p style="margin:0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:16px;line-height:1.6;color:#434655;">
+                                  <strong th:text="${actorName}" style="color:#0b1c30;">Gi&#225;o vi&#234;n</strong>
+                                  v&#7919;a publish b&#224;i h&#7885;c n&#224;y cho l&#7899;p c&#7911;a b&#7841;n.
+                                </p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- CTA -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:32px;">
+                      <tr>
+                        <td align="center">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td align="center" style="border-radius:9999px;background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 100%);">
+                                <!--[if mso]>
+                                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" th:attr="href=${lessonUrl}" style="height:52px;v-text-anchor:middle;width:260px;" arcsize="50%" strokecolor="#1d4ed8" fillcolor="#1d4ed8">
+                                  <w:anchorlock/>
+                                  <center style="color:#ffffff;font-family:Segoe UI,sans-serif;font-size:16px;font-weight:bold;">B&#7855;t &#273;&#7847;u h&#7885;c ngay</center>
+                                </v:roundrect>
+                                <![endif]-->
+                                <!--[if !mso]><!-->
+                                <a th:href="${lessonUrl}" target="_blank" style="display:inline-block;padding:16px 40px;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:9999px;background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 100%);box-shadow:0 8px 24px rgba(29,78,216,0.25);">
+                                  B&#7855;t &#273;&#7847;u h&#7885;c ngay &#8594;
+                                </a>
+                                <!--<![endif]-->
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Motivation strip -->
+                <tr>
+                  <td class="stack-pad" style="padding:24px 40px;background-color:#eff4ff;border-top:1px solid #c4c5d7;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="56" valign="top" style="padding-right:16px;">
+                          <div style="width:56px;height:56px;border-radius:9999px;background-color:#ffffff;text-align:center;line-height:56px;font-size:28px;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+                            &#128170;
+                          </div>
+                        </td>
+                        <td valign="middle">
+                          <p style="margin:0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:16px;line-height:1.6;font-weight:600;color:#0b1c30;">
+                            &ldquo;M&#7895;i b&#224;i h&#7885;c ho&#224;n th&#224;nh &#273;&#432;a b&#7841;n &#273;&#7871;n g&#7847;n h&#417;n v&#7899;i s&#7921; th&#224;nh th&#7841;o.&rdquo;
+                          </p>
+                          <p style="margin:8px 0 0;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:12px;font-weight:700;color:#006c49;text-transform:uppercase;letter-spacing:0.06em;">
+                            Course English &#183; H&#7885;c m&#7895;i ng&#224;y, ti&#7871;n b&#7897; m&#7895;i ng&#224;y
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="stack-pad" style="padding:32px 0 0;text-align:center;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="center" style="padding-bottom:16px;">
+                    <span style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:18px;font-weight:700;color:#0037b0;">Course English</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-bottom:16px;">
+                    <p style="margin:0;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:12px;font-weight:700;color:#747686;">
+                      &#169; <span th:text="${currentYear}">2026</span> Course English. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <p style="margin:0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:11px;line-height:1.6;color:#747686;max-width:400px;display:inline-block;">
+                      B&#7841;n nh&#7853;n email n&#224;y v&#236; &#273;&#227; ghi danh ch&#432;&#417;ng tr&#236;nh Course English.
+                      Email th&#244;ng b&#225;o t&#7921; &#273;&#7897;ng khi gi&#225;o vi&#234;n publish b&#224;i h&#7885;c m&#7899;i.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,16 @@
+Course English — Bài học mới
+================================
+
+Xin chào [[${studentName}]],
+
+🎉 Có bài học mới!
+
+[[${actorName}]] vừa publish bài "[[${lessonTitle}]]".
+Môn: [[${subjectName}]]
+Lớp: [[${classroomName}]]
+
+Bắt đầu học ngay: [[${lessonUrl}]]
+
+"Mỗi bài học hoàn thành đưa bạn đến gần hơn với sự thành thạo."
+
+— Course English

@@ -52,6 +52,13 @@ export const SYSTEM_CONFIG_KEY_OPTIONS: SystemConfigKeyMeta[] = [
     defaultValue: "true",
     defaultNote: "Cho phép học sinh tự đăng ký tài khoản (true/1=bật)",
   },
+   {
+    key: "NOTIFICATION_EMAIL_ENABLED",
+    label: "Gửi email thông báo",
+    type: "boolean",
+    defaultValue: "true",
+    defaultNote: "Cho phép gửi email thông báo (true/1=bật)",
+  },
 ];
 
 export const BOOLEAN_CONFIG_OPTIONS = [

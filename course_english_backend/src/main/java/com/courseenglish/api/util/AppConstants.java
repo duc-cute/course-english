@@ -14,4 +14,5 @@ public final class AppConstants {
     public static boolean vocabularyAudioEnabled = true;
     public static VocabularyAudioAccentEnum vocabularyAudioAccent = VocabularyAudioAccentEnum.UK;
     public static boolean studentSelfRegistrationEnabled = true;
+    public static boolean notificationEmailEnabled = false;
 }
