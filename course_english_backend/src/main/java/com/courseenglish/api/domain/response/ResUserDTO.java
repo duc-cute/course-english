@@ -18,6 +18,7 @@ public class ResUserDTO {
     private UUID id;
     private String email;
     private String name;
+    private String avatarUrl;
     private String address;
     private int age;
     private GenderEnum gender;

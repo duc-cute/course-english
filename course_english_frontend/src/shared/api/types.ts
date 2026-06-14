@@ -17,6 +17,7 @@ export type UserRecord = {
   id: number | string;
   email: string;
   name: string;
+  avatarUrl?: string | null;
   role?: string;
   roles?: string[];
 };

@@ -44,6 +44,7 @@ public class UserServiceImpl implements UserService {
             fallback.add(userRole);
             user.setRoles(fallback);
         }
+        user.setAvatarUrl(trimOrNull(user.getAvatarUrl()));
         return this.userRepository.save(user);
     }
 
@@ -100,6 +101,9 @@ public class UserServiceImpl implements UserService {
             currentUser.setName(userUpdate.getName());
             currentUser.setAddress(userUpdate.getAddress());
             currentUser.setGender(userUpdate.getGender());
+            if (userUpdate.getAvatarUrl() != null) {
+                currentUser.setAvatarUrl(trimOrNull(userUpdate.getAvatarUrl()));
+            }
 
             currentUser = this.userRepository.save(currentUser);
         }
@@ -114,6 +118,12 @@ public class UserServiceImpl implements UserService {
             user.setName(userUpdate.getName());
             user.setAddress(userUpdate.getAddress());
             user.setGender(userUpdate.getGender());
+            if (userUpdate.getEmail() != null && !userUpdate.getEmail().isBlank()) {
+                user.setEmail(userUpdate.getEmail().trim());
+            }
+            if (userUpdate.getAvatarUrl() != null) {
+                user.setAvatarUrl(trimOrNull(userUpdate.getAvatarUrl()));
+            }
 
             Set<Role> roles = resolveRolesFromRequest(userUpdate);
             if (roles != null && !roles.isEmpty()) {
@@ -200,6 +210,7 @@ public class UserServiceImpl implements UserService {
         ResUpdateUserDTO res = new ResUpdateUserDTO();
 
         res.setAge(user.getAge());
+        res.setEmail(user.getEmail());
         res.setName(user.getName());
         res.setGender(user.getGender());
         res.setUpdatedAt(user.getUpdatedAt());
@@ -225,6 +236,7 @@ public class UserServiceImpl implements UserService {
         res.setCreatedAt(user.getCreatedAt());
         res.setUpdatedAt(user.getUpdatedAt());
         res.setEmail(user.getEmail());
+        res.setAvatarUrl(user.getAvatarUrl());
 
         List<String> roleNames = user.getRoles() == null
                 ? List.of()
@@ -237,5 +249,13 @@ public class UserServiceImpl implements UserService {
 
     public User getUserByRefreshTokenAndEmail(String token, String email) {
         return this.userRepository.findByRefreshTokenAndEmailAndVoidedFalse(token, email);
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

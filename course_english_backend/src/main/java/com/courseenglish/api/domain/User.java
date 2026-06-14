@@ -24,6 +24,9 @@ public class User extends BaseObject {
     @NotBlank(message = "name không được để trống")
     private String name;
 
+    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    private String avatarUrl;
+
     @NotBlank(message = "password không được để trống")
     private String password;
 

@@ -55,6 +55,7 @@ export async function apiCreateUser(data: {
   email: string;
   password: string;
   name: string;
+  avatarUrl?: string;
   role?: string;
   roleNames?: string[];
 }) {
@@ -66,6 +67,7 @@ export async function apiUpdateUserByAdmin(data: {
   id: number | string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
   role?: string;
   roleNames?: string[];
   password?: string;

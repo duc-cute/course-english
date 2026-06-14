@@ -16,4 +16,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID>, J
     boolean existsByClassroom_IdAndStudent_IdAndVoidedFalse(UUID classroomId, UUID studentId);
 
     List<Enrollment> findByStudent_IdAndStatusIgnoreCaseAndVoidedFalse(UUID studentId, String status);
+
+    List<Enrollment> findByClassroom_IdAndStatusIgnoreCaseAndVoidedFalse(UUID classroomId, String status);
 }

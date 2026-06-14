@@ -14,6 +14,7 @@ import java.util.UUID;
 @Setter
 public class ResUpdateUserDTO {
     private UUID id;
+    private String email;
     private String name;
     private String address;
     private int age;

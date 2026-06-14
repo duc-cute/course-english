@@ -19,11 +19,13 @@ import com.courseenglish.api.repository.LessonRepository;
 import com.courseenglish.api.repository.SubjectRepository;
 import com.courseenglish.api.service.LessonAssetService;
 import com.courseenglish.api.service.LessonBlockService;
+import com.courseenglish.api.service.LessonNotificationService;
 import com.courseenglish.api.service.LessonPublishValidator;
 import com.courseenglish.api.service.LessonService;
 import com.courseenglish.api.service.QuestionRefResolverService;
 import com.courseenglish.api.service.VocabularyBlockResolverService;
 import com.courseenglish.api.util.LessonSlugUtil;
+import com.courseenglish.api.util.SercurityUtil;
 import com.courseenglish.api.util.constant.LessonStatusEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 
@@ -38,6 +40,7 @@ public class LessonServiceImpl implements LessonService {
     private final QuestionRefResolverService questionRefResolverService;
     private final VocabularyBlockResolverService vocabularyBlockResolverService;
     private final LessonPublishValidator lessonPublishValidator;
+    private final LessonNotificationService lessonNotificationService;
 
     public LessonServiceImpl(
             LessonRepository lessonRepository,
@@ -47,7 +50,8 @@ public class LessonServiceImpl implements LessonService {
             LessonAssetService lessonAssetService,
             QuestionRefResolverService questionRefResolverService,
             VocabularyBlockResolverService vocabularyBlockResolverService,
-            LessonPublishValidator lessonPublishValidator) {
+            LessonPublishValidator lessonPublishValidator,
+            LessonNotificationService lessonNotificationService) {
         this.lessonRepository = lessonRepository;
         this.subjectRepository = subjectRepository;
         this.lessonBlockRepository = lessonBlockRepository;
@@ -56,6 +60,7 @@ public class LessonServiceImpl implements LessonService {
         this.questionRefResolverService = questionRefResolverService;
         this.vocabularyBlockResolverService = vocabularyBlockResolverService;
         this.lessonPublishValidator = lessonPublishValidator;
+        this.lessonNotificationService = lessonNotificationService;
     }
 
     @Override
@@ -160,9 +165,15 @@ public class LessonServiceImpl implements LessonService {
     public ResLessonDTO publish(UUID id) throws IdInvalidException {
         Lesson entity = lessonRepository.findByIdAndVoidedFalse(id)
                 .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
+        LessonStatusEnum previousStatus = entity.getStatus();
         lessonPublishValidator.validateForPublish(id);
         entity.setStatus(LessonStatusEnum.PUBLISHED);
-        return toDto(lessonRepository.save(entity));
+        Lesson saved = lessonRepository.save(entity);
+        if (previousStatus != LessonStatusEnum.PUBLISHED) {
+            UUID actorUserId = SercurityUtil.getCurrentUserId().orElse(null);
+            lessonNotificationService.notifyLessonPublishedAsync(saved.getId(), actorUserId);
+        }
+        return toDto(saved);
     }
 
     @Override

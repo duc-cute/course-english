@@ -10,6 +10,7 @@ type LessonImageUploadProps = {
   caption?: string;
   onCaptionChange?: (caption: string) => void;
   label?: string;
+  previewRound?: boolean;
 };
 
 export function LessonImageUpload({
@@ -19,6 +20,7 @@ export function LessonImageUpload({
   caption,
   onCaptionChange,
   label = "Ảnh minh họa",
+  previewRound = false,
 }: LessonImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -79,7 +81,18 @@ export function LessonImageUpload({
             component="img"
             src={imageUrl}
             alt={caption || "Preview"}
-            sx={{ maxWidth: "100%", maxHeight: 220, borderRadius: "6px", objectFit: "contain" }}
+            sx={{
+              maxWidth: previewRound ? 120 : "100%",
+              maxHeight: previewRound ? 120 : 220,
+              width: previewRound ? 120 : undefined,
+              height: previewRound ? 120 : undefined,
+              borderRadius: previewRound ? "50%" : "6px",
+              objectFit: "cover",
+              mx: previewRound ? "auto" : undefined,
+              display: previewRound ? "block" : undefined,
+              border: previewRound ? "2px solid #fff" : undefined,
+              boxShadow: previewRound ? "0 2px 8px rgba(12, 68, 124, 0.15)" : undefined,
+            }}
           />
         ) : (
           <>

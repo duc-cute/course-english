@@ -1,0 +1,364 @@
+/* Notification bell + dropdown — ref Design/noti_publish/ (Lumina card panel) */
+
+.student-notification-bell-wrap {
+  position: relative;
+}
+
+.student-notification-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--vq-on-surface, #0b1c30);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.student-notification-bell:hover {
+  background: var(--vq-surface-container-high, #dce9ff);
+}
+
+.student-notification-bell:active {
+  transform: scale(0.95);
+}
+
+.student-notification-bell__dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--vq-error, #ba1a1a);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.student-notification-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.student-notification-panel {
+  position: fixed;
+  z-index: 1201;
+  width: min(420px, calc(100vw - 32px));
+  height: min(550px, calc(100vh - 96px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(196, 197, 217, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  animation: student-notification-panel-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes student-notification-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.student-notification-panel__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(196, 197, 217, 0.45);
+  background: #fff;
+}
+
+.student-notification-panel__head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.student-notification-panel__title {
+  margin: 0;
+  font-family: var(--vq-font-display, "Quicksand", sans-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--vq-on-surface, #0b1c30);
+  line-height: 1.3;
+}
+
+.student-notification-panel__unread-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--vq-primary-container, #2d5bff);
+  color: var(--vq-on-primary-container, #efefff);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.student-notification-panel__mark-all {
+  border: none;
+  background: transparent;
+  color: var(--vq-primary, #0040df);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+.student-notification-panel__mark-all:hover {
+  text-decoration: underline;
+}
+
+.student-notification-panel__list {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--vq-surface-container-lowest, #fff);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(116, 118, 136, 0.35) transparent;
+}
+
+.student-notification-panel__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.student-notification-panel__list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(116, 118, 136, 0.35);
+}
+
+.student-notification-panel__loading,
+.student-notification-panel__empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--vq-outline, #747688);
+  font-size: 0.9375rem;
+}
+
+.student-notification-group {
+  padding: 12px 16px 4px;
+}
+
+.student-notification-group__label {
+  margin: 0 0 8px;
+  color: var(--vq-outline, #747688);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.student-notification-group__cards {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.student-notification-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.student-notification-item__row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.student-notification-item:hover {
+  background: var(--vq-surface-container-low, #eff4ff);
+}
+
+.student-notification-item--unread {
+  background: var(--vq-surface-container-low, #eff4ff);
+  border-color: rgba(196, 197, 217, 0.1);
+}
+
+.student-notification-item--unread:hover {
+  background: var(--vq-surface-container, #e5eeff);
+}
+
+.student-notification-item--read {
+  opacity: 0.92;
+}
+
+.student-notification-item--read .student-notification-item__lesson-thumb {
+  opacity: 0.6;
+}
+
+.student-notification-item__dot {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--vq-primary, #0040df);
+}
+
+.student-notification-item__avatar {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(145deg, #dee0ff 0%, #eff4ff 100%);
+  color: var(--vq-primary, #0040df);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.student-notification-item__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-notification-item__avatar-initials {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.student-notification-item__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.student-notification-item__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--vq-on-surface, #0b1c30);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-notification-item__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  min-width: 0;
+}
+
+.student-notification-item__subtitle {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--vq-on-surface-variant, #434656);
+}
+
+.student-notification-item__time {
+  margin: 0;
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--vq-outline, #747688);
+  white-space: nowrap;
+}
+
+.student-notification-item__lesson-thumb {
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--vq-surface-container, #e5eeff);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.student-notification-item__lesson-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-notification-panel__foot {
+  padding: 12px 16px;
+  text-align: center;
+  border-top: 1px solid rgba(196, 197, 217, 0.45);
+  background: #fff;
+}
+
+.student-notification-panel__foot-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--vq-outline, #747688);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: default;
+}
+
+@media (max-width: 480px) {
+  .student-notification-panel {
+    right: 16px !important;
+    left: 16px;
+    width: auto;
+    height: min(520px, calc(100vh - 80px));
+  }
+}

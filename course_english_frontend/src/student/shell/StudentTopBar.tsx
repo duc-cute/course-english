@@ -2,6 +2,7 @@ import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepart
 import StarsOutlinedIcon from "@mui/icons-material/StarsOutlined";
 import { useLocation } from "react-router-dom";
 import { getStudentPageTitle } from "../../layouts/student/studentPageMeta";
+import { NotificationBell } from "../notifications/NotificationBell";
 import { VqBadge } from "../ui";
 import { StudentSidebarMenuButton } from "./StudentSidebar";
 
@@ -20,6 +21,7 @@ export function StudentTopBar({ onOpenMenu }: StudentTopBarProps) {
         <h1 className="student-vq-topbar__title">{title}</h1>
       </div>
       <div className="student-vq-topbar__stats">
+        <NotificationBell />
         <VqBadge tone="streak" icon={<LocalFireDepartmentOutlinedIcon sx={{ fontSize: 16 }} />}>
           —
         </VqBadge>

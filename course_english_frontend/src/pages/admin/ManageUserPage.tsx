@@ -21,6 +21,7 @@ import { Controller, useForm } from "react-hook-form";
 import {
   AdminCatalogToolbar,
   ConfirmDialog,
+  LessonImageUpload,
   RolePagingAutocomplete,
   TablePaginationField,
 } from "../../admin/components";
@@ -32,6 +33,7 @@ import {
   apiGetUsers,
   apiUpdateUserByAdmin,
 } from "../../shared/api/user";
+import { apiUploadFile, buildStoragePublicUrl } from "../../shared/api/file";
 import type { ApiResponse, UserRecord } from "../../shared/api/types";
 import {
   muBtnSmOutlined,
@@ -115,6 +117,8 @@ export function ManageUserPage() {
   const [deletingUser, setDeletingUser] = useState<UserRecord | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<RoleRecord[]>([]);
   const [roleFieldError, setRoleFieldError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const {
     control,
@@ -184,6 +188,7 @@ export function ManageUserPage() {
     reset(defaultValues);
     setSelectedRoles([]);
     setRoleFieldError("");
+    setAvatarUrl("");
     setOpenForm(true);
   };
 
@@ -204,6 +209,7 @@ export function ManageUserPage() {
       });
       setSelectedRoles(toRoleRecords(roleNames));
       setRoleFieldError("");
+      setAvatarUrl(detail?.avatarUrl ?? "");
     } catch {
       reset({
         id: user.id,
@@ -213,6 +219,7 @@ export function ManageUserPage() {
       });
       setSelectedRoles(toRoleRecords(getUserRoleNames(user)));
       setRoleFieldError("");
+      setAvatarUrl(user.avatarUrl ?? "");
     }
     setOpenForm(true);
   };
@@ -223,6 +230,23 @@ export function ManageUserPage() {
     reset(defaultValues);
     setSelectedRoles([]);
     setRoleFieldError("");
+    setAvatarUrl("");
+    setUploadingAvatar(false);
+  };
+
+  const uploadAvatar = async (file: File) => {
+    setUploadingAvatar(true);
+    setError("");
+    try {
+      const userId = editingUser?.id ?? null;
+      const folder = userId ? `users/${userId}/avatar` : "users/avatars";
+      const uploaded = await apiUploadFile(file, folder);
+      setAvatarUrl(buildStoragePublicUrl(folder, uploaded.fileName));
+    } catch (err) {
+      setError((err as { message?: string })?.message || "Upload ảnh đại diện thất bại.");
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const onSubmit = async (values: UserForm) => {
@@ -237,11 +261,13 @@ export function ManageUserPage() {
     setError("");
 
     try {
+      const trimmedAvatarUrl = avatarUrl.trim();
       if (isEditMode && values.id != null) {
         const payload: {
           id: number | string;
           name: string;
           email: string;
+          avatarUrl: string | null;
           roleNames: string[];
           role: string;
           password?: string;
@@ -249,6 +275,7 @@ export function ManageUserPage() {
           id: values.id,
           name: values.name,
           email: values.email,
+          avatarUrl: trimmedAvatarUrl || null,
           roleNames,
           role: roleNames.join(","),
         };
@@ -261,6 +288,7 @@ export function ManageUserPage() {
           email: values.email,
           password: values.password,
           name: values.name,
+          avatarUrl: trimmedAvatarUrl || undefined,
           roleNames,
           role: roleNames.join(","),
         });
@@ -543,6 +571,26 @@ export function ManageUserPage() {
             <div style={{ ...muCard, marginBottom: 0, padding: "10px 12px" }}>
               <div style={{ ...muCardTitle, marginBottom: 8 }}>Hồ sơ tài khoản</div>
               <Grid container spacing={1.5}>
+                <Grid size={12}>
+                  <LessonImageUpload
+                    label="Ảnh đại diện"
+                    imageUrl={avatarUrl || undefined}
+                    uploading={uploadingAvatar}
+                    onFileSelected={uploadAvatar}
+                    previewRound
+                  />
+                  {avatarUrl ? (
+                    <Button
+                      size="small"
+                      variant="text"
+                      disabled={submitting || uploadingAvatar}
+                      onClick={() => setAvatarUrl("")}
+                      sx={{ mt: 0.5, px: 0, minWidth: 0, fontSize: 12, color: "#5F5E5A" }}
+                    >
+                      Xóa ảnh đại diện
+                    </Button>
+                  ) : null}
+                </Grid>
                 <Grid size={12}>
                   <span style={muFieldLabel}>
                     Họ và tên <span style={muRequired}>*</span>

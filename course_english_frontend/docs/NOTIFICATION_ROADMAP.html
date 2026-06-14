@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Course English — Kế hoạch Notification (Phase 1 → 4)</title>
+    <style>
+      :root {
+        --paper: #fbf7ee;
+        --ink: #28231c;
+        --muted: #80786d;
+        --line: rgba(91, 78, 60, 0.16);
+        --accent: #2d4bd7;
+        --accent-soft: #dee0ff;
+        --ok: #2f7d56;
+        --ok-soft: #dff1e6;
+        --warn: #b07a14;
+        --warn-soft: #fbf0d8;
+        --crit: #b3261e;
+        --crit-soft: #fbe7e6;
+        --info: #2c5fb3;
+        --info-soft: #e2ecfb;
+        --shadow: 0 18px 50px rgba(78, 66, 48, 0.12);
+      }
+      * { box-sizing: border-box; }
+      html {
+        background: linear-gradient(135deg, #f6f0e4 0%, #efe7d8 100%);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.65;
+      }
+      body { margin: 0; padding: 0 0 64px; }
+      .layout { max-width: 920px; margin: 0 auto; padding: 32px 20px; }
+      .hero {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 28px 32px;
+        box-shadow: var(--shadow);
+        margin-bottom: 28px;
+      }
+      .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 8px;
+      }
+      h1 { margin: 0 0 12px; font-size: 2rem; letter-spacing: -0.02em; }
+      h2.section {
+        margin: 36px 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--accent-soft);
+        font-size: 1.35rem;
+      }
+      h3 { margin: 24px 0 10px; font-size: 1.1rem; }
+      p, li { color: var(--ink); }
+      .lead { font-size: 1.05rem; color: var(--muted); margin: 0 0 16px; }
+      .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+      }
+      .badge.ok { background: var(--ok-soft); color: var(--ok); }
+      .badge.warn { background: var(--warn-soft); color: var(--warn); }
+      .badge.info { background: var(--info-soft); color: var(--info); }
+      .badge.crit { background: var(--crit-soft); color: var(--crit); }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin: 16px 0;
+      }
+      .card.info { background: var(--info-soft); border-color: rgba(44, 95, 179, 0.2); }
+      .card.warn { background: var(--warn-soft); border-color: rgba(176, 122, 20, 0.2); }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9375rem;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        margin: 12px 0;
+      }
+      th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); }
+      th { background: var(--accent-soft); font-weight: 700; }
+      tr:last-child td { border-bottom: none; }
+      pre, code {
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+        font-size: 0.875rem;
+      }
+      pre {
+        background: #1e1e2e;
+        color: #cdd6f4;
+        padding: 16px 18px;
+        border-radius: 12px;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+      .roadmap {
+        display: grid;
+        gap: 12px;
+        margin: 20px 0;
+      }
+      .phase {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 16px;
+        align-items: start;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px 18px;
+      }
+      .phase-num {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .phase-num.current { background: var(--accent); color: #fff; }
+      .phase h4 { margin: 0 0 6px; font-size: 1rem; }
+      .phase p { margin: 0; font-size: 0.9375rem; color: var(--muted); }
+      ul.checklist { list-style: none; padding: 0; margin: 12px 0; }
+      ul.checklist li {
+        padding: 8px 0 8px 28px;
+        position: relative;
+        border-bottom: 1px dashed var(--line);
+      }
+      ul.checklist li:last-child { border-bottom: none; }
+      ul.checklist li::before {
+        content: "☐";
+        position: absolute;
+        left: 0;
+        color: var(--muted);
+      }
+      ul.checklist li.done::before { content: "☑"; color: var(--ok); }
+      .ascii {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        font-size: 0.8125rem;
+        line-height: 1.45;
+        overflow-x: auto;
+        white-space: pre;
+        font-family: ui-monospace, Consolas, monospace;
+      }
+      nav.toc {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+      }
+      nav.toc a { color: var(--accent); text-decoration: none; }
+      nav.toc a:hover { text-decoration: underline; }
+      nav.toc ol { margin: 8px 0 0; padding-left: 20px; }
+      nav.toc li { margin: 4px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <header class="hero">
+        <div class="eyebrow">Module Notification · Course English</div>
+        <h1>Kế hoạch thông báo HS khi GV publish lesson</h1>
+        <p class="lead">
+          Lộ trình: <strong>Phase 1</strong> in-app → <strong>1.5</strong> email → <strong>2</strong> WebSocket →
+          <strong>3</strong> Redis cache → <strong>4</strong> RabbitMQ. Cập nhật <strong>13/06/2026</strong>.
+        </p>
+        <div class="meta">
+          <span class="badge info">Đang làm: Phase 1</span>
+          <span class="badge warn">Trigger MVP: publish only</span>
+          <span class="badge ok">Enrollment ACTIVE</span>
+        </div>
+      </header>
+
+      <nav class="toc">
+        <strong>Mục lục</strong>
+        <ol>
+          <li><a href="#overview">Tổng quan 5 phase</a></li>
+          <li><a href="#phase1">Phase 1 — chi tiết (đang triển khai)</a></li>
+          <li><a href="#phase15">Phase 1.5 — Email</a></li>
+          <li><a href="#phase2">Phase 2 — WebSocket</a></li>
+          <li><a href="#phase3">Phase 3 — Redis</a></li>
+          <li><a href="#phase4">Phase 4 — RabbitMQ</a></li>
+        </ol>
+      </nav>
+
+      <h2 class="section" id="overview">1. Tổng quan lộ trình</h2>
+      <div class="roadmap">
+        <div class="phase">
+          <div class="phase-num current">1</div>
+          <div>
+            <h4>Phase 1 — DB + API in-app + chuông (poll)</h4>
+            <p>
+              Bảng <code>notifications</code>, fan-out khi GV publish, API đọc/đánh dấu, FE chuông trên topbar.
+              Không email, không socket, không queue.
+            </p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-num">1.5</div>
+          <div>
+            <h4>Phase 1.5 — Email khi publish</h4>
+            <p>
+              Cùng trigger publish. SMTP / SendGrid qua <code>@Async</code>. Template HTML + deep link bài học.
+            </p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-num">2</div>
+          <div>
+            <h4>Phase 2 — WebSocket realtime</h4>
+            <p>
+              Push chuông ngay khi HS online. DB Phase 1 vẫn là nguồn sự thật; socket chỉ bổ sung UX.
+            </p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-num">3</div>
+          <div>
+            <h4>Phase 3 — Redis cache</h4>
+            <p>
+              Cache <code>lesson:detail</code> sau publish hàng loạt HS mở bài. Evict khi GV sửa block.
+            </p>
+          </div>
+        </div>
+        <div class="phase">
+          <div class="phase-num">4</div>
+          <div>
+            <h4>Phase 4 — RabbitMQ</h4>
+            <p>
+              Fan-out lớn, email retry, DLQ. Thay <code>@Async</code> Phase 1/1.5 — không đổi API/FE.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ascii">Phase 1 ──► Phase 1.5 ──► Phase 2 ──► Phase 3 ──► Phase 4
+ in-app       email        socket       redis         queue
+ (NOW)</div>
+
+      <h2 class="section" id="phase1">2. Phase 1 — Chi tiết triển khai</h2>
+
+      <div class="card info">
+        <strong>Phạm vi Phase 1</strong>
+        <ul>
+          <li>Trigger: <strong>chỉ publish</strong> (<code>DRAFT → PUBLISHED</code>, hoặc republish sau unpublish)</li>
+          <li>Người nhận: HS <code>enrollment.status = ACTIVE</code> cùng classroom của subject bài học</li>
+          <li>Kênh: in-app (bảng + chuông FE, poll 60s)</li>
+          <li>Không làm: email, WebSocket, Redis, RabbitMQ, notify update/unpublish</li>
+        </ul>
+      </div>
+
+      <h3>2.1 Luồng nghiệp vụ</h3>
+      <div class="ascii">GV POST /lessons/{id}/publish
+    │
+    ├─► MySQL: status = PUBLISHED
+    ├─► @Async: fan-out INSERT notifications
+    └─► Response 200 (< 300ms)
+
+HS GET /notifications (poll 60s)
+    │
+    ├─► Badge unread-count
+    └─► Click item → /student/lessons/{slug}</div>
+
+      <h3>2.2 Database — migration 012</h3>
+      <p>File: <code>course_english_backend/migrations/012_notifications.sql</code></p>
+      <pre>CREATE TABLE notifications (
+  id            CHAR(36) PRIMARY KEY,
+  user_id       CHAR(36) NOT NULL,
+  type          VARCHAR(40) NOT NULL,   -- LESSON_PUBLISHED
+  title         VARCHAR(255) NOT NULL,
+  body          TEXT,
+  link_path     VARCHAR(512) NOT NULL,
+  payload_json  JSON,
+  read_at       DATETIME(6),
+  created_at    DATETIME(6),
+  ...
+  KEY idx_notif_user_unread (user_id, read_at, voided)
+);</pre>
+
+      <h3>2.3 API</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST</code></td><td><code>/api/v1/notifications/search</code></td><td>Danh sách phân trang</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/v1/notifications/unread-count</code></td><td>Số chưa đọc (badge)</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/notifications/{id}/read</code></td><td>Đánh dấu 1 cái</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/v1/notifications/read-all</code></td><td>Đọc hết</td></tr>
+        </tbody>
+      </table>
+      <p><code>user_id</code> luôn lấy từ JWT — không nhận từ client.</p>
+
+      <h3>2.4 Fan-out publish</h3>
+      <pre>1. Load Lesson + Subject + Classroom
+2. enrollments = ACTIVE trong classroom
+3. title  = "Bài mới: " + lesson.title
+   body   = subjectName + " · " + classroomName
+   link   = "/student/lessons/" + lesson.slug
+4. Batch INSERT (100 rows/lần)
+5. Chỉ khi previousStatus != PUBLISHED</pre>
+
+      <h3>2.5 Backend — file mới</h3>
+      <table>
+        <thead><tr><th>File</th><th>Vai trò</th></tr></thead>
+        <tbody>
+          <tr><td><code>domain/Notification.java</code></td><td>Entity</td></tr>
+          <tr><td><code>repository/NotificationRepository.java</code></td><td>Query + count unread</td></tr>
+          <tr><td><code>service/LessonNotificationService.java</code></td><td>Fan-out @Async khi publish</td></tr>
+          <tr><td><code>service/NotificationService.java</code></td><td>Search, mark read</td></tr>
+          <tr><td><code>controller/NotificationController.java</code></td><td>REST API</td></tr>
+          <tr><td><code>config/AsyncConfig.java</code></td><td>@EnableAsync</td></tr>
+          <tr><td><code>LessonServiceImpl.publish()</code></td><td>Hook notify</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2.6 Frontend — file mới</h3>
+      <table>
+        <thead><tr><th>File</th><th>Vai trò</th></tr></thead>
+        <tbody>
+          <tr><td><code>shared/api/notification.ts</code></td><td>API client</td></tr>
+          <tr><td><code>student/notifications/useNotifications.ts</code></td><td>Hook poll + mark read</td></tr>
+          <tr><td><code>student/notifications/NotificationBell.tsx</code></td><td>Chuông + dropdown</td></tr>
+          <tr><td><code>StudentTopBar.tsx</code></td><td>Wire chuông</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2.7 Acceptance criteria</h3>
+      <ul class="checklist">
+        <li>GV publish → HS enrolled có row <code>LESSON_PUBLISHED</code> trong ≤ 30s</li>
+        <li>HS không enrolled → không có notify</li>
+        <li>Publish khi đã PUBLISHED → không tạo notify mới</li>
+        <li>API publish trả 200 ngay, fan-out async</li>
+        <li>Chuông hiển thị badge; click mở đúng <code>/student/lessons/{slug}</code></li>
+        <li>Reload / thiết bị khác vẫn thấy notify</li>
+      </ul>
+
+      <h3>2.8 Task breakdown (~ 5–6 ngày)</h3>
+      <table>
+        <thead><tr><th>Ngày</th><th>Việc</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Migration + Entity + Repository</td></tr>
+          <tr><td>2</td><td>LessonNotificationService + hook publish + AsyncConfig</td></tr>
+          <tr><td>3</td><td>NotificationController + DTO + mark read</td></tr>
+          <tr><td>4</td><td>FE api + useNotifications</td></tr>
+          <tr><td>5</td><td>NotificationBell + StudentTopBar</td></tr>
+          <tr><td>6</td><td>QA edge cases + tick checklist REVIEW 2.8</td></tr>
+        </tbody>
+      </table>
+
+      <h2 class="section" id="phase15">3. Phase 1.5 — Email (publish only)</h2>
+      <ul>
+        <li>Trigger: cùng publish Phase 1</li>
+        <li>SMTP / SendGrid, template HTML, deep link</li>
+        <li><code>@Async</code> song song fan-out in-app — lỗi email không rollback publish</li>
+        <li>Phase 4: chuyển sang queue <code>notification.email</code></li>
+      </ul>
+
+      <h2 class="section" id="phase2">4. Phase 2 — WebSocket</h2>
+      <ul>
+        <li><code>WS /notifications?token=...</code></li>
+        <li>Sau INSERT DB → push nếu user online</li>
+        <li>FE: connect sau login, toast + bump badge</li>
+      </ul>
+
+      <h2 class="section" id="phase3">5. Phase 3 — Redis</h2>
+      <ul>
+        <li>Cache <code>lesson:detail:{id}</code> + evict khi publish/update block</li>
+        <li>Tách khỏi notification — giảm tải DB khi nhiều HS mở bài mới</li>
+      </ul>
+
+      <h2 class="section" id="phase4">6. Phase 4 — RabbitMQ</h2>
+      <ul>
+        <li>Exchange <code>course.events</code>, routing <code>lesson.published</code></li>
+        <li>Worker fan-out + EmailWorker retry + DLQ</li>
+        <li>Giữ nguyên schema Phase 1 và API FE</li>
+      </ul>
+
+      <div class="card warn">
+        <strong>Ghi chú</strong> — Phase 1 thiết kế payload <code>linkPath</code> + type enum cố định để Phase 2–4
+        plug-in mà không breaking change.
+      </div>
+    </div>
+  </body>
+</html>
