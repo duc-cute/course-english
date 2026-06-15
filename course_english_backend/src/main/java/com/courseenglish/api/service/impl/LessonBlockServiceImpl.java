@@ -18,6 +18,7 @@ import com.courseenglish.api.domain.response.ResLessonBlockDTO;
 import com.courseenglish.api.repository.LessonBlockRepository;
 import com.courseenglish.api.repository.LessonRepository;
 import com.courseenglish.api.service.LessonBlockService;
+import com.courseenglish.api.service.cache.lesson.LessonCacheEvictor;
 import com.courseenglish.api.util.error.IdInvalidException;
 
 @Service
@@ -25,10 +26,15 @@ public class LessonBlockServiceImpl implements LessonBlockService {
 
     private final LessonBlockRepository lessonBlockRepository;
     private final LessonRepository lessonRepository;
+    private final LessonCacheEvictor lessonCacheEvictor;
 
-    public LessonBlockServiceImpl(LessonBlockRepository lessonBlockRepository, LessonRepository lessonRepository) {
+    public LessonBlockServiceImpl(
+            LessonBlockRepository lessonBlockRepository,
+            LessonRepository lessonRepository,
+            LessonCacheEvictor lessonCacheEvictor) {
         this.lessonBlockRepository = lessonBlockRepository;
         this.lessonRepository = lessonRepository;
+        this.lessonCacheEvictor = lessonCacheEvictor;
     }
 
     @Override
@@ -50,7 +56,9 @@ public class LessonBlockServiceImpl implements LessonBlockService {
         entity.setBlockType(request.getBlockType());
         entity.setPayloadJson(request.getPayloadJson());
         entity.setDisplayOrder(resolveDisplayOrder(lessonId, request.getDisplayOrder()));
-        return toDto(lessonBlockRepository.save(entity));
+        ResLessonBlockDTO saved = toDto(lessonBlockRepository.save(entity));
+        lessonCacheEvictor.evictForLesson(lessonId);
+        return saved;
     }
 
     @Override
@@ -64,14 +72,20 @@ public class LessonBlockServiceImpl implements LessonBlockService {
             entity.setPayloadJson(request.getPayloadJson());
         }
         entity.setDisplayOrder(request.getDisplayOrder());
-        return toDto(lessonBlockRepository.save(entity));
+        ResLessonBlockDTO saved = toDto(lessonBlockRepository.save(entity));
+        lessonCacheEvictor.evictForBlock(blockId);
+        return saved;
     }
 
     @Override
     public void delete(UUID blockId) {
         lessonBlockRepository.findByIdAndVoidedFalse(blockId).ifPresent(item -> {
+            UUID lessonId = item.getLesson() != null ? item.getLesson().getId() : null;
             item.setVoided(true);
             lessonBlockRepository.save(item);
+            if (lessonId != null) {
+                lessonCacheEvictor.evictForLesson(lessonId);
+            }
         });
     }
 
@@ -106,6 +120,7 @@ public class LessonBlockServiceImpl implements LessonBlockService {
             block.setDisplayOrder(order++);
             lessonBlockRepository.save(block);
         }
+        lessonCacheEvictor.evictForLesson(lessonId);
         return reordered.stream().map(this::toDto).collect(Collectors.toList());
     }
 

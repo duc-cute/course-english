@@ -32,6 +32,28 @@ export type NotificationSearchPayload = {
   unreadOnly?: boolean;
 };
 
+export type NotificationWsMessage = {
+  type: "NOTIFICATION_CREATED";
+  notification: NotificationRecord;
+  unreadCount: number;
+};
+
+function normalizeNotificationRecord(raw: NotificationRecord): NotificationRecord {
+  return {
+    ...raw,
+    id: String(raw.id),
+    read: Boolean(raw.read),
+    payload: raw.payload ?? {},
+  };
+}
+
+export function normalizeNotificationWsMessage(message: NotificationWsMessage): NotificationWsMessage {
+  return {
+    ...message,
+    notification: normalizeNotificationRecord(message.notification),
+  };
+}
+
 function unwrapData<T>(response: ApiResponse<T>): T {
   const statusCode = response?.statusCode;
   if (typeof statusCode === "number" && statusCode >= 400) {

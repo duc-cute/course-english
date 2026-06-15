@@ -19,6 +19,7 @@
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.4",
     "@reduxjs/toolkit": "^2.9.0",
+    "@stomp/stompjs": "^7.3.0",
     "axios": "^1.13.2",
     "lucide-react": "^0.552.0",
     "react": "^19.2.0",
@@ -29,6 +30,7 @@
     "react-spinners": "^0.17.0",
     "react-toastify": "^11.0.5",
     "redux-persist": "^6.0.0",
+    "sockjs-client": "^1.6.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -36,6 +38,7 @@
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-react": "^5.1.0",
     "playwright-core": "^1.59.1",
     "pngjs": "^7.0.0",

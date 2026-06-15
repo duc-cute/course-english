@@ -24,6 +24,8 @@ import com.courseenglish.api.service.LessonPublishValidator;
 import com.courseenglish.api.service.LessonService;
 import com.courseenglish.api.service.QuestionRefResolverService;
 import com.courseenglish.api.service.VocabularyBlockResolverService;
+import com.courseenglish.api.service.cache.lesson.LessonCacheEvictor;
+import com.courseenglish.api.service.cache.lesson.LessonCacheService;
 import com.courseenglish.api.util.LessonSlugUtil;
 import com.courseenglish.api.util.SercurityUtil;
 import com.courseenglish.api.util.constant.LessonStatusEnum;
@@ -41,6 +43,8 @@ public class LessonServiceImpl implements LessonService {
     private final VocabularyBlockResolverService vocabularyBlockResolverService;
     private final LessonPublishValidator lessonPublishValidator;
     private final LessonPublishedNotifier lessonPublishedNotifier;
+    private final LessonCacheService lessonCacheService;
+    private final LessonCacheEvictor lessonCacheEvictor;
 
     public LessonServiceImpl(
             LessonRepository lessonRepository,
@@ -51,7 +55,9 @@ public class LessonServiceImpl implements LessonService {
             QuestionRefResolverService questionRefResolverService,
             VocabularyBlockResolverService vocabularyBlockResolverService,
             LessonPublishValidator lessonPublishValidator,
-            LessonPublishedNotifier lessonPublishedNotifier) {
+            LessonPublishedNotifier lessonPublishedNotifier,
+            LessonCacheService lessonCacheService,
+            LessonCacheEvictor lessonCacheEvictor) {
         this.lessonRepository = lessonRepository;
         this.subjectRepository = subjectRepository;
         this.lessonBlockRepository = lessonBlockRepository;
@@ -61,6 +67,8 @@ public class LessonServiceImpl implements LessonService {
         this.vocabularyBlockResolverService = vocabularyBlockResolverService;
         this.lessonPublishValidator = lessonPublishValidator;
         this.lessonPublishedNotifier = lessonPublishedNotifier;
+        this.lessonCacheService = lessonCacheService;
+        this.lessonCacheEvictor = lessonCacheEvictor;
     }
 
     @Override
@@ -95,9 +103,11 @@ public class LessonServiceImpl implements LessonService {
 
     @Override
     public ResLessonDetailDTO getDetail(UUID id) throws IdInvalidException {
-        Lesson lesson = lessonRepository.findByIdAndVoidedFalse(id)
-                .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
-        return buildDetail(lesson);
+        Optional<ResLessonDetailDTO> cached = lessonCacheService.getById(id);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+        return loadDetailById(id);
     }
 
     @Override
@@ -109,9 +119,14 @@ public class LessonServiceImpl implements LessonService {
 
     @Override
     public ResLessonDetailDTO getDetailBySlug(String slug) throws IdInvalidException {
-        Lesson lesson = lessonRepository.findBySlugAndVoidedFalse(slug)
-                .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
-        return buildDetail(lesson);
+        if (lessonCacheService.isNotFoundCached(slug)) {
+            throw new IdInvalidException("Lesson không tồn tại!");
+        }
+        Optional<ResLessonDetailDTO> cached = lessonCacheService.getBySlug(slug);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+        return loadDetailBySlug(slug);
     }
 
     @Override
@@ -150,12 +165,15 @@ public class LessonServiceImpl implements LessonService {
         if (request.getSubjectId() != null || request.getSubject() != null) {
             entity.setSubject(resolveSubject(request));
         }
-        return toDto(lessonRepository.save(entity));
+        Lesson saved = lessonRepository.save(entity);
+        lessonCacheEvictor.evictForLesson(id);
+        return toDto(saved);
     }
 
     @Override
     public void delete(UUID id) {
         lessonRepository.findByIdAndVoidedFalse(id).ifPresent(item -> {
+            lessonCacheEvictor.evictForLesson(id);
             item.setVoided(true);
             lessonRepository.save(item);
         });
@@ -170,6 +188,7 @@ public class LessonServiceImpl implements LessonService {
         entity.setStatus(LessonStatusEnum.PUBLISHED);
         Lesson saved = lessonRepository.save(entity);
         if (previousStatus != LessonStatusEnum.PUBLISHED) {
+            lessonCacheService.put(buildDetail(saved));
             UUID actorUserId = SercurityUtil.getCurrentUserId().orElse(null);
             lessonPublishedNotifier.dispatchLessonPublishedAsync(saved.getId(), actorUserId);
         }
@@ -181,7 +200,9 @@ public class LessonServiceImpl implements LessonService {
         Lesson entity = lessonRepository.findByIdAndVoidedFalse(id)
                 .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
         entity.setStatus(LessonStatusEnum.DRAFT);
-        return toDto(lessonRepository.save(entity));
+        Lesson saved = lessonRepository.save(entity);
+        lessonCacheEvictor.evictForLesson(id);
+        return toDto(saved);
     }
 
     private Subject resolveSubject(Lesson request) throws IdInvalidException {
@@ -212,6 +233,77 @@ public class LessonServiceImpl implements LessonService {
         detail.setBlocks(blocks);
         detail.setAssets(lessonAssetService.listByLessonId(lessonId));
         return detail;
+    }
+
+    private ResLessonDetailDTO loadDetailById(UUID id) throws IdInvalidException {
+        Lesson lesson = lessonRepository.findByIdAndVoidedFalse(id)
+                .orElseThrow(() -> new IdInvalidException("Lesson không tồn tại!"));
+        return loadDetailWithCache(lesson);
+    }
+
+    private ResLessonDetailDTO loadDetailBySlug(String slug) throws IdInvalidException {
+        Lesson lesson = lessonRepository.findBySlugAndVoidedFalse(slug)
+                .orElseThrow(() -> {
+                    lessonCacheService.markNotFound(slug);
+                    return new IdInvalidException("Lesson không tồn tại!");
+                });
+        return loadDetailWithCache(lesson);
+    }
+
+    private ResLessonDetailDTO loadDetailWithCache(Lesson lesson) throws IdInvalidException {
+        UUID lessonId = lesson.getId();
+        String slug = lesson.getSlug();
+        boolean locked = lessonCacheService.tryRebuildLock(lessonId);
+
+        if (!locked) {
+            Optional<ResLessonDetailDTO> cached = resolveCachedDetail(lessonId, slug);
+            if (cached.isPresent()) {
+                return cached.get();
+            }
+            waitBrieflyForCache(lessonId, slug);
+            cached = resolveCachedDetail(lessonId, slug);
+            if (cached.isPresent()) {
+                return cached.get();
+            }
+        }
+
+        try {
+            ResLessonDetailDTO detail = buildDetail(lesson);
+            lessonCacheService.put(detail);
+            return detail;
+        } finally {
+            if (locked) {
+                lessonCacheService.releaseRebuildLock(lessonId);
+            }
+        }
+    }
+
+    private Optional<ResLessonDetailDTO> resolveCachedDetail(UUID lessonId, String slug) {
+        Optional<ResLessonDetailDTO> byId = lessonCacheService.getById(lessonId);
+        if (byId.isPresent()) {
+            return byId;
+        }
+        if (slug != null && !slug.isBlank()) {
+            return lessonCacheService.getBySlug(slug);
+        }
+        return Optional.empty();
+    }
+
+    private void waitBrieflyForCache(UUID lessonId, String slug) {
+        for (int i = 0; i < 5; i++) {
+            Optional<ResLessonDetailDTO> cached = slug != null && !slug.isBlank()
+                    ? lessonCacheService.getBySlug(slug)
+                    : lessonCacheService.getById(lessonId);
+            if (cached.isPresent()) {
+                return;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     private String assignUniqueSlug(String title, UUID excludeId) {

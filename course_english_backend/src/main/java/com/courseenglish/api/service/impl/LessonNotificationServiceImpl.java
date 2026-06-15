@@ -5,6 +5,7 @@ import com.courseenglish.api.domain.dto.notification.LessonPublishedNotifyContex
 import com.courseenglish.api.repository.NotificationRepository;
 import com.courseenglish.api.service.LessonNotificationService;
 import com.courseenglish.api.service.notification.LessonPublishedContextBuilder;
+import com.courseenglish.api.service.notification.NotificationPushService;
 import com.courseenglish.api.util.constant.NotificationTypeEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +25,15 @@ public class LessonNotificationServiceImpl implements LessonNotificationService 
 
     private final LessonPublishedContextBuilder contextBuilder;
     private final NotificationRepository notificationRepository;
+    private final NotificationPushService notificationPushService;
 
     public LessonNotificationServiceImpl(
             LessonPublishedContextBuilder contextBuilder,
-            NotificationRepository notificationRepository) {
+            NotificationRepository notificationRepository,
+            NotificationPushService notificationPushService) {
         this.contextBuilder = contextBuilder;
         this.notificationRepository = notificationRepository;
+        this.notificationPushService = notificationPushService;
     }
 
     @Override
@@ -44,6 +48,7 @@ public class LessonNotificationServiceImpl implements LessonNotificationService 
             }
 
             List<Notification> batch = new ArrayList<>(BATCH_SIZE);
+            List<Notification> savedRows = new ArrayList<>(ctx.recipients().size());
             int recipientCount = 0;
 
             for (LessonPublishedNotifyContext.Recipient recipient : ctx.recipients()) {
@@ -58,14 +63,17 @@ public class LessonNotificationServiceImpl implements LessonNotificationService 
                 recipientCount++;
 
                 if (batch.size() >= BATCH_SIZE) {
-                    notificationRepository.saveAll(batch);
+                    savedRows.addAll(notificationRepository.saveAll(batch));
                     batch.clear();
                 }
             }
 
             if (!batch.isEmpty()) {
-                notificationRepository.saveAll(batch);
+                savedRows.addAll(notificationRepository.saveAll(batch));
             }
+
+            notificationRepository.flush();
+            notificationPushService.pushCreatedBatch(savedRows);
 
             log.info(
                     "Lesson publish in-app notify done: lessonId={}, recipients={}, ms={}",

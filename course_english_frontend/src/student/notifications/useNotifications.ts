@@ -1,19 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import {
   apiGetNotificationUnreadCount,
   apiMarkAllNotificationsRead,
   apiMarkNotificationRead,
   apiSearchNotifications,
+  normalizeNotificationWsMessage,
   type NotificationRecord,
+  type NotificationWsMessage,
 } from "../../shared/api/notification";
+import { getAccessToken } from "../../shared/auth/token";
+import { connectNotificationSocket } from "../../shared/ws/notificationSocket";
 
 const POLL_MS = 60_000;
+const POLL_MS_WS_CONNECTED = 300_000;
 
 export function useNotifications() {
   const [items, setItems] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const socketRef = useRef<ReturnType<typeof connectNotificationSocket> | null>(null);
 
   const refreshUnread = useCallback(async () => {
     try {
@@ -42,16 +50,55 @@ export function useNotifications() {
     }
   }, [refreshList, refreshUnread]);
 
+  const handleWsMessage = useCallback((rawMessage: NotificationWsMessage) => {
+    const message = normalizeNotificationWsMessage(rawMessage);
+    const incoming = message.notification;
+
+    setUnreadCount(message.unreadCount);
+    setItems((prev) => {
+      if (prev.some((item) => item.id === incoming.id)) {
+        return prev;
+      }
+      return [incoming, ...prev];
+    });
+
+    toast.info(incoming.title, {
+      toastId: `notification-${incoming.id}`,
+      autoClose: 4000,
+    });
+  }, []);
+
   useEffect(() => {
     void refreshAll();
   }, [refreshAll]);
 
   useEffect(() => {
+    if (!getAccessToken()) {
+      setWsConnected(false);
+      return;
+    }
+
+    socketRef.current?.disconnect();
+    socketRef.current = connectNotificationSocket({
+      onMessage: handleWsMessage,
+      onConnect: () => setWsConnected(true),
+      onDisconnect: () => setWsConnected(false),
+    });
+
+    return () => {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      setWsConnected(false);
+    };
+  }, [handleWsMessage]);
+
+  useEffect(() => {
+    const pollMs = wsConnected ? POLL_MS_WS_CONNECTED : POLL_MS;
     const timer = window.setInterval(() => {
       void refreshUnread();
-    }, POLL_MS);
+    }, pollMs);
     return () => window.clearInterval(timer);
-  }, [refreshUnread]);
+  }, [refreshUnread, wsConnected]);
 
   useEffect(() => {
     if (!open) return;
@@ -84,5 +131,6 @@ export function useNotifications() {
     markRead,
     markAllRead,
     refreshAll,
+    wsConnected,
   };
 }

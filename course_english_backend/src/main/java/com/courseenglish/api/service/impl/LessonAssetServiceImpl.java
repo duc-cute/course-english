@@ -13,6 +13,7 @@ import com.courseenglish.api.domain.response.ResLessonAssetDTO;
 import com.courseenglish.api.repository.LessonAssetRepository;
 import com.courseenglish.api.repository.LessonRepository;
 import com.courseenglish.api.service.LessonAssetService;
+import com.courseenglish.api.service.cache.lesson.LessonCacheEvictor;
 import com.courseenglish.api.util.error.IdInvalidException;
 
 @Service
@@ -20,10 +21,15 @@ public class LessonAssetServiceImpl implements LessonAssetService {
 
     private final LessonAssetRepository lessonAssetRepository;
     private final LessonRepository lessonRepository;
+    private final LessonCacheEvictor lessonCacheEvictor;
 
-    public LessonAssetServiceImpl(LessonAssetRepository lessonAssetRepository, LessonRepository lessonRepository) {
+    public LessonAssetServiceImpl(
+            LessonAssetRepository lessonAssetRepository,
+            LessonRepository lessonRepository,
+            LessonCacheEvictor lessonCacheEvictor) {
         this.lessonAssetRepository = lessonAssetRepository;
         this.lessonRepository = lessonRepository;
+        this.lessonCacheEvictor = lessonCacheEvictor;
     }
 
     @Override
@@ -51,14 +57,20 @@ public class LessonAssetServiceImpl implements LessonAssetService {
         entity.setCaption(request.getCaption());
         entity.setMetaJson(request.getMetaJson());
         entity.setDisplayOrder(request.getDisplayOrder());
-        return toDto(lessonAssetRepository.save(entity));
+        ResLessonAssetDTO saved = toDto(lessonAssetRepository.save(entity));
+        lessonCacheEvictor.evictForLesson(lessonId);
+        return saved;
     }
 
     @Override
     public void delete(UUID assetId) {
         lessonAssetRepository.findByIdAndVoidedFalse(assetId).ifPresent(item -> {
+            UUID lessonId = item.getLesson() != null ? item.getLesson().getId() : null;
             item.setVoided(true);
             lessonAssetRepository.save(item);
+            if (lessonId != null) {
+                lessonCacheEvictor.evictForLesson(lessonId);
+            }
         });
     }
 

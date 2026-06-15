@@ -8,19 +8,16 @@ import com.courseenglish.api.domain.response.ResNotificationUnreadCountDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.repository.NotificationRepository;
 import com.courseenglish.api.service.NotificationService;
+import com.courseenglish.api.service.notification.NotificationMapper;
 import com.courseenglish.api.util.PagingSearchUtil;
 import com.courseenglish.api.util.SercurityUtil;
 import com.courseenglish.api.util.error.IdInvalidException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,11 +25,12 @@ import java.util.stream.Collectors;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final ObjectMapper objectMapper;
+    private final NotificationMapper notificationMapper;
 
-    public NotificationServiceImpl(NotificationRepository notificationRepository, ObjectMapper objectMapper) {
+    public NotificationServiceImpl(
+            NotificationRepository notificationRepository, NotificationMapper notificationMapper) {
         this.notificationRepository = notificationRepository;
-        this.objectMapper = objectMapper;
+        this.notificationMapper = notificationMapper;
     }
 
     @Override
@@ -57,7 +55,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         ResultPaginationDTO dto = new ResultPaginationDTO();
         dto.setMeta(meta);
-        dto.setResult(page.getContent().stream().map(this::toDto).collect(Collectors.toList()));
+        dto.setResult(page.getContent().stream().map(notificationMapper::toDto).collect(Collectors.toList()));
         return dto;
     }
 
@@ -79,7 +77,7 @@ public class NotificationServiceImpl implements NotificationService {
             row.setReadAt(Instant.now());
             notificationRepository.save(row);
         }
-        return toDto(row);
+        return notificationMapper.toDto(row);
     }
 
     @Override
@@ -95,30 +93,5 @@ public class NotificationServiceImpl implements NotificationService {
     private UUID requireCurrentUserId() throws IdInvalidException {
         return SercurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new IdInvalidException("Cần đăng nhập để xem thông báo."));
-    }
-
-    private ResNotificationDTO toDto(Notification row) {
-        ResNotificationDTO dto = new ResNotificationDTO();
-        dto.setId(row.getId());
-        dto.setType(row.getType());
-        dto.setTitle(row.getTitle());
-        dto.setBody(row.getBody());
-        dto.setLinkPath(row.getLinkPath());
-        dto.setRead(row.getReadAt() != null);
-        dto.setReadAt(row.getReadAt());
-        dto.setCreatedAt(row.getCreatedAt());
-        dto.setPayload(parsePayload(row.getPayloadJson()));
-        return dto;
-    }
-
-    private Map<String, Object> parsePayload(String payloadJson) {
-        if (payloadJson == null || payloadJson.isBlank()) {
-            return Collections.emptyMap();
-        }
-        try {
-            return objectMapper.readValue(payloadJson, new TypeReference<Map<String, Object>>() {});
-        } catch (Exception ex) {
-            return Collections.emptyMap();
-        }
     }
 }
