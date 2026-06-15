@@ -1,4 +1,4 @@
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, MenuItem, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/lesson";
 import { parseBlockPayload, stringifyBlockPayload } from "../../shared/api/lesson";
@@ -16,6 +16,10 @@ import { ExerciseSetEditor } from "./exercise/ExerciseSetEditor";
 import { QuestionRefEditor } from "./question/QuestionRefEditor";
 import { SummaryBlockEditor } from "./SummaryBlockEditor";
 import { VocabularyBlockEditor } from "./vocabulary/VocabularyBlockEditor";
+import {
+  SLIDE_DECK_DISPLAY_MODE_OPTIONS,
+  parseSlideDeckPayload,
+} from "../../shared/lesson/slideDeckPayload";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -207,6 +211,65 @@ export function LessonBlockEditorPanel({
         onSave={saveBlock}
         onCancel={onCancel}
       />
+    );
+  }
+
+  if (block.blockType === "SLIDE_DECK") {
+    const payload = parseSlideDeckPayload(draft.payloadJson);
+    return (
+      <Box sx={{ display: "grid", gap: 1.5, pt: 1 }}>
+        <Typography sx={{ fontSize: 13, color: "#5F5E5A" }}>
+          {payload.slides.length} slide · nguồn: {payload.source?.originalFileName || "ZIP PDF"}
+        </Typography>
+        <TextField
+          label="Tiêu đề slide deck"
+          size="small"
+          fullWidth
+          sx={muTextFieldSx}
+          value={payload.title ?? ""}
+          onChange={(e) =>
+            setDraft((d) => ({
+              ...d,
+              payloadJson: stringifyBlockPayload({ ...payload, title: e.target.value }),
+            }))
+          }
+        />
+        <TextField
+          select
+          label="Cách hiển thị"
+          size="small"
+          fullWidth
+          sx={muTextFieldSx}
+          value={payload.displayMode ?? "PRESENTATION"}
+          onChange={(e) =>
+            setDraft((d) => ({
+              ...d,
+              payloadJson: stringifyBlockPayload({
+                ...payload,
+                displayMode: e.target.value as typeof payload.displayMode,
+              }),
+            }))
+          }
+        >
+          {SLIDE_DECK_DISPLAY_MODE_OPTIONS.map((o) => (
+            <MenuItem key={o.value} value={o.value}>
+              {o.label}
+            </MenuItem>
+          ))}
+        </TextField>
+        <Typography sx={{ fontSize: 12, color: "#888780" }}>
+          Để thay slide, dùng &quot;Import slide ZIP&quot; và xóa khối cũ nếu cần.
+        </Typography>
+        {error ? <Typography color="error" fontSize={12}>{error}</Typography> : null}
+        <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+          <Button size="small" sx={muFooterBtnOutlined} onClick={onCancel}>
+            Hủy
+          </Button>
+          <Button size="small" variant="contained" sx={muBtnSmPrimary} disabled={saving} onClick={handleSave}>
+            {saving ? "Đang lưu..." : "Lưu"}
+          </Button>
+        </Box>
+      </Box>
     );
   }
 

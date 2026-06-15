@@ -71,6 +71,7 @@ public class LessonPublishValidator {
             case VOCABULARY -> validateVocabulary(block, index, errors);
             case SUMMARY -> validateSummary(block, index, errors);
             case CALLOUT -> validateCallout(block, index, errors);
+            case SLIDE_DECK -> validateSlideDeck(block, index, errors);
             default -> {
                 // TEXT, IMAGE, … — không chặn publish
             }
@@ -105,6 +106,35 @@ public class LessonPublishValidator {
         int itemCount = countSummaryItems(block.getPayloadJson());
         if (itemCount == 0) {
             errors.add(blockMessage(index, "SUMMARY", "cần ít nhất một ý tóm tắt"));
+        }
+    }
+
+    private void validateSlideDeck(LessonBlock block, int index, List<String> errors) {
+        int slideCount = countSlideDeckSlides(block.getPayloadJson());
+        if (slideCount == 0) {
+            errors.add(blockMessage(index, "SLIDE_DECK", "chưa có slide nào — import lại ZIP PDF"));
+        }
+    }
+
+    private int countSlideDeckSlides(String payloadJson) {
+        if (payloadJson == null || payloadJson.isBlank()) {
+            return 0;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(payloadJson);
+            JsonNode slides = root.get("slides");
+            if (slides == null || !slides.isArray()) {
+                return 0;
+            }
+            int count = 0;
+            for (JsonNode slide : slides) {
+                if (slide != null && slide.hasNonNull("assetId") && !slide.get("assetId").asText("").isBlank()) {
+                    count++;
+                }
+            }
+            return count;
+        } catch (Exception ignored) {
+            return 0;
         }
     }
 

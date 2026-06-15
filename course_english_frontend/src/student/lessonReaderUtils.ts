@@ -15,6 +15,7 @@ const BLOCK_LABELS: Record<LessonBlockType, string> = {
   CALLOUT: "Ghi chú",
   SUMMARY: "Tóm tắt",
   VOCABULARY: "Từ vựng",
+  SLIDE_DECK: "Slide (PDF)",
   QUESTION_REF: "Câu hỏi",
   EXERCISE_SET: "Bài tập",
 };
@@ -26,6 +27,7 @@ export function getBlockTypeLabel(type: LessonBlockType): string {
 export function getBlockCssModifier(type: LessonBlockType): string {
   if (type === "TEXT") return "lesson-reader-block--text";
   if (type === "IMAGE") return "lesson-reader-block--media";
+  if (type === "SLIDE_DECK") return "lesson-reader-block--slide-deck";
   if (type === "AUDIO" || type === "VIDEO") return "lesson-reader-block--media";
   if (type === "VOCABULARY") return "lesson-reader-block--vocabulary";
   if (type === "SUMMARY") return "lesson-reader-block--summary";
@@ -49,6 +51,10 @@ export function getBlockTocTitle(block: LessonBlockRecord, index: number): strin
   }
   if (block.blockType === "CALLOUT") {
     const payload = parseCalloutBlockPayload(block.payloadJson);
+    if (payload.title?.trim()) return payload.title.trim();
+  }
+  if (block.blockType === "SLIDE_DECK") {
+    const payload = parseBlockPayload<{ title?: string }>(block.payloadJson);
     if (payload.title?.trim()) return payload.title.trim();
   }
   if (block.blockType === "TEXT") {

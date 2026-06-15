@@ -8,11 +8,13 @@ import com.courseenglish.api.domain.request.ReqSearchLessonDTO;
 import com.courseenglish.api.domain.response.ResLessonBlockDTO;
 import com.courseenglish.api.domain.response.ResLessonDTO;
 import com.courseenglish.api.domain.response.ResLessonDetailDTO;
+import com.courseenglish.api.domain.response.ResLessonSlideImportDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.service.LessonAssetService;
 import com.courseenglish.api.service.LessonBlockService;
 import com.courseenglish.api.service.LessonService;
 import com.courseenglish.api.service.StudentEnrollmentAccessService;
+import com.courseenglish.api.service.slide.LessonSlideImportService;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
 import com.courseenglish.api.util.annotation.ApiMessage;
@@ -33,16 +35,19 @@ public class LessonController {
     private final LessonBlockService lessonBlockService;
     private final LessonAssetService lessonAssetService;
     private final StudentEnrollmentAccessService studentEnrollmentAccessService;
+    private final LessonSlideImportService lessonSlideImportService;
 
     public LessonController(
             LessonService lessonService,
             LessonBlockService lessonBlockService,
             LessonAssetService lessonAssetService,
-            StudentEnrollmentAccessService studentEnrollmentAccessService) {
+            StudentEnrollmentAccessService studentEnrollmentAccessService,
+            LessonSlideImportService lessonSlideImportService) {
         this.lessonService = lessonService;
         this.lessonBlockService = lessonBlockService;
         this.lessonAssetService = lessonAssetService;
         this.studentEnrollmentAccessService = studentEnrollmentAccessService;
+        this.lessonSlideImportService = lessonSlideImportService;
     }
 
     @PostMapping("/search")
@@ -114,6 +119,17 @@ public class LessonController {
     @ApiMessage("Unpublish lesson")
     public ResponseEntity<ResLessonDTO> unpublish(@PathVariable UUID id) throws IdInvalidException {
         return ResponseEntity.ok(lessonService.unpublish(id));
+    }
+
+    @PostMapping("/{lessonId}/slides/import-zip")
+    @ApiMessage("Import slide deck from ZIP of PDF files")
+    public ResponseEntity<ResLessonSlideImportDTO> importSlidesZip(
+            @PathVariable UUID lessonId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "displayMode", required = false) String displayMode)
+            throws IdInvalidException, java.io.IOException {
+        return ResponseEntity.ok(lessonSlideImportService.importFromZip(lessonId, file, title, displayMode));
     }
 
     @GetMapping("/{lessonId}/blocks")

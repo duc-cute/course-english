@@ -39,6 +39,18 @@ public class FileServiceImpl implements FileService {
         return finalName;
     }
 
+    @Override
+    public String storeBytes(byte[] content, String folder, String fileName) throws IOException {
+        Path folderPath = storageProperties.getRootPath().resolve(folder).normalize();
+        Files.createDirectories(folderPath);
+        Path path = folderPath.resolve(fileName).normalize();
+        if (!path.startsWith(folderPath)) {
+            throw new IOException("Invalid file path");
+        }
+        Files.write(path, content);
+        return fileName;
+    }
+
     public long getFileLength(String fileName, String folder) {
         File tmpDir = storageProperties.getRootPath()
                 .resolve(folder)

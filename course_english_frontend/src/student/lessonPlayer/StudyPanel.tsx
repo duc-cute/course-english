@@ -51,8 +51,9 @@ export function StudyPanel({ studyBlocks, assets, activeBlockId, nextLesson }: S
             className={`lesson-reader-block ${getBlockCssModifier(block.blockType)} ${
               block.id === activeBlockId ? "is-active-section" : ""
             }`.trim()}
-            aria-labelledby={`block-label-${block.id}`}
+            aria-labelledby={block.blockType === "SLIDE_DECK" ? undefined : `block-label-${block.id}`}
           >
+            {block.blockType !== "SLIDE_DECK" ? (
             <div className="lesson-reader-block-head">
               <span className="lesson-reader-block-index" aria-hidden>
                 {index + 1}
@@ -64,6 +65,7 @@ export function StudyPanel({ studyBlocks, assets, activeBlockId, nextLesson }: S
                 <span className="lesson-reader-block-type">{getBlockTypeLabel(block.blockType)}</span>
               </div>
             </div>
+            ) : null}
             <LessonBlockReader block={block} assets={assets} variant="reader" />
           </section>
         ))}

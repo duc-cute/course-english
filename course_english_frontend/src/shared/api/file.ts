@@ -15,13 +15,26 @@ function unwrapUpload(response: unknown): UploadFileResult {
   return { fileName: data.fileName, uploadedAt: data.uploadedAt };
 }
 
+function getApiOrigin(): string {
+  return (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/api\/v1\/?$/i, "") || "http://localhost:7070";
+}
+
 /** URL public để hiển thị file đã upload (BE serve /storage/**) */
 export function buildStoragePublicUrl(folder: string, fileName: string): string {
-  const apiBase = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/api\/v1\/?$/i, "") || "http://localhost:7070";
   const normalizedFolder = folder.replace(/^\/+|\/+$/g, "");
   // Do not encodeURIComponent the whole fileName — Spring decodes path segments; spaces are OK in URL.
   const encodedName = fileName.split("/").map((part) => encodeURIComponent(part)).join("/");
-  return `${apiBase}/storage/${normalizedFolder}/${encodedName}`;
+  return `${getApiOrigin()}/storage/${normalizedFolder}/${encodedName}`;
+}
+
+/** DB có thể lưu `/storage/...` (import slide) hoặc full URL (upload admin) — chuẩn hóa cho <img src>. */
+export function resolveStorageAssetUrl(url: string | undefined | null): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("/storage/")) return `${getApiOrigin()}${trimmed}`;
+  return trimmed;
 }
 
 export async function apiUploadFile(file: File, folder: string): Promise<UploadFileResult> {

@@ -12,6 +12,8 @@ public interface FileService {
 
     String store(MultipartFile file, String folder) throws IOException;
 
+    String storeBytes(byte[] content, String folder, String fileName) throws IOException;
+
     long getFileLength(String fileName, String folder);
 
     InputStreamResource getResource(String fileName, String folder) throws FileNotFoundException;

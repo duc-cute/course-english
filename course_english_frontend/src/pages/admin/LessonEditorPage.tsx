@@ -26,6 +26,7 @@ import {
   ConfirmDialog,
   LessonBlockEditorPanel,
   LessonBlockPreview,
+  LessonSlideZipImportDialog,
 } from "../../admin/components";
 import { VocabAttachToLessonWizard } from "../../admin/components/vocabulary/VocabAttachToLessonWizard";
 import { VocabularySetPickerDialog } from "../../admin/components/vocabulary/VocabularySetPickerDialog";
@@ -85,6 +86,7 @@ const BLOCK_TYPE_OPTIONS: { value: LessonBlockType; label: string }[] = [
 ];
 
 function blockTypeLabel(type: LessonBlockType) {
+  if (type === "SLIDE_DECK") return "Slide deck (PDF)";
   return BLOCK_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
 }
 
@@ -108,6 +110,7 @@ export function LessonEditorPage() {
     setTitle: string;
     items: VocabularyItemRecord[];
   } | null>(null);
+  const [openSlideZipImport, setOpenSlideZipImport] = useState(false);
 
   const loadDetail = useCallback(async () => {
     if (!lessonId) return;
@@ -311,6 +314,14 @@ export function LessonEditorPage() {
               onClick={() => setOpenVocabPicker(true)}
             >
               + Bộ từ vào bài
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              sx={muBtnSmOutlined}
+              onClick={() => setOpenSlideZipImport(true)}
+            >
+              Import slide ZIP
             </Button>
             {lesson.status === "PUBLISHED" ? (
               <Button
@@ -520,6 +531,16 @@ export function LessonEditorPage() {
           }}
         />
       ) : null}
+
+      <LessonSlideZipImportDialog
+        open={openSlideZipImport}
+        lessonId={lessonId}
+        onClose={() => setOpenSlideZipImport(false)}
+        onImported={() => {
+          void loadDetail();
+          setMessage("Đã import slide từ ZIP — xem khối Slide deck trong danh sách block.");
+        }}
+      />
     </Box>
   );
 }

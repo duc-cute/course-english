@@ -11,5 +11,7 @@ public enum LessonBlockTypeEnum {
     VOCABULARY,
     QUESTION_REF,
     /** Gom nhiều câu luyện tập (MCQ, matching…) — payload questions[] */
-    EXERCISE_SET
+    EXERCISE_SET,
+    /** Slide deck — import ZIP PDF Canva → ảnh, xem dạng trình chiếu */
+    SLIDE_DECK
 }

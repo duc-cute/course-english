@@ -1,7 +1,9 @@
 import { Box, Typography } from "@mui/material";
 import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/lesson";
 import { parseBlockPayload } from "../../shared/api/lesson";
+import { resolveStorageAssetUrl } from "../../shared/api/file";
 import { CalloutBlock } from "../lessonPlayer/study/CalloutBlock";
+import { SlideDeckBlock } from "../lessonPlayer/study/SlideDeckBlock";
 import { SummaryBlock } from "../lessonPlayer/study/SummaryBlock";
 import { VocabularyBlock } from "../lessonPlayer/vocabulary/VocabularyBlock";
 
@@ -37,13 +39,14 @@ export function LessonBlockReader({ block, assets, variant = "preview" }: Lesson
     const payload = parseBlockPayload<ImagePayload>(block.payloadJson);
     const asset = assets.find((a) => a.id === payload.assetId);
     if (!asset?.url) return null;
+    const imageUrl = resolveStorageAssetUrl(asset.url);
     const caption = payload.caption || asset.caption;
 
     if (isReader) {
       return (
         <figure className="lesson-reader-figure">
           <div className="lesson-reader-figure-inner">
-            <img src={asset.url} alt={caption || "Ảnh minh họa"} loading="lazy" />
+            <img src={imageUrl} alt={caption || "Ảnh minh họa"} loading="lazy" />
             {caption ? <div className="lesson-reader-figure-caption-overlay">{caption}</div> : null}
           </div>
         </figure>
@@ -54,7 +57,7 @@ export function LessonBlockReader({ block, assets, variant = "preview" }: Lesson
       <Box>
         <Box
           component="img"
-          src={asset.url}
+          src={imageUrl}
           alt={caption || "Ảnh minh họa"}
           sx={{
             width: "100%",
@@ -74,6 +77,10 @@ export function LessonBlockReader({ block, assets, variant = "preview" }: Lesson
 
   if (block.blockType === "VOCABULARY") {
     return <VocabularyBlock block={block} />;
+  }
+
+  if (block.blockType === "SLIDE_DECK") {
+    return <SlideDeckBlock block={block} assets={assets} />;
   }
 
   if (block.blockType === "SUMMARY") {

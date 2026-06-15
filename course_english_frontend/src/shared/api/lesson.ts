@@ -12,7 +12,8 @@ export type LessonBlockType =
   | "SUMMARY"
   | "VOCABULARY"
   | "QUESTION_REF"
-  | "EXERCISE_SET";
+  | "EXERCISE_SET"
+  | "SLIDE_DECK";
 
 export type LessonAssetType = "IMAGE" | "FILE" | "VIDEO" | "LINK";
 
@@ -198,6 +199,33 @@ export async function apiCreateLessonAsset(
 
 export async function apiDeleteLessonAsset(assetId: string) {
   const response = (await api.delete(`/lessons/lesson-assets/${assetId}`)) as ApiResponse;
+  return unwrapResponse(response);
+}
+
+export type LessonSlideImportResult = {
+  blockId: string;
+  slideCount: number;
+  pdfCount: number;
+  title?: string;
+};
+
+export async function apiImportLessonSlidesZip(
+  lessonId: string,
+  zipFile: File,
+  title?: string,
+  displayMode?: string,
+) {
+  const formData = new FormData();
+  formData.append("file", zipFile);
+  if (title?.trim()) {
+    formData.append("title", title.trim());
+  }
+  if (displayMode?.trim()) {
+    formData.append("displayMode", displayMode.trim());
+  }
+  const response = (await api.post(`/lessons/${lessonId}/slides/import-zip`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  })) as ApiResponse<LessonSlideImportResult>;
   return unwrapResponse(response);
 }
 

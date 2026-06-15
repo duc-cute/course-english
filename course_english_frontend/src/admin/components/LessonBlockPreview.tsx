@@ -1,4 +1,5 @@
 import { Box, Typography } from "@mui/material";
+import { resolveStorageAssetUrl } from "../../shared/api/file";
 import type { LessonAssetRecord, LessonBlockRecord } from "../../shared/api/lesson";
 import { parseBlockPayload } from "../../shared/api/lesson";
 import { parseExerciseSetPayload } from "../../student/lessonPlayer/exercise/parseExerciseSet";
@@ -9,6 +10,7 @@ import {
   parseResolvedVocabularyItems,
   parseVocabularyBlockPayload,
 } from "../../shared/lesson/vocabularyPayload";
+import { parseSlideDeckPayload, getSlideDeckDisplayModeLabel } from "../../shared/lesson/slideDeckPayload";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -53,7 +55,7 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
       <Box>
         <Box
           component="img"
-          src={asset.url}
+          src={resolveStorageAssetUrl(asset.url)}
           alt={payload.caption || asset.caption || "Ảnh bài học"}
           sx={{ maxWidth: "100%", maxHeight: 200, borderRadius: "6px", border: "1px solid #ECEAE3" }}
         />
@@ -201,6 +203,33 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
           {payload.refs.length} câu tham chiếu
           {resolved.length > 0 ? ` · ${resolved.length} câu resolve` : ""}
         </Typography>
+      </Box>
+    );
+  }
+
+  if (block.blockType === "SLIDE_DECK") {
+    const payload = parseSlideDeckPayload(block.payloadJson);
+    const first = payload.slides[0];
+    const firstAsset = first ? assets.find((a) => a.id === first.assetId) : undefined;
+    return (
+      <Box>
+        <Typography sx={{ fontSize: 13, color: "#333" }}>
+          <strong>{payload.title || "Slide deck"}</strong>
+        </Typography>
+        <Typography sx={{ fontSize: 12, color: "#5F5E5A", mt: 0.25 }}>
+          {payload.slides.length} slide
+          {payload.source?.pdfCount ? ` · ${payload.source.pdfCount} PDF` : ""}
+          {" · "}
+          {getSlideDeckDisplayModeLabel(payload.displayMode ?? "PRESENTATION")}
+        </Typography>
+        {firstAsset?.url ? (
+          <Box
+            component="img"
+            src={resolveStorageAssetUrl(firstAsset.url)}
+            alt="Slide preview"
+            sx={{ maxWidth: "100%", maxHeight: 120, mt: 1, borderRadius: "6px", border: "1px solid #ECEAE3" }}
+          />
+        ) : null}
       </Box>
     );
   }

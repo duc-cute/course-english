@@ -11,6 +11,7 @@ export { StudentPagingAutocomplete } from "./StudentPagingAutocomplete";
 export { SubjectPagingAutocomplete } from "./SubjectPagingAutocomplete";
 export { LessonBlockEditorPanel } from "./LessonBlockEditorPanel";
 export { LessonBlockPreview } from "./LessonBlockPreview";
+export { LessonSlideZipImportDialog } from "./LessonSlideZipImportDialog";
 export { LessonRichTextEditor } from "./LessonRichTextEditor";
 export { LessonImageUpload } from "./LessonImageUpload";
 export { TablePaginationField } from "./TablePaginationField";
