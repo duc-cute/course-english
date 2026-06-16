@@ -17,8 +17,10 @@ import {
 import {
   buildExerciseSetPayloadJson,
   createEmptyFillBlankQuestion,
+  createEmptyGapFillMcqQuestion,
   createEmptyMatchingQuestion,
   createEmptyMcqQuestion,
+  createEmptyReadingComprehensionQuestion,
   createEmptyReorderQuestion,
   generateQuestionId,
   validateExerciseSetPayload,
@@ -28,6 +30,8 @@ import type {
   ExerciseQuestion,
   ExerciseSetPayload,
   FillBlankQuestion,
+  GapFillMcqQuestion,
+  ReadingComprehensionQuestion,
   ListenChooseQuestion,
   ListenTypeQuestion,
   MatchingQuestion,
@@ -36,6 +40,8 @@ import type {
   SpellingQuestion,
 } from "../../../student/lessonPlayer/exercise/types";
 import { FillBlankQuestionCanvas } from "./FillBlankQuestionCanvas";
+import { GapFillMcqQuestionCanvas } from "./GapFillMcqQuestionCanvas";
+import { ReadingComprehensionQuestionCanvas } from "./ReadingComprehensionQuestionCanvas";
 import { ReorderSentenceQuestionCanvas } from "./ReorderSentenceQuestionCanvas";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
@@ -116,16 +122,20 @@ export function ExerciseSetEditor({
     setQuestions((list) => list.map((q, i) => (i === index ? next : q)));
   };
 
-  const addQuestion = (type: "MULTIPLE_CHOICE" | "MATCHING" | "FILL_BLANK" | "REORDER_SENTENCE") => {
+  const addQuestion = (type: "MULTIPLE_CHOICE" | "MATCHING" | "FILL_BLANK" | "GAP_FILL_MCQ" | "READING_COMPREHENSION" | "REORDER_SENTENCE") => {
     setQuestions((list) => {
       const next =
         type === "MATCHING"
           ? [...list, createEmptyMatchingQuestion()]
           : type === "FILL_BLANK"
             ? [...list, createEmptyFillBlankQuestion()]
-            : type === "REORDER_SENTENCE"
-              ? [...list, createEmptyReorderQuestion()]
-              : [...list, createEmptyMcqQuestion()];
+            : type === "GAP_FILL_MCQ"
+              ? [...list, createEmptyGapFillMcqQuestion()]
+              : type === "READING_COMPREHENSION"
+                ? [...list, createEmptyReadingComprehensionQuestion()]
+                : type === "REORDER_SENTENCE"
+                  ? [...list, createEmptyReorderQuestion()]
+                  : [...list, createEmptyMcqQuestion()];
       setActiveIndex(next.length - 1);
       return next;
     });
@@ -164,6 +174,24 @@ export function ExerciseSetEditor({
           blanks: (source as FillBlankQuestion).blanks.map((b) => ({
             ...b,
             acceptedAnswers: [...b.acceptedAnswers],
+          })),
+        };
+      } else if (source.type === "GAP_FILL_MCQ") {
+        copy = {
+          ...(source as GapFillMcqQuestion),
+          id: generateQuestionId(),
+          blanks: (source as GapFillMcqQuestion).blanks.map((b) => ({
+            ...b,
+            choices: b.choices.map((c) => ({ ...c })),
+          })),
+        };
+      } else if (source.type === "READING_COMPREHENSION") {
+        copy = {
+          ...(source as ReadingComprehensionQuestion),
+          id: generateQuestionId(),
+          subQuestions: (source as ReadingComprehensionQuestion).subQuestions.map((sub) => ({
+            ...sub,
+            choices: sub.choices.map((c) => ({ ...c })),
           })),
         };
       } else if (source.type === "REORDER_SENTENCE") {
@@ -267,6 +295,8 @@ export function ExerciseSetEditor({
           onAddMcq={() => addQuestion("MULTIPLE_CHOICE")}
           onAddMatching={() => addQuestion("MATCHING")}
           onAddFillBlank={() => addQuestion("FILL_BLANK")}
+          onAddGapFillMcq={() => addQuestion("GAP_FILL_MCQ")}
+          onAddReading={() => addQuestion("READING_COMPREHENSION")}
           onAddReorder={() => addQuestion("REORDER_SENTENCE")}
           onReorder={reorderQuestions}
         />
@@ -317,6 +347,24 @@ export function ExerciseSetEditor({
           ) : activeQuestion?.type === "FILL_BLANK" ? (
             <FillBlankQuestionCanvas
               question={activeQuestion as FillBlankQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
+              onChange={(next) => updateQuestion(activeIndex, next)}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "GAP_FILL_MCQ" ? (
+            <GapFillMcqQuestionCanvas
+              question={activeQuestion as GapFillMcqQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
+              onChange={(next) => updateQuestion(activeIndex, next)}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "READING_COMPREHENSION" ? (
+            <ReadingComprehensionQuestionCanvas
+              question={activeQuestion as ReadingComprehensionQuestion}
               index={activeIndex}
               canDelete={questions.length > 1}
               onChange={(next) => updateQuestion(activeIndex, next)}

@@ -3,6 +3,8 @@ export type ExerciseQuestionType =
   | "MULTIPLE_CHOICE"
   | "MATCHING"
   | "FILL_BLANK"
+  | "GAP_FILL_MCQ"
+  | "READING_COMPREHENSION"
   | "TRUE_FALSE"
   | "LISTEN_CHOOSE"
   | "SPELLING"
@@ -99,6 +101,45 @@ export type FillBlankQuestion = {
   explanation?: string;
 };
 
+export type GapFillMcqBlank = {
+  id: string;
+  choices: ExerciseChoice[];
+  correctChoiceId: string;
+};
+
+export type GapFillMcqQuestion = {
+  id: string;
+  type: "GAP_FILL_MCQ";
+  prompt: ExercisePrompt;
+  blanks: GapFillMcqBlank[];
+  explanation?: string;
+};
+
+export type ReadingSubQuestion = {
+  id: string;
+  prompt: ExercisePrompt;
+  choices: ExerciseChoice[];
+  correctChoiceId: string;
+  explanation?: string;
+};
+
+export type ReadingPassage = {
+  title?: string;
+  text: string;
+  lang?: string;
+};
+
+export type ReadingPresentation = "split" | "stepped";
+
+export type ReadingComprehensionQuestion = {
+  id: string;
+  type: "READING_COMPREHENSION";
+  passage: ReadingPassage;
+  subQuestions: ReadingSubQuestion[];
+  presentation?: ReadingPresentation;
+  explanation?: string;
+};
+
 export type ReorderToken = {
   id: string;
   text: string;
@@ -135,6 +176,8 @@ export type ExerciseQuestion =
   | SpellingQuestion
   | ListenTypeQuestion
   | FillBlankQuestion
+  | GapFillMcqQuestion
+  | ReadingComprehensionQuestion
   | ReorderSentenceQuestion
   | TrueFalseQuestion;
 

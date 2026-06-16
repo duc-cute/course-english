@@ -1,5 +1,9 @@
 import { stringifyBlockPayload } from "../api/lesson";
 import { countBlankPlaceholders, syncBlanksWithPrompt } from "./fillBlankUtils";
+import { syncGapFillBlanksWithPrompt } from "./gapFillMcqUtils";
+import {
+  READING_PRESENTATION_SPLIT,
+} from "./readingComprehensionUtils";
 import {
   MAX_REORDER_TOKENS,
   MIN_REORDER_TOKENS,
@@ -9,6 +13,9 @@ import type {
   ExerciseQuestion,
   ExerciseSetPayload,
   FillBlankQuestion,
+  GapFillMcqQuestion,
+  ReadingComprehensionQuestion,
+  ReadingSubQuestion,
   ListenChooseQuestion,
   ListenTypeQuestion,
   MatchingQuestion,
@@ -62,6 +69,67 @@ export function createEmptyFillBlankQuestion(id?: string): FillBlankQuestion {
     type: "FILL_BLANK",
     prompt: { text: promptText, lang: "en" },
     blanks: syncBlanksWithPrompt(promptText, [{ id: "b1", acceptedAnswers: [""] }]),
+    explanation: "",
+  };
+}
+
+let subQuestionIdSeq = 0;
+
+export function generateSubQuestionId(): string {
+  subQuestionIdSeq += 1;
+  return `sq${Date.now()}_${subQuestionIdSeq}`;
+}
+
+export function createEmptyReadingSubQuestion(id?: string): ReadingSubQuestion {
+  return {
+    id: id ?? generateSubQuestionId(),
+    prompt: { text: "", lang: "en" },
+    choices: [
+      { id: "a", text: "" },
+      { id: "b", text: "" },
+      { id: "c", text: "" },
+      { id: "d", text: "" },
+    ],
+    correctChoiceId: "a",
+    explanation: "",
+  };
+}
+
+export function createEmptyReadingComprehensionQuestion(id?: string): ReadingComprehensionQuestion {
+  return {
+    id: id ?? generateQuestionId(),
+    type: "READING_COMPREHENSION",
+    passage: {
+      title: "",
+      text:
+        "Every morning, Tom wakes up at six o'clock. He brushes his teeth and eats breakfast with his family. Then he walks to school with his best friend, Anna.",
+      lang: "en",
+    },
+    presentation: READING_PRESENTATION_SPLIT,
+    subQuestions: [
+      {
+        ...createEmptyReadingSubQuestion("sq1"),
+        prompt: { text: "What time does Tom wake up?", lang: "en" },
+        choices: [
+          { id: "a", text: "6 o'clock" },
+          { id: "b", text: "7 o'clock" },
+          { id: "c", text: "8 o'clock" },
+          { id: "d", text: "9 o'clock" },
+        ],
+        correctChoiceId: "a",
+      },
+    ],
+    explanation: "",
+  };
+}
+
+export function createEmptyGapFillMcqQuestion(id?: string): GapFillMcqQuestion {
+  const promptText = "Every morning I ___ up. Then I ___ breakfast.";
+  return {
+    id: id ?? generateQuestionId(),
+    type: "GAP_FILL_MCQ",
+    prompt: { text: promptText, lang: "en" },
+    blanks: syncGapFillBlanksWithPrompt(promptText, []),
     explanation: "",
   };
 }
@@ -149,6 +217,20 @@ export function getFillBlankQuestionSummary(question: FillBlankQuestion): string
   return "Điền khuyết";
 }
 
+export function getGapFillMcqQuestionSummary(question: GapFillMcqQuestion): string {
+  const text = question.prompt.text.trim();
+  if (text) return text.length > 48 ? `${text.slice(0, 48)}…` : text;
+  return "Chọn từ điền khuyết";
+}
+
+export function getReadingComprehensionSummary(question: ReadingComprehensionQuestion): string {
+  const title = question.passage.title?.trim();
+  if (title) return title.length > 48 ? `${title.slice(0, 48)}…` : title;
+  const text = question.passage.text.trim();
+  if (text) return text.length > 48 ? `${text.slice(0, 48)}…` : text;
+  return "Đọc hiểu";
+}
+
 export function getReorderQuestionSummary(question: ReorderSentenceQuestion): string {
   const prompt = question.prompt?.text?.trim();
   if (prompt) return prompt.length > 48 ? `${prompt.slice(0, 48)}…` : prompt;
@@ -168,6 +250,8 @@ export function getQuestionSummary(question: ExerciseQuestion): string {
   if (question.type === "SPELLING") return getSpellingQuestionSummary(question);
   if (question.type === "LISTEN_TYPE") return getListenTypeQuestionSummary(question);
   if (question.type === "FILL_BLANK") return getFillBlankQuestionSummary(question);
+  if (question.type === "GAP_FILL_MCQ") return getGapFillMcqQuestionSummary(question);
+  if (question.type === "READING_COMPREHENSION") return getReadingComprehensionSummary(question);
   if (question.type === "REORDER_SENTENCE") return getReorderQuestionSummary(question);
   if (question.type === "MATCHING") return getMatchingQuestionSummary(question);
   if (question.type === "TRUE_FALSE") {
@@ -183,6 +267,8 @@ export function getQuestionTypeLabel(question: ExerciseQuestion): string {
   if (question.type === "SPELLING") return "Gõ chính tả";
   if (question.type === "LISTEN_TYPE") return "Nghe gõ";
   if (question.type === "FILL_BLANK") return "Điền khuyết";
+  if (question.type === "GAP_FILL_MCQ") return "Chọn điền khuyết";
+  if (question.type === "READING_COMPREHENSION") return "Đọc hiểu";
   if (question.type === "REORDER_SENTENCE") return "Sắp xếp câu";
   if (question.type === "MATCHING") return "Ghép cặp";
   if (question.type === "TRUE_FALSE") return "Đúng/Sai";
@@ -294,6 +380,70 @@ export function validateFillBlankQuestion(question: FillBlankQuestion): Exercise
   return { valid: errors.length === 0, errors };
 }
 
+export function validateGapFillMcqQuestion(question: GapFillMcqQuestion): ExerciseSetValidation {
+  const errors: string[] = [];
+  const promptText = question.prompt.text.trim();
+  if (!promptText) {
+    errors.push("Chưa nhập đoạn văn có chỗ trống.");
+  }
+  const placeholderCount = countBlankPlaceholders(promptText);
+  if (placeholderCount < 1) {
+    errors.push('Đoạn văn cần ít nhất một chỗ trống "___".');
+  }
+  if (question.blanks.length < 1) {
+    errors.push("Thiếu danh sách ô trống.");
+  }
+  if (placeholderCount > 0 && question.blanks.length !== placeholderCount) {
+    errors.push("Số ô trống không khớp số dấu ___ trong đoạn.");
+  }
+  for (const [index, blank] of question.blanks.entries()) {
+    if (blank.choices.length !== 4) {
+      errors.push(`Ô ${index + 1}: cần đúng 4 lựa chọn.`);
+    }
+    if (blank.choices.some((c) => !c.text.trim())) {
+      errors.push(`Ô ${index + 1}: thiếu nội dung lựa chọn.`);
+    }
+    if (!blank.choices.some((c) => c.id === blank.correctChoiceId)) {
+      errors.push(`Ô ${index + 1}: chưa chọn đáp án đúng.`);
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateReadingSubQuestion(sub: ReadingSubQuestion, index: number): string[] {
+  const errors: string[] = [];
+  const n = index + 1;
+  if (!sub.prompt.text.trim()) {
+    errors.push(`Câu ${n}: chưa nhập câu hỏi.`);
+  }
+  if (sub.choices.length !== 4) {
+    errors.push(`Câu ${n}: cần đúng 4 đáp án.`);
+  }
+  if (sub.choices.some((c) => !c.text.trim())) {
+    errors.push(`Câu ${n}: thiếu nội dung đáp án.`);
+  }
+  if (!sub.choices.some((c) => c.id === sub.correctChoiceId)) {
+    errors.push(`Câu ${n}: chưa chọn đáp án đúng.`);
+  }
+  return errors;
+}
+
+export function validateReadingComprehensionQuestion(
+  question: ReadingComprehensionQuestion,
+): ExerciseSetValidation {
+  const errors: string[] = [];
+  if (!question.passage.text.trim()) {
+    errors.push("Chưa nhập đoạn đọc.");
+  }
+  if (!question.subQuestions.length) {
+    errors.push("Cần ít nhất một câu hỏi.");
+  }
+  question.subQuestions.forEach((sub, index) => {
+    validateReadingSubQuestion(sub, index).forEach((msg) => errors.push(msg));
+  });
+  return { valid: errors.length === 0, errors };
+}
+
 export function validateListenTypeQuestion(question: ListenTypeQuestion): ExerciseSetValidation {
   const errors: string[] = [];
   if (!question.audioUrl?.trim()) {
@@ -311,6 +461,8 @@ export function validateQuestion(question: ExerciseQuestion): ExerciseSetValidat
   if (question.type === "SPELLING") return validateSpellingQuestion(question);
   if (question.type === "LISTEN_TYPE") return validateListenTypeQuestion(question);
   if (question.type === "FILL_BLANK") return validateFillBlankQuestion(question);
+  if (question.type === "GAP_FILL_MCQ") return validateGapFillMcqQuestion(question);
+  if (question.type === "READING_COMPREHENSION") return validateReadingComprehensionQuestion(question);
   if (question.type === "REORDER_SENTENCE") return validateReorderQuestion(question);
   if (question.type === "MATCHING") return validateMatchingQuestion(question);
   return { valid: false, errors: ["Loại câu chưa hỗ trợ trong editor."] };
@@ -331,6 +483,8 @@ export function validateExerciseSetPayload(payload: ExerciseSetPayload): Exercis
       q.type === "SPELLING" ||
       q.type === "LISTEN_TYPE" ||
       q.type === "FILL_BLANK" ||
+      q.type === "GAP_FILL_MCQ" ||
+      q.type === "READING_COMPREHENSION" ||
       q.type === "REORDER_SENTENCE",
   );
   if (!editableQuestions.length) {
@@ -423,6 +577,39 @@ export function buildExerciseSetPayload(payload: ExerciseSetPayload): ExerciseSe
             placeholder: b.placeholder?.trim() || undefined,
           })),
           wordEn: q.wordEn?.trim() || undefined,
+          explanation: q.explanation?.trim() || undefined,
+        };
+      }
+      if (q.type === "GAP_FILL_MCQ") {
+        return {
+          ...q,
+          prompt: { ...q.prompt, text: q.prompt.text.trim() },
+          blanks: q.blanks.map((b) => ({
+            ...b,
+            id: b.id.trim(),
+            choices: b.choices.map((c) => ({ ...c, text: c.text.trim() })),
+            correctChoiceId: b.correctChoiceId,
+          })),
+          explanation: q.explanation?.trim() || undefined,
+        };
+      }
+      if (q.type === "READING_COMPREHENSION") {
+        return {
+          ...q,
+          passage: {
+            ...q.passage,
+            title: q.passage.title?.trim() || undefined,
+            text: q.passage.text.trim(),
+          },
+          presentation: q.presentation ?? READING_PRESENTATION_SPLIT,
+          subQuestions: q.subQuestions.map((sub) => ({
+            ...sub,
+            id: sub.id.trim(),
+            prompt: { ...sub.prompt, text: sub.prompt.text.trim() },
+            choices: sub.choices.map((c) => ({ ...c, text: c.text.trim() })),
+            correctChoiceId: sub.correctChoiceId,
+            explanation: sub.explanation?.trim() || undefined,
+          })),
           explanation: q.explanation?.trim() || undefined,
         };
       }

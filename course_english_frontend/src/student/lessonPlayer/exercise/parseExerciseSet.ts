@@ -147,6 +147,99 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
     };
   }
 
+  if (raw.type === "GAP_FILL_MCQ") {
+    const prompt = isRecord(raw.prompt)
+      ? { text: String(raw.prompt.text ?? ""), lang: raw.prompt.lang ? String(raw.prompt.lang) : undefined }
+      : { text: "" };
+    if (!prompt.text.trim()) return null;
+
+    const blanksRaw = Array.isArray(raw.blanks) ? raw.blanks : [];
+    const blanks = blanksRaw
+      .filter(isRecord)
+      .map((b, index) => {
+        const id = typeof b.id === "string" && b.id.trim() ? b.id.trim() : `b${index + 1}`;
+        const choicesRaw = Array.isArray(b.choices) ? b.choices : [];
+        const choices = choicesRaw
+          .filter(isRecord)
+          .map((c, ci) => ({
+            id: typeof c.id === "string" && c.id.trim() ? c.id.trim() : `a${ci}`,
+            text: typeof c.text === "string" ? c.text.trim() : "",
+          }))
+          .filter((c) => c.text);
+        const correctChoiceId =
+          typeof b.correctChoiceId === "string" ? b.correctChoiceId.trim() : "";
+        return { id, choices, correctChoiceId };
+      })
+      .filter((b) => b.choices.length >= 2 && b.correctChoiceId);
+
+    if (!blanks.length) return null;
+
+    return {
+      id: raw.id,
+      type: "GAP_FILL_MCQ",
+      prompt,
+      blanks,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
+  if (raw.type === "READING_COMPREHENSION") {
+    const passageRaw = isRecord(raw.passage) ? raw.passage : {};
+    const passageText = typeof passageRaw.text === "string" ? passageRaw.text.trim() : "";
+    if (!passageText) return null;
+
+    const subRaw = Array.isArray(raw.subQuestions) ? raw.subQuestions : [];
+    const subQuestions = subRaw
+      .filter(isRecord)
+      .map((sub, index) => {
+        const id = typeof sub.id === "string" && sub.id.trim() ? sub.id.trim() : `sq${index + 1}`;
+        const prompt = isRecord(sub.prompt)
+          ? {
+              text: String(sub.prompt.text ?? "").trim(),
+              lang: sub.prompt.lang ? String(sub.prompt.lang) : undefined,
+            }
+          : { text: "" };
+        const choicesRaw = Array.isArray(sub.choices) ? sub.choices : [];
+        const choices = choicesRaw
+          .filter(isRecord)
+          .map((c, ci) => ({
+            id: typeof c.id === "string" && c.id.trim() ? c.id.trim() : `a${ci}`,
+            text: typeof c.text === "string" ? c.text.trim() : "",
+          }))
+          .filter((c) => c.text);
+        const correctChoiceId =
+          typeof sub.correctChoiceId === "string" ? sub.correctChoiceId.trim() : "";
+        return {
+          id,
+          prompt,
+          choices,
+          correctChoiceId,
+          explanation: typeof sub.explanation === "string" ? sub.explanation : undefined,
+        };
+      })
+      .filter((sub) => sub.prompt.text && sub.choices.length >= 2 && sub.correctChoiceId);
+
+    if (!subQuestions.length) return null;
+
+    const presentation =
+      raw.presentation === "stepped" || raw.presentation === "split"
+        ? raw.presentation
+        : "split";
+
+    return {
+      id: raw.id,
+      type: "READING_COMPREHENSION",
+      passage: {
+        title: typeof passageRaw.title === "string" ? passageRaw.title.trim() || undefined : undefined,
+        text: passageText,
+        lang: passageRaw.lang ? String(passageRaw.lang) : undefined,
+      },
+      subQuestions,
+      presentation,
+      explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+    };
+  }
+
   if (raw.type === "REORDER_SENTENCE") {
     const tokensRaw = Array.isArray(raw.tokens) ? raw.tokens : [];
     const tokens = tokensRaw

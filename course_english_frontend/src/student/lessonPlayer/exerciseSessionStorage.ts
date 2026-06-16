@@ -7,6 +7,16 @@ export type ExerciseAnswerSnapshot = {
   typedAnswer?: string;
   /** blankId → answer (FILL_BLANK) */
   fillBlankAnswers?: Record<string, string>;
+  /** blankId → choiceId (GAP_FILL_MCQ) */
+  gapFillMcqAnswers?: Record<string, string>;
+  /** subQuestionId → choiceId (READING_COMPREHENSION) */
+  readingSubAnswers?: Record<string, string>;
+  /** Chấm từng ô — GAP_FILL_MCQ */
+  correctBlankCount?: number;
+  totalBlanks?: number;
+  /** Chấm từng câu con — READING_COMPREHENSION */
+  correctSubCount?: number;
+  totalSubQuestions?: number;
   /** left → right (MATCHING) */
   matchingSelections?: Record<string, string>;
   /** token ids đã xếp (REORDER_SENTENCE) */

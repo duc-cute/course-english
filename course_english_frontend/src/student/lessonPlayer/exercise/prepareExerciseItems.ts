@@ -8,11 +8,15 @@ import { flattenExerciseBlocks } from "./flattenExerciseBlocks";
 import { sameStringSet } from "./matchingUtils";
 import type {
   ExerciseQuestion,
+  GapFillMcqQuestion,
+  ReadingComprehensionQuestion,
   ListenChooseQuestion,
   MatchingQuestion,
   MultipleChoiceQuestion,
   ReorderSentenceQuestion,
 } from "./types";
+import { gapFillChoiceOrderKey } from "../../../shared/lesson/gapFillMcqUtils";
+import { subQuestionChoiceOrderKey } from "../../../shared/lesson/readingComprehensionUtils";
 
 export type BlockExerciseSettings = {
   shuffleQuestions: boolean;
@@ -125,21 +129,127 @@ function applyReorderShuffle(
   };
 }
 
+function applyGapFillMcqShuffle(
+  question: GapFillMcqQuestion,
+  shuffleOptions: boolean,
+  savedChoiceOrders?: Record<string, string[]>,
+): { display: GapFillMcqQuestion; choiceOrders: Record<string, string[]> } {
+  const choiceOrders: Record<string, string[]> = {};
+  const blanks = question.blanks.map((blank) => {
+    const defaultOrder = blank.choices.map((c) => c.id);
+    const orderKey = gapFillChoiceOrderKey(question.id, blank.id);
+    const saved = savedChoiceOrders?.[orderKey];
+
+    const choiceOrder =
+      !shuffleOptions
+        ? defaultOrder
+        : saved &&
+            saved.length === defaultOrder.length &&
+            saved.every((id) => defaultOrder.includes(id))
+          ? saved
+          : shuffleArray(defaultOrder);
+
+    choiceOrders[orderKey] = choiceOrder;
+    return {
+      ...blank,
+      choices: reorderChoicesByIds(blank.choices, choiceOrder),
+    };
+  });
+
+  return {
+    display: { ...question, blanks },
+    choiceOrders,
+  };
+}
+
+function applyReadingComprehensionShuffle(
+  question: ReadingComprehensionQuestion,
+  shuffleOptions: boolean,
+  savedChoiceOrders?: Record<string, string[]>,
+): { display: ReadingComprehensionQuestion; choiceOrders: Record<string, string[]> } {
+  const choiceOrders: Record<string, string[]> = {};
+  const subQuestions = question.subQuestions.map((sub) => {
+    const defaultOrder = sub.choices.map((c) => c.id);
+    const orderKey = subQuestionChoiceOrderKey(question.id, sub.id);
+    const saved = savedChoiceOrders?.[orderKey];
+
+    const choiceOrder =
+      !shuffleOptions
+        ? defaultOrder
+        : saved &&
+            saved.length === defaultOrder.length &&
+            saved.every((id) => defaultOrder.includes(id))
+          ? saved
+          : shuffleArray(defaultOrder);
+
+    choiceOrders[orderKey] = choiceOrder;
+    return {
+      ...sub,
+      choices: reorderChoicesByIds(sub.choices, choiceOrder),
+    };
+  });
+
+  return {
+    display: { ...question, subQuestions },
+    choiceOrders,
+  };
+}
+
 function applyQuestionDisplay(
   question: ExerciseQuestion,
   shuffleOptions: boolean,
-  savedChoiceOrder?: string[],
-): { display: ExerciseQuestion; choiceOrder: string[] } {
+  savedChoiceOrders?: Record<string, string[]>,
+): { display: ExerciseQuestion; choiceOrderEntries: Record<string, string[]> } {
   if (question.type === "MULTIPLE_CHOICE" || question.type === "LISTEN_CHOOSE") {
-    return applyMcqShuffle(question, shuffleOptions, savedChoiceOrder);
+    const { display, choiceOrder } = applyMcqShuffle(
+      question,
+      shuffleOptions,
+      savedChoiceOrders?.[question.id],
+    );
+    return {
+      display,
+      choiceOrderEntries: choiceOrder.length ? { [question.id]: choiceOrder } : {},
+    };
   }
   if (question.type === "MATCHING") {
-    return applyMatchingShuffle(question, shuffleOptions, savedChoiceOrder);
+    const { display, choiceOrder } = applyMatchingShuffle(
+      question,
+      shuffleOptions,
+      savedChoiceOrders?.[question.id],
+    );
+    return {
+      display,
+      choiceOrderEntries: choiceOrder.length ? { [question.id]: choiceOrder } : {},
+    };
   }
   if (question.type === "REORDER_SENTENCE") {
-    return applyReorderShuffle(question, shuffleOptions, savedChoiceOrder);
+    const { display, choiceOrder } = applyReorderShuffle(
+      question,
+      shuffleOptions,
+      savedChoiceOrders?.[question.id],
+    );
+    return {
+      display,
+      choiceOrderEntries: choiceOrder.length ? { [question.id]: choiceOrder } : {},
+    };
   }
-  return { display: question, choiceOrder: [] };
+  if (question.type === "GAP_FILL_MCQ") {
+    const { display, choiceOrders } = applyGapFillMcqShuffle(
+      question,
+      shuffleOptions,
+      savedChoiceOrders,
+    );
+    return { display, choiceOrderEntries: choiceOrders };
+  }
+  if (question.type === "READING_COMPREHENSION") {
+    const { display, choiceOrders } = applyReadingComprehensionShuffle(
+      question,
+      shuffleOptions,
+      savedChoiceOrders,
+    );
+    return { display, choiceOrderEntries: choiceOrders };
+  }
+  return { display: question, choiceOrderEntries: {} };
 }
 
 function groupItemsByBlock(items: FlatExerciseItem[]): FlatExerciseItem[][] {
@@ -231,14 +341,12 @@ export function prepareExercisePlan(
   const choiceOrders: Record<string, string[]> = {};
   const items: PreparedExerciseItem[] = orderedFlat.map((item) => {
     const settings = settingsByBlock.get(item.blockId) ?? readBlockExerciseSettings(practiceBlocks[0]);
-    const { display, choiceOrder } = applyQuestionDisplay(
+    const { display, choiceOrderEntries } = applyQuestionDisplay(
       item.question,
       settings.shuffleOptions,
-      savedChoiceOrders?.[item.question.id],
+      savedChoiceOrders,
     );
-    if (choiceOrder.length) {
-      choiceOrders[item.question.id] = choiceOrder;
-    }
+    Object.assign(choiceOrders, choiceOrderEntries);
     return { ...item, displayQuestion: display };
   });
 

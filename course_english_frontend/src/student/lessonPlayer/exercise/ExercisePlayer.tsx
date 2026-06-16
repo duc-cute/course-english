@@ -23,6 +23,8 @@ import { ListenTypeQuestion } from "./ListenTypeQuestion";
 import { MatchingQuestion } from "./MatchingQuestion";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion";
 import { FillBlankQuestion } from "./FillBlankQuestion";
+import { GapFillMcqQuestion } from "./GapFillMcqQuestion";
+import { ReadingComprehensionQuestion } from "./ReadingComprehensionQuestion";
 import { ReorderSentenceQuestion } from "./ReorderSentenceQuestion";
 import { SpellingQuestion } from "./SpellingQuestion";
 import { TrueFalseQuestion, trueFalseCorrectChoiceId } from "./TrueFalseQuestion";
@@ -31,10 +33,18 @@ import { QuestionExplanationPanel } from "./QuestionExplanationPanel";
 import { QuestionProgressBar } from "./QuestionProgressBar";
 import { compareTypedAnswers } from "../../../shared/lesson/answerNormalize";
 import { compareFillBlankAnswers, isFillBlankComplete } from "../../../shared/lesson/fillBlankUtils";
+import { isGapFillMcqComplete, scoreGapFillMcq } from "../../../shared/lesson/gapFillMcqUtils";
+import {
+  isReadingComprehensionComplete,
+  scoreReadingComprehension,
+} from "../../../shared/lesson/readingComprehensionUtils";
 import { compareReorderOrder, isReorderComplete } from "../../../shared/lesson/reorderSentenceUtils";
+import { computeSessionScore } from "./exerciseScoring";
 import type {
   ListenChooseQuestion as ListenChooseType,
   FillBlankQuestion as FillBlankType,
+  GapFillMcqQuestion as GapFillMcqType,
+  ReadingComprehensionQuestion as ReadingType,
   ListenTypeQuestion as ListenTypeQuestionModel,
   MatchingQuestion as MatchingType,
   MultipleChoiceQuestion as McqType,
@@ -111,6 +121,8 @@ export function ExercisePlayer({
   const [choiceDrafts, setChoiceDrafts] = useState<Record<string, string>>({});
   const [typedAnswer, setTypedAnswer] = useState("");
   const [fillBlankAnswers, setFillBlankAnswers] = useState<Record<string, string>>({});
+  const [gapFillMcqAnswers, setGapFillMcqAnswers] = useState<Record<string, string>>({});
+  const [readingSubAnswers, setReadingSubAnswers] = useState<Record<string, string>>({});
   const [reorderTokenOrder, setReorderTokenOrder] = useState<string[]>([]);
   const [matchingSelections, setMatchingSelections] = useState<Record<string, string>>({});
   const [activeMatchingLeft, setActiveMatchingLeft] = useState<string | null>(null);
@@ -202,6 +214,14 @@ export function ExercisePlayer({
     current?.displayQuestion.type === "FILL_BLANK"
       ? (current.displayQuestion as FillBlankType)
       : null;
+  const currentGapFillMcq =
+    current?.displayQuestion.type === "GAP_FILL_MCQ"
+      ? (current.displayQuestion as GapFillMcqType)
+      : null;
+  const currentReading =
+    current?.displayQuestion.type === "READING_COMPREHENSION"
+      ? (current.displayQuestion as ReadingType)
+      : null;
   const currentMatching =
     current?.displayQuestion.type === "MATCHING"
       ? (current.displayQuestion as MatchingType)
@@ -242,6 +262,8 @@ export function ExercisePlayer({
     if (currentMcq || currentListen || currentTrueFalse) {
       setTypedAnswer("");
       setFillBlankAnswers({});
+      setGapFillMcqAnswers({});
+      setReadingSubAnswers({});
       setReorderTokenOrder([]);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
@@ -250,6 +272,8 @@ export function ExercisePlayer({
     if (currentSpelling || currentListenType) {
       setTypedAnswer(saved?.typedAnswer ?? "");
       setFillBlankAnswers({});
+      setGapFillMcqAnswers({});
+      setReadingSubAnswers({});
       setReorderTokenOrder([]);
       setMatchingSelections({});
       setActiveMatchingLeft(null);
@@ -257,6 +281,28 @@ export function ExercisePlayer({
     }
     if (currentFillBlank) {
       setFillBlankAnswers(saved?.fillBlankAnswers ?? {});
+      setGapFillMcqAnswers({});
+      setReadingSubAnswers({});
+      setReorderTokenOrder([]);
+      setTypedAnswer("");
+      setMatchingSelections({});
+      setActiveMatchingLeft(null);
+      return;
+    }
+    if (currentGapFillMcq) {
+      setGapFillMcqAnswers(saved?.gapFillMcqAnswers ?? {});
+      setFillBlankAnswers({});
+      setReadingSubAnswers({});
+      setReorderTokenOrder([]);
+      setTypedAnswer("");
+      setMatchingSelections({});
+      setActiveMatchingLeft(null);
+      return;
+    }
+    if (currentReading) {
+      setReadingSubAnswers(saved?.readingSubAnswers ?? {});
+      setFillBlankAnswers({});
+      setGapFillMcqAnswers({});
       setReorderTokenOrder([]);
       setTypedAnswer("");
       setMatchingSelections({});
@@ -266,6 +312,8 @@ export function ExercisePlayer({
     if (currentReorder) {
       setReorderTokenOrder(saved?.reorderTokenOrder ?? []);
       setFillBlankAnswers({});
+      setGapFillMcqAnswers({});
+      setReadingSubAnswers({});
       setTypedAnswer("");
       setMatchingSelections({});
       setActiveMatchingLeft(null);
@@ -274,10 +322,12 @@ export function ExercisePlayer({
     if (currentMatching) {
       setMatchingSelections(saved?.matchingSelections ?? {});
       setFillBlankAnswers({});
+      setGapFillMcqAnswers({});
+      setReadingSubAnswers({});
       setReorderTokenOrder([]);
       setActiveMatchingLeft(null);
     }
-  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentTrueFalse, currentSpelling, currentListenType, currentFillBlank, currentReorder, currentMatching, answers]);
+  }, [questionIndex, current?.displayQuestion.id, currentMcq, currentListen, currentTrueFalse, currentSpelling, currentListenType, currentFillBlank, currentGapFillMcq, currentReading, currentReorder, currentMatching, answers]);
 
   useEffect(() => {
     if (phase === "done" || phase === "review") {
@@ -287,9 +337,10 @@ export function ExercisePlayer({
     }
   }, [phase, onViewChange]);
 
-  const correctCount = Object.values(answers).filter((a) => a.correct).length;
-  const answeredCount = Object.keys(answers).length;
-  const scorePct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+  const sessionScore = useMemo(() => computeSessionScore(items, answers), [items, answers]);
+  const scoringCorrectUnits = sessionScore.correctUnits;
+  const scoringTotalUnits = sessionScore.totalUnits;
+  const scorePct = sessionScore.scorePct;
   const passed = scorePct >= passScorePercent;
 
   const ensureStartedAt = useCallback(() => {
@@ -333,16 +384,15 @@ export function ExercisePlayer({
     ) => {
       if (attemptSubmitLockRef.current || total === 0) return;
 
-      const correct = Object.values(finalAnswers).filter((a) => a.correct).length;
-      const pct = Math.round((correct / total) * 100);
+      const { correctUnits, totalUnits, scorePct: pct } = computeSessionScore(items, finalAnswers);
       const didPass = pct >= passScorePercent;
 
       attemptSubmitLockRef.current = true;
       try {
         const attempt = await apiCreateLessonPracticeAttempt({
           lessonId,
-          correctCount: correct,
-          totalCount: total,
+          correctCount: correctUnits,
+          totalCount: totalUnits,
           scorePercent: pct,
           passed: didPass,
           passScorePercent,
@@ -366,7 +416,7 @@ export function ExercisePlayer({
     [
       lessonId,
       blockIds,
-      total,
+      items,
       passScorePercent,
       persistSession,
       plan.questionIdsOrder,
@@ -485,6 +535,51 @@ export function ExercisePlayer({
     }
 
     if (
+      currentGapFillMcq &&
+      isGapFillMcqComplete(gapFillMcqAnswers, currentGapFillMcq.blanks)
+    ) {
+      const scored = scoreGapFillMcq(currentGapFillMcq.blanks, gapFillMcqAnswers);
+      const nextAnswers = {
+        ...answers,
+        [currentGapFillMcq.id]: {
+          correct: scored.allCorrect,
+          gapFillMcqAnswers: { ...gapFillMcqAnswers },
+          correctBlankCount: scored.correctBlankCount,
+          totalBlanks: scored.totalBlanks,
+        },
+      };
+      setAnswers(nextAnswers);
+      setShowExplanation(false);
+      setPhase("feedback");
+      persistSession(questionIndex, false, nextAnswers);
+      return;
+    }
+
+    if (
+      currentReading &&
+      isReadingComprehensionComplete(readingSubAnswers, currentReading.subQuestions)
+    ) {
+      const scored = scoreReadingComprehension(
+        currentReading.subQuestions,
+        readingSubAnswers,
+      );
+      const nextAnswers = {
+        ...answers,
+        [currentReading.id]: {
+          correct: scored.allCorrect,
+          readingSubAnswers: { ...readingSubAnswers },
+          correctSubCount: scored.correctSubCount,
+          totalSubQuestions: scored.totalSubQuestions,
+        },
+      };
+      setAnswers(nextAnswers);
+      setShowExplanation(false);
+      setPhase("feedback");
+      persistSession(questionIndex, false, nextAnswers);
+      return;
+    }
+
+    if (
       currentReorder &&
       isReorderComplete(reorderTokenOrder, currentReorder.tokens.length)
     ) {
@@ -579,6 +674,8 @@ export function ExercisePlayer({
     setChoiceDrafts({});
     setTypedAnswer("");
     setFillBlankAnswers({});
+    setGapFillMcqAnswers({});
+    setReadingSubAnswers({});
     setReorderTokenOrder([]);
     setMatchingSelections({});
     setActiveMatchingLeft(null);
@@ -598,6 +695,8 @@ export function ExercisePlayer({
     setChoiceDrafts({});
     setTypedAnswer("");
     setFillBlankAnswers({});
+    setGapFillMcqAnswers({});
+    setReadingSubAnswers({});
     setReorderTokenOrder([]);
     setMatchingSelections({});
     setActiveMatchingLeft(null);
@@ -610,7 +709,7 @@ export function ExercisePlayer({
     setSessionSeed((s) => s + 1);
   };
 
-  const wrongCount = Object.values(answers).filter((a) => !a.correct).length;
+  const wrongCount = scoringTotalUnits - scoringCorrectUnits;
 
   const handleRetryWrong = useCallback(() => {
     const sourceItems = reviewItems ?? items;
@@ -630,6 +729,8 @@ export function ExercisePlayer({
     setChoiceDrafts({});
     setTypedAnswer("");
     setFillBlankAnswers({});
+    setGapFillMcqAnswers({});
+    setReadingSubAnswers({});
     setReorderTokenOrder([]);
     setMatchingSelections({});
     setActiveMatchingLeft(null);
@@ -648,7 +749,11 @@ export function ExercisePlayer({
       ? Boolean(typedAnswer.trim())
       : currentFillBlank
         ? isFillBlankComplete(fillBlankAnswers, currentFillBlank.blanks)
-        : currentReorder
+        : currentGapFillMcq
+          ? isGapFillMcqComplete(gapFillMcqAnswers, currentGapFillMcq.blanks)
+          : currentReading
+            ? isReadingComprehensionComplete(readingSubAnswers, currentReading.subQuestions)
+            : currentReorder
           ? isReorderComplete(reorderTokenOrder, currentReorder.tokens.length)
           : currentMatching
             ? isMatchingComplete(currentMatching.pairs, matchingSelections)
@@ -661,6 +766,8 @@ export function ExercisePlayer({
     currentSpelling?.explanation ??
     currentListenType?.explanation ??
     currentFillBlank?.explanation ??
+    currentGapFillMcq?.explanation ??
+    currentReading?.explanation ??
     currentReorder?.explanation ??
     currentMatching?.explanation;
 
@@ -706,8 +813,8 @@ export function ExercisePlayer({
       <ExerciseResultScreen
         lessonTitle={lessonTitle}
         subjectName={subjectName}
-        correctCount={correctCount}
-        total={total}
+        correctCount={scoringCorrectUnits}
+        total={scoringTotalUnits}
         wrongCount={wrongCount}
         passScorePercent={passScorePercent}
         elapsedMs={elapsedMs}
@@ -732,7 +839,17 @@ export function ExercisePlayer({
       ? answers[currentReorder.id]?.correct === true
       : false;
 
-  if (!current || (!currentMcq && !currentListen && !currentSpelling && !currentListenType && !currentFillBlank && !currentReorder && !currentMatching && !currentTrueFalse)) {
+  const gapFillMcqIsCorrect =
+    typedShowResult && currentGapFillMcq
+      ? answers[currentGapFillMcq.id]?.correct === true
+      : false;
+
+  const readingIsCorrect =
+    typedShowResult && currentReading
+      ? answers[currentReading.id]?.correct === true
+      : false;
+
+  if (!current || (!currentMcq && !currentListen && !currentSpelling && !currentListenType && !currentFillBlank && !currentGapFillMcq && !currentReading && !currentReorder && !currentMatching && !currentTrueFalse)) {
     return (
       <Alert severity="warning" sx={{ borderRadius: "14px" }}>
         Dạng câu <strong>{current?.displayQuestion.type ?? "unknown"}</strong> sẽ hỗ trợ ở bản tiếp theo.
@@ -749,22 +866,16 @@ export function ExercisePlayer({
       ) : null}
       <QuestionProgressBar current={questionIndex + 1} total={total} />
 
-      <header className={`exercise-player-head${currentMatching || currentReorder ? " exercise-player-head--compact" : ""}`}>
+      <header className={`exercise-player-head${currentMatching || currentReorder || currentReading ? " exercise-player-head--compact" : ""}`}>
         <div className="exercise-player-eyebrow">
           <QuizOutlinedIcon sx={{ fontSize: 18 }} />
           {current.blockTitle || lessonTitle}
         </div>
-        {current.instruction && !currentMatching && !currentReorder ? (
+        {current.instruction && !currentMatching && !currentReorder && !currentReading ? (
           <p className="exercise-player-instruction">{current.instruction}</p>
         ) : null}
         {isWrongOnlyRetry ? (
           <p className="vq-exercise-mode-note">Luyện lại {total} câu đã trả lời sai</p>
-        ) : null}
-        {!currentMatching && !currentListen && !currentReorder ? (
-          <p className="exercise-player-meta">
-            Cần đạt {passScorePercent}% để hoàn thành
-            {answeredCount > 0 ? ` · Đúng ${correctCount}/${answeredCount} câu đã làm` : null}
-          </p>
         ) : null}
       </header>
 
@@ -829,6 +940,32 @@ export function ExercisePlayer({
           isCorrect={fillBlankIsCorrect}
           onChange={(blankId, value) =>
             setFillBlankAnswers((prev) => ({ ...prev, [blankId]: value }))
+          }
+        />
+      ) : null}
+
+      {currentGapFillMcq ? (
+        <GapFillMcqQuestion
+          question={currentGapFillMcq}
+          answers={gapFillMcqAnswers}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          isCorrect={gapFillMcqIsCorrect}
+          onChange={(blankId, choiceId) =>
+            setGapFillMcqAnswers((prev) => ({ ...prev, [blankId]: choiceId }))
+          }
+        />
+      ) : null}
+
+      {currentReading ? (
+        <ReadingComprehensionQuestion
+          question={currentReading}
+          subAnswers={readingSubAnswers}
+          disabled={showFeedback}
+          showResult={showFeedback}
+          isCorrect={readingIsCorrect}
+          onSelectSub={(subId, choiceId) =>
+            setReadingSubAnswers((prev) => ({ ...prev, [subId]: choiceId }))
           }
         />
       ) : null}

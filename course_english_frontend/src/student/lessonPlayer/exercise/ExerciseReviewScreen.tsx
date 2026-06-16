@@ -6,6 +6,8 @@ import type { ExerciseAnswerSnapshot } from "../exerciseSessionStorage";
 import type { PreparedExerciseItem } from "./prepareExerciseItems";
 import type {
   FillBlankQuestion,
+  GapFillMcqQuestion,
+  ReadingComprehensionQuestion,
   ListenChooseQuestion,
   ListenTypeQuestion,
   MatchingQuestion,
@@ -17,6 +19,8 @@ import type {
 import { TrueFalseQuestion as TrueFalseReview, trueFalseCorrectChoiceId } from "./TrueFalseQuestion";
 import { VqButton } from "../../ui/VqButton";
 import { FillBlankQuestion as FillBlankReview } from "./FillBlankQuestion";
+import { GapFillMcqQuestion as GapFillMcqReview } from "./GapFillMcqQuestion";
+import { ReadingComprehensionQuestion as ReadingReview } from "./ReadingComprehensionQuestion";
 import { ReorderSentenceQuestion as ReorderReview } from "./ReorderSentenceQuestion";
 import { ListenChooseQuestion as ListenChooseReview } from "./ListenChooseQuestion";
 import { ListenTypeQuestion as ListenTypeReview } from "./ListenTypeQuestion";
@@ -269,6 +273,94 @@ export function ExerciseReviewScreen({
                 {fillBlank.explanation?.trim() ? (
                   <div className="exercise-review-explain">
                     <QuestionExplanationPanel explanation={fillBlank.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
+          if (question.type === "GAP_FILL_MCQ") {
+            const gapFill = question as GapFillMcqQuestion;
+            const answer = answers[gapFill.id];
+            const isCorrect = answer?.correct === true;
+            const partialLabel =
+              answer?.correctBlankCount != null && answer?.totalBlanks != null
+                ? `${answer.correctBlankCount}/${answer.totalBlanks} ô`
+                : isCorrect
+                  ? "Đúng"
+                  : "Sai";
+
+            return (
+              <li key={gapFill.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Chọn điền khuyết</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> {partialLabel}
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> {partialLabel}
+                      </>
+                    )}
+                  </span>
+                </div>
+                <GapFillMcqReview
+                  question={gapFill}
+                  answers={answer?.gapFillMcqAnswers ?? {}}
+                  showResult
+                  isCorrect={isCorrect}
+                  onChange={() => undefined}
+                />
+                {gapFill.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={gapFill.explanation} />
+                  </div>
+                ) : null}
+              </li>
+            );
+          }
+
+          if (question.type === "READING_COMPREHENSION") {
+            const reading = question as ReadingComprehensionQuestion;
+            const answer = answers[reading.id];
+            const isCorrect = answer?.correct === true;
+            const partialLabel =
+              answer?.correctSubCount != null && answer?.totalSubQuestions != null
+                ? `${answer.correctSubCount}/${answer.totalSubQuestions} câu`
+                : isCorrect
+                  ? "Đúng"
+                  : "Sai";
+
+            return (
+              <li key={reading.id} className={`exercise-review-item${isCorrect ? " is-correct" : " is-wrong"}`}>
+                <div className="exercise-review-item-head">
+                  <span className="exercise-review-item-num">Câu {index + 1}</span>
+                  <span className="exercise-review-item-type">Đọc hiểu</span>
+                  <span className={`exercise-review-item-badge${isCorrect ? " is-ok" : " is-bad"}`}>
+                    {isCorrect ? (
+                      <>
+                        <CheckIcon sx={{ fontSize: 14 }} /> {partialLabel}
+                      </>
+                    ) : (
+                      <>
+                        <CloseIcon sx={{ fontSize: 14 }} /> {partialLabel}
+                      </>
+                    )}
+                  </span>
+                </div>
+                <ReadingReview
+                  question={reading}
+                  subAnswers={answer?.readingSubAnswers ?? {}}
+                  showResult
+                  isCorrect={isCorrect}
+                  onSelectSub={() => undefined}
+                />
+                {reading.explanation?.trim() ? (
+                  <div className="exercise-review-explain">
+                    <QuestionExplanationPanel explanation={reading.explanation} />
                   </div>
                 ) : null}
               </li>

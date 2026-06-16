@@ -282,6 +282,12 @@ public class LessonPublishValidator {
         if ("FILL_BLANK".equals(type)) {
             return isValidFillBlank(question);
         }
+        if ("GAP_FILL_MCQ".equals(type)) {
+            return isValidGapFillMcq(question);
+        }
+        if ("READING_COMPREHENSION".equals(type)) {
+            return isValidReadingComprehension(question);
+        }
         if ("REORDER_SENTENCE".equals(type)) {
             return isValidReorderSentence(question);
         }
@@ -440,6 +446,83 @@ public class LessonPublishValidator {
                 }
             }
             if (!hasAnswer) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isValidGapFillMcq(JsonNode question) {
+        JsonNode prompt = question.get("prompt");
+        String promptText = prompt != null && prompt.isObject() ? prompt.path("text").asText("") : "";
+        if (promptText.isBlank() || !promptText.contains("___")) {
+            return false;
+        }
+        JsonNode blanks = question.get("blanks");
+        if (blanks == null || !blanks.isArray() || blanks.isEmpty()) {
+            return false;
+        }
+        for (JsonNode blank : blanks) {
+            if (blank == null || blank.isNull()) {
+                return false;
+            }
+            JsonNode choices = blank.get("choices");
+            if (choices == null || !choices.isArray() || choices.size() < 2) {
+                return false;
+            }
+            boolean hasChoiceText = false;
+            for (JsonNode choice : choices) {
+                if (choice != null && !choice.path("text").asText("").isBlank()) {
+                    hasChoiceText = true;
+                    break;
+                }
+            }
+            if (!hasChoiceText) {
+                return false;
+            }
+            String correctChoiceId = blank.path("correctChoiceId").asText("");
+            if (correctChoiceId.isBlank()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isValidReadingComprehension(JsonNode question) {
+        JsonNode passage = question.get("passage");
+        String passageText = passage != null && passage.isObject() ? passage.path("text").asText("") : "";
+        if (passageText.isBlank()) {
+            return false;
+        }
+        JsonNode subQuestions = question.get("subQuestions");
+        if (subQuestions == null || !subQuestions.isArray() || subQuestions.isEmpty()) {
+            return false;
+        }
+        for (JsonNode sub : subQuestions) {
+            if (sub == null || sub.isNull()) {
+                return false;
+            }
+            JsonNode prompt = sub.get("prompt");
+            String promptText = prompt != null && prompt.isObject() ? prompt.path("text").asText("") : "";
+            if (promptText.isBlank()) {
+                return false;
+            }
+            JsonNode choices = sub.get("choices");
+            if (choices == null || !choices.isArray() || choices.size() < 2) {
+                return false;
+            }
+            boolean hasChoiceText = false;
+            for (JsonNode choice : choices) {
+                if (choice != null && !choice.path("text").asText("").isBlank()) {
+                    hasChoiceText = true;
+                    break;
+                }
+            }
+            if (!hasChoiceText) {
+                return false;
+            }
+            String correctChoiceId = sub.path("correctChoiceId").asText("");
+            if (correctChoiceId.isBlank()) {
                 return false;
             }
         }

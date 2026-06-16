@@ -21,8 +21,10 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
 import KeyboardOutlinedIcon from "@mui/icons-material/KeyboardOutlined";
 import LinkIcon from "@mui/icons-material/Link";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import ReorderIcon from "@mui/icons-material/Reorder";
+import RuleOutlinedIcon from "@mui/icons-material/RuleOutlined";
 import ShortTextOutlinedIcon from "@mui/icons-material/ShortTextOutlined";
 import SpellcheckOutlinedIcon from "@mui/icons-material/SpellcheckOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -49,6 +51,8 @@ type QuestionListPanelProps = {
   onAddMcq: () => void;
   onAddMatching: () => void;
   onAddFillBlank: () => void;
+  onAddGapFillMcq: () => void;
+  onAddReading: () => void;
   onAddReorder: () => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
 };
@@ -91,7 +95,11 @@ function SortableQuestionItem({
             ? KeyboardOutlinedIcon
             : question.type === "FILL_BLANK"
               ? ShortTextOutlinedIcon
-              : question.type === "REORDER_SENTENCE"
+              : question.type === "GAP_FILL_MCQ"
+                ? RuleOutlinedIcon
+                : question.type === "READING_COMPREHENSION"
+                  ? MenuBookOutlinedIcon
+                  : question.type === "REORDER_SENTENCE"
                 ? ReorderIcon
                 : QuizOutlinedIcon;
 
@@ -205,6 +213,8 @@ export function QuestionListPanel({
   onAddMcq,
   onAddMatching,
   onAddFillBlank,
+  onAddGapFillMcq,
+  onAddReading,
   onAddReorder,
   onReorder,
 }: QuestionListPanelProps) {
@@ -349,6 +359,40 @@ export function QuestionListPanel({
           onClick={onAddFillBlank}
         >
           Thêm điền khuyết
+        </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<RuleOutlinedIcon />}
+          sx={{
+            py: 1,
+            borderRadius: "10px",
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: "none",
+            borderColor: "#0C447C",
+            color: "#0C447C",
+          }}
+          onClick={onAddGapFillMcq}
+        >
+          Thêm chọn điền khuyết
+        </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<MenuBookOutlinedIcon />}
+          sx={{
+            py: 1,
+            borderRadius: "10px",
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: "none",
+            borderColor: "#0C447C",
+            color: "#0C447C",
+          }}
+          onClick={onAddReading}
+        >
+          Thêm đọc hiểu
         </Button>
         <Button
           fullWidth
