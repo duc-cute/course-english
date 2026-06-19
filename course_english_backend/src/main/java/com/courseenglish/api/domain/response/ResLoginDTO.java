@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import com.courseenglish.api.util.constant.GenderEnum;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -35,9 +36,12 @@ public class ResLoginDTO {
         private UUID id;
         private String email;
         private String name;
+        private String avatarUrl;
         private String address;
         private int age;
         private GenderEnum gender;
+        private String role;
+        private List<String> roles;
     }
 
     @Getter

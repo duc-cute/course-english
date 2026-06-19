@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
     User findByEmailAndVoidedFalse(String userName);
 
+    User findByGoogleIdAndVoidedFalse(String googleId);
+
     boolean existsByEmailAndVoidedFalse(String email);
 
     User findByRefreshTokenAndEmailAndVoidedFalse(String token, String email);

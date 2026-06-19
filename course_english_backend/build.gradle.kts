@@ -1,4 +1,4 @@
-﻿plugins {
+plugins {
 	java
 	id("org.springframework.boot") version "3.2.4"
 	id("io.spring.dependency-management") version "1.1.4"
@@ -28,6 +28,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 	implementation("com.turkraft.springfilter:jpa:3.1.7")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+	implementation("com.google.api-client:google-api-client:2.7.2")
 	implementation("org.apache.poi:poi-ooxml:5.2.5")
 	implementation("org.apache.pdfbox:pdfbox:3.0.3")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")

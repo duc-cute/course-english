@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forgot Password | LinguistPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#eff4ff",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary": "#525657",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed": "#001c39",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "surface": "#f8f9ff",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "outline": "#737686",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "inverse-primary": "#b4c5ff",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#0053db",
+                    "secondary-container": "#64a8fe",
+                    "on-tertiary-fixed": "#191c1e",
+                    "on-secondary-fixed-variant": "#004883",
+                    "outline-variant": "#c3c6d7",
+                    "surface-dim": "#ccdbf3",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#233144",
+                    "secondary": "#0060ac",
+                    "error-container": "#ffdad6",
+                    "on-background": "#0d1c2e",
+                    "surface-container-highest": "#d5e3fc",
+                    "primary-container": "#2563eb",
+                    "primary": "#004ac6",
+                    "on-primary-fixed": "#00174b",
+                    "on-primary-container": "#eeefff",
+                    "on-surface": "#0d1c2e",
+                    "primary-fixed": "#dbe1ff",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#d5e3fc",
+                    "background": "#f8f9ff",
+                    "secondary-fixed-dim": "#a4c9ff",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-high": "#dce9ff",
+                    "surface-container": "#e6eeff",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary-container": "#003c70",
+                    "tertiary-container": "#6b6e70",
+                    "on-surface-variant": "#434655",
+                    "secondary-fixed": "#d4e3ff",
+                    "on-tertiary-container": "#eff1f3",
+                    "tertiary-fixed": "#e0e3e5",
+                    "on-primary-fixed-variant": "#003ea8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "container-max": "1200px",
+                    "xl": "40px",
+                    "base": "4px",
+                    "sm": "8px",
+                    "xs": "4px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0px 1px 3px rgba(0,0,0,0.05), 0px 10px 15px -3px rgba(0,0,0,0.02);
+        }
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #2563EB 0%, #60A5FA 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+        .owl-float {
+            animation: floating 6s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
+<main class="flex flex-col md:flex-row h-screen w-full overflow-hidden">
+<!-- LEFT: Visual Mascot Section (60% on Desktop) -->
+<section class="hidden md:flex md:w-3/5 bg-gradient-to-br from-[#2563EB] to-[#60A5FA] relative overflow-hidden items-center justify-center p-xl">
+<!-- Decorative atmospheric elements -->
+<div class="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+<div class="absolute top-[10%] left-[10%] w-64 h-64 rounded-full bg-white blur-[120px]"></div>
+<div class="absolute bottom-[20%] right-[10%] w-96 h-96 rounded-full bg-blue-300 blur-[150px]"></div>
+</div>
+<div class="relative z-10 text-center flex flex-col items-center max-w-lg">
+<div class="owl-float mb-lg">
+<img alt="Mascot" class="w-[480px] h-auto drop-shadow-2xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ4assd12lUS3fZ9k5_OsL086PdebNk4cnIwalPznm-1Ga8zb4h04I4N7nn1l7N3P0qG2BlRKbM8VijSW0Jnf7vFrZ495A1Rms1wA6AZq2evFFnbgHcGxE7xIvsAXdQxHb7fxWSQ17DK-llU4hkVR8sWOSCofPmlXPTdN6CzdgamuXS0g0OJxYghjM2W9kgQeLC4nzGSW_Y7ggH3foY1rUOFFLZ06LqHjWasBapjkHnWE6ewa7VNXwXxdw-aMfPG9KNeLKwuxo4X9q"/>
+</div>
+<h1 class="font-display-lg text-display-lg text-white mb-base tracking-tight">Don't Worry!</h1>
+<p class="font-body-lg text-body-lg text-blue-50 mb-sm">We'll help you get back to learning English.</p>
+<div class="w-16 h-1.5 bg-white/30 rounded-full mt-lg"></div>
+</div>
+<!-- Branding overlay -->
+<div class="absolute top-gutter left-gutter flex items-center gap-2">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="font-headline-md text-headline-md font-bold text-white tracking-tighter">LinguistPro</span>
+</div>
+</section>
+<!-- RIGHT: Reset Form Section (40% on Desktop) -->
+<section class="w-full md:w-2/5 flex items-center justify-center p-margin-mobile md:p-gutter bg-surface">
+<div class="w-full max-w-[420px] glass-card rounded-xl p-8 md:p-10 border border-outline-variant/30">
+<!-- Mobile Logo (Hidden on Desktop) -->
+<div class="md:hidden flex items-center gap-2 mb-8 justify-center">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tighter">LinguistPro</span>
+</div>
+<div class="mb-lg">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Forgot Password</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Enter the email associated with your account.</p>
+</div>
+<form class="space-y-6" id="resetForm" onsubmit="event.preventDefault(); handleReset();">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="email">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">mail</span>
+<input class="w-full pl-12 pr-4 py-4 rounded-xl border-1.5 border-outline-variant bg-surface focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-body-md text-on-surface outline-none" id="email" placeholder="name@company.com" required="" type="email"/>
+</div>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant/80 italic">
+                        Enter your email address and we'll send you a secure password reset link.
+                    </p>
+<button class="btn-primary-gradient w-full py-4 rounded-xl text-white font-label-md text-label-md font-bold flex items-center justify-center gap-2" type="submit">
+<span>Send Reset Link</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<div class="pt-4 text-center">
+<a class="font-label-md text-label-md text-primary hover:text-primary-container transition-colors inline-flex items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                            Back to Login
+                        </a>
+</div>
+</form>
+<!-- Success State (Hidden initially) -->
+<div class="hidden text-center py-8" id="successState">
+<div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-lg">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">mark_email_read</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Check your inbox</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg">We've sent a password reset link to your email address.</p>
+<button class="w-full py-4 rounded-xl border-1.5 border-outline-variant text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-low transition-all" onclick="location.reload()">
+                        Didn't receive email? Try again
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<script>
+        function handleReset() {
+            const form = document.getElementById('resetForm');
+            const success = document.getElementById('successState');
+            const btn = form.querySelector('button');
+            const originalContent = btn.innerHTML;
+            
+            // Loading state
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span>';
+            
+            // Simulate API call
+            setTimeout(() => {
+                form.classList.add('hidden');
+                success.classList.remove('hidden');
+            }, 1500);
+        }
+
+        // Lightweight hover effect for mascot container
+        document.querySelector('.md\\:w-3\\/5').addEventListener('mousemove', (e) => {
+            const owl = document.querySelector('.owl-float');
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 40;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 40;
+            owl.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        document.querySelector('.md\\:w-3\\/5').addEventListener('mouseleave', () => {
+            const owl = document.querySelector('.owl-float');
+            owl.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+    </script>
+</body></html>

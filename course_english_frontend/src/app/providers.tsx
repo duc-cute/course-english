@@ -1,4 +1,5 @@
 import { Box, CssBaseline, ThemeProvider } from "@mui/material";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Provider } from "react-redux";
 import { academicCore, academicCoreTheme } from "../theme/academicCore";
 import { PersistGate } from "redux-persist/integration/react";
@@ -31,7 +32,9 @@ function GlobalLoader() {
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
-  return (
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? "";
+
+  const content = (
     <Provider store={store}>
       <PersistGate persistor={persistor}>
         <ThemeProvider theme={academicCoreTheme}>
@@ -43,4 +46,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       </PersistGate>
     </Provider>
   );
+
+  if (!googleClientId) {
+    return content;
+  }
+
+  return <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>;
 }

@@ -57,6 +57,19 @@ public class MailTemplateServiceImpl implements MailTemplateService {
         return new RenderedMailMessage(recipient.email(), subjectLine, htmlBody, textBody);
     }
 
+    @Override
+    public RenderedMailMessage renderPasswordReset(String email, String recipientName, String resetUrl, int ttlMinutes) {
+        Context ctx = new Context();
+        ctx.setVariable("recipientName", recipientName);
+        ctx.setVariable("resetUrl", resetUrl);
+        ctx.setVariable("ttlMinutes", ttlMinutes);
+        ctx.setVariable("currentYear", Year.now().getValue());
+
+        String htmlBody = templateEngine.process("mail/password-reset", ctx);
+        String textBody = templateEngine.process("mail/password-reset.txt", ctx);
+        return new RenderedMailMessage(email, "Đặt lại mật khẩu — Course English", htmlBody, textBody);
+    }
+
     private String safeTrim(String value) {
         return value == null ? "" : value.trim();
     }

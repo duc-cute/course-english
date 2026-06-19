@@ -17,6 +17,8 @@ import { ManageVocabularyWordsPage } from "../pages/admin/ManageVocabularyWordsP
 import { ManageSystemConfigPage } from "../pages/admin/ManageSystemConfigPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
+import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "../pages/auth/ResetPasswordPage";
 import { StudentHomePage } from "../pages/student/StudentHomePage";
 import { StudentLessonListPage } from "../pages/student/StudentLessonListPage";
 import { StudentUsageGuidePage } from "../pages/student/StudentUsageGuidePage";
@@ -57,6 +59,14 @@ export const appRouter = createBrowserRouter([
   {
     path: paths.REGISTER,
     element: <RegisterPage />,
+  },
+  {
+    path: paths.FORGOT_PASSWORD,
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: paths.RESET_PASSWORD,
+    element: <ResetPasswordPage />,
   },
   {
     path: paths.STUDENT,
@@ -117,7 +127,7 @@ export const appRouter = createBrowserRouter([
   {
     path: paths.ADMIN,
     element: (
-      <RequireAuth>
+      <RequireAuth adminOnly>
         <LazyAdminLayout />
       </RequireAuth>
     ),

@@ -51,7 +51,13 @@ public class SecurityConfiguration {
     @Order(1)
     public SecurityFilterChain publicEndpoints(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/v1/auth/**") // chỉ áp dụng cho auth
+                .securityMatcher(
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/register",
+                        "/api/v1/auth/google",
+                        "/api/v1/auth/forgot-password",
+                        "/api/v1/auth/reset-password",
+                        "/api/v1/auth/refresh")
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
@@ -68,7 +74,8 @@ public class SecurityConfiguration {
 
         String[] whiteList = {
                 "/",
-                "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register",
+                "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/register", "/api/v1/auth/google",
+                "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password",
                 "/api/v1/system-configs/feature-flags",
                 "/storage/**",                "/v3/api-docs/**",
                 "/swagger-ui/**",

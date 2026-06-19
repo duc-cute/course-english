@@ -1,5 +1,5 @@
 import api from "./axios";
-import type { ApiResponse, LoginResponseData, UserRecord } from "./types";
+import type { ApiResponse, ForgotPasswordData, LoginResponseData, UserRecord } from "./types";
 
 const API_AUTH_PATH = "/auth";
 const API_USER_PATH = "";
@@ -36,6 +36,28 @@ export async function apiRegister(data: {
 
 export async function apiLogin(data: { username: string; password: string }) {
   const response = (await api.post(`${API_AUTH_PATH}/login`, data)) as ApiResponse<LoginResponseData>;
+  return unwrapResponse(response);
+}
+
+export async function apiGoogleLogin(data: { idToken: string }) {
+  const response = (await api.post(`${API_AUTH_PATH}/google`, data)) as ApiResponse<LoginResponseData>;
+  return unwrapResponse(response);
+}
+
+export async function apiForgotPassword(email: string) {
+  const response = (await api.post(`${API_AUTH_PATH}/forgot-password`, { email })) as ApiResponse<ForgotPasswordData>;
+  return unwrapResponse(response);
+}
+
+export async function apiResetPassword(data: { token: string; newPassword: string }) {
+  const response = (await api.post(`${API_AUTH_PATH}/reset-password`, data)) as ApiResponse;
+  return unwrapResponse(response);
+}
+
+export async function apiGetAccount() {
+  const response = (await api.get(`${API_AUTH_PATH}/account`)) as ApiResponse<{
+    user?: LoginResponseData["user"];
+  }>;
   return unwrapResponse(response);
 }
 

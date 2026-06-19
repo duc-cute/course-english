@@ -39,7 +39,8 @@ public class UserDetailsCustom implements UserDetailsService {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
-        return new User(user.getEmail(), user.getPassword(), authorities);
+        String credentials = user.getPassword() != null ? user.getPassword() : "";
+        return new User(user.getEmail(), credentials, authorities);
 
     }
 

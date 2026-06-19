@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import com.courseenglish.api.util.constant.AuthProviderEnum;
 import com.courseenglish.api.util.constant.GenderEnum;
 
 import java.util.HashSet;
@@ -27,7 +28,14 @@ public class User extends BaseObject {
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     private String avatarUrl;
 
-    @NotBlank(message = "password không được để trống")
+    @Column(name = "google_id", unique = true, length = 255)
+    private String googleId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    private AuthProviderEnum authProvider = AuthProviderEnum.LOCAL;
+
+    /** Nullable khi {@link #authProvider} là GOOGLE. Validation ở ReqRegisterDTO / admin create. */
     private String password;
 
     private String address;
