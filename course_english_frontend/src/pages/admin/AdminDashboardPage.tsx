@@ -22,6 +22,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { TeachingPlanSection } from "../../admin/components/teachingPlan/TeachingPlanSection";
+import { StudentsNeedSupportSection } from "../../admin/components/studentSupport/StudentsNeedSupportSection";
 import { paths } from "../../shared/constants/paths";
 
 /** Số liệu mẫu — thay bằng API khi backend có endpoint dashboard */
@@ -111,6 +113,9 @@ export function AdminDashboardPage() {
 
   return (
     <Box className="admin-dashboard-wrap">
+      <TeachingPlanSection />
+      <StudentsNeedSupportSection />
+
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {STATS.map((stat) => (
           <Grid key={stat.label} size={{ xs: 12, sm: 6, lg: 3 }}>

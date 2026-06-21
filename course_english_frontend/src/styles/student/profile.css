@@ -215,78 +215,114 @@
 }
 
 /* Badges */
+.vq-profile-badges-tab {
+  background: var(--vq-surface-container-lowest);
+  border-radius: var(--vq-radius);
+  padding: 24px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.04);
+}
+
+.vq-profile-badges-tab__header {
+  margin-bottom: 28px;
+}
+
+.vq-profile-badges-tab__title {
+  margin: 0 0 6px 0;
+  font-family: var(--vq-font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--vq-on-surface);
+}
+
 .vq-profile-badges-tab__summary {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 0.9375rem;
   color: var(--vq-on-surface-variant);
 }
 
-.vq-profile-badge-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.vq-profile-badge-sections {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 32px;
 }
 
-.vq-profile-badge-card {
+.vq-profile-badge-section__title {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: calc(var(--vq-radius) - 4px);
-  background: var(--vq-surface-container-lowest);
-  border: 1px solid rgba(45, 75, 215, 0.08);
-  opacity: 0.72;
+  gap: 8px;
+  font-family: var(--vq-font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--vq-on-surface);
+  margin: 0 0 18px 0;
+  border-bottom: 2px solid var(--vq-surface-container);
+  padding-bottom: 8px;
 }
 
-.vq-profile-badge-card--unlocked {
+.vq-profile-badge-section__icon {
+  font-size: 1.25rem;
+}
+
+.vq-profile-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 24px 16px;
+}
+
+.vq-profile-badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-radius: var(--vq-radius);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
+  cursor: default;
+  opacity: 0.6;
+}
+
+.vq-profile-badge-item--unlocked {
   opacity: 1;
-  border-color: rgba(54, 132, 0, 0.2);
 }
 
-.vq-profile-badge-card__body {
-  flex: 1;
-  min-width: 0;
+.vq-profile-badge-item:hover {
+  transform: translateY(-4px);
+  background-color: var(--vq-surface-container);
 }
 
-.vq-profile-badge-card__title {
-  margin: 0 0 4px;
+.vq-profile-badge-item__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.vq-profile-badge-item__title {
+  margin: 0;
   font-size: 0.9375rem;
   font-weight: 800;
   color: var(--vq-on-surface);
 }
 
-.vq-profile-badge-card__desc {
+.vq-profile-badge-item__desc {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
   color: var(--vq-on-surface-variant);
-}
-
-.vq-profile-badge-card__status {
-  flex-shrink: 0;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--vq-outline);
-}
-
-.vq-profile-badge-card--unlocked .vq-profile-badge-card__status {
-  color: var(--vq-tertiary);
+  max-width: 120px;
 }
 
 .vq-profile-badge {
   flex-shrink: 0;
-  width: 64px;
-  height: 64px;
-  border-radius: 999px;
-  background: var(--vq-surface-container-lowest);
-  display: flex;
+  width: 80px;
+  height: 80px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .vq-profile-badge--sm {
@@ -295,31 +331,25 @@
 }
 
 .vq-profile-badge svg {
-  font-size: 1.75rem !important;
+  display: block;
 }
 
-.vq-profile-badge--secondary svg {
-  color: var(--vq-secondary);
-}
-
-.vq-profile-badge--tertiary svg {
-  color: var(--vq-tertiary);
-}
-
+.vq-profile-badge--secondary svg,
+.vq-profile-badge--tertiary svg,
 .vq-profile-badge--primary svg {
-  color: var(--vq-primary);
+  color: inherit;
 }
 
 .vq-profile-badge--locked {
-  background: rgba(255, 255, 255, 0.35);
+  background: transparent;
 }
 
 .vq-profile-badge--locked svg {
-  color: var(--vq-outline);
+  color: inherit;
 }
 
 .vq-home-badges .vq-profile-badge {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 /* History */

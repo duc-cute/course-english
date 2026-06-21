@@ -1,256 +1,181 @@
-# English Learning Platform Architecture Review
+Design a modern "Students Need Support" section for an English Learning Platform called Course English.
 
-Act as a Senior EdTech Architect, Product Architect, and LMS System Designer.
+IMPORTANT:
 
-I am building an English Learning Platform for students from Grade 1 to Grade 9.
+This feature helps teachers quickly identify students who may be struggling and need intervention.
 
-The platform supports:
+This is NOT an analytics dashboard.
 
-- Vocabulary Learning
-- Grammar Learning
-- Listening Practice
-- Speaking Practice
-- Reading Practice
-- Quizzes
-- Homework
-- Exams
+This is NOT a leaderboard.
 
-The system must be scalable, reusable, and maintainable.
+The goal is to help teachers discover at-risk students.
 
----
+================================================
 
-# Core Philosophy
+RISK DETECTION RULES
 
-I do NOT want teachers to repeatedly create the same data.
+================================================
 
-Instead, I want a Knowledge Asset architecture.
+A student receives a Risk Score based on:
 
-The platform should treat Vocabulary as a reusable learning asset.
+- No learning activity for more than 7 days (+50)
+- Missing assignments (+30)
+- Average score below 60% (+25)
+- Significant score decline over recent lessons (+20)
 
----
+Risk Levels:
 
-# Vocabulary Library (Core Knowledge Repository)
+🔴 Critical
+Risk Score >= 70
 
-Create a centralized Vocabulary Library.
+🟠 Warning
+Risk Score >= 40
 
-Each vocabulary item contains:
+🟡 Attention
+Risk Score >= 20
 
-- Word
-- Meaning (Vietnamese)
-- IPA Pronunciation
-- UK Audio
-- US Audio
-- Image
-- Example Sentence
-- Part Of Speech
-- Difficulty Level
-- Tags
+================================================
 
-Example:
+DESIGN GOAL
 
-Word:
-Apple
+================================================
 
-Meaning:
-Quả táo
+Teachers should immediately understand:
 
-IPA:
-/ˈæp.əl/
+- Which students need support
+- Why they need support
+- What action should be taken
 
-Audio:
-UK Audio
-US Audio
+================================================
 
-Example:
-I eat an apple every day.
+LAYOUT
 
-Part Of Speech:
-Noun
+================================================
 
-Image:
-Apple Picture
+Use a clean data table.
 
----
+Columns:
 
-# Automatic Vocabulary Enrichment
+Student
 
-Teachers should NOT manually enter IPA or Audio.
+Risk Level
 
-Workflow:
+Inactive Days
 
-Teacher enters:
+Missing Assignments
 
-Apple
+Average Score
 
-Backend automatically retrieves:
+Score Trend
 
-- IPA
-- UK Audio
-- US Audio
-- Part Of Speech
+Reason
 
-using Free Dictionary API or similar dictionary services.
+Actions
 
-Teacher only provides:
+================================================
 
-- Vietnamese Meaning
-- Image (optional)
-- Example Sentence (optional)
+EXAMPLE ROWS
+
+================================================
+
+Nguyen Van A
+
+🔴 Critical
+
+10 Days
+
+3 Missing Assignments
+
+45%
+
+-30%
+
+Inactive + Missing Homework
+
+[View Profile]
 
 ---
 
-# Vocabulary Sets
+Tran Thi B
 
-Teachers create Vocabulary Sets.
+🟠 Warning
 
-Example:
+5 Days
 
-Fruits Vocabulary
+2 Missing Assignments
 
-- Apple
-- Banana
-- Orange
-- Mango
+58%
 
-School Vocabulary
+-15%
 
-- Book
-- Pen
-- Teacher
-- Classroom
+Low Performance
 
-Vocabulary Sets are reusable.
+[View Profile]
 
-The same vocabulary can belong to multiple sets.
+================================================
 
----
+TOP SUMMARY
 
-# Lesson Architecture
+================================================
 
-Do NOT model Lesson as a collection of questions.
+Above the table display summary cards:
 
-Instead:
+🔴 Critical Students: 5
 
-Course
-└── Unit
-└── Lesson
-└── Learning Blocks
+🟠 Warning Students: 8
 
-Learning Blocks can be:
+🟡 Attention Students: 12
 
-- Text Block
-- Image Block
-- Video Block
-- Grammar Block
-- Vocabulary Set Block
-- Quiz Block
-- Listening Block
-- Speaking Block
-- Reading Block
-- Assignment Block
+================================================
 
----
+FILTERS
 
-# Activity Generation
+================================================
 
-Vocabulary Sets should automatically generate learning activities.
+Filter by:
 
-Teachers do not need to manually create every exercise.
+Class
 
-Example:
+Risk Level
 
-Vocabulary Set:
-Apple
-Banana
-Orange
+Inactive Days
 
-Automatically generate:
+Missing Assignments
 
-- Flashcards
-- Match Word
-- Match Image
-- Missing Letters
-- Reorder Letters
-- Listen And Choose
-- Listen And Type
-- Speaking Practice
-- Review Quiz
+Search Student Name
 
----
+================================================
 
-# Question Bank
+VISUAL STYLE
 
-Question Bank should exist as a separate module.
+================================================
 
-Question Bank stores:
+- Modern EdTech UI
+- Similar to Google Classroom Admin
+- White background
+- Soft blue accents
+- Rounded table container
+- Minimal and clean
+- Easy to scan quickly
 
-- Vocabulary Questions
-- Grammar Questions
-- Reading Questions
-- Listening Questions
+================================================
 
-Lessons can reference Question Bank items.
+AVOID
 
-Question Bank and Vocabulary Library should coexist.
+================================================
 
-Vocabulary Library = Knowledge Repository
+❌ Large charts
 
-Question Bank = Assessment Repository
+❌ Pie charts
 
----
+❌ Corporate analytics dashboards
 
-# Content Creation Methods
+❌ Excessive statistics
 
-Support 4 authoring methods:
+================================================
 
-1. Manual Builder
-   - Teachers create questions manually.
+FOCUS
 
-2. Excel Import
-   - Teachers upload CSV/Excel.
+================================================
 
-3. Question Bank
-   - Teachers select existing questions.
-
-4. Vocabulary Set Generator
-   - Teachers select vocabulary assets and the system generates activities automatically.
-
----
-
-# Future Requirements
-
-The architecture should support:
-
-- 10,000+ Vocabulary Items
-- 100,000+ Questions
-- 10,000+ Students
-- Mobile Learning
-- AI-generated Exercises
-- AI-generated Pronunciation Evaluation
-- AI-generated Quizzes
-- AI-generated Vocabulary Recommendations
-
----
-
-# Please Analyze
-
-1. Overall architecture
-2. Domain-driven design
-3. Database schema
-4. Entity relationships
-5. Vocabulary Library design
-6. Question Bank design
-7. Lesson Builder design
-8. Activity Generator design
-9. Scalability considerations
-10. Recommended implementation roadmap
-
-Provide:
-
-- ERD
-- Architecture Diagrams
-- Workflow Diagrams
-- UI/UX Suggestions
-- Backend Design Recommendations
-
-Think like a real EdTech platform, not a simple LMS.
+Teachers should be able to identify struggling students within 5 seconds of opening the page.

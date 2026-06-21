@@ -1,1 +1,1 @@
-﻿rootProject.name = "course-english-backend"
+rootProject.name = "course-english-backend"

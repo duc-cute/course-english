@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sign In - Lumina English</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#dae2fd",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#d4e3ff",
+                        "on-surface": "#131b2e",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d2d9f4",
+                        "background": "#faf8ff",
+                        "outline-variant": "#c3c6d7",
+                        "surface-tint": "#0053db",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "surface": "#faf8ff",
+                        "tertiary": "#006229",
+                        "inverse-primary": "#b4c5ff",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-container": "#eeefff",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#004883",
+                        "inverse-on-surface": "#eef0ff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "surface-variant": "#dae2fd",
+                        "tertiary-container": "#007e37",
+                        "primary": "#004ac6",
+                        "on-secondary-fixed": "#001c39",
+                        "outline": "#737686",
+                        "on-primary-fixed": "#00174b",
+                        "surface-bright": "#faf8ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#131b2e",
+                        "inverse-surface": "#283044",
+                        "secondary-fixed-dim": "#a4c9ff",
+                        "primary-fixed": "#dbe1ff",
+                        "on-secondary-container": "#003c70",
+                        "surface-container-high": "#e2e7ff",
+                        "tertiary-fixed": "#6bff8f",
+                        "primary-container": "#2563eb",
+                        "surface-container": "#eaedff",
+                        "on-tertiary-fixed": "#002109",
+                        "secondary": "#0060ac",
+                        "on-tertiary-container": "#c1ffc5",
+                        "surface-container-low": "#f2f3ff",
+                        "on-surface-variant": "#434655",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#64a8fe",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xl": "64px",
+                        "gutter": "24px",
+                        "sm": "16px",
+                        "base": "4px",
+                        "lg": "40px",
+                        "margin-desktop": "48px",
+                        "xs": "8px",
+                        "md": "24px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "headline-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .delay-1 { animation-delay: 1s; }
+        .delay-2 { animation-delay: 2s; }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface overflow-hidden">
+<main class="flex h-screen w-full">
+<!-- Left Side: Hero & Mascot (60%) -->
+<section class="hidden lg:flex lg:w-[60%] relative flex-col justify-center items-center px-margin-desktop overflow-hidden bg-gradient-to-br from-primary to-secondary-container">
+<!-- Animated Background Shader -->
+<!-- Floating UI Elements -->
+<div class="absolute top-12 left-12 animate-float delay-1">
+<div class="glass-card px-md py-sm rounded-xl flex items-center gap-xs">
+<span class="text-2xl">🔥</span>
+<div>
+<p class="font-label-md text-label-md text-on-surface">21 days</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Today's streak</p>
+</div>
+</div>
+</div>
+<div class="absolute bottom-24 right-12 animate-float">
+<div class="glass-card p-md rounded-xl w-64">
+<div class="flex justify-between items-center mb-xs">
+<p class="font-label-md text-label-md text-on-surface">Level 12 Explorer</p>
+<p class="font-label-sm text-label-sm text-primary">78%</p>
+</div>
+<div class="w-full bg-secondary-fixed h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+</div>
+<div class="absolute top-1/4 right-16 animate-float delay-2">
+<div class="glass-card p-sm rounded-full flex gap-xs items-center px-md">
+<img alt="Bookworm Badge" class="w-8 h-8 object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLtkHbsT4fXnuTCheksC_Gpu_6buGH4DOPz_UndjharL5Fry7YKJLkfDuZTHiMAEvGNHR0xwamG_7JCS2712GfzFKTBTAOaOiTBt4_JDC8YQEn1-Jyi3IU3M88RqHrPt0yvAvvk3afeYoJA6GMVJy6ZaoXDzR8Ok4H2_UfVBbRR9hSUrLPZeeqlCUH1wmX4Bz69qeWoQh4KEl92hqT1YgloG4bdMAiTffHsYzi07zpIVnA5-zAroq92TLTqz"/>
+<img alt="Scholar Badge" class="w-8 h-8 object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLs9u1ckZOzULf6cbzZYA8SuNgaSbIpU4ZeAXjjMQ1EtZTTMX51mikPQ7dkB0ZBJaqXAvfoqSNHFvtcdqjg6ZH5y-wM7qkB4QorzgxVwIkW6AJHyyYeeIyl1uSwT3Zk2r5ZL5PIrbFnh3EQxldELvZva7yBNNdpKfDHz9U5sUe7bZmJaXxfFR19oynEdU36bLZpt4QhIjGM-QFtp_UZLe2nZQLNBKpmN4p4ct52s-C48H04XY2LchqCT2aAo"/>
+<img alt="Legend Badge" class="w-8 h-8 object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLvRC5kvbrss_GCXJZ9eFL_aFkL3FVCzT5DSM7zpgojLHnO0hxmH7B850xQ2tnDR7JP6PR0TwbFjwkO8AWBEpFogmTsYoVklK--wrh3ruOxFUzyUrpamflZ_xRL5lNQzziUf3BD_GghEY8FfUVSaFjLBVCX8dFuEXxGI_-LLyidDY4s6XVMBERW_VOllFUsq_f-m2PKPOqbk4m4l473HHYd1EBpYargL2q2J3xLE-esx6ZlQE8Ch2xHQxr_2"/>
+</div>
+</div>
+<!-- Hero Content -->
+<div class="z-10 text-center max-w-2xl mb-lg">
+<h1 class="font-display-lg text-display-lg text-white mb-md">Master English Every Day</h1>
+<p class="font-body-lg text-body-lg text-white/90 mb-xl">Practice vocabulary, grammar, listening and speaking with interactive lessons.</p>
+</div>
+<!-- Owl Mascot -->
+<div class="relative z-10 w-full max-w-md animate-float">
+<img alt="Lumina Owl Mascot teaching English" class="w-full h-auto drop-shadow-2xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_9kf5HilFP5SQB7Lguj4kKrAmbD5bCVXUgNFBPQL5v-CAdvDvTIeDYQZs9RXjpIsVjW4x6VzePDA5mRfDzxigxdvOYL8a1H93AaTHCE8suIzc4fCTGVW3fHgmXAG7Ji_axo35XGea5WFZKA6nVbZ_6457Qtk-Gv1ofwEGJWD33SoJPedhH8eWnPUr_zarDIMr1efKA1OFJK7nfNdtt14VMMtR-k6JDPQzGTChmAgmsodEqCdvfdzwkYQRErkjrPYxhxXkq9hx0nx0"/>
+</div>
+<!-- Stats Bar -->
+<div class="absolute bottom-12 left-0 w-full px-margin-desktop">
+<div class="flex justify-between items-center glass-card p-md rounded-2xl">
+<div class="text-center">
+<p class="font-headline-md text-headline-md text-primary">10,000+</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Students</p>
+</div>
+<div class="h-10 w-[1px] bg-outline-variant"></div>
+<div class="text-center">
+<p class="font-headline-md text-headline-md text-primary">500+</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Lessons</p>
+</div>
+<div class="h-10 w-[1px] bg-outline-variant"></div>
+<div class="text-center">
+<p class="font-headline-md text-headline-md text-primary">95%</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Completion</p>
+</div>
+</div>
+<p class="text-center text-white/70 font-body-sm text-body-sm mt-md italic">"Small progress every day leads to big results."</p>
+</div>
+</section>
+<!-- Right Side: Login Form (40%) -->
+<section class="w-full lg:w-[40%] bg-[#F8FAFC] flex flex-col justify-center items-center px-margin-mobile md:px-xl">
+<div class="w-full max-w-[440px]">
+<!-- Brand Logo Cluster -->
+<div class="flex items-center gap-2 mb-xl justify-center lg:justify-start">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">Lumina English</span>
+</div>
+<!-- Login Card -->
+<div class="glass-card p-md md:p-xl rounded-[16px] shadow-high w-full">
+<div class="mb-lg">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Welcome Back 👋</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Please enter your details to sign in.</p>
+</div>
+<form class="space-y-md">
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-xs" for="email">Email Address</label>
+<input class="w-full px-md py-sm rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200 outline-none font-body-md text-body-md" id="email" placeholder="name@company.com" type="email"/>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-xs" for="password">Password</label>
+<div class="relative">
+<input class="w-full px-md py-sm rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-200 outline-none font-body-md text-body-md" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-body-md">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Remember Me</span>
+</label>
+<a class="font-label-md text-label-md text-primary hover:underline transition-all" href="#">Forgot Password?</a>
+</div>
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-label-md text-label-md py-sm rounded-xl transition-all duration-200 shadow-md active:scale-[0.98]" type="submit">
+                            Sign In
+                        </button>
+</form>
+<div class="relative my-xl">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant"></div>
+</div>
+<div class="relative flex justify-center text-label-sm uppercase">
+<span class="bg-white px-xs text-on-surface-variant font-label-sm text-label-sm">or continue with</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-xs px-md py-sm border border-outline-variant rounded-xl hover:bg-surface-container-low transition-all duration-200 font-label-md text-label-md text-on-surface" type="button">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+</svg>
+                        Google Account
+                    </button>
+<div class="mt-xl text-center">
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                            Don't have an account? 
+                            <a class="text-primary font-bold hover:underline" href="#">Create Account</a>
+</p>
+</div>
+</div>
+<!-- Footer Text -->
+<div class="mt-xl flex flex-wrap justify-center gap-md text-on-surface-variant font-label-sm text-label-sm">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+</div>
+</section>
+</main>
+<script>
+        // Micro-interactions and subtle effects
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    input.parentElement.closest('.glass-card').classList.add('shadow-xl');
+                });
+                input.addEventListener('blur', () => {
+                    input.parentElement.closest('.glass-card').classList.remove('shadow-xl');
+                });
+            });
+
+            // Prevent form default behavior for demo
+            document.querySelector('form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const originalText = btn.innerText;
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span>';
+                setTimeout(() => {
+                    btn.innerText = 'Welcome Back!';
+                    btn.classList.replace('bg-primary', 'bg-tertiary');
+                }, 1500);
+            });
+        });
+    </script>
+</body></html>

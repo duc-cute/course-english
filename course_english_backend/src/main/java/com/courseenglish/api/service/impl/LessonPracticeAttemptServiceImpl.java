@@ -12,6 +12,7 @@ import com.courseenglish.api.repository.LessonPracticeAttemptRepository;
 import com.courseenglish.api.repository.LessonRepository;
 import com.courseenglish.api.repository.UserRepository;
 import com.courseenglish.api.service.LessonPracticeAttemptService;
+import com.courseenglish.api.service.PracticeSubmittedNotificationService;
 import com.courseenglish.api.util.SercurityUtil;
 import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -37,16 +38,19 @@ public class LessonPracticeAttemptServiceImpl implements LessonPracticeAttemptSe
     private final LessonRepository lessonRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final PracticeSubmittedNotificationService practiceSubmittedNotificationService;
 
     public LessonPracticeAttemptServiceImpl(
             LessonPracticeAttemptRepository attemptRepository,
             LessonRepository lessonRepository,
             UserRepository userRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            PracticeSubmittedNotificationService practiceSubmittedNotificationService) {
         this.attemptRepository = attemptRepository;
         this.lessonRepository = lessonRepository;
         this.userRepository = userRepository;
         this.objectMapper = objectMapper;
+        this.practiceSubmittedNotificationService = practiceSubmittedNotificationService;
     }
 
     @Override
@@ -79,6 +83,7 @@ public class LessonPracticeAttemptServiceImpl implements LessonPracticeAttemptSe
         attempt.setCompletedAt(Instant.now());
 
         attempt = attemptRepository.save(attempt);
+        practiceSubmittedNotificationService.notifyPracticeSubmittedAsync(attempt.getId());
         return toDto(attempt);
     }
 

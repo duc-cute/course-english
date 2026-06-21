@@ -11,6 +11,7 @@ export function getAdminPageTitle(pathname: string): string {
     return "Soạn bài học";
   }
   const map: Record<string, string> = {
+    [`${adminRoot}/${paths.SCHEDULE}`]: "Lịch dạy",
     [`${adminRoot}/${paths.MANAGE_USER}`]: "Quản lý người dùng",
     [`${adminRoot}/${paths.MANAGE_ROLE}`]: "Quản lý vai trò",
     [`${adminRoot}/${paths.MANAGE_CLASSROOM}`]: "Quản lý lớp học",

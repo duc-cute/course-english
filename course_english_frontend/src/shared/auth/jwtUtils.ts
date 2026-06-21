@@ -2,19 +2,29 @@ type JwtPayload = {
   exp?: number;
   roles?: string[];
   role?: string;
+  name?: string;
+  email?: string;
+  sub?: string;
+  username?: string;
 };
 
-function decodeJwtPayload(token: string): JwtPayload | null {
+/** Base64url JWT segment → UTF-8 JSON string (atob alone breaks Vietnamese). */
+function base64UrlToUtf8(segment: string): string {
+  const base64 = segment.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+export function decodeJwtPayload(token: string): JwtPayload | null {
   const parts = token.split(".");
   if (parts.length < 2) {
     return null;
   }
 
   try {
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
-    const json = atob(padded);
-    return JSON.parse(json) as JwtPayload;
+    return JSON.parse(base64UrlToUtf8(parts[1])) as JwtPayload;
   } catch {
     return null;
   }
@@ -59,8 +69,18 @@ export function getRolesFromAccessToken(token: string): string[] {
   return roles;
 }
 
+type DuccuteClaim = {
+  id?: string;
+  name?: string;
+  email?: string;
+};
+
+export function getDuccuteFromAccessToken(token: string): DuccuteClaim | null {
+  const payload = decodeJwtPayload(token) as { duccute?: DuccuteClaim } | null;
+  return payload?.duccute ?? null;
+}
+
 export function getUserIdFromAccessToken(token: string): string | null {
-  const payload = decodeJwtPayload(token) as { duccute?: { id?: string } } | null;
-  const id = payload?.duccute?.id?.trim();
+  const id = getDuccuteFromAccessToken(token)?.id?.trim();
   return id || null;
 }

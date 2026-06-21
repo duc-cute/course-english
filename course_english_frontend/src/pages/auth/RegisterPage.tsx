@@ -30,8 +30,8 @@ export function RegisterPage() {
   const onSubmit = async (values: RegisterForm) => {
     const result = await dispatch(
       registerUser({
-        name: values.name,
-        email: values.email,
+        name: values.name.trim(),
+        email: values.email.trim(),
         password: values.password,
       }),
     );
@@ -168,22 +168,27 @@ export function RegisterPage() {
             ) : null}
 
             <form className="auth-form-flow" onSubmit={handleSubmit(onSubmit)}>
-              {/* Full Name Controller */}
+              {/* Display name */}
               <Controller
                 control={control}
                 name="name"
-                rules={{ required: "Bắt buộc nhập họ tên" }}
+                rules={{
+                  required: "Bắt buộc nhập tên hiển thị",
+                  minLength: { value: 2, message: "Tên hiển thị tối thiểu 2 ký tự" },
+                  validate: (value) => value.trim().length >= 2 || "Bắt buộc nhập tên hiển thị",
+                }}
                 render={({ field, fieldState }) => (
                   <div className="auth-field">
-                    <label className="auth-label" htmlFor="name">Full Name</label>
+                    <label className="auth-label" htmlFor="name">Tên hiển thị</label>
                     <div className="auth-input-wrapper">
                       <span className="material-symbols-outlined auth-input-icon" aria-hidden>person</span>
                       <input
                         {...field}
                         className={`auth-input ${fieldState.error ? "auth-input--error" : ""}`}
                         id="name"
-                        placeholder="John Doe"
+                        placeholder="Nguyễn Văn A"
                         type="text"
+                        autoComplete="name"
                       />
                     </div>
                     {fieldState.error ? (

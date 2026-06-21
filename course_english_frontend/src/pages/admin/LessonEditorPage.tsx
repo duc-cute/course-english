@@ -31,6 +31,12 @@ import {
 import { VocabAttachToLessonWizard } from "../../admin/components/vocabulary/VocabAttachToLessonWizard";
 import { VocabularySetPickerDialog } from "../../admin/components/vocabulary/VocabularySetPickerDialog";
 import {
+  datetimeLocalToIso,
+  formatDueAtLabel,
+  isDueAtOverdue,
+  isoToDatetimeLocal,
+} from "../../admin/components/teachingPlan/teachingPlanUtils";
+import {
   buildExerciseSetPayloadJson,
   createDefaultExerciseSetPayload,
 } from "../../shared/lesson/exercisePayload";
@@ -54,6 +60,7 @@ import {
   apiPublishLesson,
   apiReorderLessonBlocks,
   apiUnpublishLesson,
+  apiUpdateLesson,
   stringifyBlockPayload,
   type LessonBlockRecord,
   type LessonBlockType,
@@ -111,6 +118,7 @@ export function LessonEditorPage() {
     items: VocabularyItemRecord[];
   } | null>(null);
   const [openSlideZipImport, setOpenSlideZipImport] = useState(false);
+  const [dueAtLocal, setDueAtLocal] = useState("");
 
   const loadDetail = useCallback(async () => {
     if (!lessonId) return;
@@ -122,6 +130,7 @@ export function LessonEditorPage() {
       setLesson(detail);
       setBlocks(detail?.blocks ?? []);
       setAssets(detail?.assets ?? []);
+      setDueAtLocal(isoToDatetimeLocal(detail?.dueAt));
     } catch (err) {
       setError((err as { message?: string })?.message || "Không thể tải bài học.");
     } finally {
@@ -239,11 +248,41 @@ export function LessonEditorPage() {
     }
   };
 
+  const persistDueAt = async () => {
+    if (!lessonId || !lesson?.subjectId) return;
+    await apiUpdateLesson(lessonId, {
+      title: lesson.title,
+      summary: lesson.summary,
+      coverImageUrl: lesson.coverImageUrl,
+      displayOrder: lesson.displayOrder ?? 0,
+      subjectId: lesson.subjectId,
+      dueAt: dueAtLocal ? datetimeLocalToIso(dueAtLocal) : null,
+    });
+  };
+
+  const saveDueAt = async () => {
+    if (!lessonId || !lesson?.subjectId) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      await persistDueAt();
+      await loadDetail();
+      setMessage("Đã lưu hạn nộp.");
+    } catch (err) {
+      setError((err as { message?: string })?.message || "Không thể lưu hạn nộp.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const publish = async () => {
     if (!lessonId) return;
     setSubmitting(true);
     setError("");
     try {
+      if (lesson?.subjectId) {
+        await persistDueAt();
+      }
       await apiPublishLesson(lessonId);
       await loadDetail();
       setMessage("Đã publish bài học.");
@@ -303,6 +342,49 @@ export function LessonEditorPage() {
           {lesson.summary ? (
             <Typography sx={{ fontSize: 13, mt: 1, color: "#333" }}>{lesson.summary}</Typography>
           ) : null}
+          <Box
+            sx={{
+              mt: 1.5,
+              p: 1.25,
+              borderRadius: "8px",
+              border: "1px solid #D3D1C7",
+              bgcolor: "#F9F8F5",
+              display: "grid",
+              gap: 1,
+            }}
+          >
+            <Typography sx={{ fontWeight: 600, fontSize: 13, color: "#0C447C" }}>Hạn nộp bài</Typography>
+            <Typography sx={{ fontSize: 12, color: "#5F5E5A" }}>
+              Đặt deadline để theo dõi học sinh thiếu bài (Students Need Support). Để trống nếu không cần.
+            </Typography>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+              <TextField
+                type="datetime-local"
+                size="small"
+                sx={{ ...muTextFieldSx, minWidth: 220, flex: "1 1 220px" }}
+                value={dueAtLocal}
+                onChange={(e) => setDueAtLocal(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Button
+                size="small"
+                variant="outlined"
+                sx={muBtnSmOutlined}
+                disabled={submitting || !lesson.subjectId}
+                onClick={() => void saveDueAt()}
+              >
+                Lưu hạn nộp
+              </Button>
+              {lesson.dueAt ? (
+                <Chip
+                  size="small"
+                  label={formatDueAtLabel(lesson.dueAt)}
+                  color={isDueAtOverdue(lesson.dueAt) ? "error" : "default"}
+                  variant="outlined"
+                />
+              ) : null}
+            </Box>
+          </Box>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1.5 }}>
             <Button size="small" variant="contained" sx={muBtnSmPrimary} onClick={() => setOpenAddBlock(true)}>
               + Thêm khối

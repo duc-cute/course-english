@@ -1,7 +1,7 @@
 import api from "./axios";
 import type { ApiResponse } from "./types";
 
-export type NotificationType = "LESSON_PUBLISHED";
+export type NotificationType = "LESSON_PUBLISHED" | "PRACTICE_SUBMITTED";
 
 export type NotificationRecord = {
   id: string;

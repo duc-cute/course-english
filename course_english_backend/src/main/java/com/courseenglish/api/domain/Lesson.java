@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -38,6 +39,10 @@ public class Lesson extends BaseObject {
 
     @Column(name = "display_order", nullable = false)
     private int displayOrder = 0;
+
+    /** Hạn nộp bài — nullable = không theo dõi missing. */
+    @Column(name = "due_at")
+    private Instant dueAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)

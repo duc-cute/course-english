@@ -1,6 +1,7 @@
 @import "../styles.css";
 @import "./admin-layout.css";
 @import "./admin-dashboard.css";
+@import "./admin-teaching-plan.css";
 @import "./manage-user.css";
 
 :root {

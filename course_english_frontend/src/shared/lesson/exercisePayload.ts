@@ -1,5 +1,5 @@
 import { stringifyBlockPayload } from "../api/lesson";
-import { countBlankPlaceholders, syncBlanksWithPrompt } from "./fillBlankUtils";
+import { countBlankPlaceholders, MAX_FILL_BLANK_SLOTS, syncBlanksWithPrompt } from "./fillBlankUtils";
 import { syncGapFillBlanksWithPrompt } from "./gapFillMcqUtils";
 import {
   READING_PRESENTATION_SPLIT,
@@ -367,10 +367,14 @@ export function validateFillBlankQuestion(question: FillBlankQuestion): Exercise
   if (placeholderCount < 1) {
     errors.push('Câu cần ít nhất một chỗ trống "___".');
   }
+  if (placeholderCount > MAX_FILL_BLANK_SLOTS) {
+    errors.push(`Tối đa ${MAX_FILL_BLANK_SLOTS} chỗ trống trong một câu.`);
+  }
   if (question.blanks.length < 1) {
     errors.push("Thiếu danh sách ô trống.");
   }
-  if (placeholderCount > 0 && question.blanks.length !== placeholderCount) {
+  const effectiveCount = Math.min(placeholderCount, MAX_FILL_BLANK_SLOTS);
+  if (effectiveCount > 0 && question.blanks.length !== effectiveCount) {
     errors.push("Số ô trống không khớp số dấu ___ trong câu.");
   }
   const hasEmptyAnswer = question.blanks.some((b) => !b.acceptedAnswers.some((a) => a.trim()));
@@ -567,10 +571,11 @@ export function buildExerciseSetPayload(payload: ExerciseSetPayload): ExerciseSe
         };
       }
       if (q.type === "FILL_BLANK") {
+        const syncedBlanks = syncBlanksWithPrompt(q.prompt.text, q.blanks);
         return {
           ...q,
           prompt: { ...q.prompt, text: q.prompt.text.trim() },
-          blanks: q.blanks.map((b) => ({
+          blanks: syncedBlanks.map((b) => ({
             ...b,
             id: b.id.trim(),
             acceptedAnswers: b.acceptedAnswers.map((a) => a.trim()).filter(Boolean),

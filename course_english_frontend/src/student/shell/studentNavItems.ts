@@ -5,6 +5,9 @@ import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import SportsEsportsOutlinedIcon from "@mui/icons-material/SportsEsportsOutlined";
+import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { paths, studentRoutePaths } from "../../shared/constants/paths";
 
@@ -24,52 +27,52 @@ export const studentNavItems: StudentNavItem[] = [
   {
     id: "home",
     label: "Trang chủ",
-    bottomNavLabel: "Home",
+    bottomNavLabel: "Trang chủ",
     to: studentRoutePaths.home,
-    icon: DashboardCustomizeOutlinedIcon,
+    icon: HomeOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
   },
   {
     id: "path",
     label: "Lộ trình",
-    bottomNavLabel: "Path",
+    bottomNavLabel: "Lộ trình",
     to: studentRoutePaths.path,
     icon: MapOutlinedIcon,
-    showInSidebar: true,
-    showInBottomNav: true,
-  },
-  {
-    id: "lessons",
-    label: "Bài học",
-    bottomNavLabel: "Lessons",
-    to: studentRoutePaths.lessons,
-    icon: ArticleOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: false,
   },
   {
+    id: "lessons",
+    label: "Bài học",
+    bottomNavLabel: "Bài học",
+    to: studentRoutePaths.lessons,
+    icon: MenuBookOutlinedIcon,
+    showInSidebar: true,
+    showInBottomNav: true,
+  },
+  {
     id: "vocab",
     label: "Từ vựng",
-    bottomNavLabel: "Vocab",
+    bottomNavLabel: "Luyện tập",
     to: studentRoutePaths.vocab,
-    icon: MenuBookOutlinedIcon,
+    icon: SportsEsportsOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
   },
   {
     id: "leaderboard",
     label: "Xếp hạng",
-    bottomNavLabel: "Rank",
+    bottomNavLabel: "Bảng xếp hạng",
     to: studentRoutePaths.leaderboard,
-    icon: LeaderboardOutlinedIcon,
-    showInSidebar: true,
-    showInBottomNav: true,
+    icon: EmojiEventsOutlinedIcon,
+    showInSidebar: false,
+    showInBottomNav: false,
   },
   {
     id: "profile",
     label: "Hồ sơ",
-    bottomNavLabel: "Profile",
+    bottomNavLabel: "Hồ sơ",
     to: studentRoutePaths.profile,
     icon: PersonOutlineOutlinedIcon,
     showInSidebar: true,

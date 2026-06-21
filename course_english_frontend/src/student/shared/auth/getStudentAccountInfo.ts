@@ -1,19 +1,11 @@
+import { decodeJwtPayload, getDuccuteFromAccessToken } from "../../../shared/auth/jwtUtils";
+import { getCachedDisplayName } from "../../../shared/auth/userProfileCache";
 import { getAccessToken } from "../../../shared/auth/token";
 
 export type StudentAccountInfo = {
   displayName: string;
   email: string | null;
 };
-
-function readJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const segment = token.split(".")[1];
-    if (!segment) return null;
-    return JSON.parse(atob(segment)) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
 
 function normalizeName(raw: unknown): string | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
@@ -31,28 +23,31 @@ function normalizeEmail(raw: unknown): string | null {
   return value.includes("@") ? value : null;
 }
 
-/** Display name + email from JWT claims. */
+/** Display name + email from cached profile or JWT claims. */
 export function getStudentAccountInfo(): StudentAccountInfo {
   const token = getAccessToken();
   if (!token) {
     return { displayName: "bạn", email: null };
   }
 
-  const payload = readJwtPayload(token);
+  const payload = decodeJwtPayload(token);
   if (!payload) {
     return { displayName: "bạn", email: null };
   }
 
+  const duccute = getDuccuteFromAccessToken(token);
+
   const email =
+    normalizeEmail(duccute?.email) ??
     normalizeEmail(payload.email) ??
     normalizeEmail(payload.sub) ??
     normalizeEmail(payload.username);
 
   const displayName =
+    getCachedDisplayName() ??
+    normalizeName(duccute?.name) ??
     normalizeName(payload.name) ??
     (email ? normalizeName(email.split("@")[0]) : null) ??
-    normalizeName(payload.sub) ??
-    normalizeName(payload.username) ??
     "bạn";
 
   return { displayName, email };

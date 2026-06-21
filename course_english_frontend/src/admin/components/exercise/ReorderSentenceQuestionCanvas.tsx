@@ -11,6 +11,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Alert,
 } from "@mui/material";
 import { muTextFieldSx } from "../../../pages/admin/manageUserUiStyles";
 import {
@@ -21,6 +22,7 @@ import {
   splitTokenAt,
   suggestTokensFromSentence,
   syncCorrectOrder,
+  tokensMatchSourceSentence,
 } from "../../../shared/lesson/reorderSentenceUtils";
 import type { ReorderSentenceQuestion } from "../../../student/lessonPlayer/exercise/types";
 
@@ -78,6 +80,10 @@ export function ReorderSentenceQuestionCanvas({
     if (!sentence) return;
     updateTokens(suggestTokensFromSentence(sentence));
   };
+
+  const sourceSentence = question.sourceSentence?.trim() ?? "";
+  const tokensAligned =
+    !sourceSentence || tokensMatchSourceSentence(question.tokens, sourceSentence);
 
   return (
     <Box
@@ -152,30 +158,41 @@ export function ReorderSentenceQuestionCanvas({
         />
 
         <TextField
-          label="Câu gốc (gợi ý — tuỳ chọn)"
+          label="Câu đúng (gốc)"
           value={question.sourceSentence ?? ""}
           onChange={(e) => onChange({ ...question, sourceSentence: e.target.value })}
           size="small"
           fullWidth
-          placeholder="I go to school every day."
+          placeholder="Teenagers should respect their parents."
           sx={muTextFieldSx}
-          helperText="Chỉ để hiển thị gợi ý — không bắt buộc khớp số mảnh"
+          helperText="Câu hoàn chỉnh — bấm &quot;Tách theo câu gốc&quot; để tạo các mảnh"
         />
 
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
           <Button
             size="small"
             variant="outlined"
-            disabled={!question.sourceSentence?.trim()}
+            disabled={!sourceSentence}
             onClick={applySuggestFromSentence}
             sx={{ textTransform: "none" }}
           >
-            Gợi ý tách theo khoảng trắng
+            Tách theo câu gốc
           </Button>
         </Box>
 
+        {!tokensAligned ? (
+          <Alert severity="warning" sx={{ fontSize: 12 }}>
+            Thứ tự mảnh hiện <strong>không khớp</strong> câu gốc — bấm &quot;Tách theo câu gốc&quot;
+            để đồng bộ lại.
+          </Alert>
+        ) : null}
+
         <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#0C447C" }}>
-          Các mảnh (thứ tự danh sách = đáp án đúng)
+          Các mảnh — thứ tự danh sách = đáp án đúng
+        </Typography>
+        <Typography sx={{ fontSize: 11, color: "#5F5E5A", mt: -1 }}>
+          Học sinh thấy các mảnh <strong>xáo trộn</strong> khi làm bài (theo cài đặt shuffle). Ở
+          đây bạn chỉ sắp thứ tự <strong>đúng</strong>.
         </Typography>
 
         {question.tokens.map((token, tokenIndex) => (

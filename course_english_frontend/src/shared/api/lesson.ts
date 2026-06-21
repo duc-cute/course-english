@@ -25,6 +25,7 @@ export type LessonRecord = {
   coverImageUrl?: string;
   status?: LessonStatus;
   displayOrder?: number;
+  dueAt?: string | null;
   subjectId?: string;
   subjectName?: string;
   blockCount?: number;
@@ -111,6 +112,7 @@ export async function apiCreateLesson(data: {
   summary?: string;
   coverImageUrl?: string;
   displayOrder?: number;
+  dueAt?: string | null;
   subjectId: string;
 }) {
   const response = (await api.post("/lessons", data)) as ApiResponse<LessonRecord>;
@@ -126,6 +128,7 @@ export async function apiUpdateLesson(
     displayOrder?: number;
     subjectId: string;
     status?: LessonStatus;
+    dueAt?: string | null;
   },
 ) {
   const response = (await api.put(`/lessons/${id}`, data)) as ApiResponse<LessonRecord>;

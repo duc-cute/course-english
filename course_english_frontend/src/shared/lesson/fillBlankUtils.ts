@@ -1,7 +1,8 @@
 import { compareTypedAnswers } from "./answerNormalize";
-import type { FillBlankSlot } from "../../student/lessonPlayer/exercise/types";
+import type { FillBlankQuestion, FillBlankSlot } from "../../student/lessonPlayer/exercise/types";
 
 export const FILL_BLANK_TOKEN = "___";
+export const MAX_FILL_BLANK_SLOTS = 12;
 
 export type FillBlankSegment =
   | { kind: "text"; value: string }
@@ -19,9 +20,16 @@ export function countBlankPlaceholders(promptText: string): number {
 }
 
 export function syncBlanksWithPrompt(promptText: string, existing: FillBlankSlot[]): FillBlankSlot[] {
-  const count = countBlankPlaceholders(promptText);
+  const count = Math.min(countBlankPlaceholders(promptText), MAX_FILL_BLANK_SLOTS);
   if (count <= 0) {
-    return existing.length ? existing : [{ id: "b1", acceptedAnswers: [""] }];
+    const preserved = existing[0];
+    return [
+      {
+        id: "b1",
+        acceptedAnswers: preserved?.acceptedAnswers?.length ? [...preserved.acceptedAnswers] : [""],
+        placeholder: preserved?.placeholder,
+      },
+    ];
   }
 
   const next: FillBlankSlot[] = [];
@@ -35,6 +43,13 @@ export function syncBlanksWithPrompt(promptText: string, existing: FillBlankSlot
     });
   }
   return next;
+}
+
+export function normalizeFillBlankQuestion(question: FillBlankQuestion): FillBlankQuestion {
+  return {
+    ...question,
+    blanks: syncBlanksWithPrompt(question.prompt.text, question.blanks),
+  };
 }
 
 export function parseFillBlankPrompt(promptText: string, blanks: FillBlankSlot[]): FillBlankSegment[] {

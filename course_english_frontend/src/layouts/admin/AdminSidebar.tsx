@@ -1,4 +1,6 @@
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
+import PersonSearchOutlinedIcon from "@mui/icons-material/PersonSearchOutlined";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
@@ -52,6 +54,16 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         label: "Tổng quan",
         icon: <DashboardOutlinedIcon />,
         to: `/${paths.ADMIN}`,
+      },
+      {
+        label: "Lịch dạy",
+        icon: <CalendarTodayOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.SCHEDULE}`,
+      },
+      {
+        label: "Học sinh cần hỗ trợ",
+        icon: <PersonSearchOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.STUDENTS_NEED_SUPPORT}`,
       },
       {
         label: "Quản lý người dùng",

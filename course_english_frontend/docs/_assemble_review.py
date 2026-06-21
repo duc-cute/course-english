@@ -6,6 +6,7 @@ import re
 root = Path(__file__).parent
 src = root.parent / "public" / "docs" / "REVIEW.html"
 lc_tab = (root / "_learning_tab.html").read_text(encoding="utf-8")
+st_tab = (root / "_student_tab.html").read_text(encoding="utf-8")
 html = src.read_text(encoding="utf-8")
 
 extra_css = """

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>EnglishQuest - Explorer Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-error-container": "#93000a",
+                  "on-background": "#0b1c30",
+                  "inverse-on-surface": "#eaf1ff",
+                  "primary-fixed-dim": "#adc6ff",
+                  "on-primary-fixed-variant": "#004395",
+                  "on-secondary-fixed-variant": "#005236",
+                  "surface-dim": "#cbdbf5",
+                  "surface": "#f8f9ff",
+                  "on-error": "#ffffff",
+                  "surface-container-lowest": "#ffffff",
+                  "surface-container": "#e5eeff",
+                  "error": "#ba1a1a",
+                  "surface-bright": "#f8f9ff",
+                  "secondary": "#006c49",
+                  "on-primary": "#ffffff",
+                  "inverse-primary": "#adc6ff",
+                  "surface-container-highest": "#d3e4fe",
+                  "primary-fixed": "#d8e2ff",
+                  "primary": "#0058be",
+                  "secondary-container": "#6cf8bb",
+                  "on-tertiary": "#ffffff",
+                  "tertiary-container": "#a36700",
+                  "outline-variant": "#c2c6d6",
+                  "on-primary-container": "#fefcff",
+                  "inverse-surface": "#213145",
+                  "tertiary-fixed": "#ffddb8",
+                  "primary-container": "#2170e4",
+                  "background": "#f8f9ff",
+                  "on-secondary-fixed": "#002113",
+                  "error-container": "#ffdad6",
+                  "surface-container-high": "#dce9ff",
+                  "on-tertiary-fixed-variant": "#653e00",
+                  "on-secondary-container": "#00714d",
+                  "surface-container-low": "#eff4ff",
+                  "secondary-fixed": "#6ffbbe",
+                  "secondary-fixed-dim": "#4edea3",
+                  "on-tertiary-fixed": "#2a1700",
+                  "on-surface": "#0b1c30",
+                  "on-secondary": "#ffffff",
+                  "on-tertiary-container": "#fffbff",
+                  "surface-tint": "#005ac2",
+                  "tertiary": "#825100",
+                  "surface-variant": "#d3e4fe",
+                  "tertiary-fixed-dim": "#ffb95f",
+                  "outline": "#727785",
+                  "on-surface-variant": "#424754",
+                  "on-primary-fixed": "#001a42"
+          },
+          "borderRadius": {
+                  "DEFAULT": "1rem",
+                  "lg": "2rem",
+                  "xl": "3rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "gutter": "16px",
+                  "base": "8px",
+                  "stack-md": "24px",
+                  "stack-sm": "12px",
+                  "container-margin": "24px",
+                  "stack-lg": "48px"
+          },
+          "fontFamily": {
+                  "label-bold": ["Inter"],
+                  "label-sm": ["Inter"],
+                  "body-lg": ["Inter"],
+                  "display-lg": ["Quicksand"],
+                  "body-md": ["Inter"],
+                  "headline-md": ["Quicksand"],
+                  "display-lg-mobile": ["Quicksand"]
+          },
+          "fontSize": {
+                  "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                  "display-lg-mobile": ["32px", {"lineHeight": "38px", "fontWeight": "700"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    
+    .tactile-button {
+      transition: all 0.1s ease;
+      position: relative;
+    }
+    .tactile-button:active {
+      transform: translateY(2px);
+    }
+    .tactile-card {
+      border: 1px solid #E2E8F0;
+    }
+    .tactile-card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px -5px rgba(0, 88, 190, 0.2);
+    }
+    .progress-sparkle {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      background-size: 200% 100%;
+      animation: sparkle 2s infinite linear;
+    }
+    @keyframes sparkle {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .roadmap-line {
+      background: repeating-linear-gradient(90deg, #d3e4fe, #d3e4fe 10px, transparent 10px, transparent 20px);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md overflow-x-hidden pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-on-background font-headline-md text-headline-md-mobile flex justify-between items-center w-full px-container-margin py-base fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-primary dark:text-primary-fixed-dim tracking-tight">EnglishQuest</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex gap-6 mr-6">
+<a class="text-primary font-bold hover:bg-surface-container-high transition-colors px-3 py-1 rounded-lg" href="#">World Map</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors px-3 py-1 rounded-lg" href="#">Quests</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors px-3 py-1 rounded-lg" href="#">Backpack</a>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1 bg-surface-container-high px-3 py-1 rounded-full border-b-2 border-primary">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+<span class="font-label-bold text-label-bold">1,240</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-high px-3 py-1 rounded-full border-b-2 border-error">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-label-bold text-label-bold">14</span>
+</div>
+<img alt="Student Avatar" class="w-10 h-10 rounded-full border-2 border-primary bg-primary-container" data-alt="A premium 3D avatar profile picture of a young high school student with friendly features, wearing a modern school uniform and a stylish headset. The style is soft, tactile 3D like a modern video game character, set against a clean white and primary blue background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvTIeDwmiqundw3p2k7_rWZ5-vKgpp6FLlOPNuV-tW-clLAcnIpeZm-eFpzOb5PcsidtEAR782t5ys8sxpBGx03kiwcLq2RTiU5uNws8ey3ZanOSVdjJE_3WBVHWcJnli3w7Mb98YpcStbhsrZkWEEzunYme1BhOvgP8vEvwdAaS85LgKjc3tD6qJhg-su0tjtubSJeVs_xaJ7LktHjjz0KUcdhOGTxRtx2ZgXKyahVHn9hP7CBxbYA4QJ0hanvO4z3zUqwnlhIls"/>
+</div>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto px-container-margin pt-24 pb-12">
+<!-- Hero Profile Section -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-stack-md mb-stack-lg">
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-lg p-stack-md tactile-card flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+<div class="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="relative z-10 w-48 h-48 md:w-64 md:h-64 flex-shrink-0">
+<img alt="Course English Mascot" class="w-full h-full object-contain drop-shadow-xl" src="https://lh3.googleusercontent.com/aida/AP1WRLtjcd18kRAMYJyBv2uMCjzTysvivdB3fgPLsRplMD2iGCJB8GxBvI1UVCLb-Bt3UjkaNcWF2l1bmX9YzA9_c3AmFio1qPWEzqiaBB8Xc1JZE_GhXTGpyygQ2oo2gY8ClBIsFJ76A-yNHW5IKjfkOJwqzjo4b_ATkVnZLIQGIVgGuNsh3hKqieaewsSvhN8Mf1mzK1npo8uwZ7x83tfKtC1wC1fjY7fpaGIuvrMe_2ste_APrruvb9LGxkQ"/>
+</div>
+<div class="flex-grow w-full z-10 text-center md:text-left">
+<div class="mb-4">
+<span class="inline-block bg-primary-container text-on-primary-container px-4 py-1 rounded-full font-label-bold text-label-bold mb-2">LEVEL 12 EXPLORER</span>
+<h2 class="font-display-lg text-display-lg text-on-background">Nguyễn Văn Đức</h2>
+<p class="text-on-surface-variant font-medium">Grade 10A1 • Vinschool Metropolis</p>
+</div>
+<!-- XP Bar -->
+<div class="bg-surface-container-high rounded-full h-8 w-full relative mb-4 overflow-hidden border-2 border-surface-container-highest">
+<div class="bg-primary h-full rounded-full transition-all duration-1000 relative" style="width: 81.6%;">
+<div class="progress-sparkle absolute inset-0 opacity-30"></div>
+</div>
+<div class="absolute inset-0 flex items-center justify-center font-label-bold text-label-bold text-on-surface">2450 / 3000 XP</div>
+</div>
+<div class="flex items-center justify-center md:justify-start gap-3 bg-tertiary-container/10 p-3 rounded-lg border-l-4 border-tertiary">
+<img alt="Golden Star Badge" class="w-8 h-8 object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLsXe7Tnxa2cF6d6AZC2eE-3Qn2k7oRzmAZcJsqeZGfDfD-8pqmJLChI51tkQzTbZcKavhOWRtWy2OkARrw_8jC4aSGVGrwHCa7mdMzqT_TAw44N_p6mH2EMYFJe2SF2k0IIXEB79csr82qbKjiotJccDHg86_N40WGLspWsPMHIrnoLyijQiDvQk38j-jwM8zmnlKzCNmtqOhRIHHuhxo5nCAjZLmzT0MOydj_jTgQ4vxM4PrAAPwpO7_E"/>
+<p class="text-tertiary font-bold font-label-bold text-label-bold">Next Reward: Golden Star Badge at 3000 XP!</p>
+</div>
+</div>
+</div>
+<!-- Streak & Quick Stats -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<div class="bg-surface-container-lowest rounded-lg p-6 tactile-card tactile-card-hover flex items-center gap-4 border-b-4 border-error/20">
+<div class="w-16 h-16 bg-error-container rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-4xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-bold text-label-bold uppercase tracking-wider">14 Day Streak</p>
+<p class="font-display-lg text-headline-md text-on-background">On Fire!</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-lg p-6 tactile-card tactile-card-hover flex items-center gap-4 border-b-4 border-primary/20">
+<div class="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-4xl" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-bold text-label-bold uppercase tracking-wider">2450 Total XP</p>
+<p class="font-display-lg text-headline-md text-on-background">Veteran</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-lg p-6 tactile-card tactile-card-hover flex items-center gap-4 border-b-4 border-secondary/20">
+<div class="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container text-4xl" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+<div>
+<p class="text-on-surface-variant font-label-bold text-label-bold uppercase tracking-wider">#3 Class Rank</p>
+<p class="font-display-lg text-headline-md text-on-background">Podium King</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid Layout for Missions and Badge Collection -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-md">
+<!-- Today's Missions -->
+<section class="lg:col-span-4 bg-surface-container-low rounded-lg p-stack-md tactile-card h-full">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-on-background">Today's Missions</h3>
+<span class="bg-primary text-on-primary px-3 py-1 rounded-full font-label-bold text-label-bold">2/4</span>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest p-4 rounded-lg flex items-center gap-4 tactile-card group hover:border-primary transition-colors">
+<div class="w-6 h-6 border-2 border-primary rounded-md flex items-center justify-center text-primary bg-primary-container/20">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+<div class="flex-grow">
+<p class="font-label-bold text-on-surface">Daily Vocabulary</p>
+<p class="text-xs text-on-surface-variant">Complete 10 cards</p>
+</div>
+<div class="text-tertiary font-bold">+50 XP</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg flex items-center gap-4 tactile-card group hover:border-primary transition-colors">
+<div class="w-6 h-6 border-2 border-primary rounded-md flex items-center justify-center text-primary bg-primary-container/20">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+<div class="flex-grow">
+<p class="font-label-bold text-on-surface">Grammar Challenge</p>
+<p class="text-xs text-on-surface-variant">Score 80%+ on test</p>
+</div>
+<div class="text-tertiary font-bold">+50 XP</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg flex items-center gap-4 tactile-card opacity-80 border-dashed border-2">
+<div class="w-6 h-6 border-2 border-outline rounded-md"></div>
+<div class="flex-grow">
+<p class="font-label-bold text-on-surface">Listening Lab</p>
+<p class="text-xs text-on-surface-variant">Watch 1 English video</p>
+</div>
+<div class="text-on-surface-variant font-bold">+50 XP</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg flex items-center gap-4 tactile-card opacity-80 border-dashed border-2">
+<div class="w-6 h-6 border-2 border-outline rounded-md"></div>
+<div class="flex-grow">
+<p class="font-label-bold text-on-surface">Speak Out!</p>
+<p class="text-xs text-on-surface-variant">Record 3 sentences</p>
+</div>
+<div class="text-on-surface-variant font-bold">+50 XP</div>
+</div>
+</div>
+<button class="w-full mt-6 bg-primary text-on-primary font-label-bold text-label-bold py-3 rounded-lg border-b-4 border-on-primary-fixed-variant tactile-button">
+          Claim Rewards
+        </button>
+</section>
+<!-- Badge Collection Grid -->
+<section class="lg:col-span-8 bg-surface-container-lowest rounded-lg p-stack-md tactile-card">
+<h3 class="font-headline-md text-headline-md text-on-background mb-6">Badge Collection</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+<!-- Unlocked -->
+<div class="flex flex-col items-center gap-3 group">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 tactile-card tactile-card-hover transition-all flex items-center justify-center relative">
+<div class="absolute inset-0 bg-primary/5 rounded-full animate-pulse"></div>
+<img alt="XP Icon Badge" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLuktfrOxXV4cP86BA4i06rVHo9-MEgerkvZfemtZm7fJDehOVZ9JLTLSqPLo111sN3GGOBWbYNixaENKH0byGymAQIz91TbZAdN71atFQoXk7Ps0gGsrq2EVtD85VTLGAP10bDlJsW2ulmD2DoksYkDW6WbuKYuxV9TT3fwfYmrIC8cuWV7-N5O5bY3XXafXxW97jsAqt_u5n-ik0igU1OPBQZ75kZVmtuPzRkrxOvVFnqR8GjZfK-mvlM"/>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Reading Hero</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 tactile-card flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl text-error" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Flame Keeper</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 tactile-card flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl text-secondary" style="font-variation-settings: 'FILL' 1;">assignment</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Quest Master</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 tactile-card flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl text-tertiary" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Perfect Week</span>
+</div>
+<!-- Locked -->
+<div class="flex flex-col items-center gap-3 grayscale opacity-40">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 border-2 border-dashed border-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl">lock</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Vocabulary King</span>
+</div>
+<div class="flex flex-col items-center gap-3 grayscale opacity-40">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 border-2 border-dashed border-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl">lock</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Grammar God</span>
+</div>
+<div class="flex flex-col items-center gap-3 grayscale opacity-40">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 border-2 border-dashed border-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl">lock</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Fluency Legend</span>
+</div>
+<div class="flex flex-col items-center gap-3 grayscale opacity-40">
+<div class="w-24 h-24 bg-surface-container-high rounded-full p-4 border-2 border-dashed border-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl">lock</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Speaker Pro</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Leaderboard Preview & Mascot Evolution -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-md mt-stack-md">
+<!-- Leaderboard Preview -->
+<section class="lg:col-span-5 bg-surface-container-lowest rounded-lg p-stack-md tactile-card">
+<h3 class="font-headline-md text-headline-md text-on-background mb-6">Class Ranking</h3>
+<div class="space-y-4">
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container transition-colors">
+<span class="font-display-lg text-headline-md text-tertiary w-8">1</span>
+<img alt="Minh Anh" class="w-12 h-12 rounded-full bg-secondary-container" data-alt="A 3D avatar profile of a student girl with glasses and a kind expression, rendered in a modern tactile 3D style with soft lighting and vibrant colors, set against a clean studio background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrHGFbtXU6mf1Yz6-1UEbz0m3SyIsZB3Rt9NpHXlFrPx4604rP3CXNa72YIHyHCQmLg1si2l5F0QyQlhmctiIIutYSNeEYImnT5vw7jC-nebixtUx-r4W3_g9qPDccaCwBe9W-OuAbug40TVj9GJlqNVMEe-Z76TxdXSm3oe7_SMIWeixALQDs4WuS2laQubCBOh8EQhNCm9Cfl0ULfEVi_Ru-W71f1881-w0QjYglMTOG3h3jJNjmvkFRvWoN15WWvV3J5txJbEA"/>
+<div class="flex-grow">
+<p class="font-label-bold text-on-surface">Minh Anh</p>
+<p class="text-xs text-on-surface-variant">Level 15 Legend</p>
+</div>
+<div class="font-label-bold text-primary">3,420 XP</div>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container transition-colors">
+<span class="font-display-lg text-headline-md text-outline w-8">2</span>
+<img alt="Quốc Bảo" class="w-12 h-12 rounded-full bg-primary-container" data-alt="A 3D avatar profile of a young male student with a sporty look, short hair, and a friendly smile, rendered in high-fidelity 3D with soft shadows and a professional, modern look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuishGko_oPSJNHtVPf7DkDV8FhbCAd3HStK_VwsXbsgr97_tnwkn_PfDdJPo8bLtLj6bspOWL3zQIES_S87itg_uEh0bHKf-TLrGW1QXHGWe7dleUmrehvMAG2tNIpGScnlw1f7pitgd4DBt-Rtc_eDdtjMECRZPVhjewYz5lhGYeotEGr6F1E4tcRfSJOL3_IwDUOXmwJvnNgupyYbKspowCxvYHARIAtbEBffMPmbbPsK21cIwD-_DW8-f7xKKPWpQI6eAt7Fk"/>
+<div class="flex-grow">
+<p class="font-label-bold text-on-surface">Quốc Bảo</p>
+<p class="text-xs text-on-surface-variant">Level 14 Veteran</p>
+</div>
+<div class="font-label-bold text-primary">3,100 XP</div>
+</div>
+<!-- Current User Highlighted -->
+<div class="flex items-center gap-4 p-3 rounded-lg bg-primary/10 border-2 border-primary border-dashed">
+<span class="font-display-lg text-headline-md text-primary w-8">3</span>
+<img alt="Nguyễn Văn Đức" class="w-12 h-12 rounded-full bg-primary-container" data-alt="A premium 3D avatar profile picture of a young high school student with friendly features, wearing a modern school uniform and a stylish headset. The style is soft, tactile 3D like a modern video game character." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgUncnalqKg3kD8AG75hs--Ub-ih7MsRbVvRjjaOuyeePxScFnrv-Dd9DtAnXxmBlw3h6O3iwfYo5HOLSLIW33DMCpfCv4MQOlvl69tJKpMo8wsG6R1BeV0Xw6WZ6EFtOta0nNSkgD2qS0Jq_jmgAUhgKGYZe-wccqoqzBN2XxwROdSygkR9nYW2UE28m3z574QfKkkEQKJGfV5H5_SsyIDbDxWa8S64qYN4D1pbkMaZ-6nJnixZWHWOrX8GG5sOch0At_fEzGHdw"/>
+<div class="flex-grow">
+<p class="font-label-bold text-primary">Nguyễn Văn Đức (You)</p>
+<p class="text-xs text-on-surface-variant">Level 12 Explorer</p>
+</div>
+<div class="font-label-bold text-primary">2,450 XP</div>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-lg opacity-60">
+<span class="font-label-bold text-on-surface w-8">4</span>
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-outline">person</span>
+</div>
+<div class="flex-grow">
+<p class="font-label-bold text-on-surface">Lê Hải Yến</p>
+<p class="text-xs text-on-surface-variant">Level 11 Explorer</p>
+</div>
+<div class="font-label-bold text-on-surface-variant">2,200 XP</div>
+</div>
+</div>
+</section>
+<!-- Mascot Evolution & Rewards -->
+<section class="lg:col-span-7 space-y-stack-md">
+<!-- Rewards Showcase -->
+<div class="bg-primary text-on-primary rounded-lg p-stack-md tactile-card border-b-8 border-on-primary-fixed-variant relative overflow-hidden group">
+<div class="relative z-10 flex flex-col md:flex-row items-center gap-6">
+<div class="w-24 h-24 bg-white/20 rounded-xl flex items-center justify-center border-2 border-white/40 group-hover:rotate-12 transition-transform">
+<span class="material-symbols-outlined text-6xl text-on-primary" style="font-variation-settings: 'FILL' 1;">face</span>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md mb-2">Next Unlock: Level 13</h4>
+<p class="text-primary-fixed text-lg font-medium">Blue Lightning Avatar Frame</p>
+<p class="text-sm opacity-80 mt-2">Only 550 XP more to go! You can do it!</p>
+</div>
+</div>
+<!-- Decorative Background Lightning -->
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-10 rotate-12">electric_bolt</span>
+</div>
+<!-- Evolution Preview -->
+<div class="bg-surface-container-highest rounded-lg p-stack-md tactile-card relative">
+<h3 class="font-headline-md text-headline-md text-on-background mb-6">Mascot Evolution</h3>
+<div class="flex justify-around items-end gap-4 h-48">
+<div class="flex flex-col items-center gap-2 opacity-100">
+<img alt="Current Evolution" class="w-24 h-24 object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLtjcd18kRAMYJyBv2uMCjzTysvivdB3fgPLsRplMD2iGCJB8GxBvI1UVCLb-Bt3UjkaNcWF2l1bmX9YzA9_c3AmFio1qPWEzqiaBB8Xc1JZE_GhXTGpyygQ2oo2gY8ClBIsFJ76A-yNHW5IKjfkOJwqzjo4b_ATkVnZLIQGIVgGuNsh3hKqieaewsSvhN8Mf1mzK1npo8uwZ7x83tfKtC1wC1fjY7fpaGIuvrMe_2ste_APrruvb9LGxkQ"/>
+<span class="text-xs font-label-bold text-on-surface-variant">LEVEL 1 (Current)</span>
+</div>
+<div class="w-12 h-1 roadmap-line mb-12"></div>
+<div class="flex flex-col items-center gap-2 opacity-30 grayscale relative">
+<span class="material-symbols-outlined absolute -top-4 text-primary text-xl">help</span>
+<img alt="Evolution Silhouette" class="w-32 h-32 object-contain brightness-0 contrast-50" src="https://lh3.googleusercontent.com/aida/AP1WRLtjcd18kRAMYJyBv2uMCjzTysvivdB3fgPLsRplMD2iGCJB8GxBvI1UVCLb-Bt3UjkaNcWF2l1bmX9YzA9_c3AmFio1qPWEzqiaBB8Xc1JZE_GhXTGpyygQ2oo2gY8ClBIsFJ76A-yNHW5IKjfkOJwqzjo4b_ATkVnZLIQGIVgGuNsh3hKqieaewsSvhN8Mf1mzK1npo8uwZ7x83tfKtC1wC1fjY7fpaGIuvrMe_2ste_APrruvb9LGxkQ"/>
+<span class="text-xs font-label-bold text-on-surface-variant">LEVEL 15 (Locked)</span>
+</div>
+<div class="w-12 h-1 roadmap-line mb-12"></div>
+<div class="flex flex-col items-center gap-2 opacity-10 grayscale">
+<img alt="Final Evolution Silhouette" class="w-40 h-40 object-contain brightness-0 contrast-50 scale-110" src="https://lh3.googleusercontent.com/aida/AP1WRLtjcd18kRAMYJyBv2uMCjzTysvivdB3fgPLsRplMD2iGCJB8GxBvI1UVCLb-Bt3UjkaNcWF2l1bmX9YzA9_c3AmFio1qPWEzqiaBB8Xc1JZE_GhXTGpyygQ2oo2gY8ClBIsFJ76A-yNHW5IKjfkOJwqzjo4b_ATkVnZLIQGIVgGuNsh3hKqieaewsSvhN8Mf1mzK1npo8uwZ7x83tfKtC1wC1fjY7fpaGIuvrMe_2ste_APrruvb9LGxkQ"/>
+<span class="text-xs font-label-bold text-on-surface-variant">LEVEL 30 (Legend)</span>
+</div>
+</div>
+<p class="text-center text-sm text-on-surface-variant mt-6 italic">Reach Level 15 to evolve your mascot into a Winged Professor!</p>
+</div>
+</section>
+</div>
+<!-- Learning Journey Roadmap -->
+<section class="mt-stack-lg bg-surface-container-low rounded-lg p-stack-md tactile-card">
+<h3 class="font-headline-md text-headline-md text-on-background mb-8">Learning Journey</h3>
+<div class="relative py-12 px-8 overflow-x-auto scrollbar-hide">
+<div class="flex min-w-[800px] justify-between relative z-10">
+<div class="flex flex-col items-center gap-4 relative">
+<div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-on-primary ring-8 ring-primary/10">
+<span class="material-symbols-outlined">star</span>
+</div>
+<div class="text-center">
+<p class="font-label-bold text-on-surface">Joined</p>
+<p class="text-xs text-on-surface-variant">14 Feb 2024</p>
+</div>
+</div>
+<div class="flex flex-col items-center gap-4 relative">
+<div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-on-primary ring-8 ring-primary/10">
+<span class="material-symbols-outlined">hiking</span>
+</div>
+<div class="text-center">
+<p class="font-label-bold text-on-surface">Level 5</p>
+<p class="text-xs text-on-surface-variant">Reached 2 Mar</p>
+</div>
+</div>
+<div class="flex flex-col items-center gap-4 relative">
+<div class="w-16 h-16 bg-primary-container rounded-full border-4 border-primary flex items-center justify-center text-on-primary-container ring-8 ring-primary/20 animate-bounce">
+<span class="material-symbols-outlined text-3xl">emoji_events</span>
+</div>
+<div class="text-center">
+<p class="font-label-bold text-primary text-lg">Level 12</p>
+<p class="text-xs text-primary font-bold">You are here!</p>
+</div>
+</div>
+<div class="flex flex-col items-center gap-4 relative grayscale opacity-40">
+<div class="w-12 h-12 bg-surface-container-highest rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">military_tech</span>
+</div>
+<div class="text-center">
+<p class="font-label-bold text-on-surface-variant">Level 20</p>
+<p class="text-xs text-on-surface-variant">Incoming Goal</p>
+</div>
+</div>
+<div class="flex flex-col items-center gap-4 relative grayscale opacity-40">
+<div class="w-12 h-12 bg-surface-container-highest rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">workspace_premium</span>
+</div>
+<div class="text-center">
+<p class="font-label-bold text-on-surface-variant">Graduation</p>
+<p class="text-xs text-on-surface-variant">Final Milestone</p>
+</div>
+</div>
+</div>
+<!-- Roadmap Connector Line -->
+<div class="absolute top-[4.75rem] left-8 right-8 h-2 bg-surface-container-highest -z-0 rounded-full">
+<div class="h-full bg-primary rounded-full" style="width: 50%;"></div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container dark:bg-inverse-surface border-t-4 border-surface-container-highest shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-all active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label-bold text-label-bold">World Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-all active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-bold text-label-bold">Quests</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-all active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">backpack</span>
+<span class="font-label-bold text-label-bold">Backpack</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 border-b-4 border-on-primary-fixed-variant active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-bold text-label-bold">Profile</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-all active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-label-bold text-label-bold">Store</span>
+</a>
+</nav>
+<!-- Interactive JavaScript for micro-interactions -->
+<script>
+    document.querySelectorAll('.tactile-card').forEach(card => {
+      card.addEventListener('mousedown', () => {
+        card.style.transform = 'translateY(2px)';
+      });
+      card.addEventListener('mouseup', () => {
+        card.style.transform = 'translateY(-2px)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+      });
+    });
+
+    // Simple confetti effect on achievement clicks
+    function createConfetti(x, y) {
+      for (let i = 0; i < 15; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'fixed w-2 h-2 pointer-events-none z-[100] rounded-full';
+        confetti.style.backgroundColor = ['#0058be', '#2170e4', '#6cf8bb', '#ffddb8'][Math.floor(Math.random() * 4)];
+        confetti.style.left = x + 'px';
+        confetti.style.top = y + 'px';
+        document.body.appendChild(confetti);
+
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = 5 + Math.random() * 5;
+        let dx = Math.cos(angle) * velocity;
+        let dy = Math.sin(angle) * velocity;
+        let opacity = 1;
+
+        const animate = () => {
+          dx *= 0.95;
+          dy += 0.5;
+          confetti.style.left = (parseFloat(confetti.style.left) + dx) + 'px';
+          confetti.style.top = (parseFloat(confetti.style.top) + dy) + 'px';
+          opacity -= 0.02;
+          confetti.style.opacity = opacity;
+
+          if (opacity > 0) {
+            requestAnimationFrame(animate);
+          } else {
+            confetti.remove();
+          }
+        };
+        requestAnimationFrame(animate);
+      }
+    }
+
+    document.querySelectorAll('.tactile-button, .w-24.h-24').forEach(el => {
+      el.addEventListener('click', (e) => {
+        createConfetti(e.clientX, e.clientY);
+      });
+    });
+  </script>
+</body></html>

@@ -6,24 +6,39 @@ import { VqButton, VqCard } from "../ui";
 import { HomeBadgesPreview } from "./HomeBadgesPreview";
 import { HomeContinueCard } from "./HomeContinueCard";
 import { HomeDailyGoals } from "./HomeDailyGoals";
-import { HomeHero } from "./HomeHero";
-import { HomeQuickLinks } from "./HomeQuickLinks";
 import { HomeWeeklyStreak } from "./HomeWeeklyStreak";
-import { useHomeDashboard } from "./useHomeDashboard";
-import { useStudentStats } from "../profile/useStudentStats";
+import { HomeLevelBar } from "./HomeLevelBar";
+import { StudentHeaderStats } from "../shell/StudentHeaderStats";
+import { useStudentDashboard } from "../shell/StudentDashboardContext";
 
 export function HomePage() {
-  const { continueProgress, continuePractice, weeklyDays, loading } = useHomeDashboard();
-  const { stats, loading: statsLoading } = useStudentStats();
-  const pageLoading = loading || statsLoading;
+  const {
+    continueProgress,
+    continuePractice,
+    weeklyDays,
+    weeklyStreakCount,
+    stats,
+    practiceSummary,
+    loading,
+  } = useStudentDashboard();
 
   return (
     <div className="vq-page vq-home">
-      <HomeHero weeklyStreakCount={stats.weeklyStreakCount} xp={stats.xp} />
-
-      {pageLoading ? (
+      {loading ? (
         <div className="vq-home-loading">
           <CircularProgress size={32} />
+        </div>
+      ) : null}
+
+      {!loading ? (
+        <div className="vq-home-mobile-header-zone">
+          <StudentHeaderStats
+            stats={stats}
+            continueProgress={continueProgress}
+            practiceSummary={practiceSummary}
+            variant="mobile-cards"
+          />
+          <HomeLevelBar xp={stats.xp} className="vq-home-level--mobile" />
         </div>
       ) : null}
 
@@ -47,19 +62,20 @@ export function HomePage() {
         )}
 
         <div className="vq-home-bento__goals">
-          <HomeDailyGoals continueProgress={continueProgress} />
+          <HomeDailyGoals
+            continueProgress={continueProgress}
+            practiceSummary={practiceSummary}
+          />
         </div>
 
         <div className="vq-home-bento__weekly">
-          <HomeWeeklyStreak days={weeklyDays} />
+          <HomeWeeklyStreak days={weeklyDays} weeklyStreakCount={weeklyStreakCount} />
         </div>
 
         <div className="vq-home-bento__badges">
           <HomeBadgesPreview stats={stats} />
         </div>
       </div>
-
-      <HomeQuickLinks />
     </div>
   );
 }

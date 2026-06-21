@@ -9,7 +9,9 @@ import {
   type NotificationRecord,
   type NotificationWsMessage,
 } from "../../shared/api/notification";
-import { getAccessToken } from "../../shared/auth/token";
+import { AUTH_SESSION_EXPIRED_EVENT, AUTH_TOKEN_REFRESHED_EVENT } from "../../shared/auth/authSession";
+import { isAccessTokenExpired } from "../../shared/auth/jwtUtils";
+import { getAccessToken, subscribeAccessTokenChange } from "../../shared/auth/token";
 import { connectNotificationSocket } from "../../shared/ws/notificationSocket";
 
 const POLL_MS = 60_000;
@@ -73,19 +75,53 @@ export function useNotifications() {
   }, [refreshAll]);
 
   useEffect(() => {
-    if (!getAccessToken()) {
-      setWsConnected(false);
-      return;
-    }
+    const connectSocket = () => {
+      const token = getAccessToken();
+      if (!token || isAccessTokenExpired(token)) {
+        socketRef.current?.disconnect();
+        socketRef.current = null;
+        setWsConnected(false);
+        return;
+      }
 
-    socketRef.current?.disconnect();
-    socketRef.current = connectNotificationSocket({
-      onMessage: handleWsMessage,
-      onConnect: () => setWsConnected(true),
-      onDisconnect: () => setWsConnected(false),
+      socketRef.current?.disconnect();
+      socketRef.current = connectNotificationSocket({
+        onMessage: handleWsMessage,
+        onConnect: () => setWsConnected(true),
+        onDisconnect: () => setWsConnected(false),
+        onAuthFailed: () => setWsConnected(false),
+      });
+    };
+
+    connectSocket();
+
+    const unsubscribeToken = subscribeAccessTokenChange((token) => {
+      if (!token || isAccessTokenExpired(token)) {
+        socketRef.current?.disconnect();
+        socketRef.current = null;
+        setWsConnected(false);
+        return;
+      }
+      connectSocket();
     });
 
+    const onTokenRefreshed = () => {
+      connectSocket();
+    };
+
+    const onSessionExpired = () => {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+      setWsConnected(false);
+    };
+
+    window.addEventListener(AUTH_TOKEN_REFRESHED_EVENT, onTokenRefreshed);
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+
     return () => {
+      unsubscribeToken();
+      window.removeEventListener(AUTH_TOKEN_REFRESHED_EVENT, onTokenRefreshed);
+      window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
       socketRef.current?.disconnect();
       socketRef.current = null;
       setWsConnected(false);

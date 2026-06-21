@@ -3,6 +3,8 @@ package com.courseenglish.api.domain.request;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 public class ReqSearchVocabularySetDTO extends ReqPagingSearchDTO {
@@ -12,4 +14,7 @@ public class ReqSearchVocabularySetDTO extends ReqPagingSearchDTO {
     /** Chỉ bộ từ thuộc môn của lớp HS đã ghi danh ACTIVE */
     private Boolean enrolledOnly;
     private UUID classroomId;
+
+
+
 }

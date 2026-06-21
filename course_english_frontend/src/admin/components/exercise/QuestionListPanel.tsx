@@ -54,6 +54,7 @@ type QuestionListPanelProps = {
   onAddGapFillMcq: () => void;
   onAddReading: () => void;
   onAddReorder: () => void;
+  onAddListenTypeFromVocab: () => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
 };
 
@@ -216,6 +217,7 @@ export function QuestionListPanel({
   onAddGapFillMcq,
   onAddReading,
   onAddReorder,
+  onAddListenTypeFromVocab,
   onReorder,
 }: QuestionListPanelProps) {
   const [search, setSearch] = useState("");
@@ -410,6 +412,23 @@ export function QuestionListPanel({
           onClick={onAddReorder}
         >
           Thêm sắp xếp câu
+        </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<KeyboardOutlinedIcon />}
+          sx={{
+            py: 1,
+            borderRadius: "10px",
+            fontSize: 13,
+            fontWeight: 600,
+            textTransform: "none",
+            borderColor: "#0C447C",
+            color: "#0C447C",
+          }}
+          onClick={onAddListenTypeFromVocab}
+        >
+          Thêm nghe gõ (từ thư viện)
         </Button>
       </Box>
     </Box>

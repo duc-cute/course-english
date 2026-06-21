@@ -29,6 +29,8 @@ import { StudentVocabSetPage } from "../pages/student/StudentVocabSetPage";
 import { StudentProfilePage } from "../pages/student/StudentProfilePage";
 import { StudentLeaderboardPage } from "../pages/student/StudentLeaderboardPage";
 import { TeacherUsageGuidePage } from "../pages/admin/TeacherUsageGuidePage";
+import { TeacherSchedulePage } from "../pages/admin/TeacherSchedulePage";
+import { TeacherStudentSupportPage } from "../pages/admin/TeacherStudentSupportPage";
 
 const LazyAdminLayout = lazy(async () => {
   const module = await import("../layouts/admin/AdminLayout");
@@ -135,6 +137,14 @@ export const appRouter = createBrowserRouter([
       {
         index: true,
         element: <AdminDashboardPage />,
+      },
+      {
+        path: paths.SCHEDULE,
+        element: <TeacherSchedulePage />,
+      },
+      {
+        path: paths.STUDENTS_NEED_SUPPORT,
+        element: <TeacherStudentSupportPage />,
       },
       {
         path: paths.MANAGE_USER,

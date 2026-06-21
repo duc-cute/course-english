@@ -4,6 +4,8 @@ import com.courseenglish.api.domain.LessonReadingProgress;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +15,8 @@ public interface LessonReadingProgressRepository extends JpaRepository<LessonRea
     Optional<LessonReadingProgress> findByUserIdAndLessonIdAndVoidedFalse(UUID userId, UUID lessonId);
 
     Optional<LessonReadingProgress> findFirstByUserIdAndVoidedFalseOrderByUpdatedAtDesc(UUID userId);
+
+    List<LessonReadingProgress> findByLessonIdInAndVoidedFalse(Collection<UUID> lessonIds);
+
+    List<LessonReadingProgress> findByUserIdAndLessonIdInAndVoidedFalse(UUID userId, Collection<UUID> lessonIds);
 }

@@ -3,6 +3,8 @@ package com.courseenglish.api.service.mail.impl;
 import com.courseenglish.api.config.MailProperties;
 import com.courseenglish.api.domain.dto.notification.LessonPublishedNotifyContext;
 import com.courseenglish.api.domain.dto.notification.LessonPublishedNotifyContext.Recipient;
+import com.courseenglish.api.domain.dto.notification.SessionReminderNotifyContext;
+import com.courseenglish.api.service.impl.SessionReminderEmailServiceImpl;
 import com.courseenglish.api.service.mail.MailTemplateService;
 import com.courseenglish.api.service.mail.RenderedMailMessage;
 import org.springframework.stereotype.Service;
@@ -68,6 +70,34 @@ public class MailTemplateServiceImpl implements MailTemplateService {
         String htmlBody = templateEngine.process("mail/password-reset", ctx);
         String textBody = templateEngine.process("mail/password-reset.txt", ctx);
         return new RenderedMailMessage(email, "Đặt lại mật khẩu — Course English", htmlBody, textBody);
+    }
+
+    @Override
+    public RenderedMailMessage renderSessionReminder(SessionReminderNotifyContext context) {
+        String subjectLine = context.startingSoon()
+                ? "[Course English] Buổi dạy sắp bắt đầu — " + safeTrim(context.classroomName())
+                : "[Course English] Buổi dạy sau 15 phút — " + safeTrim(context.classroomName());
+
+        String timeRange = SessionReminderEmailServiceImpl.formatTime(context.startAt())
+                + " – "
+                + SessionReminderEmailServiceImpl.formatTime(context.endAt());
+        String dateLabel = SessionReminderEmailServiceImpl.formatDate(context.startAt());
+
+        Context ctx = new Context();
+        ctx.setVariable("teacherName", context.teacherName());
+        ctx.setVariable("classroomName", safeTrim(context.classroomName()));
+        ctx.setVariable("sessionTitle", safeTrim(context.sessionTitle()));
+        ctx.setVariable("lessonTitle", safeTrim(context.lessonTitle()));
+        ctx.setVariable("timeRange", timeRange);
+        ctx.setVariable("dateLabel", dateLabel);
+        ctx.setVariable("meetLink", safeTrim(context.meetLink()));
+        ctx.setVariable("scheduleUrl", context.scheduleUrl());
+        ctx.setVariable("startingSoon", context.startingSoon());
+        ctx.setVariable("currentYear", Year.now().getValue());
+
+        String htmlBody = templateEngine.process("mail/session-reminder", ctx);
+        String textBody = templateEngine.process("mail/session-reminder.txt", ctx);
+        return new RenderedMailMessage(context.teacherEmail(), subjectLine, htmlBody, textBody);
     }
 
     private String safeTrim(String value) {

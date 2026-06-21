@@ -21,6 +21,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminCatalogToolbar, ConfirmDialog, LessonImageUpload, SubjectPagingAutocomplete } from "../../admin/components";
 import {
+  datetimeLocalToIso,
+  formatDueAtLabel,
+  isoToDatetimeLocal,
+} from "../../admin/components/teachingPlan/teachingPlanUtils";
+import {
   muBtnSmOutlined,
   muCatalogTableShell,
   muDialogFooter,
@@ -53,6 +58,7 @@ type LessonForm = {
   summary: string;
   coverImageUrl: string;
   displayOrder: number;
+  dueAtLocal: string;
   subject: SubjectRecord | null;
 };
 
@@ -61,6 +67,7 @@ const defaultForm: LessonForm = {
   summary: "",
   coverImageUrl: "",
   displayOrder: 0,
+  dueAtLocal: "",
   subject: null,
 };
 
@@ -136,6 +143,7 @@ export function ManageLessonPage() {
         summary: detail?.summary ?? "",
         coverImageUrl: detail?.coverImageUrl ?? "",
         displayOrder: Number(detail?.displayOrder ?? 0),
+        dueAtLocal: isoToDatetimeLocal(detail?.dueAt),
         subject: detail?.subjectId
           ? ({ id: detail.subjectId, name: detail.subjectName || "Môn học" } as SubjectRecord)
           : null,
@@ -146,6 +154,7 @@ export function ManageLessonPage() {
         summary: item.summary ?? "",
         coverImageUrl: item.coverImageUrl ?? "",
         displayOrder: Number(item.displayOrder ?? 0),
+        dueAtLocal: isoToDatetimeLocal(item.dueAt),
         subject: item.subjectId
           ? ({ id: item.subjectId, name: item.subjectName || "Môn học" } as SubjectRecord)
           : null,
@@ -182,6 +191,7 @@ export function ManageLessonPage() {
         summary: form.summary.trim(),
         coverImageUrl: form.coverImageUrl.trim() || undefined,
         displayOrder: Number(form.displayOrder) || 0,
+        dueAt: form.dueAtLocal ? datetimeLocalToIso(form.dueAtLocal) : null,
         subjectId: form.subject.id,
       };
       if (editing?.id) {
@@ -271,7 +281,7 @@ export function ManageLessonPage() {
             py: 0.75,
             borderBottom: "1px solid #D3D1C7",
             display: "grid",
-            gridTemplateColumns: "56px minmax(200px,1fr) minmax(140px,1fr) 72px 72px 140px",
+            gridTemplateColumns: "56px minmax(160px,1fr) minmax(120px,1fr) minmax(100px,1fr) 56px 72px 140px",
             columnGap: 1.5,
             fontSize: 12,
             fontWeight: 700,
@@ -281,6 +291,7 @@ export function ManageLessonPage() {
           <Box>STT</Box>
           <Box>Tiêu đề</Box>
           <Box>Môn</Box>
+          <Box>Hạn nộp</Box>
           <Box>Block</Box>
           <Box>TT</Box>
           <Box sx={{ textAlign: "center" }}>Thao tác</Box>
@@ -301,7 +312,7 @@ export function ManageLessonPage() {
                 py: 0.75,
                 borderBottom: "1px solid #ECEAE3",
                 display: "grid",
-                gridTemplateColumns: "56px minmax(200px,1fr) minmax(140px,1fr) 72px 72px 140px",
+                gridTemplateColumns: "56px minmax(160px,1fr) minmax(120px,1fr) minmax(100px,1fr) 56px 72px 140px",
                 columnGap: 1.5,
                 alignItems: "center",
                 fontSize: 13,
@@ -310,6 +321,7 @@ export function ManageLessonPage() {
               <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
               <Box sx={{ fontWeight: 600, color: "#0C447C" }}>{item.title || "—"}</Box>
               <Box sx={{ color: "#5F5E5A" }}>{item.subjectName || "—"}</Box>
+              <Box sx={{ color: "#5F5E5A", fontSize: 12 }}>{formatDueAtLabel(item.dueAt)}</Box>
               <Box sx={{ color: "#5F5E5A" }}>{item.blockCount ?? 0}</Box>
               <Box>{statusChip(item.status)}</Box>
               <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
@@ -432,6 +444,21 @@ export function ManageLessonPage() {
               value={form.displayOrder}
               onChange={(e) => setForm((p) => ({ ...p, displayOrder: Number(e.target.value) || 0 }))}
             />
+            <Box>
+              <Typography component="label" sx={{ ...muFieldLabel, mb: 0.5 }}>
+                Hạn nộp (tùy chọn)
+              </Typography>
+              <TextField
+                type="datetime-local"
+                size="small"
+                fullWidth
+                sx={muTextFieldSx}
+                value={form.dueAtLocal}
+                onChange={(e) => setForm((p) => ({ ...p, dueAtLocal: e.target.value }))}
+                helperText="Để trống nếu không theo dõi bài thiếu. Dùng cho Students Need Support."
+                InputLabelProps={{ shrink: true }}
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions sx={muDialogFooter}>

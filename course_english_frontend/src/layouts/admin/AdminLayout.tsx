@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import "../../styles/admin-layout.css";
+import "../../styles/student/notifications.css";
 
 export function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);

@@ -47,6 +47,17 @@ export function splitTokenAt(tokens: ReorderToken[], index: number): ReorderToke
   ]);
 }
 
+export function tokensMatchSourceSentence(tokens: ReorderToken[], sentence: string): boolean {
+  const sentenceText = sentence.trim().replace(/\s+/g, " ");
+  if (!sentenceText) return true;
+  const joined = tokens
+    .map((token) => token.text.trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ");
+  return joined === sentenceText;
+}
+
 export function getTokenById(tokens: ReorderToken[], id: string): ReorderToken | undefined {
   return tokens.find((token) => token.id === id);
 }

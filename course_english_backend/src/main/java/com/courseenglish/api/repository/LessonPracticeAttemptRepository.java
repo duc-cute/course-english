@@ -4,6 +4,7 @@ import com.courseenglish.api.domain.LessonPracticeAttempt;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,4 +24,6 @@ public interface LessonPracticeAttemptRepository extends JpaRepository<LessonPra
     long countByUserIdAndLessonIdAndVoidedFalse(UUID userId, UUID lessonId);
 
     List<LessonPracticeAttempt> findByUserIdAndLessonIdInAndVoidedFalse(UUID userId, List<UUID> lessonIds);
+
+    List<LessonPracticeAttempt> findByLessonIdInAndVoidedFalse(Collection<UUID> lessonIds);
 }

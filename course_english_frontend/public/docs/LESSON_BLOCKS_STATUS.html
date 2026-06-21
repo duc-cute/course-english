@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Course English — Trạng thái Bài học &amp; Bài tập</title>
+    <style>
+      :root {
+        --paper: #fbf7ee;
+        --ink: #28231c;
+        --muted: #80786d;
+        --line: rgba(91, 78, 60, 0.16);
+        --accent: #0d9488;
+        --accent-soft: #ccfbf1;
+        --ok: #2f7d56;
+        --ok-soft: #dff1e6;
+        --warn: #b07a14;
+        --warn-soft: #fbf0d8;
+        --crit: #b3261e;
+        --crit-soft: #fbe7e6;
+        --info: #2c5fb3;
+        --info-soft: #e2ecfb;
+        --shadow: 0 18px 50px rgba(78, 66, 48, 0.12);
+      }
+      * { box-sizing: border-box; }
+      html {
+        background: linear-gradient(135deg, #f6f0e4 0%, #efe7d8 100%);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.65;
+      }
+      body { margin: 0; padding: 0 0 64px; }
+      .layout { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
+      .hero {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 28px 32px;
+        box-shadow: var(--shadow);
+        margin-bottom: 28px;
+      }
+      .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 8px;
+      }
+      h1 { margin: 0 0 12px; font-size: 2rem; letter-spacing: -0.02em; }
+      h2.section {
+        margin: 36px 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--accent-soft);
+        font-size: 1.35rem;
+      }
+      h3 { margin: 24px 0 10px; font-size: 1.1rem; }
+      p, li { color: var(--ink); }
+      .lead { font-size: 1.05rem; color: var(--muted); margin: 0 0 16px; }
+      .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+      }
+      .badge.ok { background: var(--ok-soft); color: var(--ok); }
+      .badge.warn { background: var(--warn-soft); color: var(--warn); }
+      .badge.info { background: var(--info-soft); color: var(--info); }
+      .badge.crit { background: var(--crit-soft); color: var(--crit); }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin: 16px 0;
+      }
+      .card.info { background: var(--info-soft); border-color: rgba(44, 95, 179, 0.2); }
+      .card.warn { background: var(--warn-soft); border-color: rgba(176, 122, 20, 0.2); }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9375rem;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        margin: 12px 0;
+      }
+      th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { background: var(--accent-soft); font-weight: 700; }
+      tr:last-child td { border-bottom: none; }
+      .st { white-space: nowrap; font-weight: 600; }
+      .st.ok { color: var(--ok); }
+      .st.warn { color: var(--warn); }
+      .st.no { color: var(--crit); }
+      pre {
+        background: #1e1e2e;
+        color: #cdd6f4;
+        padding: 16px 18px;
+        border-radius: 12px;
+        overflow-x: auto;
+        line-height: 1.5;
+        font-size: 0.875rem;
+      }
+      code {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 0.875rem;
+        background: rgba(13, 148, 136, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .toc { margin: 0; padding-left: 1.25rem; }
+      .toc a { color: var(--accent); text-decoration: none; }
+      .toc a:hover { text-decoration: underline; }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 20px 0;
+      }
+      @media (max-width: 640px) {
+        .summary-grid { grid-template-columns: 1fr; }
+        table { font-size: 0.8125rem; }
+        th, td { padding: 8px 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <header class="hero">
+        <div class="eyebrow">Course English LMS</div>
+        <h1>Trạng thái Bài học &amp; Bài tập</h1>
+        <p class="lead">
+          Tổng hợp block type, dạng câu hỏi, và mức hoàn thiện Admin / Học viên — cập nhật theo codebase
+          (sau commit <code>f90b1a0</code> — GAP_FILL_MCQ + READING_COMPREHENSION).
+        </p>
+        <div class="meta">
+          <span class="badge ok">6/8 block Bài học</span>
+          <span class="badge ok">2/2 block Bài tập</span>
+          <span class="badge ok">10/10 dạng câu player</span>
+          <span class="badge warn">TRUE_FALSE admin chưa nút thêm</span>
+          <span class="badge warn">VIDEO/AUDIO chưa</span>
+        </div>
+      </header>
+
+      <nav class="card">
+        <strong>Mục lục</strong>
+        <ol class="toc">
+          <li><a href="#structure">Cấu trúc chung</a></li>
+          <li><a href="#study">Tab Bài học — từng block</a></li>
+          <li><a href="#practice-blocks">Tab Bài tập — khối block</a></li>
+          <li><a href="#question-types">9 dạng câu trong EXERCISE_SET</a></li>
+          <li><a href="#workflow">Luồng GV thường dùng</a></li>
+          <li><a href="#gaps">Gap / chưa làm</a></li>
+          <li><a href="#summary">Tóm tắt nhanh</a></li>
+        </ol>
+      </nav>
+
+      <h2 class="section" id="structure">1. Cấu trúc chung</h2>
+      <p>
+        Một <strong>Lesson</strong> gồm nhiều <strong>LessonBlock</strong>, chia 2 tab trên Lesson Player:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Tab</th>
+            <th>Block types (<code>blockTypes.ts</code>)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Bài học</strong> (study)</td>
+            <td>
+              <code>TEXT</code>, <code>IMAGE</code>, <code>VIDEO</code>, <code>AUDIO</code>,
+              <code>CALLOUT</code>, <code>SUMMARY</code>, <code>VOCABULARY</code>, <code>SLIDE_DECK</code>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Bài tập</strong> (practice)</td>
+            <td><code>EXERCISE_SET</code>, <code>QUESTION_REF</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="card info">
+        <strong>Shell học viên (đã có):</strong> mục lục (TOC), tiến độ đọc %, chuyển tab Bài học ↔ Bài tập,
+        URL slug <code>/student/lessons/{slug}</code>, badge tiến độ trên danh sách bài, practice attempt API.
+      </div>
+
+      <h2 class="section" id="study">2. Tab BÀI HỌC — từng loại block</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Block</th>
+            <th>Admin (GV)</th>
+            <th>Học viên</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>TEXT</code></td>
+            <td class="st ok">✅ Rich text</td>
+            <td class="st ok">✅ HTML reader</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><code>IMAGE</code></td>
+            <td class="st ok">✅ Upload + caption</td>
+            <td class="st ok">✅ Hiển thị ảnh</td>
+            <td>Storage <code>/storage/...</code></td>
+          </tr>
+          <tr>
+            <td><code>CALLOUT</code></td>
+            <td class="st ok">✅ Editor</td>
+            <td class="st ok">✅ CalloutBlock</td>
+            <td>tip / warning / definition</td>
+          </tr>
+          <tr>
+            <td><code>SUMMARY</code></td>
+            <td class="st ok">✅ Editor</td>
+            <td class="st ok">✅ SummaryBlock</td>
+            <td>Danh sách ý tóm tắt</td>
+          </tr>
+          <tr>
+            <td><code>VOCABULARY</code></td>
+            <td class="st ok">✅ Gắn bộ từ</td>
+            <td class="st ok">✅ List / flashcard</td>
+            <td>Resolve live từ <code>vocabulary_sets</code>; audio UK/US (feature flag)</td>
+          </tr>
+          <tr>
+            <td><code>SLIDE_DECK</code></td>
+            <td class="st ok">✅ Import ZIP PDF</td>
+            <td class="st ok">✅ Trình chiếu / Cuộn</td>
+            <td>Canva → PDFBox → PNG; không có trong menu “+ Thêm khối”</td>
+          </tr>
+          <tr>
+            <td><code>VIDEO</code></td>
+            <td class="st no">❌</td>
+            <td class="st warn">⚠️ Placeholder</td>
+            <td>Có trong enum BE; HS thấy “Phase P1”</td>
+          </tr>
+          <tr>
+            <td><code>AUDIO</code></td>
+            <td class="st no">❌</td>
+            <td class="st warn">⚠️ Placeholder</td>
+            <td>Có trong enum BE; HS thấy “Phase P1”</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>SLIDE_DECK — chi tiết</h3>
+      <ul>
+        <li><strong>Import:</strong> ZIP chứa nhiều PDF (mỗi file = 1 slide), tối đa 50MB / 100 PDF</li>
+        <li><strong>Lưu file:</strong> <code>{STORAGE}/lessons/{lessonId}/slides/{batchId}/slide-NNN.png</code></li>
+        <li><strong>Hiển thị:</strong> <code>PRESENTATION</code> (prev/next, fullscreen) hoặc <code>SCROLL</code> (ảnh xếp dọc)</li>
+        <li><strong>Migration DB:</strong> <code>015_slide_deck_block_type.sql</code> — <code>block_type</code> → VARCHAR(64)</li>
+      </ul>
+
+      <h2 class="section" id="practice-blocks">3. Tab BÀI TẬP — 2 loại khối</h2>
+
+      <h3>3.1 <code>EXERCISE_SET</code> — nhiều câu trong một block</h3>
+      <table>
+        <thead>
+          <tr><th>Vai trò</th><th>Đã có</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Admin</strong></td>
+            <td>
+              Form soạn câu (không JSON tay); import CSV/Excel; cài đặt shuffle, % đạt;
+              preview số câu
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Học viên</strong></td>
+            <td>
+              <code>ExercisePlayer</code> stepped; shuffle; giải thích từng câu;
+              màn kết quả + xem lại; session <code>localStorage</code>;
+              POST practice attempt khi nộp bài
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>3.2 <code>QUESTION_REF</code> — trỏ ngân hàng câu</h3>
+      <table>
+        <thead>
+          <tr><th>Vai trò</th><th>Đã có</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Admin</strong></td>
+            <td>Picker từ Question Bank (<code>/admin/questions</code>); CRUD + import CSV/Excel bank</td>
+          </tr>
+          <tr>
+            <td><strong>Học viên</strong></td>
+            <td>Cùng <code>ExercisePlayer</code> — resolve câu từ bank khi load lesson</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 class="section" id="question-types">4. Trong EXERCISE_SET — 9 dạng câu hỏi</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Dạng</th>
+            <th>Mô tả</th>
+            <th>Admin soạn</th>
+            <th>HS làm</th>
+            <th>Sinh từ bộ từ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>MULTIPLE_CHOICE</code></td>
+            <td>Trắc nghiệm 4 đáp án</td>
+            <td class="st ok">✅ Form + import</td>
+            <td class="st ok">✅</td>
+            <td class="st ok">✅ MCQ</td>
+          </tr>
+          <tr>
+            <td><code>MATCHING</code></td>
+            <td>Ghép cặp trái–phải</td>
+            <td class="st ok">✅ Form</td>
+            <td class="st ok">✅</td>
+            <td class="st ok">✅ Matching</td>
+          </tr>
+          <tr>
+            <td><code>LISTEN_CHOOSE</code></td>
+            <td>Nghe → chọn đáp án</td>
+            <td class="st ok">✅ Canvas</td>
+            <td class="st ok">✅</td>
+            <td class="st ok">✅</td>
+          </tr>
+          <tr>
+            <td><code>SPELLING</code></td>
+            <td>Nghĩa VI → gõ từ EN</td>
+            <td class="st ok">✅ (chủ yếu gen)</td>
+            <td class="st ok">✅</td>
+            <td class="st ok">✅</td>
+          </tr>
+          <tr>
+            <td><code>LISTEN_TYPE</code></td>
+            <td>Nghe → gõ từ EN</td>
+            <td class="st ok">✅ (chủ yếu gen)</td>
+            <td class="st ok">✅</td>
+            <td class="st ok">✅</td>
+          </tr>
+          <tr>
+            <td><code>FILL_BLANK</code></td>
+            <td>Điền từ vào <code>___</code></td>
+            <td class="st ok">✅ Form tay</td>
+            <td class="st ok">✅</td>
+            <td class="st no">❌</td>
+          </tr>
+          <tr>
+            <td><code>REORDER_SENTENCE</code></td>
+            <td>Sắp xếp chip thành câu (3–15 từ)</td>
+            <td class="st ok">✅ Form</td>
+            <td class="st ok">✅ (tap chip)</td>
+            <td class="st no">❌</td>
+          </tr>
+          <tr>
+            <td><code>TRUE_FALSE</code></td>
+            <td>Đúng / Sai</td>
+            <td class="st warn">⚠️ Player only</td>
+            <td class="st ok">✅</td>
+            <td class="st no">❌</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="card warn">
+        <strong>Admin EXERCISE_SET — nút “+ thêm câu” hiện có:</strong>
+        MCQ, Matching, Fill blank, Reorder.
+        SPELLING / LISTEN_* thêm qua wizard <strong>sinh từ bộ từ</strong> hoặc duplicate/import.
+        TRUE_FALSE chạy trên player nhưng chưa có nút thêm trong editor.
+      </div>
+
+      <h2 class="section" id="workflow">5. Luồng GV thường dùng (đã hỗ trợ)</h2>
+      <pre>Soạn TEXT / IMAGE / CALLOUT / SUMMARY
+  → + Bộ từ vào bài (VOCABULARY + tùy chọn MCQ / MATCHING / LISTEN…)
+  → Import slide ZIP (SLIDE_DECK)
+  → Khối EXERCISE_SET (form hoặc import CSV) hoặc QUESTION_REF (bank)
+  → Publish (LessonPublishValidator)
+  → HS: tab Bài học + tab Bài tập</pre>
+
+      <h2 class="section" id="gaps">6. Gap / chưa làm</h2>
+      <table>
+        <thead>
+          <tr><th>Hạng mục</th><th>Trạng thái</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>VIDEO / AUDIO</strong> block tab Bài học</td><td class="st no">Chưa editor + player thật</td></tr>
+          <tr><td><strong>TRUE_FALSE</strong> editor trong admin</td><td class="st warn">Chưa nút thêm (chỉ payload/import)</td></tr>
+          <tr><td><strong>REORDER / FILL_BLANK</strong> sinh từ bộ từ</td><td class="st no">Chưa</td></tr>
+          <tr><td><code>example_sentence_en</code> trên từ vựng</td><td class="st no">Chưa — auto-gen câu mẫu</td></tr>
+          <tr><td>Question bank đủ 9 type</td><td class="st warn">Bank chủ yếu MCQ</td></tr>
+          <tr><td>REORDER drag-drop desktop</td><td class="st warn">Dùng tap chip (mobile-friendly)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 class="section" id="summary">7. Tóm tắt nhanh</h2>
+      <div class="summary-grid">
+        <div class="card">
+          <h3 style="margin-top:0">Bài học</h3>
+          <p><span class="badge ok">6/8</span> block dùng được thật:</p>
+          <p>TEXT · IMAGE · CALLOUT · SUMMARY · VOCABULARY · SLIDE_DECK</p>
+          <p class="lead" style="margin:0">VIDEO / AUDIO: enum có, UI chưa.</p>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Bài tập</h3>
+          <p><span class="badge ok">2/2</span> khối block:</p>
+          <p>EXERCISE_SET · QUESTION_REF</p>
+          <p><span class="badge info">8/9</span> dạng câu chạy player;</p>
+          <p class="lead" style="margin:0">TRUE_FALSE: player có, admin chưa tiện soạn.</p>
+        </div>
+      </div>
+
+      <footer class="card" style="margin-top: 32px; font-size: 0.875rem; color: var(--muted);">
+        File: <code>course_english_frontend/docs/LESSON_BLOCKS_STATUS.html</code><br />
+        Tham chiếu code: <code>blockTypes.ts</code>, <code>LessonBlockEditorPanel.tsx</code>,
+        <code>LessonBlockReader.tsx</code>, <code>ExercisePlayer.tsx</code>, <code>exercise/types.ts</code><br />
+        Doc liên quan: <code>docs/LESSON_AUTHORING_PROGRESS.md</code>, <code>docs/EXERCISE_TYPES_PHASE8_PLAN.md</code>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -25,7 +25,13 @@ import {
   generateQuestionId,
   validateExerciseSetPayload,
 } from "../../../shared/lesson/exercisePayload";
+import type { VocabularyItemRecord } from "../../../shared/api/vocabularySet";
+import { useFeatureFlags } from "../../../shared/featureFlags/useFeatureFlags";
+import { generateListenTypeFromVocabItems } from "../../../shared/lesson/vocabActivityGenerator";
 import { parseExerciseSetPayload } from "../../../student/lessonPlayer/exercise/parseExerciseSet";
+import { VocabularyWordPicker } from "../vocabulary/VocabularyWordPicker";
+import { syncBlanksWithPrompt } from "../../../shared/lesson/fillBlankUtils";
+import { syncGapFillBlanksWithPrompt } from "../../../shared/lesson/gapFillMcqUtils";
 import type {
   ExerciseQuestion,
   ExerciseSetPayload,
@@ -60,8 +66,26 @@ type ExerciseSetEditorProps = {
   onCancel: () => void;
 };
 
+function normalizeExerciseQuestion(question: ExerciseQuestion): ExerciseQuestion {
+  if (question.type === "FILL_BLANK") {
+    return {
+      ...question,
+      blanks: syncBlanksWithPrompt(question.prompt.text, question.blanks),
+    } satisfies FillBlankQuestion;
+  }
+  if (question.type === "GAP_FILL_MCQ") {
+    return {
+      ...question,
+      blanks: syncGapFillBlanksWithPrompt(question.prompt.text, question.blanks),
+    } satisfies GapFillMcqQuestion;
+  }
+  return question;
+}
+
 function normalizeQuestions(questions: ExerciseQuestion[]): ExerciseQuestion[] {
-  return questions.length ? questions : [createEmptyMcqQuestion("q1")];
+  return questions.length
+    ? questions.map(normalizeExerciseQuestion)
+    : [createEmptyMcqQuestion("q1")];
 }
 
 export function ExerciseSetEditor({
@@ -93,6 +117,12 @@ export function ExerciseSetEditor({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [importOpen, setImportOpen] = useState(false);
   const [importFormat, setImportFormat] = useState<ExerciseImportFormat>("csv");
+  const [listenTypePickerOpen, setListenTypePickerOpen] = useState(false);
+  const [listenTypeFeedback, setListenTypeFeedback] = useState<{
+    severity: "success" | "warning" | "error";
+    message: string;
+  } | null>(null);
+  const { flags } = useFeatureFlags();
 
   useEffect(() => {
     const next = parseExerciseSetPayload(payloadJson);
@@ -225,6 +255,58 @@ export function ExerciseSetEditor({
     });
   };
 
+  const appendListenTypeFromVocab = (items: VocabularyItemRecord[]) => {
+    setListenTypeFeedback(null);
+    try {
+      const result = generateListenTypeFromVocabItems(
+        items.map((item) => ({
+          id: item.id,
+          wordEn: item.wordEn,
+          meaningVi: item.meaningVi,
+          audioUkUrl: item.audioUkUrl,
+          audioUsUrl: item.audioUsUrl,
+        })),
+        {
+          shuffleQuestions: false,
+          audioAccent: flags.vocabularyAudioAccent,
+        },
+      );
+      const newQuestions = result.payload.questions.map((question) => ({
+        ...question,
+        id: generateQuestionId(),
+      }));
+      if (!newQuestions.length) {
+        setListenTypeFeedback({
+          severity: "error",
+          message: "Không sinh được câu nào — kiểm tra từ đã có audio (enrich) chưa.",
+        });
+        return;
+      }
+      setQuestions((list) => {
+        const next = [...list, ...newQuestions];
+        setActiveIndex(list.length);
+        return next;
+      });
+      const warningText = result.warnings.filter(Boolean).join(" ");
+      if (warningText) {
+        setListenTypeFeedback({
+          severity: "warning",
+          message: `Đã thêm ${newQuestions.length} câu nghe gõ. ${warningText}`,
+        });
+      } else {
+        setListenTypeFeedback({
+          severity: "success",
+          message: `Đã thêm ${newQuestions.length} câu nghe gõ từ thư viện.`,
+        });
+      }
+    } catch (err) {
+      setListenTypeFeedback({
+        severity: "error",
+        message: (err as { message?: string })?.message ?? "Không thể sinh câu nghe gõ.",
+      });
+    }
+  };
+
   const applyImportedPayload = (next: ExerciseSetPayload) => {
     setSettings({
       title: next.title,
@@ -298,6 +380,7 @@ export function ExerciseSetEditor({
           onAddGapFillMcq={() => addQuestion("GAP_FILL_MCQ")}
           onAddReading={() => addQuestion("READING_COMPREHENSION")}
           onAddReorder={() => addQuestion("REORDER_SENTENCE")}
+          onAddListenTypeFromVocab={() => setListenTypePickerOpen(true)}
           onReorder={reorderQuestions}
         />
 
@@ -409,6 +492,22 @@ export function ExerciseSetEditor({
         onClose={() => setImportOpen(false)}
         onApplied={applyImportedPayload}
       />
+
+      <VocabularyWordPicker
+        open={listenTypePickerOpen}
+        onClose={() => setListenTypePickerOpen(false)}
+        onSelect={appendListenTypeFromVocab}
+      />
+
+      {listenTypeFeedback ? (
+        <Alert
+          severity={listenTypeFeedback.severity}
+          sx={{ fontSize: 12, mt: 1 }}
+          onClose={() => setListenTypeFeedback(null)}
+        >
+          {listenTypeFeedback.message}
+        </Alert>
+      ) : null}
 
       {validationErrors.length > 0 ? (
         <Alert severity="error" sx={{ fontSize: 12, mt: 1 }}>

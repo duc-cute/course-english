@@ -2,7 +2,7 @@ import axios from "axios";
 import type { ApiResponse, LoginResponseData } from "../api/types";
 import { paths } from "../constants/paths";
 import { clearAccessToken, setAccessToken } from "./token";
-import { clearCachedUserProfile, setCachedAvatarUrl } from "./userProfileCache";
+import { cacheLoginUserProfile, clearCachedUserProfile } from "./userProfileCache";
 
 export const AUTH_SESSION_EXPIRED_EVENT = "auth:session-expired";
 export const AUTH_TOKEN_REFRESHED_EVENT = "auth:token-refreshed";
@@ -35,7 +35,7 @@ export async function refreshAccessToken(): Promise<string | null> {
         return null;
       }
       setAccessToken(token);
-      setCachedAvatarUrl(user?.avatarUrl);
+      cacheLoginUserProfile(user);
       dispatchAuthEvent(AUTH_TOKEN_REFRESHED_EVENT, token);
       return token;
     })

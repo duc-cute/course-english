@@ -58,7 +58,16 @@ export function TypedExerciseQuestionCanvas({
 
       <Box sx={{ p: 2, display: "grid", gap: 1.5 }}>
         <Alert severity="info" sx={{ fontSize: 12 }}>
-          Câu sinh từ <strong>bộ từ vựng</strong> — chỉ xem. Sinh lại từ Bộ từ vựng nếu cần sửa.
+          {isListenType ? (
+            <>
+              Câu nghe gõ — chỉ xem tại đây. Thêm mới bằng{" "}
+              <strong>Thêm nghe gõ (từ thư viện)</strong> hoặc sinh từ Bộ từ vựng.
+            </>
+          ) : (
+            <>
+              Câu sinh từ <strong>bộ từ vựng</strong> — chỉ xem. Sinh lại từ Bộ từ vựng nếu cần sửa.
+            </>
+          )}
         </Alert>
         <Typography sx={{ fontSize: 14 }}>
           {isListenType ? "Nghe:" : "Nghĩa:"} <strong>{promptText}</strong>

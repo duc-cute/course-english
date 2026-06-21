@@ -149,6 +149,7 @@ public class LessonServiceImpl implements LessonService {
         entity.setSummary(request.getSummary());
         entity.setCoverImageUrl(normalizeCoverImageUrl(request.getCoverImageUrl()));
         entity.setDisplayOrder(request.getDisplayOrder());
+        entity.setDueAt(request.getDueAt());
         entity.setStatus(LessonStatusEnum.DRAFT);
         entity.setSubject(subject);
         return toDto(lessonRepository.save(entity));
@@ -162,6 +163,7 @@ public class LessonServiceImpl implements LessonService {
         entity.setSummary(request.getSummary());
         entity.setCoverImageUrl(normalizeCoverImageUrl(request.getCoverImageUrl()));
         entity.setDisplayOrder(request.getDisplayOrder());
+        entity.setDueAt(request.getDueAt());
         if (request.getSubjectId() != null || request.getSubject() != null) {
             entity.setSubject(resolveSubject(request));
         }
@@ -331,6 +333,7 @@ public class LessonServiceImpl implements LessonService {
         dto.setCoverImageUrl(lesson.getCoverImageUrl());
         dto.setStatus(lesson.getStatus());
         dto.setDisplayOrder(lesson.getDisplayOrder());
+        dto.setDueAt(lesson.getDueAt());
         dto.setSubjectId(lesson.getSubject() != null ? lesson.getSubject().getId() : null);
         dto.setSubjectName(lesson.getSubject() != null ? lesson.getSubject().getName() : null);
         dto.setBlockCount(lessonBlockRepository.countByLesson_IdAndVoidedFalse(lesson.getId()));

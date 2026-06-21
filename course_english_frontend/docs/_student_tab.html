@@ -1,0 +1,186 @@
+        <section class="tab-panel" data-panel="student" role="tabpanel">
+          <div class="hero" style="margin-bottom:24px;padding-bottom:18px">
+            <span class="eyebrow">Học sinh · Giao diện &amp; chức năng</span>
+            <h1 style="font-size:2rem">Student Progress</h1>
+            <p>
+              Snapshot tiến độ màn HS — theme hiện tại <strong>English Glass</strong>, mục tiêu redesign
+              <strong>Vibrant Scholar</strong> (<code>Design/stitch_quest_english_learning_platform/</code>).
+              Bản đầy đủ: <code>docs/STUDENT_PROGRESS.md</code> · Cập nhật <strong>13/06/2026</strong>.
+            </p>
+            <div class="meta">
+              <span class="badge ok">Chức năng cốt lõi ~65%</span>
+              <span class="badge warn">UI mock LingoQuest ~15%</span>
+              <span class="badge info">Exercise 7/8 loại câu</span>
+            </div>
+          </div>
+
+          <div class="progress-panel" id="st-overview-panel">
+            <div class="progress-head">
+              <strong>Tổng quan theo nhóm</strong>
+              <span class="progress-pct">~65% chức năng</span>
+            </div>
+            <table style="width:100%;font-size:14px;margin-top:8px">
+              <thead><tr><th>Nhóm</th><th>Tiến độ</th><th>Ghi chú</th></tr></thead>
+              <tbody>
+                <tr><td>Shell &amp; điều hướng</td><td><strong>40%</strong></td><td>Sidebar 3 mục; chưa bottom nav, Path, Profile</td></tr>
+                <tr><td>Trang chủ &amp; danh sách bài</td><td><strong>55%</strong></td><td>Home + list + search; chưa dashboard gamified</td></tr>
+                <tr><td>Lesson Player</td><td><strong>75%</strong></td><td>TOC, focus, Up Next, sync server</td></tr>
+                <tr><td>Bài tập (Exercise)</td><td><strong>80%</strong></td><td>7/8 loại câu; attempt server; reskin UI chưa</td></tr>
+                <tr><td>Gamification</td><td><strong>0%</strong></td><td>XP, streak, badge, leaderboard</td></tr>
+                <tr><td>Enrollment filter</td><td><strong>10%</strong></td><td>BE có; FE chưa lọc lesson list</td></tr>
+                <tr><td>Assignment / nộp bài</td><td><strong>0%</strong></td><td>Roadmap v1 — chưa có màn HS</td></tr>
+                <tr><td>Redesign Vibrant Scholar</td><td><strong>0%</strong></td><td>Mock HTML + DESIGN.md</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            <div>
+              <strong>Theme:</strong> đang chạy <code>student-english-theme.css</code> ·
+              <strong>Đích:</strong> <code>student-vibrant-theme.css</code> (Quicksand, Nunito, tactile 3D).
+              Admin giữ Academic Core — không trộn token.
+            </div>
+          </div>
+
+          <h2 class="section" id="st-routes">A. Màn hình &amp; route</h2>
+          <table>
+            <thead><tr><th>Route</th><th>Trang</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              <tr><td><code>/student</code></td><td>Trang chủ</td><td><span class="badge ok">✓ Cơ bản</span></td></tr>
+              <tr><td><code>/student/lessons</code></td><td>Danh sách bài publish</td><td><span class="badge ok">✓ Search + card</span></td></tr>
+              <tr><td><code>/student/lessons/:slug</code></td><td>Lesson Player</td><td><span class="badge ok">✓ Study + Practice</span></td></tr>
+              <tr><td><code>/student/usage-guide</code></td><td>Hướng dẫn</td><td><span class="badge ok">✓</span></td></tr>
+              <tr><td><code>/student/path</code></td><td>Lộ trình học (map)</td><td><span class="badge crit">Chưa có</span></td></tr>
+              <tr><td><code>/student/vocab</code></td><td>Trung tâm từ vựng</td><td><span class="badge crit">Chưa có</span></td></tr>
+              <tr><td><code>/student/profile</code></td><td>Hồ sơ</td><td><span class="badge crit">Chưa có</span></td></tr>
+              <tr><td><code>/student/leaderboard</code></td><td>Bảng xếp hạng</td><td><span class="badge crit">Chưa có</span></td></tr>
+            </tbody>
+          </table>
+          <p><strong>Nav hiện tại:</strong> Trang chủ · Bài học · Hướng dẫn (<code>StudentSidebar.tsx</code>, 240px).</p>
+
+          <h2 class="section" id="st-features">B. Chức năng đã có</h2>
+
+          <h3 id="st-home">B.1 Trang chủ &amp; danh sách</h3>
+          <ul class="checklist" data-group="st-done-home">
+            <li><label><input type="checkbox" data-check-id="st.home.continue" data-default="1" disabled /><span>Tiếp tục học (<code>ContinueLearningCard</code> + merge server)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.home.list-link" data-default="1" disabled /><span>Link danh sách bài + search publish</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.home.quiz-card" disabled /><span>Card Quiz home (⚠ lỗi thời — exercise đã có trong lesson)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.home.hero" disabled /><span>Hero mascot, streak, XP, Daily Goals</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.list.practice-badge" data-default="1" disabled /><span>Badge practice passed trên list</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.list.enroll" disabled /><span>Lọc bài theo Enrollment</span></label></li>
+          </ul>
+
+          <h3 id="st-player">B.2 Lesson Player</h3>
+          <ul class="checklist" data-group="st-done-player">
+            <li><label><input type="checkbox" data-check-id="st.pl.tabs" data-default="1" disabled /><span>Tab Bài học / Bài tập</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.pl.toc" data-default="1" disabled /><span>TOC + scroll spy + % tiến độ</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.pl.focus" data-default="1" disabled /><span>Focus mode + in bài</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.pl.upnext" data-default="1" disabled /><span>Up Next cùng môn</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.pl.sync" data-default="1" disabled /><span><code>lessonProgressSync</code> → API reading progress</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.pl.blocks" data-default="1" disabled /><span>Study blocks: TEXT, IMAGE, VIDEO, AUDIO, CALLOUT, SUMMARY, VOCABULARY</span></label></li>
+          </ul>
+
+          <h3 id="st-exercise">B.3 Bài tập (ExercisePlayer)</h3>
+          <table>
+            <thead><tr><th>Loại câu</th><th>Player</th><th>Component</th></tr></thead>
+            <tbody>
+              <tr><td><code>MULTIPLE_CHOICE</code></td><td>✓</td><td><code>MultipleChoiceQuestion</code></td></tr>
+              <tr><td><code>MATCHING</code></td><td>✓</td><td><code>MatchingQuestion</code></td></tr>
+              <tr><td><code>FILL_BLANK</code></td><td>✓</td><td><code>FillBlankQuestion</code></td></tr>
+              <tr><td><code>LISTEN_CHOOSE</code></td><td>✓</td><td><code>ListenChooseQuestion</code></td></tr>
+              <tr><td><code>SPELLING</code></td><td>✓</td><td><code>SpellingQuestion</code></td></tr>
+              <tr><td><code>LISTEN_TYPE</code></td><td>✓</td><td><code>ListenTypeQuestion</code></td></tr>
+              <tr><td><code>REORDER_SENTENCE</code></td><td>✓</td><td><code>ReorderSentenceQuestion</code></td></tr>
+              <tr><td><code>TRUE_FALSE</code></td><td>✗</td><td>Chưa có component</td></tr>
+            </tbody>
+          </table>
+          <ul class="checklist" data-group="st-done-exercise">
+            <li><label><input type="checkbox" data-check-id="st.ex.stepped" data-default="1" disabled /><span>Stepped MCQ + shuffle + passScorePercent</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.ex.result" data-default="1" disabled /><span>Result + Review + confetti pass</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.ex.attempt" data-default="1" disabled /><span>Lưu attempt server (<code>lesson_practice_attempts</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.ex.session" data-default="1" disabled /><span>Session localStorage (F5)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.ex.wrong-only" disabled /><span>Luyện lại chỉ câu sai</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.ex.reskin" disabled /><span>Reskin UI mock (tactile, feedback tray)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="st-design-map">C. Map mock thiết kế → code</h2>
+          <table>
+            <thead><tr><th>Mock (<code>stitch_quest/…</code>)</th><th>Code / màn</th><th>Phase</th></tr></thead>
+            <tbody>
+              <tr><td><code>student_home_dashboard</code></td><td><code>StudentHomePage.tsx</code></td><td>P1</td></tr>
+              <tr><td><code>learning_path</code></td><td><code>StudentLearningPathPage</code> (mới)</td><td>P2</td></tr>
+              <tr><td><code>lesson_player_content_block</code></td><td><code>StudyPanel</code> focus layout</td><td>P2</td></tr>
+              <tr><td><code>quiz_unscramble_letters</code></td><td><code>SpellingQuestion</code> reskin</td><td>P2</td></tr>
+              <tr><td><code>vocab_center_match_word_to_image</code></td><td><code>MatchingQuestion</code> + <code>/student/vocab</code></td><td>P2</td></tr>
+              <tr><td><code>quiz_result_encouragement</code></td><td><code>ExerciseResultScreen</code> fail</td><td>P2</td></tr>
+              <tr><td><code>lesson_completion_passed</code></td><td><code>ExerciseResultScreen</code> pass</td><td>P2</td></tr>
+              <tr><td><code>student_achievements</code></td><td>Profile tab</td><td>P3</td></tr>
+              <tr><td><code>profile_leaderboard</code></td><td><code>StudentLeaderboardPage</code></td><td>P3</td></tr>
+            </tbody>
+          </table>
+          <p>Design tokens: <code>Design/stitch_quest_english_learning_platform/vibrant_scholar/DESIGN.md</code></p>
+
+          <h2 class="section" id="st-api">D. API backend (HS đang dùng)</h2>
+          <table>
+            <thead><tr><th>Endpoint</th><th>Dùng ở</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /api/v1/lessons</code> (published)</td><td>Danh sách bài</td></tr>
+              <tr><td><code>GET /api/v1/lessons/:id</code> / by slug</td><td>Lesson Player</td></tr>
+              <tr><td><code>PUT /api/v1/lesson-reading-progress/:lessonId</code></td><td>Sync tiến độ đọc</td></tr>
+              <tr><td><code>GET /api/v1/lesson-reading-progress/continue</code></td><td>Tiếp tục học</td></tr>
+              <tr><td><code>POST /api/v1/lesson-practice-attempt</code></td><td>Nộp bài tập</td></tr>
+              <tr><td><code>GET …/latest</code>, <code>/best</code>, summary</td><td>List + banner</td></tr>
+            </tbody>
+          </table>
+
+          <h2 class="section" id="st-roadmap-checklist">E. Việc tiếp theo (tick theo dõi)</h2>
+          <p class="check-summary" id="st-progress-summary"></p>
+          <div class="progress-panel" id="st-progress-panel">
+            <div class="progress-head">
+              <strong>Tiến độ roadmap HS</strong>
+              <span class="progress-pct" id="st-progress-pct">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="st-progress-fill" style="width:0%"></div></div>
+            <p class="progress-note">Đã tick <span id="st-progress-count">0</span> / <span id="st-progress-total">0</span> ·
+              <button type="button" class="link-btn" id="st-reset-defaults">Đặt lại mặc định</button> ·
+              <button type="button" class="link-btn" id="st-clear-all">Xóa tick</button>
+            </p>
+          </div>
+
+          <h3 id="st-next-short">E.1 Ngắn hạn — polish chức năng</h3>
+          <ul class="checklist" data-group="st-next-short">
+            <li><label><input type="checkbox" data-check-id="st.n.home-quiz" /><span>Sửa/bỏ card “Quiz sắp ra mắt” trên Home</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.true-false" /><span>Player <code>TRUE_FALSE</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.enroll-filter" /><span>Lọc bài theo Enrollment (FE + API)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.wrong-only" /><span>Luyện câu sai từ Review screen</span></label></li>
+          </ul>
+
+          <h3 id="st-next-ui">E.2 Trung hạn — redesign Vibrant Scholar</h3>
+          <ul class="checklist" data-group="st-next-ui">
+            <li><label><input type="checkbox" data-check-id="st.u.p0-theme" /><span>P0: <code>student-vibrant-theme.css</code> + primitives</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p1-shell" /><span>P1: Bottom nav + Home dashboard bento</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p2-path" /><span>P2: Learning Path map</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p2-reskin" /><span>P2: Reskin lesson player + exercise</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p2-vocab" /><span>P2: Vocab center (<code>/student/vocab</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p3-gamify" /><span>P3: XP / streak / profile / leaderboard (BE)</span></label></li>
+          </ul>
+
+          <h3 id="st-next-long">E.3 Dài hạn — roadmap v1</h3>
+          <ul class="checklist" data-group="st-next-long">
+            <li><label><input type="checkbox" data-check-id="st.l.assign" /><span>Assignment &amp; Submission flow</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.l.grade-view" /><span>HS xem điểm / feedback GV</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.l.teacher-report" /><span>Báo cáo tiến độ cho GV</span></label></li>
+          </ul>
+
+          <h2 class="section" id="st-files">F. File code chính</h2>
+          <pre class="ascii">src/pages/student/          StudentHomePage, StudentLessonListPage, LessonReaderPage
+src/layouts/student/        StudentLayout, StudentSidebar, StudentHeader
+src/student/lessonPlayer/   StudyPanel, ExercisePlayer, *Question.tsx
+src/student/                lessonProgressStorage, lessonProgressSync
+src/styles/                 student-english-theme.css, lesson-reader.css, lesson-player.css
+docs/STUDENT_PROGRESS.md    Bản markdown đầy đủ (cùng nội dung tab này)</pre>
+
+          <footer class="page-foot">
+            Snapshot: <code>docs/STUDENT_PROGRESS.md</code> · Tick roadmap lưu <code>course-english.review.checks.v1</code>.
+          </footer>
+        </section>

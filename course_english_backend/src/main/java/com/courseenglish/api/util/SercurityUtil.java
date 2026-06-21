@@ -53,12 +53,16 @@ public class SercurityUtil {
         List<String> listAuthority = new ArrayList<String>();
         listAuthority.add("ROLE_USER_CREATE");
         listAuthority.add("ROLE_USER_UPDATE");
+        List<String> roleNames = dto.getUser() != null && dto.getUser().getRoles() != null
+                ? dto.getUser().getRoles()
+                : List.of();
         JwtClaimsSet claims =JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(email)
                 .claim("duccute",userToken)
                 .claim("permission",listAuthority)
+                .claim("roles", roleNames)
                 .build();
 
         JwsHeader jwsHeader =JwsHeader.with(JWT_ALGORITHM).build();

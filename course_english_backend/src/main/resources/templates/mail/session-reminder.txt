@@ -1,0 +1,17 @@
+Course English — Nhắc buổi dạy
+================================
+
+Xin chào [[${teacherName}]],
+
+Buổi dạy của bạn [[${startingSoon} ? 'sắp bắt đầu' : 'sẽ bắt đầu sau khoảng 15 phút']]:
+
+- Lớp: [[${classroomName}]]
+- Buổi: [[${sessionTitle}]]
+- Bài: [[${lessonTitle}]]
+- Ngày: [[${dateLabel}]]
+- Giờ: [[${timeRange}]]
+- Meet: [[${meetLink}]]
+
+Xem lịch dạy: [[${scheduleUrl}]]
+
+— Course English

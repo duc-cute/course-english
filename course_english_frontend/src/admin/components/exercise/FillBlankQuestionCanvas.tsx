@@ -1,6 +1,7 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ShortTextOutlinedIcon from "@mui/icons-material/ShortTextOutlined";
+import { useEffect } from "react";
 import {
   Box,
   IconButton,
@@ -10,7 +11,9 @@ import {
 } from "@mui/material";
 import { muTextFieldSx } from "../../../pages/admin/manageUserUiStyles";
 import {
+  countBlankPlaceholders,
   formatAcceptedAnswers,
+  MAX_FILL_BLANK_SLOTS,
   parseAcceptedAnswersInput,
   syncBlanksWithPrompt,
 } from "../../../shared/lesson/fillBlankUtils";
@@ -33,6 +36,20 @@ export function FillBlankQuestionCanvas({
   onDelete,
   onDuplicate,
 }: FillBlankQuestionCanvasProps) {
+  const placeholderCount = countBlankPlaceholders(question.prompt.text);
+
+  useEffect(() => {
+    const expected = Math.min(placeholderCount, MAX_FILL_BLANK_SLOTS);
+    if (expected > 0 && question.blanks.length !== expected) {
+      onChange({
+        ...question,
+        blanks: syncBlanksWithPrompt(question.prompt.text, question.blanks),
+      });
+    }
+    // Chỉ sync khi số ___ đổi hoặc blanks lệch — không chạy lại khi gõ đáp án
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeholderCount, question.id, question.blanks.length, question.prompt.text]);
+
   const updatePrompt = (text: string) => {
     const blanks = syncBlanksWithPrompt(text, question.blanks);
     onChange({
@@ -121,7 +138,13 @@ export function FillBlankQuestionCanvas({
           minRows={2}
           placeholder="I ___ to school every day."
           sx={muTextFieldSx}
-          helperText="Có thể dùng nhiều ___ — mỗi ô một đáp án bên dưới"
+          helperText={
+            placeholderCount > MAX_FILL_BLANK_SLOTS
+              ? `Tối đa ${MAX_FILL_BLANK_SLOTS} chỗ trống — các ___ thừa sẽ bị bỏ qua`
+              : placeholderCount > 0
+                ? `${placeholderCount} chỗ trống → ${question.blanks.length} ô đáp án`
+                : 'Thêm ít nhất một "___" trong câu để tạo ô đáp án'
+          }
         />
 
         {question.blanks.map((blank, blankIndex) => (

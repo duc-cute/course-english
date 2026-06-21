@@ -11,6 +11,8 @@ export const paths = {
   STUDENT_VOCAB: "vocab",
   STUDENT_PROFILE: "profile",
   STUDENT_LEADERBOARD: "leaderboard",
+  SCHEDULE: "schedule",
+  STUDENTS_NEED_SUPPORT: "students-need-support",
   MANAGE_USER: "manage-user",
   MANAGE_ROLE: "manage-role",
   MANAGE_CLASSROOM: "manage-classroom",

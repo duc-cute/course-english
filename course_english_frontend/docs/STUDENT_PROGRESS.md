@@ -16,9 +16,9 @@
 | Lesson Player (đọc bài) | **85%** | Vq reskin, chrome progress, mascot tip |
 | Bài tập (Exercise) | **90%** | 8/8 loại câu; retry câu sai; Vq result/review |
 | Từ vựng | **75%** | Vocab center list + flashcard practice |
-| Gamification (FE) | **40%** | XP/streak/badge client-side ✅ S8a; chưa BE |
+| Gamification (FE) | **40%** | XP/streak/badge client-side ✅ S8a; streak = weekly count (chưa consecutive); chưa BE |
 | Lớp học / phân quyền nội dung | **70%** | Lọc lesson/vocab theo enrollment ✅ S6/S7 |
-| Leaderboard | **5%** | Placeholder — cần S8b BE |
+| Leaderboard / Rank | **5%** | Placeholder — xem **`docs/GAMIFICATION_PLAN.md`** Phase 3 |
 | Bài tập GV / nộp bài (Assignment) | **0%** | Chưa có màn student |
 
 **Tổng thể chức năng học bài cốt lõi:** ~**85%**  
@@ -57,7 +57,7 @@
 | S6 | Enrollment filter (BE + FE) | ✅ |
 | S7 | Vocab center MVP | ✅ |
 | **S8a** | **Profile MVP — stats + badges + history (FE-only)** | ✅ |
-| S8b | Leaderboard + gamification BE | 📋 Kế hoạch (xem bên dưới) |
+| S8b | Gamification BE — streak, rank, leaderboard | 📋 [`GAMIFICATION_PLAN.md`](./GAMIFICATION_PLAN.md) Phase 0–6 |
 
 ---
 
@@ -112,9 +112,12 @@ XP = (bài tập pass × 50) + (bài đọc xong ≥98% × 20) + (tổng lần l
 
 ---
 
-## S8b — Leaderboard + Gamification BE (chưa làm — hướng triển khai)
+## S8b — Gamification BE + Rank + Streak (chưa làm)
 
-> Làm khi cần xếp hạng lớp thật hoặc sync XP cross-device.
+> **Plan chi tiết:** [`docs/GAMIFICATION_PLAN.md`](./GAMIFICATION_PLAN.md) — Phase 0–6.  
+> Tóm tắt: Phase 1 stats API → Phase 2 streak UX → Phase 3 leaderboard → Phase 4 badge → Phase 5 teacher → Phase 6 cache.
+
+### Sketch cũ (tham khảo nhanh)
 
 ### Phase 1 — API aggregate (không cần bảng mới)
 
@@ -260,8 +263,10 @@ src/
 
 | File | Nội dung |
 |------|----------|
+| **`docs/GAMIFICATION_PLAN.md`** | **Plan Phase 0–6: XP, streak, rank, badge, teacher** |
 | `docs/STUDENT_FE_STRUCTURE.md` | Cấu trúc FE student zone |
 | `docs/REVIEW.html` | Review sản phẩm — tab Student UI |
+| `promt.md` | Vision gamification (Duolingo-style) |
 | `Design/stitch_quest_english_learning_platform/` | Mock UI |
 
 ---
@@ -277,3 +282,4 @@ src/
 | 13/06/2026 | S7: vocab center MVP |
 | 13/06/2026 | **S8a: Profile MVP — stats, badges, history, Home XP/badges** |
 | 13/06/2026 | **Ghi hướng S8b** — leaderboard + gamification BE |
+| 20/06/2026 | **`GAMIFICATION_PLAN.md`** — Phase 0–6 (streak consecutive, rank, daily XP) |

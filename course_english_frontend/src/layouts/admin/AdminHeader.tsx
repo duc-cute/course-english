@@ -1,7 +1,7 @@
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import SearchIcon from "@mui/icons-material/Search";
+import { NotificationBell } from "../../student/notifications/NotificationBell";
 import {
   Box,
   IconButton,
@@ -41,9 +41,7 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
           <SearchIcon className="search-icon" fontSize="small" />
           <input type="search" placeholder="Tìm kiếm..." aria-label="Tìm kiếm" />
         </Box>
-        <IconButton className="admin-header-icon-btn" size="small" aria-label="Thông báo">
-          <NotificationsNoneIcon />
-        </IconButton>
+        <NotificationBell />
         <IconButton className="admin-header-icon-btn" size="small" aria-label="Trợ giúp">
           <HelpOutlineIcon />
         </IconButton>

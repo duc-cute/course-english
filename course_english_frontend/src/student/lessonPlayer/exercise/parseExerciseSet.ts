@@ -1,4 +1,5 @@
 import { parseBlockPayload } from "../../../shared/api/lesson";
+import { syncBlanksWithPrompt } from "../../../shared/lesson/fillBlankUtils";
 import type { ExerciseQuestion, ExerciseSetPayload } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -120,21 +121,20 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
     if (!prompt.text.trim()) return null;
 
     const blanksRaw = Array.isArray(raw.blanks) ? raw.blanks : [];
-    const blanks = blanksRaw
-      .filter(isRecord)
-      .map((b, index) => {
-        const id = typeof b.id === "string" && b.id.trim() ? b.id.trim() : `b${index + 1}`;
-        const acceptedRaw = Array.isArray(b.acceptedAnswers) ? b.acceptedAnswers : [];
-        const acceptedAnswers = acceptedRaw.map((a) => String(a ?? "").trim()).filter(Boolean);
-        return {
-          id,
-          acceptedAnswers,
-          placeholder: typeof b.placeholder === "string" ? b.placeholder : undefined,
-        };
-      })
-      .filter((b) => b.acceptedAnswers.length > 0);
+    const parsedBlanks = blanksRaw.filter(isRecord).map((b, index) => {
+      const id = typeof b.id === "string" && b.id.trim() ? b.id.trim() : `b${index + 1}`;
+      const acceptedRaw = Array.isArray(b.acceptedAnswers) ? b.acceptedAnswers : [];
+      const acceptedAnswers = acceptedRaw.map((a) => String(a ?? "").trim()).filter(Boolean);
+      return {
+        id,
+        acceptedAnswers: acceptedAnswers.length ? acceptedAnswers : [""],
+        placeholder: typeof b.placeholder === "string" ? b.placeholder : undefined,
+      };
+    });
+    const blanks = syncBlanksWithPrompt(prompt.text, parsedBlanks);
+    const hasAnyAnswer = blanks.some((b) => b.acceptedAnswers.some((a) => a.trim()));
 
-    if (!blanks.length) return null;
+    if (!hasAnyAnswer) return null;
 
     return {
       id: raw.id,

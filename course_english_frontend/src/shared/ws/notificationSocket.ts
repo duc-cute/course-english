@@ -1,4 +1,6 @@
+import { refreshAccessToken } from "../auth/authSession";
 import { getAccessToken } from "../auth/token";
+import { isAccessTokenExpired } from "../auth/jwtUtils";
 import type { NotificationWsMessage } from "../api/notification";
 import { Client, type IMessage, type StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
@@ -11,10 +13,33 @@ function getApiOrigin(): string {
   return apiUrl.replace(/\/api\/v1\/?$/i, "");
 }
 
+function buildNotificationSocketUrl(token: string): string {
+  const base = getApiOrigin();
+  return `${base}/ws/notifications?token=${encodeURIComponent(token)}`;
+}
+
+async function resolveConnectToken(): Promise<string | null> {
+  let token = getAccessToken();
+  if (!token) {
+    return null;
+  }
+
+  if (isAccessTokenExpired(token)) {
+    token = await refreshAccessToken();
+  }
+
+  if (!token || isAccessTokenExpired(token)) {
+    return null;
+  }
+
+  return token;
+}
+
 export type NotificationSocketOptions = {
   onMessage: (message: NotificationWsMessage) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onAuthFailed?: () => void;
 };
 
 export type NotificationSocketHandle = {
@@ -22,23 +47,37 @@ export type NotificationSocketHandle = {
 };
 
 export function connectNotificationSocket(options: NotificationSocketOptions): NotificationSocketHandle | null {
-  const token = getAccessToken();
-  if (!token) {
+  const initialToken = getAccessToken();
+  if (!initialToken || isAccessTokenExpired(initialToken)) {
     return null;
   }
 
-  const base = getApiOrigin();
-  const url = `${base}/ws/notifications?token=${encodeURIComponent(token)}`;
   let subscription: StompSubscription | null = null;
+  let authFailed = false;
+  let currentToken = initialToken;
 
   const client = new Client({
-    webSocketFactory: () => new SockJS(url),
-    connectHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
     reconnectDelay: 5000,
     heartbeatIncoming: 10000,
     heartbeatOutgoing: 10000,
+    beforeConnect: async () => {
+      if (authFailed) {
+        throw new Error("WS auth previously failed");
+      }
+
+      const token = await resolveConnectToken();
+      if (!token) {
+        authFailed = true;
+        options.onAuthFailed?.();
+        throw new Error("WS token unavailable");
+      }
+
+      currentToken = token;
+      client.connectHeaders = {
+        Authorization: `Bearer ${token}`,
+      };
+    },
+    webSocketFactory: () => new SockJS(buildNotificationSocketUrl(currentToken)),
     onConnect: () => {
       subscription = client.subscribe("/user/queue/notifications", (message: IMessage) => {
         try {
@@ -61,7 +100,16 @@ export function connectNotificationSocket(options: NotificationSocketOptions): N
       options.onDisconnect?.();
     },
     onStompError: () => {
+      authFailed = true;
+      subscription = null;
+      options.onAuthFailed?.();
       options.onDisconnect?.();
+      client.deactivate();
+    },
+    onWebSocketError: () => {
+      if (authFailed) {
+        client.deactivate();
+      }
     },
   });
 
@@ -69,6 +117,7 @@ export function connectNotificationSocket(options: NotificationSocketOptions): N
 
   return {
     disconnect: () => {
+      authFailed = true;
       try {
         subscription?.unsubscribe();
       } catch {

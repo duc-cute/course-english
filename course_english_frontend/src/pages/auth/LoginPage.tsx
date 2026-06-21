@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { apiLogin } from "../../shared/api/user";
 import { resolvePostLoginRedirect } from "../../shared/auth/resolvePostLoginRedirect";
 import { setAccessToken } from "../../shared/auth/token";
-import { setCachedAvatarUrl } from "../../shared/auth/userProfileCache";
+import { cacheLoginUserProfile } from "../../shared/auth/userProfileCache";
 import { paths } from "../../shared/constants/paths";
 import { useFeatureFlags } from "../../shared/featureFlags/useFeatureFlags";
 import { GoogleSignInButton } from "./GoogleSignInButton";
@@ -40,7 +40,7 @@ export function LoginPage() {
       }
 
       setAccessToken(token);
-      setCachedAvatarUrl(user?.avatarUrl);
+      cacheLoginUserProfile(user);
       toast.success(response?.message || "Đăng nhập thành công");
       const redirectTo = resolvePostLoginRedirect(fromPath, user?.role, user?.roles);
       navigate(redirectTo, { replace: true });

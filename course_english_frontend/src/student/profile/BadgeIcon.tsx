@@ -1,20 +1,5 @@
-import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
-import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
-import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import RocketLaunchOutlinedIcon from "@mui/icons-material/RocketLaunchOutlined";
-import StarOutlinedIcon from "@mui/icons-material/StarOutlined";
-import type { ReactNode } from "react";
-import type { BadgeDefinition, BadgeId, BadgeTone } from "./badges";
-
-const BADGE_ICONS: Record<BadgeId, ReactNode> = {
-  first_lesson: <RocketLaunchOutlinedIcon />,
-  on_fire: <LocalFireDepartmentOutlinedIcon />,
-  quiz_master: <EmojiEventsOutlinedIcon />,
-  perfect: <StarOutlinedIcon />,
-  bookworm: <AutoStoriesOutlinedIcon />,
-  dedicated: <LocalFireDepartmentOutlinedIcon />,
-};
+import { BadgeGraphic } from "./BadgeGraphic";
+import type { BadgeDefinition, BadgeTone } from "./badges";
 
 type BadgeIconProps = {
   badge: BadgeDefinition;
@@ -33,9 +18,11 @@ export function BadgeIcon({ badge, unlocked, size = "md" }: BadgeIconProps) {
     .filter(Boolean)
     .join(" ");
 
+  const pixelSize = size === "sm" ? 64 : 80;
+
   return (
-    <div className={className} title={badge.title}>
-      {unlocked ? BADGE_ICONS[badge.id] : <LockOutlinedIcon />}
+    <div className={className} title={`${badge.title}: ${badge.description}`}>
+      <BadgeGraphic id={badge.id} unlocked={unlocked} size={pixelSize} />
     </div>
   );
 }

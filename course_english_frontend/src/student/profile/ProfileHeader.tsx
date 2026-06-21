@@ -1,10 +1,9 @@
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../../redux/user/userSlice";
-import { clearAccessToken } from "../../shared/auth/token";
 import { paths } from "../../shared/constants/paths";
 import { getStudentAccountInfo } from "../shared/auth/getStudentAccountInfo";
+import { performStudentLogout } from "../shared/auth/studentLogout";
 import { useStudentEnrollments } from "../lessons/useStudentEnrollments";
 import { MascotAvatar, VqButton } from "../ui";
 import type { StudentStats } from "./studentStats";
@@ -20,8 +19,7 @@ export function ProfileHeader({ stats }: ProfileHeaderProps) {
   const navigate = useNavigate();
 
   function handleLogout() {
-    clearAccessToken();
-    dispatch(logout());
+    performStudentLogout(dispatch);
     navigate(`/${paths.LOGIN}`, { replace: true });
   }
 

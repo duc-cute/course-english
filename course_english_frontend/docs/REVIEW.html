@@ -565,6 +565,7 @@
           <li><a href="#module-priority">6. MVP / V2 / V3</a></li>
           <li><a href="#sitemap">7. Sitemap</a></li>
           <li><a href="#user-journeys">8. Journey</a></li>
+          <li><a href="#" data-switch-tab="student">→ Student UI (tab)</a></li>
           <li><a href="#impl-status">12. Hiện trạng code</a></li>
           <li><a href="#lessons-core">13. Kiến trúc Lesson</a></li>
           <li class="sub"><a href="#lesson-principle">13.1 Nguyên tắc</a></li>
@@ -587,6 +588,13 @@
           <li class="sub"><a href="#infra-flow">15.5 Luồng tích hợp</a></li>
           <li class="sub"><a href="#infra-rollout">15.6 Thứ tự triển khai</a></li>
           <li class="sub"><a href="#infra-checklist">15.7 Checklist</a></li>
+          <li><a href="#students-need-support">16. Students Need Support</a></li>
+          <li class="sub"><a href="#sns-overview">16.1 Mục tiêu &amp; phạm vi</a></li>
+          <li class="sub"><a href="#sns-risk-score">16.2 Công thức Risk Score</a></li>
+          <li class="sub"><a href="#sns-signals">16.3 Định nghĩa tín hiệu</a></li>
+          <li class="sub"><a href="#sns-ui-flow">16.4 UI &amp; luồng GV</a></li>
+          <li class="sub"><a href="#sns-api">16.5 API &amp; code</a></li>
+          <li class="sub"><a href="#sns-checklist">16.6 Checklist triển khai</a></li>
           <li><a href="#summary">Tổng kết</a></li>
         </ul>
         <ul class="toc toc-group" data-toc="learning">
@@ -604,6 +612,21 @@
           <li><a href="#lc-cross">K. Chất lượng</a></li>
           <li><a href="#lc-platform">L. Block platform</a></li>
           <li><a href="#lc-player">M. Lesson Player (HS)</a></li>
+        </ul>
+        <ul class="toc toc-group" data-toc="student">
+          <li><a href="#st-overview-panel">Tổng quan</a></li>
+          <li><a href="#st-routes">A. Route &amp; màn hình</a></li>
+          <li><a href="#st-features">B. Chức năng đã có</a></li>
+          <li class="sub"><a href="#st-home">B.1 Home &amp; list</a></li>
+          <li class="sub"><a href="#st-player">B.2 Lesson Player</a></li>
+          <li class="sub"><a href="#st-exercise">B.3 Exercise</a></li>
+          <li><a href="#st-design-map">C. Map mock → code</a></li>
+          <li><a href="#st-api">D. API backend</a></li>
+          <li><a href="#st-roadmap-checklist">E. Việc tiếp theo</a></li>
+          <li class="sub"><a href="#st-next-short">E.1 Ngắn hạn</a></li>
+          <li class="sub"><a href="#st-next-ui">E.2 Redesign UI</a></li>
+          <li class="sub"><a href="#st-next-long">E.3 Dài hạn</a></li>
+          <li><a href="#st-files">F. File code</a></li>
         </ul>
       </aside>
 
@@ -629,6 +652,9 @@
           <button type="button" role="tab" class="is-active" data-tab="review" aria-selected="true">Product Review</button>
           <button type="button" role="tab" data-tab="learning" aria-selected="false">
             Learning Content <span class="tab-badge">2.3 · chi tiết</span>
+          </button>
+          <button type="button" role="tab" data-tab="student" aria-selected="false">
+            Student UI <span class="tab-badge">HS · progress</span>
           </button>
         </nav>
         <div class="progress-panel" id="review-progress-panel">
@@ -752,7 +778,7 @@
         <h3 id="chk-dash">2.7 Dashboard</h3>
         <ul class="checklist" data-group="mod-dash">
           <li><label><input type="checkbox" data-check-id="mod.dash.student" data-default="1" /><span>Student home + continue (cơ bản)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.dash.teacher" /><span>Teacher: weak students, pending grade (V2)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.dash.teacher" data-default="1" /><span>Teacher: Students Need Support — risk score + widget + bảng HS cần hỗ trợ</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.dash.admin" /><span>Admin: totals report (V2)</span></label></li>
         </ul>
 
@@ -803,7 +829,8 @@
   → Tạo Quiz hoặc Assignment → chọn lớp → due date
   → Theo dõi submissions
   → Chấm điểm + feedback
-  → Dashboard: weak students, pending</pre>
+  → Dashboard: Students Need Support (risk widget)
+  → /admin/students-need-support — lọc + View Profile</pre>
 
         <h3 id="flow-admin">3.3 Luồng admin</h3>
         <pre class="ascii">Login (ADMIN)
@@ -893,7 +920,8 @@ parent_student_links</code></pre>
   /profile                   (V2)
 
 /admin  (Teacher dùng chung hoặc tách /teacher V2)
-  /dashboard
+  /dashboard                   ← widget Students Need Support (top 3)
+  /students-need-support       ← bảng HS cần hỗ trợ + filter
   /manage-user, /roles, /permissions
   /classrooms, /subjects, /enrollments
   /lessons, /lessons/:id/edit
@@ -927,7 +955,7 @@ parent_student_links</code></pre>
             <tr><td>3</td><td>Publish</td><td>HS trong lớp thấy bài</td></tr>
             <tr><td>4</td><td>Giao assignment/quiz</td><td>Bản ghi ASSIGN + due</td></tr>
             <tr><td>5</td><td>Chấm submission</td><td>Điểm + feedback</td></tr>
-            <tr><td>6</td><td>Dashboard</td><td>Can thiệp HS yếu</td></tr>
+            <tr><td>6</td><td>Dashboard → Students Need Support</td><td>Risk score, bài OVERDUE, View Profile</td></tr>
           </tbody>
         </table>
 
@@ -1019,8 +1047,8 @@ parent_student_links</code></pre>
           </tbody>
         </table>
         <p><strong>Routes FE:</strong> <code>/student</code>, <code>/student/lessons/:id</code>, <code>/admin/*</code>, <code>/login</code>, <code>/register</code>.</p>
-        <p><strong>Đã triển khai:</strong> Auth, CRUD classroom/subject/enrollment/lesson, <code>LessonBlock</code> + <code>payload_json</code>, editor/reader (TEXT/IMAGE/VOCABULARY), Question Bank, <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (MCQ/MATCHING), flashcard, vocab generator; progress local + server (<code>lesson_reading_progress</code>, <code>lesson_practice_attempts</code>).</p>
-        <p><strong>Gap so với <code>promt.md</code>:</strong> CALLOUT/SUMMARY/VIDEO/AUDIO reader; syllabus sidebar; Assignment module; Redis/RabbitMQ (mục <a href="#redis-built-features">15.2b</a>).</p>
+        <p><strong>Đã triển khai:</strong> Auth, CRUD classroom/subject/enrollment/lesson, <code>LessonBlock</code> + <code>payload_json</code>, editor/reader (TEXT/IMAGE/VOCABULARY), Question Bank, <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (MCQ/MATCHING), flashcard, vocab generator; progress local + server (<code>lesson_reading_progress</code>, <code>lesson_practice_attempts</code>); <strong>Students Need Support</strong> (<code>lessons.due_at</code>, risk engine, widget + trang GV — mục <a href="#students-need-support">16</a>).</p>
+        <p><strong>Gap so với <code>promt.md</code>:</strong> syllabus sidebar; Assignment module; Redis/RabbitMQ (mục <a href="#redis-built-features">15.2b</a>). Chi tiết màn học sinh: tab <button type="button" class="link-btn" data-switch-tab="student">Student UI</button> · <code>docs/STUDENT_PROGRESS.md</code>.</p>
 
         <!-- 13 — Kiến trúc Lesson theo promt.md -->
         <h2 class="section" id="lessons-core">13. Kiến trúc Lesson — Learning Blocks (<code>promt.md</code>)</h2>
@@ -1791,6 +1819,181 @@ RabbitMQ → NotificationWorker
           <li><label><input type="checkbox" data-check-id="ws.fe-bell" /><span>FE: chuông + badge + list <code>GET /notifications</code></span></label></li>
         </ul>
 
+        <!-- 16 — Students Need Support (GV) -->
+        <h2 class="section" id="students-need-support">16. Students Need Support — HS cần hỗ trợ (GV)</h2>
+        <p class="lead">
+          Giúp giáo viên <strong>trong vài giây</strong> biết học sinh nào đang có nguy cơ tụt lại và <strong>vì sao</strong> —
+          để can thiệp sớm (xem tiến độ, nhắc làm bài, liên hệ phụ huynh…).
+          Nguồn chi tiết: <code>docs/TEACHER_STUDENTS_NEED_SUPPORT.md</code> · UI: <code>Design/UI_profile_gv/code.html</code> §3.
+        </p>
+        <div class="meta" style="margin-bottom:16px">
+          <span class="badge ok">SNS-0 → SNS-4: đã ship</span>
+          <span class="badge warn">SNS-5: snapshot + email digest — chưa</span>
+        </div>
+
+        <h3 id="sns-overview">16.1 Mục tiêu &amp; phạm vi</h3>
+        <table>
+          <thead><tr><th>Đây là</th><th>Không phải</th></tr></thead>
+          <tbody>
+            <tr><td>Danh sách HS cần chú ý theo <strong>rule rõ ràng</strong></td><td>Dashboard analytics / biểu đồ</td></tr>
+            <tr><td>Bảng/card quét nhanh + lý do + hành động</td><td>Leaderboard / xếp hạng lớp</td></tr>
+            <tr><td>Công cụ can thiệp cho GV</td><td>Báo cáo quản trị toàn trường</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Tách biệt</strong> với các block prototype khác:</p>
+        <table>
+          <thead><tr><th>Block</th><th>Module</th><th>Ghi chú</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Students Need Support</strong></td><td>Tài liệu này</td><td>Risk score từ hành vi học (inactive, thiếu bài, điểm…)</td></tr>
+            <tr><td>Attention Required</td><td><code>teacher_tasks</code> (sau)</td><td>Task tổng hợp: chấm bài, setup…</td></tr>
+            <tr><td>Pending Grading</td><td>Grading workflow (sau)</td><td>Bài HS nộp chờ GV chấm</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Phạm vi dữ liệu</h4>
+        <pre class="ascii">Teacher (đăng nhập)
+  └── classrooms[] (teacher_id = GV, ADMIN xem all)
+        └── subjects[] → lessons[] (status = PUBLISHED)
+        └── enrollments[] (ACTIVE)
+              └── student (User)
+                    ├── lesson_reading_progress.updated_at
+                    └── lesson_practice_attempts (score, passed, completed_at)</pre>
+        <p>Chỉ tính HS <strong>ACTIVE</strong> trong lớp. Chỉ lesson <strong>PUBLISHED</strong> thuộc lớp GV phụ trách.</p>
+
+        <h3 id="sns-risk-score">16.2 Công thức Risk Score</h3>
+        <p>Risk Score = <strong>tổng điểm cộng dồn</strong> từ 4 tín hiệu (gợi ý cap 100). HS có score <strong>&lt; 20</strong> không xuất hiện trong danh sách “cần hỗ trợ”.</p>
+
+        <table>
+          <thead><tr><th>Tín hiệu</th><th>Điều kiện</th><th>Điểm cộng</th><th>Mã lý do</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Không hoạt động</strong></td><td><code>inactiveDays &gt; 7</code> (strict, không tính ngày thứ 7)</td><td><strong>+50</strong></td><td><code>INACTIVE_7D</code></td></tr>
+            <tr><td><strong>Thiếu bài</strong></td><td>≥ 1 lesson <strong>OVERDUE</strong> (<code>due_at &lt; now</code>, chưa <code>passed</code>)</td><td><strong>+30</strong></td><td><code>MISSING_ASSIGNMENTS</code></td></tr>
+            <tr><td><strong>Điểm thấp</strong></td><td>Trung bình best score bài tập <strong>&lt; 60%</strong></td><td><strong>+25</strong></td><td><code>LOW_AVG_SCORE</code></td></tr>
+            <tr><td><strong>Tụt điểm</strong></td><td>TB 3 bài gần nhất − TB 3 bài trước đó <strong>≤ −15%</strong></td><td><strong>+20</strong></td><td><code>SCORE_DECLINE</code></td></tr>
+          </tbody>
+        </table>
+
+        <h4>Mức risk (UI badge)</h4>
+        <table>
+          <thead><tr><th>Level</th><th>Điều kiện</th><th>Màu</th></tr></thead>
+          <tbody>
+            <tr><td><code>CRITICAL</code></td><td>score ≥ 70</td><td>🔴 Đỏ</td></tr>
+            <tr><td><code>WARNING</code></td><td>score ≥ 40</td><td>🟠 Cam</td></tr>
+            <tr><td><code>ATTENTION</code></td><td>score ≥ 20</td><td>🟡 Vàng</td></tr>
+            <tr><td>—</td><td>score &lt; 20</td><td>Không hiện trong list</td></tr>
+          </tbody>
+        </table>
+
+        <div class="quote">
+          <strong>Ví dụ:</strong> HS không vào app 10 ngày (+50) + 2 bài quá hạn (+30) = <strong>80 → CRITICAL</strong>.
+          Badge lý do: <em>Inactive + Missing Homework</em>.
+        </div>
+
+        <h3 id="sns-signals">16.3 Định nghĩa kỹ thuật từng tín hiệu</h3>
+
+        <h4>16.3.1 Last activity — <code>inactiveDays</code></h4>
+        <pre><code>lastActivityAt = MAX(
+  lesson_reading_progress.updated_at,
+  lesson_practice_attempts.completed_at
+) trên mọi lesson PUBLISHED thuộc lớp HS
+
+Nếu chưa có activity → lastActivityAt = enrollment.joined_at
+
+inactiveDays = số ngày (ChronoUnit.DAYS) từ lastActivityAt đến now
+Rule +50 khi inactiveDays &gt; 7</code></pre>
+
+        <h4>16.3.2 Missing assignments — <code>missingCount</code> (cần <code>lessons.due_at</code>)</h4>
+        <p>GV gán <strong>Hạn nộp</strong> khi publish/sửa lesson. Lesson không có <code>due_at</code> → không tính missing.</p>
+        <pre><code>eligible = lesson PUBLISHED + due_at IS NOT NULL + thuộc lớp HS ACTIVE
+
+OVERDUE (thiếu / quá hạn):
+  due_at &lt; now AND không có attempt với passed = true
+  → missingCount++, risk +30 (một lần nếu có ≥1 OVERDUE)
+
+UPCOMING (chưa làm, còn hạn):
+  due_at &gt;= now AND chưa passed
+  → KHÔNG tính risk, KHÔNG vào missingCount
+  → chỉ hiện trong popup View Profile</code></pre>
+
+        <h4>16.3.3 Average score — <code>avgScorePercent</code></h4>
+        <pre><code>Với mỗi lesson có ít nhất 1 attempt: lấy best score_percent
+avgScorePercent = trung bình các best score
+(Lesson chưa có attempt → bỏ qua, không tính 0)
+
+Rule +25 khi avgScorePercent &lt; 60</code></pre>
+
+        <h4>16.3.4 Score trend — <code>scoreTrendPercent</code></h4>
+        <pre><code>Sắp xếp lesson theo thời gian attempt gần nhất
+recentAvg  = TB best score của 3 bài gần nhất (có điểm)
+previousAvg = TB best score của 3 bài ngay trước đó
+scoreTrendPercent = recentAvg - previousAvg   (âm = tụt)
+
+Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
+
+        <h4>16.3.5 Reason label (hiển thị 1 dòng trên card/bảng)</h4>
+        <p>Ưu tiên lý do có <strong>điểm risk cao nhất</strong>, ghép tối đa 2:</p>
+        <ul>
+          <li><em>Inactive + Missing Homework</em></li>
+          <li><em>Low Performance</em></li>
+          <li><em>Score dropped: -15%</em></li>
+        </ul>
+
+        <h3 id="sns-ui-flow">16.4 UI &amp; luồng giáo viên</h3>
+        <table>
+          <thead><tr><th>Tầng</th><th>Route / vị trí</th><th>Nội dung</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Widget</strong></td><td><code>/admin/dashboard</code></td><td>Top <strong>3</strong> HS risk cao nhất; badge lý do; nút <strong>View Profile</strong>; link <strong>Xem tất cả</strong>. Empty: “Tất cả học sinh đang ổn định.”</td></tr>
+            <tr><td><strong>Trang full</strong></td><td><code>/admin/students-need-support</code></td><td>Summary strip (Critical / Warning / Attention); bảng + phân trang; filter lớp, risk, inactive, missing, keyword</td></tr>
+            <tr><td><strong>Popup</strong></td><td>MUI <code>Dialog</code></td><td>3 nhóm: <strong>Quá hạn</strong> · <strong>Còn hạn</strong> · <strong>Đã hoàn thành</strong>; điểm best; link mở lesson editor</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Đã chốt v1:</strong> không có nút Message; View Profile = Dialog (không drawer).</p>
+
+        <pre class="ascii">GV mở Dashboard
+  → Widget "Students Need Support" (GET /widget)
+  → Thấy HS CRITICAL / WARNING + lý do
+  → View Profile → GET /{studentId}/detail?classroomId=
+  → Xem bài OVERDUE / UPCOMING / completed
+  → "Xem tất cả" → /admin/students-need-support
+  → Lọc theo lớp, risk level, tìm tên</pre>
+
+        <h3 id="sns-api">16.5 API &amp; file code</h3>
+        <p>Base: <code>GET /api/v1/teacher/students-need-support</code></p>
+        <table>
+          <thead><tr><th>Endpoint</th><th>Mục đích</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET /summary</code></td><td>Đếm Critical / Warning / Attention / totalAtRisk</td></tr>
+            <tr><td><code>GET /</code></td><td>Danh sách + filter (<code>classroomId</code>, <code>riskLevel</code>, <code>minInactiveDays</code>, <code>minMissing</code>, <code>keyword</code>, <code>page</code>, <code>size</code>)</td></tr>
+            <tr><td><code>GET /widget</code></td><td>Top 3 HS risk cao nhất</td></tr>
+            <tr><td><code>GET /{studentId}/detail?classroomId=</code></td><td>Profile + overdue / upcoming / completed lessons</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Phân quyền:</strong> GV chỉ HS lớp mình; <code>ADMIN_ROLE</code> xem tất cả lớp.</p>
+
+        <table>
+          <thead><tr><th>Layer</th><th>File chính</th></tr></thead>
+          <tbody>
+            <tr><td>DB</td><td><code>migrations/020_lesson_due_at.sql</code></td></tr>
+            <tr><td>BE</td><td><code>StudentSupportRiskServiceImpl</code>, <code>StudentSupportController</code></td></tr>
+            <tr><td>FE API</td><td><code>src/shared/api/studentSupport.ts</code></td></tr>
+            <tr><td>FE widget</td><td><code>admin/components/studentSupport/StudentsNeedSupportSection.tsx</code></td></tr>
+            <tr><td>FE trang</td><td><code>pages/admin/TeacherStudentSupportPage.tsx</code></td></tr>
+            <tr><td>FE popup</td><td><code>StudentSupportProfileDialog.tsx</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="sns-checklist">16.6 Checklist triển khai</h3>
+        <ul class="checklist" data-group="sns-v1">
+          <li class="is-done"><label><input type="checkbox" data-check-id="sns.due-at" data-default="1" checked /><span>SNS-0: <code>lessons.due_at</code> — migration + form Hạn nộp GV</span></label></li>
+          <li class="is-done"><label><input type="checkbox" data-check-id="sns.risk-api" data-default="1" checked /><span>SNS-1: Risk engine + API summary / list / widget</span></label></li>
+          <li class="is-done"><label><input type="checkbox" data-check-id="sns.widget" data-default="1" checked /><span>SNS-2: Widget dashboard (3 cards)</span></label></li>
+          <li class="is-done"><label><input type="checkbox" data-check-id="sns.full-page" data-default="1" checked /><span>SNS-3: Trang <code>/admin/students-need-support</code> + filter + sidebar</span></label></li>
+          <li class="is-done"><label><input type="checkbox" data-check-id="sns.profile" data-default="1" checked /><span>SNS-4: Popup View Profile + detail API (3 nhóm bài)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="sns.unit-test" /><span>Unit test scoring BE (4 rule + threshold)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="sns.snapshot" /><span>SNS-5: Bảng <code>student_support_snapshots</code> + job nightly</span></label></li>
+          <li><label><input type="checkbox" data-check-id="sns.email-digest" /><span>SNS-5: Email digest tuần cho GV</span></label></li>
+        </ul>
+
         <h2 class="section" id="summary">Tổng kết</h2>
         <p>
           <strong>Course English</strong> bám <code>promt.md</code>: 9 module nghiệp vụ + <strong>Lesson = chuỗi Learning Blocks</strong>
@@ -1798,7 +2001,7 @@ RabbitMQ → NotificationWorker
           <strong>Draft → Publish → Assign → Submit → Grade</strong>.
         </p>
         <p>
-          <strong>Đã có:</strong> Lesson Player (tab Bài học/Bài tập), <code>EXERCISE_SET</code>, MCQ/MATCHING, vocab flashcard, progress server (đọc + practice).<br />
+          <strong>Đã có:</strong> Lesson Player (tab Bài học/Bài tập), <code>EXERCISE_SET</code>, MCQ/MATCHING, vocab flashcard, progress server (đọc + practice); <strong>Students Need Support</strong> cho GV (<a href="#students-need-support">mục 16</a>).<br />
           <strong>Đích tiếp:</strong> CALLOUT/SUMMARY/VIDEO/AUDIO; syllabus sidebar; Assignment V2 — <a href="#lesson-impl-plan">13.10</a>.<br />
           <strong>Scale:</strong> Redis ưu tiên theo <a href="#redis-built-features">15.2b</a> khi &gt;1k HS hoặc DB đọc nặng.
         </p>
@@ -1998,9 +2201,197 @@ RabbitMQ → NotificationWorker
           </footer>
         </section>
 
+        <section class="tab-panel" data-panel="student" role="tabpanel">
+          <div class="hero" style="margin-bottom:24px;padding-bottom:18px">
+            <span class="eyebrow">Học sinh · Giao diện &amp; chức năng</span>
+            <h1 style="font-size:2rem">Student Progress</h1>
+            <p>
+              Snapshot tiến độ màn HS — theme hiện tại <strong>English Glass</strong>, mục tiêu redesign
+              <strong>Vibrant Scholar</strong> (<code>Design/stitch_quest_english_learning_platform/</code>).
+              Bản đầy đủ: <code>docs/STUDENT_PROGRESS.md</code> · Cập nhật <strong>13/06/2026</strong>.
+            </p>
+            <div class="meta">
+              <span class="badge ok">Chức năng cốt lõi ~65%</span>
+              <span class="badge warn">UI mock LingoQuest ~15%</span>
+              <span class="badge info">Exercise 7/8 loại câu</span>
+            </div>
+          </div>
+
+          <div class="progress-panel" id="st-overview-panel">
+            <div class="progress-head">
+              <strong>Tổng quan theo nhóm</strong>
+              <span class="progress-pct">~65% chức năng</span>
+            </div>
+            <table style="width:100%;font-size:14px;margin-top:8px">
+              <thead><tr><th>Nhóm</th><th>Tiến độ</th><th>Ghi chú</th></tr></thead>
+              <tbody>
+                <tr><td>Shell &amp; điều hướng</td><td><strong>40%</strong></td><td>Sidebar 3 mục; chưa bottom nav, Path, Profile</td></tr>
+                <tr><td>Trang chủ &amp; danh sách bài</td><td><strong>55%</strong></td><td>Home + list + search; chưa dashboard gamified</td></tr>
+                <tr><td>Lesson Player</td><td><strong>75%</strong></td><td>TOC, focus, Up Next, sync server</td></tr>
+                <tr><td>Bài tập (Exercise)</td><td><strong>80%</strong></td><td>7/8 loại câu; attempt server; reskin UI chưa</td></tr>
+                <tr><td>Gamification</td><td><strong>0%</strong></td><td>XP, streak, badge, leaderboard</td></tr>
+                <tr><td>Enrollment filter</td><td><strong>10%</strong></td><td>BE có; FE chưa lọc lesson list</td></tr>
+                <tr><td>Assignment / nộp bài</td><td><strong>0%</strong></td><td>Roadmap v1 — chưa có màn HS</td></tr>
+                <tr><td>Redesign Vibrant Scholar</td><td><strong>0%</strong></td><td>Mock HTML + DESIGN.md</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            <div>
+              <strong>Theme:</strong> đang chạy <code>student-english-theme.css</code> ·
+              <strong>Đích:</strong> <code>student-vibrant-theme.css</code> (Quicksand, Nunito, tactile 3D).
+              Admin giữ Academic Core — không trộn token.
+            </div>
+          </div>
+
+          <h2 class="section" id="st-routes">A. Màn hình &amp; route</h2>
+          <table>
+            <thead><tr><th>Route</th><th>Trang</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              <tr><td><code>/student</code></td><td>Trang chủ</td><td><span class="badge ok">✓ Cơ bản</span></td></tr>
+              <tr><td><code>/student/lessons</code></td><td>Danh sách bài publish</td><td><span class="badge ok">✓ Search + card</span></td></tr>
+              <tr><td><code>/student/lessons/:slug</code></td><td>Lesson Player</td><td><span class="badge ok">✓ Study + Practice</span></td></tr>
+              <tr><td><code>/student/usage-guide</code></td><td>Hướng dẫn</td><td><span class="badge ok">✓</span></td></tr>
+              <tr><td><code>/student/path</code></td><td>Lộ trình học (map)</td><td><span class="badge crit">Chưa có</span></td></tr>
+              <tr><td><code>/student/vocab</code></td><td>Trung tâm từ vựng</td><td><span class="badge crit">Chưa có</span></td></tr>
+              <tr><td><code>/student/profile</code></td><td>Hồ sơ</td><td><span class="badge crit">Chưa có</span></td></tr>
+              <tr><td><code>/student/leaderboard</code></td><td>Bảng xếp hạng</td><td><span class="badge crit">Chưa có</span></td></tr>
+            </tbody>
+          </table>
+          <p><strong>Nav hiện tại:</strong> Trang chủ · Bài học · Hướng dẫn (<code>StudentSidebar.tsx</code>, 240px).</p>
+
+          <h2 class="section" id="st-features">B. Chức năng đã có</h2>
+
+          <h3 id="st-home">B.1 Trang chủ &amp; danh sách</h3>
+          <ul class="checklist" data-group="st-done-home">
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Tiếp tục học (<code>ContinueLearningCard</code> + merge server)</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Link danh sách bài + search publish</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>Card Quiz home (⚠ lỗi thời — exercise đã có trong lesson)</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>Hero mascot, streak, XP, Daily Goals</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Badge practice passed trên list</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>Lọc bài theo Enrollment</span></label></li>
+          </ul>
+
+          <h3 id="st-player">B.2 Lesson Player</h3>
+          <ul class="checklist" data-group="st-done-player">
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Tab Bài học / Bài tập</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>TOC + scroll spy + % tiến độ</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Focus mode + in bài</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Up Next cùng môn</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span><code>lessonProgressSync</code> → API reading progress</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Study blocks: TEXT, IMAGE, VIDEO, AUDIO, CALLOUT, SUMMARY, VOCABULARY</span></label></li>
+          </ul>
+
+          <h3 id="st-exercise">B.3 Bài tập (ExercisePlayer)</h3>
+          <table>
+            <thead><tr><th>Loại câu</th><th>Player</th><th>Component</th></tr></thead>
+            <tbody>
+              <tr><td><code>MULTIPLE_CHOICE</code></td><td>✓</td><td><code>MultipleChoiceQuestion</code></td></tr>
+              <tr><td><code>MATCHING</code></td><td>✓</td><td><code>MatchingQuestion</code></td></tr>
+              <tr><td><code>FILL_BLANK</code></td><td>✓</td><td><code>FillBlankQuestion</code></td></tr>
+              <tr><td><code>LISTEN_CHOOSE</code></td><td>✓</td><td><code>ListenChooseQuestion</code></td></tr>
+              <tr><td><code>SPELLING</code></td><td>✓</td><td><code>SpellingQuestion</code></td></tr>
+              <tr><td><code>LISTEN_TYPE</code></td><td>✓</td><td><code>ListenTypeQuestion</code></td></tr>
+              <tr><td><code>REORDER_SENTENCE</code></td><td>✓</td><td><code>ReorderSentenceQuestion</code></td></tr>
+              <tr><td><code>TRUE_FALSE</code></td><td>✗</td><td>Chưa có component</td></tr>
+            </tbody>
+          </table>
+          <ul class="checklist" data-group="st-done-exercise">
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Stepped + shuffle + passScorePercent</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Result + Review + confetti pass</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Lưu attempt server (<code>lesson_practice_attempts</code>)</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Session localStorage (F5)</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>Luyện lại chỉ câu sai</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>Reskin UI mock (tactile, feedback tray)</span></label></li>
+          </ul>
+
+          <h2 class="section" id="st-design-map">C. Map mock thiết kế → code</h2>
+          <table>
+            <thead><tr><th>Mock (<code>stitch_quest/…</code>)</th><th>Code / màn</th><th>Phase</th></tr></thead>
+            <tbody>
+              <tr><td><code>student_home_dashboard</code></td><td><code>StudentHomePage.tsx</code></td><td>P1</td></tr>
+              <tr><td><code>learning_path</code></td><td><code>StudentLearningPathPage</code> (mới)</td><td>P2</td></tr>
+              <tr><td><code>lesson_player_content_block</code></td><td><code>StudyPanel</code> focus layout</td><td>P2</td></tr>
+              <tr><td><code>quiz_unscramble_letters</code></td><td><code>SpellingQuestion</code> reskin</td><td>P2</td></tr>
+              <tr><td><code>vocab_center_match_word_to_image</code></td><td><code>MatchingQuestion</code> + <code>/student/vocab</code></td><td>P2</td></tr>
+              <tr><td><code>quiz_result_encouragement</code></td><td><code>ExerciseResultScreen</code> fail</td><td>P2</td></tr>
+              <tr><td><code>lesson_completion_passed</code></td><td><code>ExerciseResultScreen</code> pass</td><td>P2</td></tr>
+              <tr><td><code>student_achievements</code></td><td>Profile tab</td><td>P3</td></tr>
+              <tr><td><code>profile_leaderboard</code></td><td><code>StudentLeaderboardPage</code></td><td>P3</td></tr>
+            </tbody>
+          </table>
+          <p>Design tokens: <code>Design/stitch_quest_english_learning_platform/vibrant_scholar/DESIGN.md</code></p>
+
+          <h2 class="section" id="st-api">D. API backend (HS đang dùng)</h2>
+          <table>
+            <thead><tr><th>Endpoint</th><th>Dùng ở</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /api/v1/lessons</code> (published)</td><td>Danh sách bài</td></tr>
+              <tr><td><code>GET /api/v1/lessons/:id</code> / by slug</td><td>Lesson Player</td></tr>
+              <tr><td><code>PUT /api/v1/lesson-reading-progress/:lessonId</code></td><td>Sync tiến độ đọc</td></tr>
+              <tr><td><code>GET /api/v1/lesson-reading-progress/continue</code></td><td>Tiếp tục học</td></tr>
+              <tr><td><code>POST /api/v1/lesson-practice-attempt</code></td><td>Nộp bài tập</td></tr>
+              <tr><td><code>GET …/latest</code>, <code>/best</code>, summary</td><td>List + banner</td></tr>
+            </tbody>
+          </table>
+
+          <h2 class="section" id="st-roadmap-checklist">E. Việc tiếp theo (tick theo dõi)</h2>
+          <p class="check-summary" id="st-progress-summary"></p>
+          <div class="progress-panel" id="st-progress-panel">
+            <div class="progress-head">
+              <strong>Tiến độ roadmap HS</strong>
+              <span class="progress-pct" id="st-progress-pct">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="st-progress-fill" style="width:0%"></div></div>
+            <p class="progress-note">Đã tick <span id="st-progress-count">0</span> / <span id="st-progress-total">0</span> ·
+              <button type="button" class="link-btn" id="st-reset-defaults">Đặt lại mặc định</button> ·
+              <button type="button" class="link-btn" id="st-clear-all">Xóa tick</button>
+            </p>
+          </div>
+
+          <h3 id="st-next-short">E.1 Ngắn hạn — polish chức năng</h3>
+          <ul class="checklist" data-group="st-next-short">
+            <li><label><input type="checkbox" data-check-id="st.n.home-quiz" /><span>Sửa/bỏ card “Quiz sắp ra mắt” trên Home</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.true-false" /><span>Player <code>TRUE_FALSE</code></span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.enroll-filter" /><span>Lọc bài theo Enrollment (FE + API)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.wrong-only" /><span>Luyện câu sai từ Review screen</span></label></li>
+          </ul>
+
+          <h3 id="st-next-ui">E.2 Trung hạn — redesign Vibrant Scholar</h3>
+          <ul class="checklist" data-group="st-next-ui">
+            <li><label><input type="checkbox" data-check-id="st.u.p0-theme" /><span>P0: <code>student-vibrant-theme.css</code> + primitives</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p1-shell" /><span>P1: Bottom nav + Home dashboard bento</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p2-path" /><span>P2: Learning Path map</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p2-reskin" /><span>P2: Reskin lesson player + exercise</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p2-vocab" /><span>P2: Vocab center (<code>/student/vocab</code>)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.p3-gamify" /><span>P3: XP / streak / profile / leaderboard (BE)</span></label></li>
+          </ul>
+
+          <h3 id="st-next-long">E.3 Dài hạn — roadmap v1</h3>
+          <ul class="checklist" data-group="st-next-long">
+            <li><label><input type="checkbox" data-check-id="st.l.assign" /><span>Assignment &amp; Submission flow</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.l.grade-view" /><span>HS xem điểm / feedback GV</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.l.teacher-report" /><span>Báo cáo tiến độ cho GV</span></label></li>
+          </ul>
+
+          <h2 class="section" id="st-files">F. File code chính</h2>
+          <pre class="ascii">src/pages/student/          StudentHomePage, StudentLessonListPage, LessonReaderPage
+src/layouts/student/        StudentLayout, StudentSidebar, StudentHeader
+src/student/lessonPlayer/   StudyPanel, ExercisePlayer, *Question.tsx
+src/student/                lessonProgressStorage, lessonProgressSync
+src/styles/                 student-english-theme.css, lesson-reader.css, lesson-player.css
+docs/STUDENT_PROGRESS.md    Bản markdown đầy đủ (cùng nội dung tab này)</pre>
+
+          <footer class="page-foot">
+            Snapshot: <code>docs/STUDENT_PROGRESS.md</code> · Tick roadmap lưu <code>course-english.review.checks.v1</code>.
+          </footer>
+        </section>
+
         <footer class="page-foot">
           Nguồn khung: <code>course_english/promt.md</code> · File:
           <code>course_english_frontend/docs/REVIEW.html</code> · Trong app: <code>/admin/review-doc</code>
+          · Student: <code>docs/STUDENT_PROGRESS.md</code>
         </footer>
       </main>
     </div>
@@ -2066,6 +2457,20 @@ RabbitMQ → NotificationWorker
             if (elFill) elFill.style.width = pct + "%";
             if (elCount) elCount.textContent = String(done);
             if (elTotal) elTotal.textContent = String(total);
+          } else if (scope && scope.getAttribute("data-panel") === "student") {
+            var stPct = document.getElementById("st-progress-pct");
+            var stFill = document.getElementById("st-progress-fill");
+            var stCount = document.getElementById("st-progress-count");
+            var stTotal = document.getElementById("st-progress-total");
+            var stSummary = document.getElementById("st-progress-summary");
+            if (stPct) stPct.textContent = pct + "%";
+            if (stFill) stFill.style.width = pct + "%";
+            if (stCount) stCount.textContent = String(done);
+            if (stTotal) stTotal.textContent = String(total);
+            if (stSummary) {
+              stSummary.textContent =
+                "Roadmap HS: " + done + "/" + total + " mục · Snapshot chức năng xem mục B ở trên.";
+            }
           } else if (!scope || scope.getAttribute("data-panel") === "review") {
             var rPct = document.getElementById("review-progress-pct");
             var rFill = document.getElementById("review-progress-fill");
@@ -2096,6 +2501,7 @@ RabbitMQ → NotificationWorker
             applyCheckbox(box, state);
           });
           updateProgress(document.querySelector('[data-panel="learning"]'));
+          updateProgress(document.querySelector('[data-panel="student"]'));
           updateProgress(document.querySelector('[data-panel="review"]'));
 
           allCheckboxes().forEach(function (box) {
@@ -2106,6 +2512,7 @@ RabbitMQ → NotificationWorker
               var panel = box.closest(".tab-panel");
               updateProgress(panel);
               updateProgress(document.querySelector('[data-panel="review"]'));
+              updateProgress(document.querySelector('[data-panel="student"]'));
             });
           });
         }
@@ -2122,6 +2529,7 @@ RabbitMQ → NotificationWorker
           saveState(readStateFromDom());
           updateProgress(scope);
           updateProgress(document.querySelector('[data-panel="review"]'));
+          updateProgress(document.querySelector('[data-panel="student"]'));
         }
 
         function clearAll(scope) {
@@ -2136,6 +2544,7 @@ RabbitMQ → NotificationWorker
           saveState(readStateFromDom());
           updateProgress(scope);
           updateProgress(document.querySelector('[data-panel="review"]'));
+          updateProgress(document.querySelector('[data-panel="student"]'));
         }
 
         function switchTab(name) {
@@ -2169,6 +2578,8 @@ RabbitMQ → NotificationWorker
 
         var lcReset = document.getElementById("lc-reset-defaults");
         var lcClear = document.getElementById("lc-clear-all");
+        var stReset = document.getElementById("st-reset-defaults");
+        var stClear = document.getElementById("st-clear-all");
         var reviewReset = document.getElementById("review-reset-defaults");
         var reviewClear = document.getElementById("review-clear-all");
         if (lcReset) {
@@ -2179,6 +2590,16 @@ RabbitMQ → NotificationWorker
         if (lcClear) {
           lcClear.addEventListener("click", function () {
             clearAll(document.querySelector('[data-panel="learning"]'));
+          });
+        }
+        if (stReset) {
+          stReset.addEventListener("click", function () {
+            clearAll(document.querySelector('[data-panel="student"]'));
+          });
+        }
+        if (stClear) {
+          stClear.addEventListener("click", function () {
+            clearAll(document.querySelector('[data-panel="student"]'));
           });
         }
         if (reviewReset) {
