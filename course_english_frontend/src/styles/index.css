@@ -2,6 +2,8 @@
 @import "./admin-layout.css";
 @import "./admin-dashboard.css";
 @import "./admin-teaching-plan.css";
+@import "./admin-ai-assistant.css";
+@import "./brand-logo.css";
 @import "./manage-user.css";
 
 :root {

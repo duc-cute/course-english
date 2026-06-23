@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
+import { AiChatWidgetHost } from "../shared/ai/AiChatWidgetHost";
 import { RequireAuth } from "../shared/auth/RequireAuth";
 import { paths } from "../shared/constants/paths";
 import { AdminDashboardPage } from "../pages/admin/AdminDashboardPage";
@@ -31,6 +32,7 @@ import { StudentLeaderboardPage } from "../pages/student/StudentLeaderboardPage"
 import { TeacherUsageGuidePage } from "../pages/admin/TeacherUsageGuidePage";
 import { TeacherSchedulePage } from "../pages/admin/TeacherSchedulePage";
 import { TeacherStudentSupportPage } from "../pages/admin/TeacherStudentSupportPage";
+import { AiAssistantPage } from "../pages/admin/AiAssistantPage";
 
 const LazyAdminLayout = lazy(async () => {
   const module = await import("../layouts/admin/AdminLayout");
@@ -49,7 +51,19 @@ const LazyStudentPlayerLayout = lazy(async () => {
 
 const studentHome = `/${paths.STUDENT}`;
 
+function AppRoot() {
+  return (
+    <>
+      <Outlet />
+      <AiChatWidgetHost />
+    </>
+  );
+}
+
 export const appRouter = createBrowserRouter([
+  {
+    element: <AppRoot />,
+    children: [
   {
     path: "/",
     element: <Navigate to={studentHome} replace />,
@@ -195,6 +209,10 @@ export const appRouter = createBrowserRouter([
         element: <ReviewDocPage />,
       },
       {
+        path: paths.AI_ASSISTANT,
+        element: <AiAssistantPage />,
+      },
+      {
         path: paths.USAGE_GUIDE,
         element: <TeacherUsageGuidePage />,
       },
@@ -203,5 +221,7 @@ export const appRouter = createBrowserRouter([
   {
     path: "*",
     element: <Navigate to={studentHome} replace />,
+  },
+    ],
   },
 ]);

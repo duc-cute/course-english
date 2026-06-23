@@ -1,6 +1,10 @@
 import { Box } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
+import {
+  AiAssistantDrawerProvider,
+  useAiAssistantDrawer,
+} from "../../shared/ai/AiAssistantDrawerContext";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import "../../styles/admin-layout.css";
@@ -14,10 +18,31 @@ export function AdminLayout() {
   };
 
   return (
+    <AiAssistantDrawerProvider onBeforeOpenDrawer={() => setMobileOpen(false)}>
+      <AdminLayoutShell mobileOpen={mobileOpen} onToggleSidebar={toggleDrawer} onOpenAdminMenu={() => setMobileOpen(true)} />
+    </AiAssistantDrawerProvider>
+  );
+}
+
+type AdminLayoutShellProps = {
+  mobileOpen: boolean;
+  onToggleSidebar: () => void;
+  onOpenAdminMenu: () => void;
+};
+
+function AdminLayoutShell({ mobileOpen, onToggleSidebar, onOpenAdminMenu }: AdminLayoutShellProps) {
+  const { registerOpenAdminMenu, unregisterOpenAdminMenu } = useAiAssistantDrawer();
+
+  useEffect(() => {
+    registerOpenAdminMenu(onOpenAdminMenu);
+    return unregisterOpenAdminMenu;
+  }, [onOpenAdminMenu, registerOpenAdminMenu, unregisterOpenAdminMenu]);
+
+  return (
     <Box className="admin-layout-root">
-      <AdminSidebar mobileOpen={mobileOpen} onToggleSidebar={toggleDrawer} />
+      <AdminSidebar mobileOpen={mobileOpen} onToggleSidebar={onToggleSidebar} />
       <Box className="admin-layout-frame">
-        <AdminHeader onToggleSidebar={toggleDrawer} />
+        <AdminHeader onToggleSidebar={onToggleSidebar} />
         <Box
           component="main"
           className="admin-layout-main"

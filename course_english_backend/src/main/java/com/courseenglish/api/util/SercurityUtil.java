@@ -119,6 +119,31 @@ public class SercurityUtil {
         return Optional.empty();
     }
 
+    @SuppressWarnings("unchecked")
+    public static List<String> getCurrentUserRoles() {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return List.of();
+        }
+        Object roles = jwt.getClaim("roles");
+        if (!(roles instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream()
+                .map(Object::toString)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    public static boolean isStaffUser() {
+        return getCurrentUserRoles().stream().anyMatch(role -> {
+            String normalized = role.toUpperCase();
+            return "ADMIN_ROLE".equals(normalized) || "TEACHER_ROLE".equals(normalized);
+        });
+    }
+
     private static String extractPrincipal(Authentication authentication) {
         if(authentication == null) return null;
         else if(authentication.getPrincipal() instanceof UserDetails springSecurityUser) {

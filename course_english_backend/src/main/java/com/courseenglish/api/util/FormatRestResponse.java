@@ -9,6 +9,7 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.courseenglish.api.domain.response.RestResponse;
 import com.courseenglish.api.util.annotation.ApiMessage;
 
@@ -25,7 +26,7 @@ public class FormatRestResponse implements ResponseBodyAdvice<Object> {
                                   Class  selectedConverterType,
                                   ServerHttpRequest request,
                                   ServerHttpResponse response) {
-        if (body instanceof String || body instanceof Resource) {
+        if (body instanceof String || body instanceof Resource || body instanceof SseEmitter) {
             return body;
         }
         HttpServletResponse servletResponse = ((ServletServerHttpResponse) response).getServletResponse();

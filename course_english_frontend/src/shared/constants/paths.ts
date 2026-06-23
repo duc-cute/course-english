@@ -25,6 +25,7 @@ export const paths = {
   MANAGE_SYSTEM_CONFIG: "system-config",
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",
+  AI_ASSISTANT: "ai-assistant",
   USAGE_GUIDE: "huong-dan",
 } as const;
 

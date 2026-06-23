@@ -25,6 +25,7 @@ export function getAdminPageTitle(pathname: string): string {
     [`${adminRoot}/${paths.MANAGE_VOCABULARY_SETS}`]: "Bộ từ vựng",
     [`${adminRoot}/${paths.MANAGE_SYSTEM_CONFIG}`]: "Cấu hình hệ thống",
     [`${adminRoot}/${paths.USAGE_GUIDE}`]: "Hướng dẫn sử dụng",
+    [`${adminRoot}/${paths.AI_ASSISTANT}`]: "LinguistAI",
   };
   return map[pathname] ?? "Course English Admin";
 }

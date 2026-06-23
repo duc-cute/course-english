@@ -24,6 +24,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { TeachingPlanSection } from "../../admin/components/teachingPlan/TeachingPlanSection";
 import { StudentsNeedSupportSection } from "../../admin/components/studentSupport/StudentsNeedSupportSection";
+import { AiUsageDashboardSection } from "../../admin/components/aiUsage/AiUsageDashboardSection";
 import { paths } from "../../shared/constants/paths";
 
 /** Số liệu mẫu — thay bằng API khi backend có endpoint dashboard */
@@ -115,6 +116,7 @@ export function AdminDashboardPage() {
     <Box className="admin-dashboard-wrap">
       <TeachingPlanSection />
       <StudentsNeedSupportSection />
+      <AiUsageDashboardSection />
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {STATS.map((stat) => (

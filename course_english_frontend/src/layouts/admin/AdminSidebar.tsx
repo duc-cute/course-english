@@ -14,6 +14,7 @@ import EmojiPeopleOutlinedIcon from "@mui/icons-material/EmojiPeopleOutlined";
 import SecurityIcon from "@mui/icons-material/Security";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import {
   Avatar,
   Box,
@@ -124,6 +125,11 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         label: "Duyệt tài liệu",
         icon: <DescriptionOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.REVIEW_DOC}`,
+      },
+      {
+        label: "AI Assistant",
+        icon: <SmartToyOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.AI_ASSISTANT}`,
       },
     ],
     [],
