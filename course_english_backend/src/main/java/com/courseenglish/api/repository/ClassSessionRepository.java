@@ -48,6 +48,32 @@ public interface ClassSessionRepository extends JpaRepository<ClassSession, UUID
             @Param("cancelled") SessionStatusEnum cancelled);
 
     @Query("""
+            SELECT s FROM ClassSession s
+            WHERE s.voided = false
+              AND s.status <> :cancelled
+              AND s.startAt >= :dayStart
+              AND s.startAt < :dayEnd
+            ORDER BY s.startAt ASC
+            """)
+    List<ClassSession> findSessionsForDay(
+            @Param("dayStart") Instant dayStart,
+            @Param("dayEnd") Instant dayEnd,
+            @Param("cancelled") SessionStatusEnum cancelled);
+
+    @Query("""
+            SELECT s FROM ClassSession s
+            WHERE s.voided = false
+              AND s.status <> :cancelled
+              AND s.startAt >= :from
+              AND s.startAt < :to
+            ORDER BY s.startAt ASC
+            """)
+    List<ClassSession> findSessionsInRange(
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            @Param("cancelled") SessionStatusEnum cancelled);
+
+    @Query("""
             SELECT COUNT(s) > 0 FROM ClassSession s
             WHERE s.teacher.id = :teacherId
               AND s.voided = false

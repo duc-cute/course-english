@@ -1,7 +1,7 @@
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import type { ClassSessionRecord } from "../../../shared/api/classSession";
@@ -11,29 +11,44 @@ type TeachingPlanTimelineItemProps = {
   session: ClassSessionRecord;
   onJoinMeet: (session: ClassSessionRecord) => void;
   onOpenLesson: (session: ClassSessionRecord) => void;
-  onSetup: (session: ClassSessionRecord) => void;
+  onStartOnlineClass?: (session: ClassSessionRecord) => void;
+  onPasteMeetingLink?: (session: ClassSessionRecord) => void;
   onAssignLesson?: (session: ClassSessionRecord) => void;
   showEdit?: boolean;
   onEdit?: (session: ClassSessionRecord) => void;
+  startOnlineClassLoadingId?: string | null;
 };
 
 export function TeachingPlanTimelineItem({
   session,
   onJoinMeet,
   onOpenLesson,
-  onSetup,
+  onStartOnlineClass,
+  onPasteMeetingLink,
   onAssignLesson,
   showEdit = false,
   onEdit,
+  startOnlineClassLoadingId = null,
 }: TeachingPlanTimelineItemProps) {
   const isLive = session.uiState === "LIVE";
   const isPast = session.uiState === "PAST";
-  const isUpcoming = session.uiState === "UPCOMING" || session.uiState === "NEEDS_SETUP";
+  const isUpcoming =
+    session.uiState === "UPCOMING" ||
+    session.uiState === "NEEDS_SETUP" ||
+    session.uiState === "NEEDS_START";
+  const isWaitingTeacher = session.uiState === "WAITING_TEACHER";
   const classLabel = session.classroomName || session.classroomCode || "Lớp học";
+  const showStart =
+    session.sessionType === "LIVE_CLASS" &&
+    (session.canStartOnlineClass || session.needsSetup) &&
+    onStartOnlineClass;
+  const showPaste =
+    session.sessionType === "LIVE_CLASS" && isWaitingTeacher && onPasteMeetingLink;
+  const starting = startOnlineClassLoadingId === session.id;
 
   return (
     <Box
-      className={`teaching-plan-timeline-item${isLive ? " is-live" : ""}${isPast ? " is-past" : ""}${isUpcoming ? " is-upcoming" : ""}`}
+      className={`teaching-plan-timeline-item${isLive ? " is-live" : ""}${isPast ? " is-past" : ""}${isUpcoming || isWaitingTeacher ? " is-upcoming" : ""}${isWaitingTeacher ? " is-waiting-teacher" : ""}`}
     >
       <Box className="teaching-plan-timeline-dot" aria-hidden />
       <Box className="teaching-plan-timeline-body">
@@ -47,22 +62,40 @@ export function TeachingPlanTimelineItem({
               Lặp tuần
             </Box>
           ) : null}
+          {isLive ? (
+            <Box component="span" className="teaching-plan-live-badge">
+              Đang live
+            </Box>
+          ) : null}
         </Typography>
         <Typography className="teaching-plan-timeline-sub" variant="body2">
           {sessionSubtitle(session)}
         </Typography>
       </Box>
       <Stack direction="row" spacing={1} className="teaching-plan-timeline-actions" flexShrink={0}>
-        {session.needsSetup ? (
+        {showStart ? (
           <Button
             size="small"
             variant="contained"
             color="primary"
-            className="teaching-plan-btn teaching-plan-btn--setup"
-            startIcon={<SettingsOutlinedIcon />}
-            onClick={() => onSetup(session)}
+            className="teaching-plan-btn teaching-plan-btn--start"
+            startIcon={<PlayCircleOutlineIcon />}
+            onClick={() => onStartOnlineClass(session)}
+            disabled={starting}
           >
-            Thiết lập
+            {starting ? "Đang mở…" : "Bắt đầu lớp online"}
+          </Button>
+        ) : null}
+        {showPaste ? (
+          <Button
+            size="small"
+            variant="contained"
+            color="secondary"
+            className="teaching-plan-btn teaching-plan-btn--paste"
+            startIcon={<LinkOutlinedIcon />}
+            onClick={() => onPasteMeetingLink(session)}
+          >
+            Dán link Meet
           </Button>
         ) : null}
         {session.canJoinMeet ? (
@@ -74,11 +107,6 @@ export function TeachingPlanTimelineItem({
             onClick={() => onJoinMeet(session)}
           >
             Vào lớp
-          </Button>
-        ) : null}
-        {!session.canJoinMeet && !session.needsSetup && session.uiState === "UPCOMING" && session.meetLink ? (
-          <Button size="small" variant="outlined" disabled className="teaching-plan-btn">
-            Chờ giờ
           </Button>
         ) : null}
         {session.canOpenLesson && session.lessonId ? (

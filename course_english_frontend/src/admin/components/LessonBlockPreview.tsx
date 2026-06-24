@@ -11,6 +11,10 @@ import {
   parseVocabularyBlockPayload,
 } from "../../shared/lesson/vocabularyPayload";
 import { parseSlideDeckPayload, getSlideDeckDisplayModeLabel } from "../../shared/lesson/slideDeckPayload";
+import {
+  formatExerciseSetQuestionCountLabel,
+  getReadingComprehensionSummary,
+} from "../../shared/lesson/exercisePayload";
 
 type TextPayload = { html?: string };
 type ImagePayload = { assetId?: string; caption?: string };
@@ -68,28 +72,14 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
 
   if (block.blockType === "EXERCISE_SET") {
     const payload = parseExerciseSetPayload(block.payloadJson);
-    const mcqCount = payload.questions.filter((q) => q.type === "MULTIPLE_CHOICE").length;
-    const listenCount = payload.questions.filter((q) => q.type === "LISTEN_CHOOSE").length;
-    const spellingCount = payload.questions.filter((q) => q.type === "SPELLING").length;
-    const listenTypeCount = payload.questions.filter((q) => q.type === "LISTEN_TYPE").length;
-    const fillBlankCount = payload.questions.filter((q) => q.type === "FILL_BLANK").length;
-    const reorderCount = payload.questions.filter((q) => q.type === "REORDER_SENTENCE").length;
-    const matchingCount = payload.questions.filter((q) => q.type === "MATCHING").length;
     const firstMcq = payload.questions.find((q) => q.type === "MULTIPLE_CHOICE");
     const firstListen = payload.questions.find((q) => q.type === "LISTEN_CHOOSE");
     const firstSpelling = payload.questions.find((q) => q.type === "SPELLING");
     const firstListenType = payload.questions.find((q) => q.type === "LISTEN_TYPE");
     const firstFillBlank = payload.questions.find((q) => q.type === "FILL_BLANK");
+    const firstGapFillMcq = payload.questions.find((q) => q.type === "GAP_FILL_MCQ");
+    const firstReading = payload.questions.find((q) => q.type === "READING_COMPREHENSION");
     const firstReorder = payload.questions.find((q) => q.type === "REORDER_SENTENCE");
-    const questionParts = [
-      mcqCount ? `${mcqCount} MCQ` : "",
-      listenCount ? `${listenCount} nghe chọn` : "",
-      spellingCount ? `${spellingCount} gõ chính tả` : "",
-      listenTypeCount ? `${listenTypeCount} nghe gõ` : "",
-      fillBlankCount ? `${fillBlankCount} điền khuyết` : "",
-      reorderCount ? `${reorderCount} sắp xếp` : "",
-      matchingCount ? `${matchingCount} ghép cặp` : "",
-    ].filter(Boolean);
     return (
       <Box>
         <Typography sx={{ fontSize: 13, color: "#333" }}>
@@ -97,7 +87,7 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
           {payload.instruction ? ` — ${payload.instruction}` : ""}
           <br />
           <span style={{ color: "#5F5E5A" }}>
-            {questionParts.join(" · ") || "0 câu"}
+            {formatExerciseSetQuestionCountLabel(payload.questions)}
             {payload.passScorePercent !== undefined ? ` · Đạt ${payload.passScorePercent}%` : ""}
           </span>
         </Typography>
@@ -116,6 +106,14 @@ export function LessonBlockPreview({ block, assets }: LessonBlockPreviewProps) {
         ) : firstFillBlank && firstFillBlank.type === "FILL_BLANK" ? (
           <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
             VD điền: {firstFillBlank.prompt.text}
+          </Typography>
+        ) : firstGapFillMcq && firstGapFillMcq.type === "GAP_FILL_MCQ" ? (
+          <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
+            VD chọn điền: {firstGapFillMcq.prompt.text}
+          </Typography>
+        ) : firstReading && firstReading.type === "READING_COMPREHENSION" ? (
+          <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>
+            VD đọc hiểu: {getReadingComprehensionSummary(firstReading)}
           </Typography>
         ) : firstReorder && firstReorder.type === "REORDER_SENTENCE" ? (
           <Typography sx={{ fontSize: 12, color: "#888780", mt: 0.5, fontStyle: "italic" }}>

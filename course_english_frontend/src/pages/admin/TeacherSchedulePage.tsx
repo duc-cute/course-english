@@ -1,3 +1,4 @@
+import RepeatOutlinedIcon from "@mui/icons-material/RepeatOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
@@ -22,7 +23,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AssignLessonDialog } from "../../admin/components/teachingPlan/AssignLessonDialog";
 import { ClassSessionFormModal } from "../../admin/components/teachingPlan/ClassSessionFormModal";
+import { StartOnlineClassDialog } from "../../admin/components/teachingPlan/StartOnlineClassDialog";
 import { TeachingPlanTimelineItem } from "../../admin/components/teachingPlan/TeachingPlanTimelineItem";
+import { useOnlineClassFlow } from "../../admin/components/teachingPlan/useOnlineClassFlow";
 import { WeekScheduleGrid } from "../../admin/components/teachingPlan/WeekScheduleGrid";
 import { formatTodayIsoInTz } from "../../admin/components/teachingPlan/teachingPlanUtils";
 import {
@@ -46,6 +49,7 @@ import { paths } from "../../shared/constants/paths";
 import { muPageShell } from "./manageUserUiStyles";
 
 type ScheduleViewMode = "list" | "grid";
+type ClassSessionFormMode = "quick" | "recurring";
 
 export function TeacherSchedulePage() {
   const navigate = useNavigate();
@@ -62,7 +66,7 @@ export function TeacherSchedulePage() {
   const weekEnd = useMemo(() => getWeekEnd(weekStart), [weekStart]);
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
 
-  const viewMode: ScheduleViewMode = searchParams.get("view") === "grid" ? "grid" : "list";
+  const viewMode: ScheduleViewMode = searchParams.get("view") === "list" ? "list" : "grid";
 
   const [sessions, setSessions] = useState<ClassSessionRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,12 +76,15 @@ export function TeacherSchedulePage() {
   const [typeFilter, setTypeFilter] = useState<"" | SessionType>("");
 
   const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<ClassSessionFormMode>("quick");
   const [editing, setEditing] = useState<ClassSessionRecord | null>(null);
   const [createDay, setCreateDay] = useState<string | undefined>();
   const [createStartHour, setCreateStartHour] = useState<number | undefined>();
   const [createStartMinute, setCreateStartMinute] = useState<number | undefined>();
   const [assignSession, setAssignSession] = useState<ClassSessionRecord | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [savingMeetLink, setSavingMeetLink] = useState(false);
+  const [cancellingStart, setCancellingStart] = useState(false);
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -92,6 +99,17 @@ export function TeacherSchedulePage() {
       setLoading(false);
     }
   }, [weekStart, weekEnd]);
+
+  const {
+    pasteSession,
+    startingId,
+    flowError,
+    handleStartOnlineClass,
+    openPasteDialog,
+    closePasteDialog,
+    handleSaveMeetingLink,
+    handleCancelOnlineClassStart,
+  } = useOnlineClassFlow(loadWeek);
 
   useEffect(() => {
     void loadWeek();
@@ -141,8 +159,8 @@ export function TeacherSchedulePage() {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (mode === "grid") {
-          next.set("view", "grid");
+        if (mode === "list") {
+          next.set("view", "list");
         } else {
           next.delete("view");
         }
@@ -153,10 +171,20 @@ export function TeacherSchedulePage() {
   };
 
   const openCreate = (day?: string, hour?: number, minute?: number) => {
+    setFormMode("quick");
     setEditing(null);
     setCreateDay(day);
     setCreateStartHour(hour);
     setCreateStartMinute(minute);
+    setFormOpen(true);
+  };
+
+  const openRecurringSetup = () => {
+    setFormMode("recurring");
+    setEditing(null);
+    setCreateDay(undefined);
+    setCreateStartHour(undefined);
+    setCreateStartMinute(undefined);
     setFormOpen(true);
   };
 
@@ -199,7 +227,7 @@ export function TeacherSchedulePage() {
               Lịch dạy tuần
             </Typography>
             <Typography variant="body2" sx={{ color: "var(--ac-on-surface-variant)" }}>
-              {formatWeekRangeLabel(weekStart, weekEnd)} · {totalSessions} buổi
+              {formatWeekRangeLabel(weekStart, weekEnd)} · {totalSessions} ca
             </Typography>
           </Box>
 
@@ -232,13 +260,13 @@ export function TeacherSchedulePage() {
               Tuần sau
             </Button>
             <Button
-              variant="contained"
+              variant="outlined"
               size="small"
-              startIcon={<EventOutlinedIcon />}
-              onClick={() => openCreate()}
-              sx={{ textTransform: "none", fontWeight: 700, boxShadow: "0 4px 0 0 #004395" }}
+              startIcon={<RepeatOutlinedIcon />}
+              onClick={openRecurringSetup}
+              sx={{ textTransform: "none", fontWeight: 700 }}
             >
-              Lên lịch
+              Lịch cố định
             </Button>
           </Stack>
         </Stack>
@@ -286,21 +314,21 @@ export function TeacherSchedulePage() {
             aria-label="Chế độ xem lịch"
             sx={{ ml: { sm: "auto" } }}
           >
-            <ToggleButton value="list" aria-label="Danh sách">
-              <ViewListOutlinedIcon fontSize="small" sx={{ mr: 0.75 }} />
-              Danh sách
-            </ToggleButton>
             <ToggleButton value="grid" aria-label="Lưới tuần">
               <ViewModuleOutlinedIcon fontSize="small" sx={{ mr: 0.75 }} />
               Lưới
+            </ToggleButton>
+            <ToggleButton value="list" aria-label="Danh sách">
+              <ViewListOutlinedIcon fontSize="small" sx={{ mr: 0.75 }} />
+              Danh sách
             </ToggleButton>
           </ToggleButtonGroup>
         </Stack>
       </Box>
 
-      {error ? (
+      {error || flowError ? (
         <Alert severity="error" sx={{ mb: 2 }} action={<Button onClick={() => void loadWeek()}>Thử lại</Button>}>
-          {error}
+          {error || flowError}
         </Alert>
       ) : null}
 
@@ -348,14 +376,14 @@ export function TeacherSchedulePage() {
                   onClick={() => openCreate(date)}
                   sx={{ textTransform: "none", fontWeight: 700 }}
                 >
-                  Thêm buổi
+                  Thêm ca dạy
                 </Button>
               </Stack>
 
               {daySessions.length === 0 ? (
                 <Box className="schedule-week-day-empty">
                   <Typography variant="body2" sx={{ color: "var(--ac-on-surface-variant)" }}>
-                    Chưa có buổi dạy
+                    Chưa có ca dạy
                   </Typography>
                 </Box>
               ) : (
@@ -367,9 +395,11 @@ export function TeacherSchedulePage() {
                       showEdit
                       onJoinMeet={handleJoinMeet}
                       onOpenLesson={handleOpenLesson}
-                      onSetup={openEdit}
+                      onStartOnlineClass={(s) => void handleStartOnlineClass(s)}
+                      onPasteMeetingLink={openPasteDialog}
                       onEdit={openEdit}
                       onAssignLesson={openAssignLesson}
+                      startOnlineClassLoadingId={startingId}
                     />
                   ))}
                 </Box>
@@ -379,9 +409,34 @@ export function TeacherSchedulePage() {
         </Stack>
       )}
 
+      <StartOnlineClassDialog
+        open={Boolean(pasteSession)}
+        session={pasteSession}
+        saving={savingMeetLink}
+        cancelling={cancellingStart}
+        onClose={closePasteDialog}
+        onSave={async (meetLink) => {
+          setSavingMeetLink(true);
+          try {
+            await handleSaveMeetingLink(meetLink);
+          } finally {
+            setSavingMeetLink(false);
+          }
+        }}
+        onCancelStart={async () => {
+          setCancellingStart(true);
+          try {
+            await handleCancelOnlineClassStart();
+          } finally {
+            setCancellingStart(false);
+          }
+        }}
+      />
+
       <ClassSessionFormModal
         open={formOpen}
         editing={editing}
+        mode={formMode}
         initialDay={createDay}
         initialStartHour={createStartHour}
         initialStartMinute={createStartMinute}
@@ -391,7 +446,7 @@ export function TeacherSchedulePage() {
           setCreateStartHour(undefined);
           setCreateStartMinute(undefined);
         }}
-        onSaved={() => void loadWeek()}
+        onSaved={loadWeek}
       />
 
       <AssignLessonDialog
@@ -401,7 +456,7 @@ export function TeacherSchedulePage() {
           setAssignOpen(false);
           setAssignSession(null);
         }}
-        onSaved={() => void loadWeek()}
+        onSaved={loadWeek}
       />
     </Box>
   );

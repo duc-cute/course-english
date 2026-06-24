@@ -1,4 +1,5 @@
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
@@ -6,12 +7,10 @@ import {
   Box,
   Button,
   FormControl,
-  FormControlLabel,
   IconButton,
   InputLabel,
   MenuItem,
   Radio,
-  RadioGroup,
   Select,
   TextField,
   Tooltip,
@@ -122,7 +121,7 @@ export function ReadingComprehensionQuestionCanvas({
         </Box>
       </Box>
 
-      <Box sx={{ p: 2, display: "grid", gap: 2 }}>
+      <Box sx={{ p: { xs: 2, md: 3 }, display: "grid", gap: 3 }}>
         <FormControl size="small" fullWidth sx={muTextFieldSx}>
           <InputLabel>Chế độ hiển thị</InputLabel>
           <Select
@@ -143,107 +142,206 @@ export function ReadingComprehensionQuestionCanvas({
           </Select>
         </FormControl>
 
-        <TextField
-          label="Tiêu đề đoạn (tuỳ chọn)"
-          value={question.passage.title ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...question,
-              passage: { ...question.passage, title: e.target.value },
-            })
-          }
-          size="small"
-          fullWidth
-          sx={muTextFieldSx}
-        />
-
-        <TextField
-          label="Đoạn đọc"
-          value={question.passage.text}
-          onChange={(e) =>
-            onChange({
-              ...question,
-              passage: { ...question.passage, text: e.target.value },
-            })
-          }
-          size="small"
-          fullWidth
-          multiline
-          minRows={5}
-          sx={muTextFieldSx}
-        />
-
-        {question.subQuestions.map((sub, subIndex) => (
-          <Box
-            key={sub.id}
+        <Box>
+          <Typography sx={{ fontSize: 12, fontWeight: 500, color: "#5F5E5A", mb: 0.75 }}>
+            Tiêu đề đoạn (tuỳ chọn)
+          </Typography>
+          <TextField
+            placeholder="Nhập tiêu đề..."
+            value={question.passage.title ?? ""}
+            onChange={(e) =>
+              onChange({
+                ...question,
+                passage: { ...question.passage, title: e.target.value },
+              })
+            }
+            fullWidth
             sx={{
-              p: 1.5,
-              border: "1px solid #ECEAE3",
-              borderRadius: "8px",
-              bgcolor: "#FAFAF8",
-              display: "grid",
-              gap: 1.25,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "10px",
+                fontSize: 14,
+                bgcolor: "#fff",
+                "&.Mui-focused fieldset": { borderWidth: 2, borderColor: "#0C447C" },
+              },
             }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#0C447C" }}>
-                Câu hỏi {subIndex + 1}
-              </Typography>
-              {question.subQuestions.length > 1 ? (
-                <IconButton size="small" color="error" onClick={() => removeSub(sub.id)}>
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
-              ) : null}
-            </Box>
+          />
+        </Box>
 
-            <TextField
-              label="Câu hỏi"
-              value={sub.prompt.text}
-              onChange={(e) =>
-                updateSub(sub.id, { prompt: { ...sub.prompt, text: e.target.value } })
-              }
-              size="small"
-              fullWidth
-              multiline
-              minRows={2}
-              sx={muTextFieldSx}
-            />
+        <Box>
+          <Typography sx={{ fontSize: 12, fontWeight: 500, color: "#5F5E5A", mb: 0.75 }}>
+            Đoạn đọc
+          </Typography>
+          <TextField
+            placeholder="Dán hoặc nhập đoạn văn tiếng Anh..."
+            value={question.passage.text}
+            onChange={(e) =>
+              onChange({
+                ...question,
+                passage: { ...question.passage, text: e.target.value },
+              })
+            }
+            fullWidth
+            multiline
+            minRows={5}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "10px",
+                fontSize: 14,
+                lineHeight: 1.6,
+                bgcolor: "#fff",
+                "&.Mui-focused fieldset": { borderWidth: 2, borderColor: "#0C447C" },
+              },
+            }}
+          />
+        </Box>
 
-            {sub.choices.map((choice, ci) => (
-              <TextField
-                key={choice.id}
-                label={`Đáp án ${CHOICE_LABELS[ci] ?? choice.id.toUpperCase()}`}
-                value={choice.text}
-                onChange={(e) =>
-                  updateSub(sub.id, {
-                    choices: sub.choices.map((c) =>
-                      c.id === choice.id ? { ...c, text: e.target.value } : c,
-                    ),
-                  })
-                }
-                size="small"
-                fullWidth
-                sx={muTextFieldSx}
-              />
-            ))}
+        <Box sx={{ display: "grid", gap: 2 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#0b1c30" }}>
+            Câu hỏi theo đoạn đọc
+          </Typography>
 
-            <RadioGroup
-              row
-              value={sub.correctChoiceId}
-              onChange={(e) => updateSub(sub.id, { correctChoiceId: e.target.value })}
+          {question.subQuestions.map((sub, subIndex) => (
+            <Box
+              key={sub.id}
+              sx={{
+                p: { xs: 2, md: 2.5 },
+                border: "1px solid #E8E6DF",
+                borderLeft: "3px solid #0C447C",
+                borderRadius: "12px",
+                bgcolor: "#fff",
+                display: "grid",
+                gap: 2,
+                boxShadow: "0 1px 3px rgba(12, 68, 124, 0.04)",
+              }}
             >
-              {sub.choices.map((choice, ci) => (
-                <FormControlLabel
-                  key={choice.id}
-                  value={choice.id}
-                  control={<Radio size="small" />}
-                  label={CHOICE_LABELS[ci] ?? choice.id.toUpperCase()}
-                  sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box
+                  sx={{
+                    px: 1.25,
+                    py: 0.35,
+                    borderRadius: "6px",
+                    bgcolor: "rgba(12, 68, 124, 0.08)",
+                    color: "#0C447C",
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  Câu hỏi {subIndex + 1}
+                </Box>
+                {question.subQuestions.length > 1 ? (
+                  <Tooltip title="Xóa câu hỏi">
+                    <IconButton size="small" onClick={() => removeSub(sub.id)} aria-label="Xóa câu hỏi">
+                      <DeleteOutlineIcon sx={{ fontSize: 18, color: "#BA1A1A" }} />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontSize: 12, fontWeight: 500, color: "#5F5E5A", mb: 0.75 }}>
+                  Nội dung câu hỏi
+                </Typography>
+                <TextField
+                  multiline
+                  minRows={2}
+                  fullWidth
+                  placeholder="Nhập câu hỏi (tiếng Anh)..."
+                  value={sub.prompt.text}
+                  onChange={(e) =>
+                    updateSub(sub.id, { prompt: { ...sub.prompt, text: e.target.value } })
+                  }
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "10px",
+                      fontSize: 15,
+                      "&.Mui-focused fieldset": { borderWidth: 2, borderColor: "#0C447C" },
+                    },
+                  }}
                 />
-              ))}
-            </RadioGroup>
-          </Box>
-        ))}
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontSize: 12, fontWeight: 500, color: "#5F5E5A", mb: 1 }}>
+                  Đáp án — chọn đáp án đúng
+                </Typography>
+                <Box sx={{ display: "grid", gap: 1.25 }}>
+                  {sub.choices.map((choice, ci) => {
+                    const isCorrect = choice.id === sub.correctChoiceId;
+                    const label = CHOICE_LABELS[ci] ?? choice.id.toUpperCase();
+
+                    return (
+                      <Box key={choice.id} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Radio
+                          size="small"
+                          checked={isCorrect}
+                          onChange={() => updateSub(sub.id, { correctChoiceId: choice.id })}
+                          sx={{ p: 0.5 }}
+                        />
+                        <Box
+                          sx={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            border: isCorrect ? "2px solid #0C447C" : "1px solid #ECEAE3",
+                            borderRadius: "10px",
+                            bgcolor: isCorrect ? "rgba(12, 68, 124, 0.04)" : "#FAFAF8",
+                            overflow: "hidden",
+                            transition: "border-color 0.15s, background 0.15s",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              px: 1.5,
+                              py: 1.25,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: isCorrect ? "#0C447C" : "#888780",
+                              borderRight: isCorrect
+                                ? "1px solid rgba(12,68,124,0.2)"
+                                : "1px solid #ECEAE3",
+                              bgcolor: isCorrect ? "rgba(12, 68, 124, 0.06)" : "#F3F2EE",
+                              minWidth: 36,
+                              textAlign: "center",
+                            }}
+                          >
+                            {label}
+                          </Box>
+                          <TextField
+                            variant="standard"
+                            fullWidth
+                            placeholder={`Đáp án ${label}`}
+                            value={choice.text}
+                            onChange={(e) =>
+                              updateSub(sub.id, {
+                                choices: sub.choices.map((c) =>
+                                  c.id === choice.id ? { ...c, text: e.target.value } : c,
+                                ),
+                              })
+                            }
+                            InputProps={{ disableUnderline: true }}
+                            sx={{
+                              px: 1.5,
+                              "& input": {
+                                fontSize: 14,
+                                fontWeight: isCorrect ? 600 : 400,
+                                py: 1.25,
+                              },
+                            }}
+                          />
+                          {isCorrect ? (
+                            <CheckCircleIcon
+                              sx={{ fontSize: 20, color: "#0C447C", mr: 1, flexShrink: 0 }}
+                            />
+                          ) : null}
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            </Box>
+          ))}
+        </Box>
 
         <Button
           variant="outlined"
@@ -254,16 +352,27 @@ export function ReadingComprehensionQuestionCanvas({
           Thêm câu hỏi
         </Button>
 
-        <TextField
-          label="Giải thích chung (tuỳ chọn)"
-          value={question.explanation ?? ""}
-          onChange={(e) => onChange({ ...question, explanation: e.target.value })}
-          size="small"
-          fullWidth
-          multiline
-          minRows={2}
-          sx={muTextFieldSx}
-        />
+        <Box>
+          <Typography sx={{ fontSize: 12, fontWeight: 500, color: "#5F5E5A", mb: 0.75 }}>
+            Giải thích chung (tuỳ chọn)
+          </Typography>
+          <TextField
+            placeholder="Thêm gợi ý hoặc giải thích sau khi chấm..."
+            value={question.explanation ?? ""}
+            onChange={(e) => onChange({ ...question, explanation: e.target.value })}
+            fullWidth
+            multiline
+            minRows={2}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "10px",
+                fontSize: 14,
+                bgcolor: "#FAFAF8",
+                "&.Mui-focused fieldset": { borderWidth: 2, borderColor: "#0C447C" },
+              },
+            }}
+          />
+        </Box>
       </Box>
     </Box>
   );

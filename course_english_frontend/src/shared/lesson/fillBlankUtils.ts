@@ -10,8 +10,12 @@ export type FillBlankSegment =
 
 const BRACE_BLANK_RE = /\{\{([a-zA-Z0-9_-]+)\}\}/g;
 
+export function normalizeFillBlankPrompt(promptText: string): string {
+  return promptText.replace(/_{3,}/g, FILL_BLANK_TOKEN);
+}
+
 export function countBlankPlaceholders(promptText: string): number {
-  const plain = (promptText.match(/___/g) ?? []).length;
+  const plain = (promptText.match(/_{3,}/g) ?? []).length;
   const braces = new Set<string>();
   for (const match of promptText.matchAll(BRACE_BLANK_RE)) {
     if (match[1]) braces.add(match[1]);
@@ -66,12 +70,13 @@ export function parseFillBlankPrompt(promptText: string, blanks: FillBlankSlot[]
   };
 
   while (scan < promptText.length) {
-    if (promptText.startsWith(FILL_BLANK_TOKEN, scan)) {
+    const blankRun = promptText.slice(scan).match(/^_{3,}/);
+    if (blankRun) {
       pushTextUpTo(scan);
       const blank = blanks[blankIndex] ?? blanks[blanks.length - 1];
       segments.push({ kind: "blank", blankId: blank?.id ?? `b${blankIndex + 1}` });
       blankIndex += 1;
-      scan += FILL_BLANK_TOKEN.length;
+      scan += blankRun[0].length;
       textStart = scan;
       continue;
     }

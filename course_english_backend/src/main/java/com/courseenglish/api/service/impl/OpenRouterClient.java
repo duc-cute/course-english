@@ -1,5 +1,6 @@
 package com.courseenglish.api.service.impl;
 
+import com.courseenglish.api.util.AiJsonResponseSanitizer;
 import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,7 +58,32 @@ public class OpenRouterClient {
     }
 
     public ChatResult chat(String model, List<Map<String, String>> messages) throws IdInvalidException {
-        HttpRequest request = buildChatRequest(model, messages, false);
+        return chatSync(model, messages, false);
+    }
+
+    /**
+     * Sync completion for structured JSON output (e.g. question generation).
+     * Uses json_object response_format, lower temperature, and sanitizes markdown fences.
+     */
+    public ChatResult chatJson(String model, List<Map<String, String>> messages) throws IdInvalidException {
+        ChatResult result = chatSync(model, messages, true);
+        String raw = result.getContent();
+        String clean = AiJsonResponseSanitizer.extractJsonObject(raw);
+        if (clean.isBlank()) {
+            throw new IdInvalidException("AI không trả JSON hợp lệ");
+        }
+        if (logRequests && !clean.equals(raw)) {
+            log.info("[OpenRouter] Sanitized JSON response — rawLength={} cleanLength={}", raw.length(), clean.length());
+            log.debug("[OpenRouter] rawContent={}", raw);
+        }
+        result.setRawContent(raw);
+        result.setContent(clean);
+        return result;
+    }
+
+    private ChatResult chatSync(String model, List<Map<String, String>> messages, boolean jsonObjectMode)
+            throws IdInvalidException {
+        HttpRequest request = buildChatRequest(model, messages, false, jsonObjectMode);
         HttpResponse<String> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -113,7 +139,7 @@ public class OpenRouterClient {
 
     public void chatStream(String model, List<Map<String, String>> messages, StreamHandler handler)
             throws IdInvalidException {
-        HttpRequest request = buildChatRequest(model, messages, true);
+        HttpRequest request = buildChatRequest(model, messages, true, false);
         HttpResponse<InputStream> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
@@ -191,8 +217,11 @@ public class OpenRouterClient {
         }
     }
 
-    private HttpRequest buildChatRequest(String model, List<Map<String, String>> messages, boolean stream)
-            throws IdInvalidException {
+    private HttpRequest buildChatRequest(
+            String model,
+            List<Map<String, String>> messages,
+            boolean stream,
+            boolean jsonObjectMode) throws IdInvalidException {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IdInvalidException("AI chưa được cấu hình OPENROUTER_API_KEY");
         }
@@ -200,8 +229,11 @@ public class OpenRouterClient {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", model);
         payload.put("messages", messages);
-        payload.put("temperature", 0.4);
+        payload.put("temperature", jsonObjectMode ? 0.2 : 0.4);
         payload.put("stream", stream);
+        if (jsonObjectMode) {
+            payload.put("response_format", Map.of("type", "json_object"));
+        }
         if (stream) {
             payload.put("stream_options", Map.of("include_usage", true));
         }
@@ -264,6 +296,8 @@ public class OpenRouterClient {
 
     public static class ChatResult {
         private String content;
+        /** Original assistant text before JSON sanitization; set only for {@link #chatJson}. */
+        private String rawContent;
         private Integer promptTokens;
         private Integer completionTokens;
 
@@ -273,6 +307,14 @@ public class OpenRouterClient {
 
         public void setContent(String content) {
             this.content = content;
+        }
+
+        public String getRawContent() {
+            return rawContent;
+        }
+
+        public void setRawContent(String rawContent) {
+            this.rawContent = rawContent;
         }
 
         public Integer getPromptTokens() {

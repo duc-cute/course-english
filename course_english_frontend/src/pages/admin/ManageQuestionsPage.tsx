@@ -1,5 +1,6 @@
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import {
   Alert,
   Box,
@@ -17,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
 import { QuestionBankForm } from "../../admin/components/question/QuestionBankForm";
 import {
   QuestionBankImportDialog,
@@ -25,15 +26,13 @@ import {
 } from "../../admin/components/question/QuestionBankImportDialog";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muPageShell,
-  muPageTitle,
   muTextFieldSx,
+  muSelectAllowEmpty,
+  muSelectFilterInputLabelProps,
 } from "./manageUserUiStyles";
 import {
   apiCreateQuestion,
@@ -198,65 +197,78 @@ export function ManageQuestionsPage() {
   };
 
   return (
-    <Box sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>
-        Thư viện câu hỏi
-      </Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm theo nội dung câu hỏi..."
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(0);
-          setSearchText(searchInput);
-        }}
-        onReset={() => {
-          setSearchInput("");
-          setSearchText("");
-          setFilterCategoryId("");
-          setFilterStatus("");
-          setPage(0);
-        }}
-        addLabel="Thêm câu MCQ"
-        onAdd={openCreate}
-        extraFilters={
-          <>
-            <TextField
-              select
-              size="small"
-              value={filterCategoryId}
-              onChange={(e) => {
-                setFilterCategoryId(e.target.value);
-                setPage(0);
-              }}
-              sx={{ ...muTextFieldSx, minWidth: 140 }}
-            >
-              <MenuItem value="">Tất cả DM</MenuItem>
-              {categories.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.name}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              size="small"
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setPage(0);
-              }}
-              sx={{ ...muTextFieldSx, minWidth: 120 }}
-            >
-              <MenuItem value="">Mọi TT</MenuItem>
-              <MenuItem value="DRAFT">Nháp</MenuItem>
-              <MenuItem value="PUBLISHED">Published</MenuItem>
-              <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
-            </TextField>
-          </>
-        }
+    <Box className="admin-catalog-page">
+      <AdminCatalogPageHeader
+        title="Thư viện câu hỏi"
+        subtitle="Ngân hàng câu hỏi MCQ"
+        icon={<QuizOutlinedIcon />}
       />
+
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tìm theo nội dung câu hỏi..."
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={() => {
+            setPage(0);
+            setSearchText(searchInput);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearchText("");
+            setFilterCategoryId("");
+            setFilterStatus("");
+            setPage(0);
+          }}
+          addLabel="Thêm câu MCQ"
+          onAdd={openCreate}
+          toolbarVariant="soft"
+          extraFilters={
+            <>
+              <TextField
+                select
+                size="small"
+                label="Danh mục"
+                value={filterCategoryId}
+                onChange={(e) => {
+                  setFilterCategoryId(e.target.value);
+                  setPage(0);
+                }}
+                SelectProps={muSelectAllowEmpty}
+                InputLabelProps={muSelectFilterInputLabelProps}
+                className="admin-catalog-soft-filter__field"
+                sx={{ ...muTextFieldSx, minWidth: 140 }}
+              >
+                <MenuItem value="">Tất cả DM</MenuItem>
+                {categories.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                size="small"
+                label="Trạng thái"
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setPage(0);
+                }}
+                SelectProps={muSelectAllowEmpty}
+                InputLabelProps={muSelectFilterInputLabelProps}
+                className="admin-catalog-soft-filter__field"
+                sx={{ ...muTextFieldSx, minWidth: 148 }}
+              >
+                <MenuItem value="">Mọi trạng thái</MenuItem>
+                <MenuItem value="DRAFT">Nháp</MenuItem>
+                <MenuItem value="PUBLISHED">Published</MenuItem>
+                <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
+              </TextField>
+            </>
+          }
+        />
+      </Box>
 
       <Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap" }}>
         <Button size="small" variant="outlined" sx={muBtnSmOutlined} onClick={() => setImportFormat("excel")}>
@@ -273,18 +285,13 @@ export function ManageQuestionsPage() {
         </Alert>
       ) : null}
 
-      <Box sx={muCatalogTableShell}>
+      <Box className="admin-catalog-page__table-card">
         <Box
+          className="catalog-table-head"
           sx={{
-            px: 1.25,
-            py: 0.75,
-            borderBottom: "1px solid #D3D1C7",
             display: "grid",
             gridTemplateColumns: "48px minmax(200px, 2fr) minmax(100px, 1fr) 100px 100px",
             columnGap: 1,
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#0C447C",
           }}
         >
           <Box>#</Box>
@@ -300,27 +307,23 @@ export function ManageQuestionsPage() {
             <Skeleton height={36} />
           </Box>
         ) : rows.length === 0 ? (
-          <Box sx={muEmptyState}>Chưa có câu hỏi trong ngân hàng.</Box>
+          <Box className="admin-catalog-page__empty">Chưa có câu hỏi trong ngân hàng.</Box>
         ) : (
           rows.map((row, index) => (
             <Box
               key={row.id}
+              className="catalog-table-row"
               sx={{
-                px: 1.25,
-                py: 0.75,
-                borderBottom: "1px solid #ECEAE3",
                 display: "grid",
                 gridTemplateColumns: "48px minmax(200px, 2fr) minmax(100px, 1fr) 100px 100px",
                 columnGap: 1,
-                alignItems: "center",
-                fontSize: 13,
               }}
             >
-              <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
+              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
               <Box sx={{ fontWeight: 500 }}>{row.promptText}</Box>
-              <Box sx={{ color: "#5F5E5A", fontSize: 12 }}>{row.categoryName ?? "—"}</Box>
+              <Box className="catalog-table-muted" sx={{ fontSize: 12 }}>{row.categoryName ?? "—"}</Box>
               <Box>{statusChip(row.status)}</Box>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+              <Box className="catalog-table-actions">
                 <Tooltip title="Sửa">
                   <IconButton size="small" color="primary" onClick={() => void openEdit(row)}>
                     <EditOutlinedIcon fontSize="small" />
@@ -336,20 +339,11 @@ export function ManageQuestionsPage() {
           ))
         )}
 
-        <Box
-          sx={{
-            p: 1.5,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            bgcolor: "#F9F8F5",
-            borderTop: "1px solid #D3D1C7",
-          }}
-        >
-          <Typography variant="body2" sx={{ color: "#5F5E5A" }}>
+        <Box className="admin-catalog-page__table-footer">
+          <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng: {total}
           </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box className="admin-catalog-page__table-footer-controls">
             <Button variant="outlined" sx={muBtnSmOutlined} size="small" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>
               Trang trước
             </Button>

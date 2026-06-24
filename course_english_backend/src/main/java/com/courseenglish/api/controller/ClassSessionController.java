@@ -1,6 +1,7 @@
 package com.courseenglish.api.controller;
 
 import com.courseenglish.api.domain.request.ReqClassSessionDTO;
+import com.courseenglish.api.domain.request.ReqMeetingLinkDTO;
 import com.courseenglish.api.domain.request.ReqRecurringClassSessionDTO;
 import com.courseenglish.api.domain.response.ResClassSessionDTO;
 import com.courseenglish.api.domain.response.ResRecurringCreateDTO;
@@ -62,6 +63,25 @@ public class ClassSessionController {
             @PathVariable UUID id, @RequestParam(required = false) RecurrenceScopeEnum scope)
             throws IdInvalidException {
         return ResponseEntity.ok(classSessionService.cancel(id, scope));
+    }
+
+    @PostMapping("/{id}/start-online-class")
+    @ApiMessage("Start online class (opens meet.new flow)")
+    public ResponseEntity<ResClassSessionDTO> startOnlineClass(@PathVariable UUID id) throws IdInvalidException {
+        return ResponseEntity.ok(classSessionService.startOnlineClass(id));
+    }
+
+    @PatchMapping("/{id}/meeting-link")
+    @ApiMessage("Save Google Meet / Zoom link after teacher creates room")
+    public ResponseEntity<ResClassSessionDTO> saveMeetingLink(
+            @PathVariable UUID id, @Valid @RequestBody ReqMeetingLinkDTO request) throws IdInvalidException {
+        return ResponseEntity.ok(classSessionService.saveMeetingLink(id, request.getMeetLink()));
+    }
+
+    @PostMapping("/{id}/cancel-online-class-start")
+    @ApiMessage("Undo Start Online Class when meet link not saved yet")
+    public ResponseEntity<ResClassSessionDTO> cancelOnlineClassStart(@PathVariable UUID id) throws IdInvalidException {
+        return ResponseEntity.ok(classSessionService.cancelOnlineClassStart(id));
     }
 
     @DeleteMapping("/{id}")

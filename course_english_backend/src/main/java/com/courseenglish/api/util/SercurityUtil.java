@@ -144,6 +144,11 @@ public class SercurityUtil {
         });
     }
 
+    public static boolean isAdminUser() {
+        return getCurrentUserRoles().stream()
+                .anyMatch(role -> "ADMIN_ROLE".equals(role.toUpperCase()));
+    }
+
     private static String extractPrincipal(Authentication authentication) {
         if(authentication == null) return null;
         else if(authentication.getPrincipal() instanceof UserDetails springSecurityUser) {

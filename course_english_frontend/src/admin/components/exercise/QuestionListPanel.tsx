@@ -247,6 +247,81 @@ export function QuestionListPanel({
     onReorder(fromIndex, toIndex);
   };
 
+  const addActions: {
+    key: string;
+    label: string;
+    title: string;
+    icon: typeof AddCircleOutlineIcon;
+    onClick: () => void;
+    primary?: boolean;
+  }[] = [
+    {
+      key: "mcq",
+      label: "Trắc nghiệm",
+      title: "Thêm trắc nghiệm",
+      icon: AddCircleOutlineIcon,
+      onClick: onAddMcq,
+      primary: true,
+    },
+    {
+      key: "matching",
+      label: "Ghép cặp",
+      title: "Thêm ghép cặp",
+      icon: LinkIcon,
+      onClick: onAddMatching,
+    },
+    {
+      key: "fill",
+      label: "Điền khuyết",
+      title: "Thêm điền khuyết",
+      icon: ShortTextOutlinedIcon,
+      onClick: onAddFillBlank,
+    },
+    {
+      key: "gap",
+      label: "Chọn điền",
+      title: "Thêm chọn điền khuyết",
+      icon: RuleOutlinedIcon,
+      onClick: onAddGapFillMcq,
+    },
+    {
+      key: "reading",
+      label: "Đọc hiểu",
+      title: "Thêm đọc hiểu",
+      icon: MenuBookOutlinedIcon,
+      onClick: onAddReading,
+    },
+    {
+      key: "reorder",
+      label: "Sắp xếp",
+      title: "Thêm sắp xếp câu",
+      icon: ReorderIcon,
+      onClick: onAddReorder,
+    },
+    {
+      key: "listen",
+      label: "Nghe gõ",
+      title: "Thêm nghe gõ (từ thư viện)",
+      icon: KeyboardOutlinedIcon,
+      onClick: onAddListenTypeFromVocab,
+    },
+  ];
+
+  const outlinedAddBtnSx = {
+    flex: "1 1 calc(50% - 4px)",
+    minWidth: 0,
+    py: 0.625,
+    px: 0.75,
+    borderRadius: "8px",
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: "none" as const,
+    borderColor: "#0C447C",
+    color: "#0C447C",
+    whiteSpace: "nowrap" as const,
+    "& .MuiButton-startIcon": { mr: 0.35, "& > *:nth-of-type(1)": { fontSize: 15 } },
+  };
+
   return (
     <Box
       sx={{
@@ -312,124 +387,38 @@ export function QuestionListPanel({
         </SortableContext>
       </DndContext>
 
-      <Box sx={{ p: 1.25, borderTop: "1px solid #ECEAE3", bgcolor: "#fff", display: "grid", gap: 0.75 }}>
-        <Button
-          fullWidth
-          variant="contained"
-          startIcon={<AddCircleOutlineIcon />}
-          sx={{
-            ...muBtnSmPrimary,
-            py: 1,
-            borderRadius: "10px",
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-          onClick={onAddMcq}
-        >
-          Thêm trắc nghiệm
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<LinkIcon />}
-          sx={{
-            py: 1,
-            borderRadius: "10px",
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "none",
-            borderColor: "#0C447C",
-            color: "#0C447C",
-          }}
-          onClick={onAddMatching}
-        >
-          Thêm ghép cặp
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<ShortTextOutlinedIcon />}
-          sx={{
-            py: 1,
-            borderRadius: "10px",
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "none",
-            borderColor: "#0C447C",
-            color: "#0C447C",
-          }}
-          onClick={onAddFillBlank}
-        >
-          Thêm điền khuyết
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<RuleOutlinedIcon />}
-          sx={{
-            py: 1,
-            borderRadius: "10px",
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "none",
-            borderColor: "#0C447C",
-            color: "#0C447C",
-          }}
-          onClick={onAddGapFillMcq}
-        >
-          Thêm chọn điền khuyết
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<MenuBookOutlinedIcon />}
-          sx={{
-            py: 1,
-            borderRadius: "10px",
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "none",
-            borderColor: "#0C447C",
-            color: "#0C447C",
-          }}
-          onClick={onAddReading}
-        >
-          Thêm đọc hiểu
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<ReorderIcon />}
-          sx={{
-            py: 1,
-            borderRadius: "10px",
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "none",
-            borderColor: "#0C447C",
-            color: "#0C447C",
-          }}
-          onClick={onAddReorder}
-        >
-          Thêm sắp xếp câu
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<KeyboardOutlinedIcon />}
-          sx={{
-            py: 1,
-            borderRadius: "10px",
-            fontSize: 13,
-            fontWeight: 600,
-            textTransform: "none",
-            borderColor: "#0C447C",
-            color: "#0C447C",
-          }}
-          onClick={onAddListenTypeFromVocab}
-        >
-          Thêm nghe gõ (từ thư viện)
-        </Button>
+      <Box
+        sx={{
+          p: 1,
+          borderTop: "1px solid #ECEAE3",
+          bgcolor: "#fff",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 0.5,
+          flexShrink: 0,
+        }}
+      >
+        {addActions.map(({ key, label, title, icon: Icon, onClick, primary }) => (
+          <Button
+            key={key}
+            title={title}
+            variant={primary ? "contained" : "outlined"}
+            startIcon={<Icon />}
+            sx={
+              primary
+                ? {
+                    ...muBtnSmPrimary,
+                    ...outlinedAddBtnSx,
+                    borderColor: undefined,
+                    color: "#fff",
+                  }
+                : outlinedAddBtnSx
+            }
+            onClick={onClick}
+          >
+            {label}
+          </Button>
+        ))}
       </Box>
     </Box>
   );

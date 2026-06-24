@@ -3,7 +3,15 @@ import type { ApiResponse } from "./types";
 
 export type SessionType = "LIVE_CLASS" | "OFFICE_HOURS" | "EXAM" | "OTHER";
 export type SessionStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
-export type SessionUiState = "LIVE" | "UPCOMING" | "PAST" | "NEEDS_SETUP";
+export type SessionUiState =
+  | "LIVE"
+  | "UPCOMING"
+  | "PAST"
+  | "NEEDS_SETUP"
+  | "NEEDS_START"
+  | "WAITING_TEACHER";
+export type ScheduledState = "UPCOMING" | "IN_WINDOW" | "PAST";
+export type MeetingState = "NOT_STARTED" | "LIVE" | "ENDED";
 export type RecurrenceScope = "THIS_ONLY" | "THIS_AND_FOLLOWING" | "ALL_IN_SERIES";
 
 export type ClassSessionRecord = {
@@ -16,16 +24,21 @@ export type ClassSessionRecord = {
   sessionType: SessionType;
   startAt: string;
   endAt: string;
+  startedAt?: string | null;
   meetLink?: string | null;
   locationLabel?: string | null;
   lessonId?: string | null;
   lessonTitle?: string | null;
   activeStudentCount?: number;
   status: SessionStatus;
+  scheduledState?: ScheduledState;
+  meetingState?: MeetingState;
   uiState: SessionUiState;
   canJoinMeet: boolean;
+  canStartOnlineClass?: boolean;
   canOpenLesson: boolean;
   needsSetup: boolean;
+  usePreSavedLink?: boolean;
   notes?: string | null;
   recurrenceGroupId?: string | null;
   recurrenceRule?: string | null;
@@ -152,4 +165,23 @@ export async function apiCancelClassSession(id: string, scope?: RecurrenceScope)
 export async function apiDeleteClassSession(id: string) {
   const response = (await api.delete(`/class-sessions/${id}`)) as ApiResponse;
   return unwrapResponse(response);
+}
+
+export async function apiStartOnlineClass(id: string) {
+  const response = (await api.post(`/class-sessions/${id}/start-online-class`)) as ApiResponse<ClassSessionRecord>;
+  return extractData(response);
+}
+
+export async function apiSaveMeetingLink(id: string, meetLink: string) {
+  const response = (await api.patch(`/class-sessions/${id}/meeting-link`, {
+    meetLink,
+  })) as ApiResponse<ClassSessionRecord>;
+  return extractData(response);
+}
+
+export async function apiCancelOnlineClassStart(id: string) {
+  const response = (await api.post(
+    `/class-sessions/${id}/cancel-online-class-start`,
+  )) as ApiResponse<ClassSessionRecord>;
+  return extractData(response);
 }

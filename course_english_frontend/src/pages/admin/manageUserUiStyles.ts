@@ -305,6 +305,16 @@ export const muTextFieldSx = {
   },
 };
 
+/** TextField select có MenuItem value="" — hiển thị label "tất cả" thay vì ô trắng */
+export const muSelectAllowEmpty = {
+  displayEmpty: true,
+} as const;
+
+/** Dùng kèm label trên select filter — tránh label chồng lên giá trị khi value="" */
+export const muSelectFilterInputLabelProps = {
+  shrink: true,
+} as const;
+
 export const muToolbarSearchField = {
   ...muTextFieldSx,
   flex: "1 1 200px",

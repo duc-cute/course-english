@@ -1,16 +1,18 @@
 import { Box, Typography } from "@mui/material";
 import type { MouseEvent } from "react";
-import type { ClassSessionRecord } from "../../../shared/api/classSession";
-import { formatSessionTimeRange } from "./teachingPlanUtils";
+import type { ClassSessionRecord, SessionType } from "../../../shared/api/classSession";
+import { formatSessionTimeRange, sessionMeetStatusLabel } from "./teachingPlanUtils";
 import type { DayScheduleGroup } from "./weekScheduleUtils";
 import { isTodayIso } from "./weekScheduleUtils";
 import {
-  GRID_HOUR_HEIGHT_PX,
+  GRID_SLOT_HEIGHT_PX,
   buildGridHours,
   computeGridHourRange,
   formatGridDayHeader,
   formatGridHourLabel,
+  gridHeightPx,
   layoutSessionOnGrid,
+  slotTopPx,
   snapSlotFromGridClick,
 } from "./weekScheduleGridUtils";
 
@@ -36,7 +38,24 @@ function sessionTypeClass(sessionType: ClassSessionRecord["sessionType"]): strin
 function uiStateClass(uiState: ClassSessionRecord["uiState"]): string {
   if (uiState === "LIVE") return "is-live";
   if (uiState === "PAST") return "is-past";
+  if (uiState === "WAITING_TEACHER") return "is-waiting";
+  if (uiState === "NEEDS_START" || uiState === "NEEDS_SETUP") return "is-needs-start";
   return "is-upcoming";
+}
+
+function sessionTypeLabel(sessionType: SessionType): string | null {
+  switch (sessionType) {
+    case "LIVE_CLASS":
+      return null;
+    case "OFFICE_HOURS":
+      return "Office";
+    case "EXAM":
+      return "Kiểm tra";
+    case "OTHER":
+      return "Khác";
+    default:
+      return null;
+  }
 }
 
 function GridSessionEvent({
@@ -49,6 +68,16 @@ function GridSessionEvent({
   onEdit: (session: ClassSessionRecord) => void;
 }) {
   const classLabel = session.classroomName || session.classroomCode || "Lớp";
+  const lessonLabel = session.lessonTitle || (session.lessonId ? "Đã gán bài" : "Chưa gán bài");
+  const locationLabel = sessionMeetStatusLabel(session);
+  const studentCount = session.activeStudentCount ?? 0;
+  const typeLabel = sessionTypeLabel(session.sessionType);
+  const tooltip = [
+    `${classLabel}: ${session.title}`,
+    formatSessionTimeRange(session.startAt, session.endAt),
+    `Bài: ${lessonLabel}`,
+    `${studentCount} HS active · ${locationLabel}`,
+  ].join("\n");
 
   return (
     <button
@@ -59,16 +88,30 @@ function GridSessionEvent({
         e.stopPropagation();
         onEdit(session);
       }}
-      title={`${classLabel}: ${session.title}`}
+      title={tooltip}
     >
-      <span className="schedule-week-grid-event-time">{formatSessionTimeRange(session.startAt, session.endAt)}</span>
-      <span className="schedule-week-grid-event-title">
-        {classLabel}: {session.title}
+      <span className="schedule-week-grid-event-head">
+        <span className="schedule-week-grid-event-time">{formatSessionTimeRange(session.startAt, session.endAt)}</span>
+        <span className="schedule-week-grid-event-badges">
+          {session.uiState === "LIVE" ? (
+            <span className="schedule-week-grid-event-badge is-live">Live</span>
+          ) : null}
+          {session.uiState === "WAITING_TEACHER" ? (
+            <span className="schedule-week-grid-event-badge is-waiting">Chờ link</span>
+          ) : null}
+          {session.canStartOnlineClass || session.needsSetup ? (
+            <span className="schedule-week-grid-event-badge is-setup">Chưa start</span>
+          ) : null}
+          {session.recurring ? <span className="schedule-week-grid-event-badge">Lặp</span> : null}
+          {typeLabel ? <span className="schedule-week-grid-event-badge is-type">{typeLabel}</span> : null}
+        </span>
       </span>
-      {session.lessonTitle ? (
-        <span className="schedule-week-grid-event-lesson">{session.lessonTitle}</span>
-      ) : null}
-      {session.recurring ? <span className="schedule-week-grid-event-badge">Lặp</span> : null}
+      <span className="schedule-week-grid-event-class">{classLabel}</span>
+      <span className="schedule-week-grid-event-title">{session.title}</span>
+      <span className="schedule-week-grid-event-lesson">Bài: {lessonLabel}</span>
+      <span className="schedule-week-grid-event-meta">
+        {studentCount} HS · {locationLabel}
+      </span>
     </button>
   );
 }
@@ -77,19 +120,19 @@ export function WeekScheduleGrid({ dayGroups, onCreateSlot, onEditSession }: Wee
   const allSessions = dayGroups.flatMap((g) => g.sessions);
   const { startHour, endHour } = computeGridHourRange(allSessions);
   const hours = buildGridHours(startHour, endHour);
-  const gridHeightPx = hours.length * GRID_HOUR_HEIGHT_PX;
+  const totalGridHeightPx = gridHeightPx(startHour, endHour, GRID_SLOT_HEIGHT_PX);
 
   const handleColumnClick = (day: string, event: MouseEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const offsetY = event.clientY - rect.top;
-    const { hour, minute } = snapSlotFromGridClick(offsetY, startHour, GRID_HOUR_HEIGHT_PX);
+    const { hour, minute } = snapSlotFromGridClick(offsetY, startHour, endHour, GRID_SLOT_HEIGHT_PX);
     onCreateSlot(day, hour, minute);
   };
 
   return (
     <Box className="schedule-week-grid-wrap admin-panel-card">
       <Box className="schedule-week-grid-scroll">
-        <Box className="schedule-week-grid" sx={{ minWidth: 720 }}>
+        <Box className="schedule-week-grid" sx={{ minWidth: 840 }}>
           <Box className="schedule-week-grid-header">
             <Box className="schedule-week-grid-gutter schedule-week-grid-gutter--header" aria-hidden />
             {dayGroups.map(({ date }) => {
@@ -112,20 +155,20 @@ export function WeekScheduleGrid({ dayGroups, onCreateSlot, onEditSession }: Wee
           </Box>
 
           <Box className="schedule-week-grid-body">
-            <Box className="schedule-week-grid-gutter schedule-week-grid-times" style={{ height: gridHeightPx }}>
+            <Box className="schedule-week-grid-gutter schedule-week-grid-times" style={{ height: totalGridHeightPx }}>
               {hours.map((hour) => (
-                <Box key={hour} className="schedule-week-grid-time-label" style={{ height: GRID_HOUR_HEIGHT_PX }}>
+                <Box key={hour} className="schedule-week-grid-time-label" style={{ height: GRID_SLOT_HEIGHT_PX }}>
                   {formatGridHourLabel(hour)}
                 </Box>
               ))}
             </Box>
 
-            <Box className="schedule-week-grid-columns" style={{ height: gridHeightPx }}>
+            <Box className="schedule-week-grid-columns" style={{ height: totalGridHeightPx }}>
               {dayGroups.map(({ date, sessions }) => (
                 <Box
                   key={date}
                   className={`schedule-week-grid-col${isTodayIso(date) ? " is-today" : ""}`}
-                  style={{ height: gridHeightPx }}
+                  style={{ height: totalGridHeightPx }}
                   onClick={(e) => handleColumnClick(date, e)}
                   role="presentation"
                 >
@@ -133,7 +176,7 @@ export function WeekScheduleGrid({ dayGroups, onCreateSlot, onEditSession }: Wee
                     <Box
                       key={hour}
                       className="schedule-week-grid-hour-line"
-                      style={{ top: (hour - startHour) * GRID_HOUR_HEIGHT_PX }}
+                      style={{ top: slotTopPx(hour, startHour, GRID_SLOT_HEIGHT_PX) }}
                       aria-hidden
                     />
                   ))}
@@ -141,7 +184,7 @@ export function WeekScheduleGrid({ dayGroups, onCreateSlot, onEditSession }: Wee
                     <GridSessionEvent
                       key={session.id}
                       session={session}
-                      layout={layoutSessionOnGrid(session, startHour, endHour, GRID_HOUR_HEIGHT_PX)}
+                      layout={layoutSessionOnGrid(session, startHour, endHour, GRID_SLOT_HEIGHT_PX)}
                       onEdit={onEditSession}
                     />
                   ))}

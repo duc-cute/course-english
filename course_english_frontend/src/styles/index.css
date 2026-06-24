@@ -4,7 +4,9 @@
 @import "./admin-teaching-plan.css";
 @import "./admin-ai-assistant.css";
 @import "./brand-logo.css";
+@import "./admin-catalog-soft.css";
 @import "./manage-user.css";
+@import "./admin-manage-enrollment.css";
 
 :root {
   --ac-primary: #004ac6;

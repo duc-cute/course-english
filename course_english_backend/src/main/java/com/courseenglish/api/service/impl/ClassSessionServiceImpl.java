@@ -17,8 +17,11 @@ import com.courseenglish.api.repository.LessonRepository;
 import com.courseenglish.api.repository.UserRepository;
 import com.courseenglish.api.service.ClassSessionService;
 import com.courseenglish.api.service.SessionReminderSyncService;
+import com.courseenglish.api.util.MeetLinkValidator;
 import com.courseenglish.api.util.SercurityUtil;
+import com.courseenglish.api.util.constant.MeetingStateEnum;
 import com.courseenglish.api.util.constant.RecurrenceScopeEnum;
+import com.courseenglish.api.util.constant.ScheduledStateEnum;
 import com.courseenglish.api.util.constant.SessionStatusEnum;
 import com.courseenglish.api.util.constant.SessionTypeEnum;
 import com.courseenglish.api.util.constant.SessionUiStateEnum;
@@ -44,7 +47,7 @@ import java.util.stream.Collectors;
 public class ClassSessionServiceImpl implements ClassSessionService {
 
     private static final ZoneId TEACHING_PLAN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    private static final long JOIN_MEET_BUFFER_MINUTES = 15;
+    private static final long START_ONLINE_CLASS_LEAD_HOURS = 24;
     private static final String ACTIVE_ENROLLMENT = "ACTIVE";
     private static final int MAX_RECURRING_SESSIONS = 100;
 
@@ -79,12 +82,8 @@ public class ClassSessionServiceImpl implements ClassSessionService {
     @Override
     @Transactional(readOnly = true)
     public ResTeachingPlanDTO getTeachingPlanByDate(LocalDate date) throws IdInvalidException {
-        UUID teacherId = requireCurrentUserId();
-        Instant dayStart = date.atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
-        Instant dayEnd = date.plusDays(1).atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
-
-        List<ClassSession> sessions = classSessionRepository.findTeacherSessionsForDay(
-                teacherId, dayStart, dayEnd, SessionStatusEnum.CANCELLED);
+        UUID actorId = requireCurrentUserId();
+        List<ClassSession> sessions = findSessionsForTeachingPlanDay(date, actorId);
 
         ResTeachingPlanDTO plan = new ResTeachingPlanDTO();
         plan.setDate(date);
@@ -99,12 +98,8 @@ public class ClassSessionServiceImpl implements ClassSessionService {
         if (to.isBefore(from)) {
             throw new IdInvalidException("Ngày kết thúc phải sau ngày bắt đầu!");
         }
-        UUID teacherId = requireCurrentUserId();
-        Instant rangeStart = from.atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
-        Instant rangeEnd = to.plusDays(1).atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
-
-        List<ClassSession> sessions = classSessionRepository.findTeacherSessionsInRange(
-                teacherId, rangeStart, rangeEnd, SessionStatusEnum.CANCELLED);
+        UUID actorId = requireCurrentUserId();
+        List<ClassSession> sessions = findSessionsForTeachingPlanRange(from, to, actorId);
 
         ResTeachingPlanDTO plan = new ResTeachingPlanDTO();
         plan.setDate(from);
@@ -180,7 +175,7 @@ public class ClassSessionServiceImpl implements ClassSessionService {
                 entity.setSessionType(request.getSessionType() != null ? request.getSessionType() : SessionTypeEnum.LIVE_CLASS);
                 entity.setStartAt(sessionStart);
                 entity.setEndAt(sessionEnd);
-                entity.setMeetLink(trimNullable(request.getMeetLink()));
+                entity.setMeetLink(resolveMeetLinkForSave(request.getMeetLink()));
                 entity.setLocationLabel(trimNullable(request.getLocationLabel()));
                 entity.setNotes(trimNullable(request.getNotes()));
                 entity.setLesson(lesson);
@@ -288,15 +283,108 @@ public class ClassSessionServiceImpl implements ClassSessionService {
         sessionReminderSyncService.syncForSession(entity);
     }
 
+    @Override
+    @Transactional
+    public ResClassSessionDTO startOnlineClass(UUID id) throws IdInvalidException {
+        UUID actorId = requireCurrentUserId();
+        ClassSession session = requireSession(id);
+        assertCanManageSession(session, actorId);
+
+        if (session.getStartedAt() != null) {
+            return toDto(session);
+        }
+        assertStartOnlineClassAllowed(session);
+
+        session.setStartedAt(Instant.now());
+        session = classSessionRepository.save(session);
+        return toDto(session);
+    }
+
+    @Override
+    @Transactional
+    public ResClassSessionDTO saveMeetingLink(UUID id, String meetLink) throws IdInvalidException {
+        UUID actorId = requireCurrentUserId();
+        ClassSession session = requireSession(id);
+        assertCanManageSession(session, actorId);
+
+        String validLink = requireValidMeetLink(meetLink);
+        session.setMeetLink(validLink);
+        if (session.getSessionType() == SessionTypeEnum.LIVE_CLASS && session.getStartedAt() == null) {
+            session.setStartedAt(Instant.now());
+        }
+
+        ClassSession saved = classSessionRepository.save(session);
+        // Phase 5a: broadcast MEETING_STARTED via WebSocket to enrolled students
+        return toDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResClassSessionDTO cancelOnlineClassStart(UUID id) throws IdInvalidException {
+        UUID actorId = requireCurrentUserId();
+        ClassSession session = requireSession(id);
+        assertCanManageSession(session, actorId);
+
+        if (session.getSessionType() != SessionTypeEnum.LIVE_CLASS) {
+            throw new IdInvalidException("Chỉ buổi lớp trực tuyến mới hủy được bắt đầu lớp online!");
+        }
+        if (session.getStartedAt() == null) {
+            throw new IdInvalidException("Buổi học chưa bắt đầu lớp online!");
+        }
+        if (hasValidMeetLink(session)) {
+            throw new IdInvalidException("Đã lưu link Meet — hãy sửa ca dạy nếu cần đổi link.");
+        }
+
+        session.setStartedAt(null);
+        ClassSession saved = classSessionRepository.save(session);
+        return toDto(saved);
+    }
+
     private void applyRequest(ClassSession entity, ReqClassSessionDTO request) throws IdInvalidException {
         entity.setTitle(trimToEmpty(request.getTitle()));
         entity.setSessionType(request.getSessionType() != null ? request.getSessionType() : SessionTypeEnum.LIVE_CLASS);
         entity.setStartAt(request.getStartAt());
         entity.setEndAt(request.getEndAt());
-        entity.setMeetLink(trimNullable(request.getMeetLink()));
+        entity.setMeetLink(resolveMeetLinkForSave(request.getMeetLink()));
         entity.setLocationLabel(trimNullable(request.getLocationLabel()));
         entity.setNotes(trimNullable(request.getNotes()));
         entity.setLesson(resolveLesson(request.getLessonId()));
+    }
+
+    private String resolveMeetLinkForSave(String meetLink) throws IdInvalidException {
+        String trimmed = trimNullable(meetLink);
+        if (trimmed == null) {
+            return null;
+        }
+        return requireValidMeetLink(trimmed);
+    }
+
+    private String requireValidMeetLink(String meetLink) throws IdInvalidException {
+        try {
+            return MeetLinkValidator.requireValid(meetLink);
+        } catch (IllegalArgumentException ex) {
+            throw new IdInvalidException(ex.getMessage());
+        }
+    }
+
+    private void assertStartOnlineClassAllowed(ClassSession session) throws IdInvalidException {
+        if (session.getStatus() == SessionStatusEnum.CANCELLED) {
+            throw new IdInvalidException("Buổi học đã bị hủy!");
+        }
+        if (session.getSessionType() != SessionTypeEnum.LIVE_CLASS) {
+            throw new IdInvalidException("Chỉ buổi lớp trực tuyến mới dùng Bắt đầu lớp online!");
+        }
+        Instant now = Instant.now();
+        ScheduledStateEnum scheduledState = deriveScheduledState(session, now);
+        if (scheduledState == ScheduledStateEnum.PAST) {
+            throw new IdInvalidException("Buổi học đã kết thúc!");
+        }
+        if (isPreSavedLink(session)) {
+            throw new IdInvalidException("Buổi học đã có link sẵn — dùng Vào lớp!");
+        }
+        if (!canStartOnlineClass(session, now, scheduledState)) {
+            throw new IdInvalidException("Chưa đến khung giờ bắt đầu lớp online!");
+        }
     }
 
     private Lesson resolveLesson(UUID lessonId) throws IdInvalidException {
@@ -347,11 +435,13 @@ public class ClassSessionServiceImpl implements ClassSessionService {
 
     private ResClassSessionDTO toDto(ClassSession session) {
         Instant now = Instant.now();
-        SessionUiStateEnum uiState = deriveUiState(session, now);
-        boolean hasMeetLink = hasText(session.getMeetLink());
-        boolean needsSetup = uiState != SessionUiStateEnum.PAST
-                && session.getSessionType() == SessionTypeEnum.LIVE_CLASS
-                && !hasMeetLink;
+        ScheduledStateEnum scheduledState = deriveScheduledState(session, now);
+        MeetingStateEnum meetingState = deriveMeetingState(session, now, scheduledState);
+        boolean hasValidMeetLink = hasValidMeetLink(session);
+        boolean preSavedLink = isPreSavedLink(session);
+        boolean startOnlineClass = canStartOnlineClass(session, now, scheduledState);
+        SessionUiStateEnum uiState = deriveDisplayUiState(
+                session, scheduledState, meetingState, startOnlineClass);
 
         ResClassSessionDTO dto = new ResClassSessionDTO();
         dto.setId(session.getId());
@@ -359,12 +449,15 @@ public class ClassSessionServiceImpl implements ClassSessionService {
         dto.setSessionType(session.getSessionType());
         dto.setStartAt(session.getStartAt());
         dto.setEndAt(session.getEndAt());
+        dto.setStartedAt(session.getStartedAt());
         dto.setMeetLink(session.getMeetLink());
         dto.setLocationLabel(session.getLocationLabel());
         dto.setStatus(session.getStatus());
-        dto.setNotes(session.getNotes());
-        dto.setUiState(needsSetup ? SessionUiStateEnum.NEEDS_SETUP : uiState);
-        dto.setNeedsSetup(needsSetup);
+        dto.setScheduledState(scheduledState);
+        dto.setMeetingState(meetingState);
+        dto.setUiState(uiState);
+        dto.setNeedsSetup(startOnlineClass);
+        dto.setUsePreSavedLink(preSavedLink);
         dto.setCanOpenLesson(session.getLesson() != null);
 
         if (session.getClassroom() != null) {
@@ -384,32 +477,110 @@ public class ClassSessionServiceImpl implements ClassSessionService {
             dto.setLessonTitle(session.getLesson().getTitle());
         }
 
-        dto.setCanJoinMeet(canJoinMeet(session, now, hasMeetLink, uiState));
+        dto.setCanJoinMeet(canJoinMeet(session, scheduledState, meetingState, hasValidMeetLink));
+        dto.setCanStartOnlineClass(startOnlineClass);
+        dto.setNotes(session.getNotes());
         dto.setRecurrenceGroupId(session.getRecurrenceGroupId());
         dto.setRecurrenceRule(session.getRecurrenceRule());
         dto.setRecurring(session.getRecurrenceGroupId() != null);
         return dto;
     }
 
-    private SessionUiStateEnum deriveUiState(ClassSession session, Instant now) {
-        if (session.getStatus() == SessionStatusEnum.CANCELLED) {
-            return SessionUiStateEnum.PAST;
-        }
-        if (!now.isBefore(session.getStartAt()) && now.isBefore(session.getEndAt())) {
-            return SessionUiStateEnum.LIVE;
+    private ScheduledStateEnum deriveScheduledState(ClassSession session, Instant now) {
+        if (session.getStatus() == SessionStatusEnum.CANCELLED || !now.isBefore(session.getEndAt())) {
+            return ScheduledStateEnum.PAST;
         }
         if (now.isBefore(session.getStartAt())) {
-            return SessionUiStateEnum.UPCOMING;
+            return ScheduledStateEnum.UPCOMING;
         }
-        return SessionUiStateEnum.PAST;
+        return ScheduledStateEnum.IN_WINDOW;
     }
 
-    private boolean canJoinMeet(ClassSession session, Instant now, boolean hasMeetLink, SessionUiStateEnum uiState) {
-        if (!hasMeetLink || uiState == SessionUiStateEnum.PAST) {
+    private MeetingStateEnum deriveMeetingState(
+            ClassSession session, Instant now, ScheduledStateEnum scheduledState) {
+        if (scheduledState == ScheduledStateEnum.PAST) {
+            return MeetingStateEnum.ENDED;
+        }
+        if (!hasValidMeetLink(session)) {
+            return MeetingStateEnum.NOT_STARTED;
+        }
+        if (session.getSessionType() == SessionTypeEnum.LIVE_CLASS) {
+            if (isPreSavedLink(session) || session.getStartedAt() != null) {
+                return MeetingStateEnum.LIVE;
+            }
+            return MeetingStateEnum.NOT_STARTED;
+        }
+        return MeetingStateEnum.LIVE;
+    }
+
+    private SessionUiStateEnum deriveDisplayUiState(
+            ClassSession session,
+            ScheduledStateEnum scheduledState,
+            MeetingStateEnum meetingState,
+            boolean canStart) {
+        if (canStart) {
+            return SessionUiStateEnum.NEEDS_START;
+        }
+        if (scheduledState == ScheduledStateEnum.PAST) {
+            return SessionUiStateEnum.PAST;
+        }
+        if (scheduledState == ScheduledStateEnum.IN_WINDOW
+                && session.getSessionType() == SessionTypeEnum.LIVE_CLASS
+                && meetingState == MeetingStateEnum.NOT_STARTED) {
+            return SessionUiStateEnum.WAITING_TEACHER;
+        }
+        if (scheduledState == ScheduledStateEnum.IN_WINDOW && meetingState == MeetingStateEnum.LIVE) {
+            return SessionUiStateEnum.LIVE;
+        }
+        if (scheduledState == ScheduledStateEnum.UPCOMING) {
+            return SessionUiStateEnum.UPCOMING;
+        }
+        return SessionUiStateEnum.UPCOMING;
+    }
+
+    private boolean canStartOnlineClass(
+            ClassSession session, Instant now, ScheduledStateEnum scheduledState) {
+        if (session.getStatus() == SessionStatusEnum.CANCELLED) {
             return false;
         }
-        Instant joinFrom = session.getStartAt().minus(Duration.ofMinutes(JOIN_MEET_BUFFER_MINUTES));
-        return !now.isBefore(joinFrom) && now.isBefore(session.getEndAt());
+        if (session.getSessionType() != SessionTypeEnum.LIVE_CLASS) {
+            return false;
+        }
+        if (scheduledState == ScheduledStateEnum.PAST) {
+            return false;
+        }
+        if (hasValidMeetLink(session)) {
+            return false;
+        }
+        if (session.getStartedAt() != null) {
+            return false;
+        }
+        if (scheduledState == ScheduledStateEnum.IN_WINDOW) {
+            return true;
+        }
+        if (scheduledState == ScheduledStateEnum.UPCOMING) {
+            Instant lead = session.getStartAt().minus(Duration.ofHours(START_ONLINE_CLASS_LEAD_HOURS));
+            return !now.isBefore(lead);
+        }
+        return false;
+    }
+
+    private boolean canJoinMeet(
+            ClassSession session,
+            ScheduledStateEnum scheduledState,
+            MeetingStateEnum meetingState,
+            boolean hasValidMeetLink) {
+        return scheduledState == ScheduledStateEnum.IN_WINDOW
+                && meetingState == MeetingStateEnum.LIVE
+                && hasValidMeetLink;
+    }
+
+    private boolean isPreSavedLink(ClassSession session) {
+        return hasValidMeetLink(session) && session.getStartedAt() == null;
+    }
+
+    private boolean hasValidMeetLink(ClassSession session) {
+        return MeetLinkValidator.isValid(session.getMeetLink());
     }
 
     private void validateTimes(Instant startAt, Instant endAt) throws IdInvalidException {
@@ -444,6 +615,26 @@ public class ClassSessionServiceImpl implements ClassSessionService {
             throw new IdInvalidException("Lớp học chưa gán giáo viên!");
         }
         return classroom.getTeacher();
+    }
+
+    private List<ClassSession> findSessionsForTeachingPlanDay(LocalDate date, UUID actorId) {
+        Instant dayStart = date.atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
+        Instant dayEnd = date.plusDays(1).atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
+        if (isAdmin(actorId)) {
+            return classSessionRepository.findSessionsForDay(dayStart, dayEnd, SessionStatusEnum.CANCELLED);
+        }
+        return classSessionRepository.findTeacherSessionsForDay(
+                actorId, dayStart, dayEnd, SessionStatusEnum.CANCELLED);
+    }
+
+    private List<ClassSession> findSessionsForTeachingPlanRange(LocalDate from, LocalDate to, UUID actorId) {
+        Instant rangeStart = from.atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
+        Instant rangeEnd = to.plusDays(1).atStartOfDay(TEACHING_PLAN_ZONE).toInstant();
+        if (isAdmin(actorId)) {
+            return classSessionRepository.findSessionsInRange(rangeStart, rangeEnd, SessionStatusEnum.CANCELLED);
+        }
+        return classSessionRepository.findTeacherSessionsInRange(
+                actorId, rangeStart, rangeEnd, SessionStatusEnum.CANCELLED);
     }
 
     private UUID requireCurrentUserId() throws IdInvalidException {
@@ -578,9 +769,10 @@ public class ClassSessionServiceImpl implements ClassSessionService {
         return toDto(anchor);
     }
 
-    private void applyMetadata(ClassSession session, ReqClassSessionDTO request, Lesson lesson) {
+    private void applyMetadata(ClassSession session, ReqClassSessionDTO request, Lesson lesson)
+            throws IdInvalidException {
         session.setTitle(trimToEmpty(request.getTitle()));
-        session.setMeetLink(trimNullable(request.getMeetLink()));
+        session.setMeetLink(resolveMeetLinkForSave(request.getMeetLink()));
         session.setLocationLabel(trimNullable(request.getLocationLabel()));
         session.setNotes(trimNullable(request.getNotes()));
         session.setLesson(lesson);

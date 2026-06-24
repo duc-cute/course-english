@@ -1,6 +1,8 @@
+import { useState } from "react";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import type { NotificationRecord } from "../../shared/api/notification";
+import { AvatarImage } from "../../shared/ui/ProfileAvatar";
 import { formatNotificationTime } from "./formatNotificationTime";
 import { getNameInitials, parseNotificationPayload } from "./parseNotificationPayload";
 
@@ -18,6 +20,8 @@ function formatSubtitle(body: string | null | undefined): string | null {
 export function NotificationPanelItem({ item, onOpen }: NotificationPanelItemProps) {
   const subtitle = formatSubtitle(item.body);
   const { actorName, actorAvatarUrl, coverImageUrl, lessonTitle } = parseNotificationPayload(item.payload);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const showActorAvatar = Boolean(actorAvatarUrl) && !avatarFailed;
 
   return (
     <button
@@ -29,8 +33,12 @@ export function NotificationPanelItem({ item, onOpen }: NotificationPanelItemPro
 
       <div className="student-notification-item__row">
         <div className="student-notification-item__avatar" aria-hidden>
-          {actorAvatarUrl ? (
-            <img src={actorAvatarUrl} alt="" className="student-notification-item__avatar-img" />
+          {showActorAvatar ? (
+            <AvatarImage
+              src={actorAvatarUrl!}
+              className="student-notification-item__avatar-img"
+              onError={() => setAvatarFailed(true)}
+            />
           ) : actorName ? (
             <span className="student-notification-item__avatar-initials">{getNameInitials(actorName)}</span>
           ) : (

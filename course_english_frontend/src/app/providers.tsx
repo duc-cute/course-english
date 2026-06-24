@@ -2,6 +2,7 @@ import { Box, CssBaseline, ThemeProvider } from "@mui/material";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Provider } from "react-redux";
 import { academicCore, academicCoreTheme } from "../theme/academicCore";
+import { MuiDatePickerProvider } from "../shared/datetime";
 import { PersistGate } from "redux-persist/integration/react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -38,10 +39,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <Provider store={store}>
       <PersistGate persistor={persistor}>
         <ThemeProvider theme={academicCoreTheme}>
-          <CssBaseline />
-          {children}
-          <GlobalLoader />
-          <ToastContainer position="top-right" autoClose={5000} theme="light" />
+          <MuiDatePickerProvider>
+            <CssBaseline />
+            {children}
+            <GlobalLoader />
+            <ToastContainer position="top-right" autoClose={5000} theme="light" />
+          </MuiDatePickerProvider>
         </ThemeProvider>
       </PersistGate>
     </Provider>

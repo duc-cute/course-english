@@ -51,6 +51,7 @@ import { ReadingComprehensionQuestionCanvas } from "./ReadingComprehensionQuesti
 import { ReorderSentenceQuestionCanvas } from "./ReorderSentenceQuestionCanvas";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
+import { AiExerciseGenDialog } from "./AiExerciseGenDialog";
 import { ExerciseSetSettings } from "./ExerciseSetSettings";
 import { ListenChooseQuestionCanvas } from "./ListenChooseQuestionCanvas";
 import { MatchingQuestionCanvas } from "./MatchingQuestionCanvas";
@@ -117,6 +118,7 @@ export function ExerciseSetEditor({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [importOpen, setImportOpen] = useState(false);
   const [importFormat, setImportFormat] = useState<ExerciseImportFormat>("csv");
+  const [aiGenOpen, setAiGenOpen] = useState(false);
   const [listenTypePickerOpen, setListenTypePickerOpen] = useState(false);
   const [listenTypeFeedback, setListenTypeFeedback] = useState<{
     severity: "success" | "warning" | "error";
@@ -321,6 +323,16 @@ export function ExerciseSetEditor({
     setValidationErrors([]);
   };
 
+  const appendAiQuestions = (newQuestions: ExerciseQuestion[]) => {
+    if (!newQuestions.length) return;
+    setQuestions((list) => {
+      const next = [...list, ...newQuestions];
+      setActiveIndex(list.length);
+      return next;
+    });
+    setValidationErrors([]);
+  };
+
   const handleSave = async () => {
     const payload = buildPayload();
     const validation = validateExerciseSetPayload(payload);
@@ -483,6 +495,13 @@ export function ExerciseSetEditor({
           setImportFormat("csv");
           setImportOpen(true);
         }}
+        onAiGen={() => setAiGenOpen(true)}
+      />
+
+      <AiExerciseGenDialog
+        open={aiGenOpen}
+        onClose={() => setAiGenOpen(false)}
+        onApplied={appendAiQuestions}
       />
 
       <ExerciseImportDialog

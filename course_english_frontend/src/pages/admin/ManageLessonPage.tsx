@@ -1,6 +1,7 @@
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import {
   Alert,
   Box,
@@ -19,7 +20,7 @@ import {
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AdminCatalogToolbar, ConfirmDialog, LessonImageUpload, SubjectPagingAutocomplete } from "../../admin/components";
+import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog, LessonImageUpload, SubjectPagingAutocomplete } from "../../admin/components";
 import {
   datetimeLocalToIso,
   formatDueAtLabel,
@@ -27,15 +28,11 @@ import {
 } from "../../admin/components/teachingPlan/teachingPlanUtils";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFieldLabel,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muPageShell,
-  muPageTitle,
   muRequired,
   muTextFieldSx,
 } from "./manageUserUiStyles";
@@ -236,56 +233,56 @@ export function ManageLessonPage() {
   };
 
   return (
-    <Box sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>
-        Quản lý bài học
-      </Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm theo tiêu đề/môn"
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(0);
-          setSearchText(searchInput);
-        }}
-        onReset={() => {
-          setSearchInput("");
-          setSearchText("");
-          setFilterSubject(null);
-          setPage(0);
-        }}
-        addLabel="Thêm bài"
-        onAdd={openCreate}
-        extraFilters={
-          <Box sx={{ minWidth: 160, maxWidth: 220, flex: "0 1 200px" }}>
-            <SubjectPagingAutocomplete
-              multiple={false}
-              value={filterSubject}
-              onChange={(val) => {
-                setFilterSubject((val as SubjectRecord | null) ?? null);
-                setPage(0);
-              }}
-              helperText=""
-            />
-          </Box>
-        }
+    <Box className="admin-catalog-page">
+      <AdminCatalogPageHeader
+        title="Quản lý bài học"
+        subtitle="Danh sách bài học theo môn"
+        icon={<MenuBookOutlinedIcon />}
       />
+
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tìm theo tiêu đề/môn"
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={() => {
+            setPage(0);
+            setSearchText(searchInput);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearchText("");
+            setFilterSubject(null);
+            setPage(0);
+          }}
+          addLabel="Thêm bài"
+          onAdd={openCreate}
+          toolbarVariant="soft"
+          extraFilters={
+            <Box sx={{ minWidth: 160, maxWidth: 220, flex: "0 1 200px" }}>
+              <SubjectPagingAutocomplete
+                multiple={false}
+                value={filterSubject}
+                onChange={(val) => {
+                  setFilterSubject((val as SubjectRecord | null) ?? null);
+                  setPage(0);
+                }}
+                helperText=""
+              />
+            </Box>
+          }
+        />
+      </Box>
 
       {error ? <Alert severity="error" sx={{ mb: 1, py: 0.25, fontSize: 12 }}>{error}</Alert> : null}
 
-      <Box sx={muCatalogTableShell}>
+      <Box className="admin-catalog-page__table-card">
         <Box
+          className="catalog-table-head"
           sx={{
-            px: 1.25,
-            py: 0.75,
-            borderBottom: "1px solid #D3D1C7",
             display: "grid",
             gridTemplateColumns: "56px minmax(160px,1fr) minmax(120px,1fr) minmax(100px,1fr) 56px 72px 140px",
             columnGap: 1.5,
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#0C447C",
           }}
         >
           <Box>STT</Box>
@@ -302,29 +299,25 @@ export function ManageLessonPage() {
             <Skeleton height={36} />
           </Box>
         ) : rows.length === 0 ? (
-          <Box sx={muEmptyState}>Chưa có bài học. Tạo bài mới để soạn block nội dung.</Box>
+          <Box className="admin-catalog-page__empty">Chưa có bài học. Tạo bài mới để soạn block nội dung.</Box>
         ) : (
           rows.map((item, index) => (
             <Box
               key={item.id}
+              className="catalog-table-row"
               sx={{
-                px: 1.25,
-                py: 0.75,
-                borderBottom: "1px solid #ECEAE3",
                 display: "grid",
                 gridTemplateColumns: "56px minmax(160px,1fr) minmax(120px,1fr) minmax(100px,1fr) 56px 72px 140px",
                 columnGap: 1.5,
-                alignItems: "center",
-                fontSize: 13,
               }}
             >
-              <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
+              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
               <Box sx={{ fontWeight: 600, color: "#0C447C" }}>{item.title || "—"}</Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.subjectName || "—"}</Box>
-              <Box sx={{ color: "#5F5E5A", fontSize: 12 }}>{formatDueAtLabel(item.dueAt)}</Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.blockCount ?? 0}</Box>
+              <Box className="catalog-table-muted">{item.subjectName || "—"}</Box>
+              <Box className="catalog-table-muted" sx={{ fontSize: 12 }}>{formatDueAtLabel(item.dueAt)}</Box>
+              <Box className="catalog-table-muted">{item.blockCount ?? 0}</Box>
               <Box>{statusChip(item.status)}</Box>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+              <Box className="catalog-table-actions">
                 <Tooltip title="Soạn block">
                   <IconButton size="small" color="primary" onClick={() => goEditor(item.id)}>
                     <ArticleOutlinedIcon fontSize="small" />
@@ -351,21 +344,11 @@ export function ManageLessonPage() {
             </Box>
           ))
         )}
-        <Box
-          sx={{
-            p: 1.5,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            bgcolor: "#F9F8F5",
-            borderTop: "1px solid #D3D1C7",
-            gap: 1,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: "#5F5E5A" }}>
+        <Box className="admin-catalog-page__table-footer">
+          <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng: {total}
           </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box className="admin-catalog-page__table-footer-controls">
             <Button variant="outlined" sx={muBtnSmOutlined} size="small" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>
               Trang trước
             </Button>

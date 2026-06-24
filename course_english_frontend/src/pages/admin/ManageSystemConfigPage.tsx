@@ -1,5 +1,6 @@
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import {
   Alert,
   Box,
@@ -16,18 +17,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFieldLabel,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muPageShell,
-  muPageTitle,
   muTextFieldSx,
 } from "./manageUserUiStyles";
 import {
@@ -205,30 +202,32 @@ export function ManageSystemConfigPage() {
   };
 
   return (
-    <Box sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>
-        Cấu hình hệ thống
-      </Typography>
-      <Typography variant="body2" sx={{ color: "#5F5E5A", mb: 1.5 }}>
-        Bật/tắt tính năng toàn hệ thống. Thay đổi có hiệu lực ngay, không cần khởi động lại server.
-      </Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm theo mã, giá trị, mô tả"
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(0);
-          setSearchText(searchInput);
-        }}
-        onReset={() => {
-          setSearchInput("");
-          setSearchText("");
-          setPage(0);
-        }}
-        addLabel="Thêm cấu hình"
-        onAdd={openCreate}
+    <Box className="admin-catalog-page">
+      <AdminCatalogPageHeader
+        title="Cấu hình hệ thống"
+        subtitle="Bật/tắt tính năng toàn hệ thống. Thay đổi có hiệu lực ngay, không cần khởi động lại server."
+        icon={<SettingsOutlinedIcon />}
       />
+
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tìm theo mã, giá trị, mô tả"
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={() => {
+            setPage(0);
+            setSearchText(searchInput);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearchText("");
+            setPage(0);
+          }}
+          addLabel="Thêm cấu hình"
+          onAdd={openCreate}
+          toolbarVariant="soft"
+        />
+      </Box>
 
       {error ? (
         <Alert severity="error" sx={{ mb: 1, py: 0.25, fontSize: 12 }}>
@@ -236,18 +235,13 @@ export function ManageSystemConfigPage() {
         </Alert>
       ) : null}
 
-      <Box sx={muCatalogTableShell}>
+      <Box className="admin-catalog-page__table-card">
         <Box
+          className="catalog-table-head"
           sx={{
-            px: 1.25,
-            py: 0.75,
-            borderBottom: "1px solid #D3D1C7",
             display: "grid",
             gridTemplateColumns: "72px minmax(220px,1fr) 140px minmax(220px,1fr) 120px",
             columnGap: 1.5,
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#0C447C",
           }}
         >
           <Box>STT</Box>
@@ -263,31 +257,27 @@ export function ManageSystemConfigPage() {
             <Skeleton height={36} />
           </Box>
         ) : rows.length === 0 ? (
-          <Box sx={muEmptyState}>Chưa có cấu hình nào.</Box>
+          <Box className="admin-catalog-page__empty">Chưa có cấu hình nào.</Box>
         ) : (
           rows.map((item, index) => (
             <Box
               key={item.id}
+              className="catalog-table-row"
               sx={{
-                px: 1.25,
-                py: 0.75,
-                borderBottom: "1px solid #ECEAE3",
                 display: "grid",
                 gridTemplateColumns: "72px minmax(220px,1fr) 140px minmax(220px,1fr) 120px",
                 columnGap: 1.5,
-                alignItems: "center",
-                fontSize: 13,
               }}
             >
-              <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
+              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
               <Box sx={{ fontWeight: 600, color: "#0C447C", fontFamily: "monospace", fontSize: 12 }}>
                 {item.configKey || "—"}
               </Box>
               <Box sx={{ color: "#0C447C", fontWeight: 600 }}>
                 {formatConfigDisplayValue(item.configKey, item.configValue)}
               </Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.note || "—"}</Box>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+              <Box className="catalog-table-muted">{item.note || "—"}</Box>
+              <Box className="catalog-table-actions">
                 <Tooltip title="Sửa">
                   <IconButton size="small" color="primary" onClick={() => void openEdit(item)}>
                     <EditOutlinedIcon fontSize="small" />
@@ -309,21 +299,11 @@ export function ManageSystemConfigPage() {
             </Box>
           ))
         )}
-        <Box
-          sx={{
-            p: 1.5,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            bgcolor: "#F9F8F5",
-            borderTop: "1px solid #D3D1C7",
-            gap: 1,
-          }}
-        >
-          <Typography variant="body2" sx={{ color: "#5F5E5A" }}>
+        <Box className="admin-catalog-page__table-footer">
+          <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng: {total}
           </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box className="admin-catalog-page__table-footer-controls">
             <Button
               variant="outlined"
               sx={muBtnSmOutlined}

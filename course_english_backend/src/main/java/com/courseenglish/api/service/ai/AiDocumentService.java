@@ -1,0 +1,231 @@
+package com.courseenglish.api.service.ai;
+
+import com.courseenglish.api.domain.AiDocument;
+import com.courseenglish.api.domain.request.ReqCreateTextDocumentDTO;
+import com.courseenglish.api.domain.response.ResAiDocumentDTO;
+import com.courseenglish.api.repository.AiDocumentRepository;
+import com.courseenglish.api.service.ActivityLogService;
+import com.courseenglish.api.service.FileService;
+import com.courseenglish.api.service.activitylog.ActivityLogWriteContext;
+import com.courseenglish.api.util.constant.ActivityLogActionEnum;
+import com.courseenglish.api.util.constant.ActivityLogModuleEnum;
+import com.courseenglish.api.util.constant.ActivityLogSeverityEnum;
+import com.courseenglish.api.config.StorageProperties;
+import com.courseenglish.api.util.constant.AiDocumentStatusEnum;
+import com.courseenglish.api.util.error.IdInvalidException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
+
+@Service
+public class AiDocumentService {
+
+  private static final Set<String> ALLOWED_EXT = Set.of("pdf", "docx");
+
+  private final AiDocumentRepository aiDocumentRepository;
+  private final FileService fileService;
+  private final DocumentTextExtractor documentTextExtractor;
+  private final StorageProperties storageProperties;
+  private final AiAccessSupport aiAccessSupport;
+  private final ActivityLogService activityLogService;
+
+  @Value("${app.ai.max-document-mb:10}")
+  private long maxDocumentMb;
+
+  @Value("${app.ai.max-document-pages:20}")
+  private int maxDocumentPages;
+
+  @Value("${app.ai.max-extract-text-chars:100000}")
+  private int maxExtractTextChars;
+
+  @Value("${app.ai.min-paste-text-chars:80}")
+  private int minPasteTextChars;
+
+  public AiDocumentService(
+      AiDocumentRepository aiDocumentRepository,
+      FileService fileService,
+      DocumentTextExtractor documentTextExtractor,
+      StorageProperties storageProperties,
+      AiAccessSupport aiAccessSupport,
+      ActivityLogService activityLogService) {
+    this.aiDocumentRepository = aiDocumentRepository;
+    this.fileService = fileService;
+    this.documentTextExtractor = documentTextExtractor;
+    this.storageProperties = storageProperties;
+    this.aiAccessSupport = aiAccessSupport;
+    this.activityLogService = activityLogService;
+  }
+
+  @Transactional
+  public ResAiDocumentDTO upload(MultipartFile file) throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+    UUID userId = aiAccessSupport.currentUserId();
+
+    if (file == null || file.isEmpty()) {
+      throw new IdInvalidException("File trống");
+    }
+    long maxBytes = maxDocumentMb * 1024L * 1024L;
+    if (file.getSize() > maxBytes) {
+      throw new IdInvalidException("File vượt quá " + maxDocumentMb + " MB");
+    }
+
+    String originalName = file.getOriginalFilename() == null ? "document" : file.getOriginalFilename();
+    String ext = extension(originalName);
+    if (!ALLOWED_EXT.contains(ext)) {
+      throw new IdInvalidException("Chỉ hỗ trợ PDF hoặc DOCX");
+    }
+
+    String storedName;
+    try {
+      fileService.createDirectory(AiDocument.STORAGE_FOLDER);
+      storedName = fileService.store(file, AiDocument.STORAGE_FOLDER);
+    } catch (IOException e) {
+      throw new IdInvalidException("Không lưu được file: " + e.getMessage());
+    }
+
+    AiDocument entity = new AiDocument();
+    entity.setUserId(userId);
+    entity.setFileName(originalName);
+    entity.setMimeType(normalizeMimeType(file.getContentType(), ext));
+    entity.setStorageFolder(AiDocument.STORAGE_FOLDER);
+    entity.setStorageFileName(storedName);
+    entity.setFileSizeBytes(file.getSize());
+    entity.setStatus(AiDocumentStatusEnum.EXTRACTING);
+
+    try {
+      Path filePath = storageProperties.getRootPath()
+          .resolve(AiDocument.STORAGE_FOLDER)
+          .resolve(storedName)
+          .normalize();
+
+      DocumentTextExtractor.ExtractResult extracted =
+          documentTextExtractor.extract(filePath, file.getContentType(), maxDocumentPages);
+      String text = extracted.text();
+      if (text.length() > maxExtractTextChars) {
+        text = text.substring(0, maxExtractTextChars);
+      }
+      if (text.isBlank()) {
+        throw new IdInvalidException("Không trích xuất được nội dung từ file");
+      }
+
+      entity.setExtractedText(text);
+      entity.setPageCount(extracted.pageCount());
+      entity.setStatus(AiDocumentStatusEnum.READY);
+      entity.setErrorMessage(null);
+    } catch (IOException e) {
+      entity.setStatus(AiDocumentStatusEnum.FAILED);
+      entity.setErrorMessage("Không đọc được file: " + e.getMessage());
+    } catch (IdInvalidException e) {
+      entity.setStatus(AiDocumentStatusEnum.FAILED);
+      entity.setErrorMessage(e.getMessage());
+    }
+
+    aiDocumentRepository.save(entity);
+    if (entity.getStatus() == AiDocumentStatusEnum.FAILED) {
+      String err = entity.getErrorMessage() != null
+          ? entity.getErrorMessage()
+          : "Trích xuất tài liệu thất bại";
+      activityLogService.log(
+          ActivityLogWriteContext.of(
+                  ActivityLogSeverityEnum.ERROR,
+                  ActivityLogModuleEnum.AI,
+                  ActivityLogActionEnum.AI_DOC_FAIL,
+                  err)
+              .userId(userId)
+              .ref("AI_DOCUMENT", entity.getId())
+              .put("fileName", entity.getFileName())
+              .put("mimeType", entity.getMimeType()));
+      throw new IdInvalidException(err);
+    }
+    return toDto(entity);
+  }
+
+  @Transactional
+  public ResAiDocumentDTO createFromText(ReqCreateTextDocumentDTO request) throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+    UUID userId = aiAccessSupport.currentUserId();
+
+    String text = request.getText() == null ? "" : request.getText().trim();
+    if (text.length() < minPasteTextChars) {
+      throw new IdInvalidException("Nội dung cần ít nhất " + minPasteTextChars + " ký tự");
+    }
+    if (text.length() > maxExtractTextChars) {
+      text = text.substring(0, maxExtractTextChars);
+    }
+
+    String title = request.getTitle() != null ? request.getTitle().trim() : "";
+    String fileName = title.isBlank() ? "Pasted text" : title;
+    String storageKey = "paste-" + UUID.randomUUID() + ".txt";
+
+    AiDocument entity = new AiDocument();
+    entity.setUserId(userId);
+    entity.setFileName(fileName);
+    entity.setMimeType("text/plain");
+    entity.setStorageFolder(AiDocument.STORAGE_FOLDER);
+    entity.setStorageFileName(storageKey);
+    entity.setFileSizeBytes((long) text.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+    entity.setPageCount(1);
+    entity.setExtractedText(text);
+    entity.setStatus(AiDocumentStatusEnum.READY);
+    entity.setErrorMessage(null);
+
+    aiDocumentRepository.save(entity);
+    return toDto(entity);
+  }
+
+  public ResAiDocumentDTO getById(UUID id) throws IdInvalidException {
+    aiAccessSupport.requireStaffUser();
+    UUID userId = aiAccessSupport.currentUserId();
+    AiDocument entity = aiDocumentRepository.findByIdAndUserIdAndVoidedFalse(id, userId)
+        .orElseThrow(() -> new IdInvalidException("Tài liệu không tồn tại"));
+    return toDto(entity);
+  }
+
+  public AiDocument requireReadyDocument(UUID id, UUID userId) throws IdInvalidException {
+    return aiDocumentRepository
+        .findByIdAndUserIdAndStatusAndVoidedFalse(id, userId, AiDocumentStatusEnum.READY)
+        .orElseThrow(() -> new IdInvalidException("Tài liệu chưa sẵn sàng hoặc không tồn tại"));
+  }
+
+  private ResAiDocumentDTO toDto(AiDocument entity) {
+    ResAiDocumentDTO dto = new ResAiDocumentDTO();
+    dto.setId(entity.getId());
+    dto.setFileName(entity.getFileName());
+    dto.setMimeType(entity.getMimeType());
+    dto.setStatus(entity.getStatus());
+    dto.setPageCount(entity.getPageCount());
+    dto.setErrorMessage(entity.getErrorMessage());
+    return dto;
+  }
+
+  private String extension(String fileName) {
+    int dot = fileName.lastIndexOf('.');
+    if (dot < 0) {
+      return "";
+    }
+    return fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
+  }
+
+  private String normalizeMimeType(String rawMime, String ext) {
+    String mime = rawMime == null ? "" : rawMime.trim().toLowerCase(Locale.ROOT);
+    if (mime.contains("pdf") || "pdf".equals(ext)) {
+      return "application/pdf";
+    }
+    if (mime.contains("wordprocessingml") || mime.contains("docx") || "docx".equals(ext)) {
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    }
+    if (mime.length() > 128) {
+      return mime.substring(0, 128);
+    }
+    return mime.isEmpty() ? null : mime;
+  }
+}

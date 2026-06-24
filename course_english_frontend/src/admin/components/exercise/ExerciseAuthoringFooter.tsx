@@ -1,4 +1,5 @@
 import TableViewOutlinedIcon from "@mui/icons-material/TableViewOutlined";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { Box, Button, Typography } from "@mui/material";
 import { muBtnSmOutlined } from "../../../pages/admin/manageUserUiStyles";
@@ -7,12 +8,14 @@ type ExerciseAuthoringFooterProps = {
   questionCount: number;
   onImportExcel?: () => void;
   onImportCsv?: () => void;
+  onAiGen?: () => void;
 };
 
 export function ExerciseAuthoringFooter({
   questionCount,
   onImportExcel,
   onImportCsv,
+  onAiGen,
 }: ExerciseAuthoringFooterProps) {
   return (
     <Box
@@ -47,6 +50,15 @@ export function ExerciseAuthoringFooter({
           disabled={!onImportCsv}
         >
           Import CSV
+        </Button>
+        <Button
+          size="small"
+          startIcon={<AutoAwesomeOutlinedIcon />}
+          sx={muBtnSmOutlined}
+          onClick={onAiGen}
+          disabled={!onAiGen}
+        >
+          Sinh câu bằng AI
         </Button>
       </Box>
       <Box sx={{ textAlign: "right" }}>

@@ -23,8 +23,10 @@ type AdminCatalogToolbarProps = {
   onAdd: () => void;
   importType?: CatalogImportType;
   onImported?: () => void;
+  importAppearance?: "default" | "ghost";
+  /** `soft` — nút mảnh, phẳng (trang phân lớp); mặc định EMR compact */
+  toolbarVariant?: "default" | "soft";
   extraFilters?: ReactNode;
-
 };
 
 export function AdminCatalogToolbar({
@@ -37,11 +39,15 @@ export function AdminCatalogToolbar({
   onAdd,
   importType,
   onImported,
+  importAppearance,
+  toolbarVariant = "default",
   extraFilters,
 }: AdminCatalogToolbarProps) {
+  const isSoft = toolbarVariant === "soft";
+
   return (
-    <Box sx={muToolbarCard}>
-      <Box sx={muToolbarRow}>
+    <Box className={`admin-catalog-toolbar${isSoft ? " admin-catalog-toolbar--soft" : ""}`} sx={isSoft ? undefined : muToolbarCard}>
+      <Box className="admin-catalog-toolbar__row" sx={isSoft ? undefined : muToolbarRow}>
         <TextField
           size="small"
           placeholder={searchPlaceholder}
@@ -50,7 +56,8 @@ export function AdminCatalogToolbar({
           onKeyDown={(e) => {
             if (e.key === "Enter") onSearch();
           }}
-          sx={muToolbarSearchField}
+          className="admin-catalog-toolbar__search"
+          sx={isSoft ? undefined : muToolbarSearchField}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -60,20 +67,39 @@ export function AdminCatalogToolbar({
           }}
         />
         {extraFilters}
-        <Button variant="contained" size="small" sx={muBtnSmPrimary} onClick={onSearch}>
+        <Button
+          variant="contained"
+          size="small"
+          className={isSoft ? "admin-catalog-toolbar__btn admin-catalog-toolbar__btn--primary" : undefined}
+          sx={isSoft ? undefined : muBtnSmPrimary}
+          onClick={onSearch}
+        >
           Tìm
         </Button>
-        <Button variant="outlined" size="small" sx={muBtnSmOutlined} onClick={onReset}>
+        <Button
+          variant="outlined"
+          size="small"
+          className={isSoft ? "admin-catalog-toolbar__btn admin-catalog-toolbar__btn--outlined" : undefined}
+          sx={isSoft ? undefined : muBtnSmOutlined}
+          onClick={onReset}
+        >
           Làm mới
         </Button>
         {importType ? (
           <>
-            <Box sx={muToolbarDivider} />
-            <CatalogImportActions type={importType} inline onImported={onImported} />
+            <Box className="admin-catalog-toolbar__divider" sx={isSoft ? undefined : muToolbarDivider} />
+            <CatalogImportActions type={importType} inline appearance={importAppearance ?? (isSoft ? "ghost" : "default")} onImported={onImported} />
           </>
         ) : null}
-        <Box sx={muToolbarDivider} />
-        <Button variant="contained" size="small" sx={muBtnSmPrimary} startIcon={<AddIcon sx={{ fontSize: 15 }} />} onClick={onAdd}>
+        <Box className="admin-catalog-toolbar__divider admin-catalog-toolbar__divider--before-add" sx={isSoft ? undefined : muToolbarDivider} />
+        <Button
+          variant="contained"
+          size="small"
+          className={isSoft ? "admin-catalog-toolbar__btn admin-catalog-toolbar__btn--add" : undefined}
+          sx={isSoft ? undefined : muBtnSmPrimary}
+          startIcon={<AddIcon sx={{ fontSize: 15 }} />}
+          onClick={onAdd}
+        >
           {addLabel}
         </Button>
       </Box>

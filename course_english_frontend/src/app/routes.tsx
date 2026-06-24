@@ -33,6 +33,7 @@ import { TeacherUsageGuidePage } from "../pages/admin/TeacherUsageGuidePage";
 import { TeacherSchedulePage } from "../pages/admin/TeacherSchedulePage";
 import { TeacherStudentSupportPage } from "../pages/admin/TeacherStudentSupportPage";
 import { AiAssistantPage } from "../pages/admin/AiAssistantPage";
+import { ActivityLogsPage } from "../pages/admin/ActivityLogsPage";
 
 const LazyAdminLayout = lazy(async () => {
   const module = await import("../layouts/admin/AdminLayout");
@@ -211,6 +212,10 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.AI_ASSISTANT,
         element: <AiAssistantPage />,
+      },
+      {
+        path: paths.ACTIVITY_LOGS,
+        element: <ActivityLogsPage />,
       },
       {
         path: paths.USAGE_GUIDE,

@@ -1,5 +1,6 @@
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import {
   Alert,
   Box,
@@ -16,18 +17,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogToolbar, ClassroomPagingAutocomplete, ConfirmDialog } from "../../admin/components";
+import { AdminCatalogPageHeader, AdminCatalogToolbar, ClassroomPagingAutocomplete, ConfirmDialog } from "../../admin/components";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFieldLabel,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muPageShell,
-  muPageTitle,
   muRequired,
   muTextFieldSx,
 } from "./manageUserUiStyles";
@@ -173,55 +170,69 @@ export function ManageSubjectPage() {
   };
 
   return (
-    <Box sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>Quản lý môn học</Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm theo tên môn/lớp"
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(0);
-          setSearchText(searchInput);
-        }}
-        onReset={() => {
-          setSearchInput("");
-          setSearchText("");
-          setPage(0);
-        }}
-        addLabel="Thêm môn"
-        onAdd={openCreate}
-        importType="subjects"
-        onImported={() => void fetchData()}
+    <Box className="admin-catalog-page">
+      <AdminCatalogPageHeader
+        title="Quản lý môn học"
+        subtitle="Môn học gắn với từng lớp"
+        icon={<SchoolOutlinedIcon />}
       />
+
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tìm theo tên môn/lớp"
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={() => {
+            setPage(0);
+            setSearchText(searchInput);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearchText("");
+            setPage(0);
+          }}
+          addLabel="Thêm môn"
+          onAdd={openCreate}
+          importType="subjects"
+          toolbarVariant="soft"
+          onImported={() => void fetchData()}
+        />
+      </Box>
 
       {error ? <Alert severity="error" sx={{ mb: 1, py: 0.25, fontSize: 12 }}>{error}</Alert> : null}
 
-      <Box sx={muCatalogTableShell}>
-        <Box sx={{ px: 1.25, py: 0.75, borderBottom: "1px solid #D3D1C7", display: "grid", gridTemplateColumns: "72px minmax(220px,1fr) minmax(220px,1fr) 90px 120px", columnGap: 1.5, fontSize: 12, fontWeight: 700, color: "#0C447C" }}>
+      <Box className="admin-catalog-page__table-card">
+        <Box
+          className="catalog-table-head"
+          sx={{ display: "grid", gridTemplateColumns: "72px minmax(220px,1fr) minmax(220px,1fr) 90px 120px", columnGap: 1.5 }}
+        >
           <Box>STT</Box><Box>Tên môn</Box><Box>Lớp học</Box><Box>Thứ tự</Box><Box sx={{ textAlign: "center" }}>Thao tác</Box>
         </Box>
         {loading ? (
           <Box sx={{ p: 2 }}><Skeleton height={36} /><Skeleton height={36} /><Skeleton height={36} /></Box>
         ) : rows.length === 0 ? (
-          <Box sx={muEmptyState}>Không có dữ liệu môn học.</Box>
+          <Box className="admin-catalog-page__empty">Không có dữ liệu môn học.</Box>
         ) : (
           rows.map((item, index) => (
-            <Box key={item.id} sx={{ px: 1.25, py: 0.75, borderBottom: "1px solid #ECEAE3", display: "grid", gridTemplateColumns: "72px minmax(220px,1fr) minmax(220px,1fr) 90px 120px", columnGap: 1.5, alignItems: "center", fontSize: 13 }}>
-              <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
+            <Box
+              key={item.id}
+              className="catalog-table-row"
+              sx={{ display: "grid", gridTemplateColumns: "72px minmax(220px,1fr) minmax(220px,1fr) 90px 120px", columnGap: 1.5 }}
+            >
+              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
               <Box sx={{ fontWeight: 600, color: "#0C447C" }}>{item.name || "—"}</Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.classroomName || "—"}</Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.displayOrder ?? 0}</Box>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+              <Box className="catalog-table-muted">{item.classroomName || "—"}</Box>
+              <Box className="catalog-table-muted">{item.displayOrder ?? 0}</Box>
+              <Box className="catalog-table-actions">
                 <Tooltip title="Sửa"><IconButton size="small" color="primary" onClick={() => void openEdit(item)}><EditOutlinedIcon fontSize="small" /></IconButton></Tooltip>
                 <Tooltip title="Xóa"><IconButton size="small" color="error" onClick={() => { setDeleting(item); setOpenDelete(true); }}><DeleteOutlineIcon fontSize="small" /></IconButton></Tooltip>
               </Box>
             </Box>
           ))
         )}
-        <Box sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#F9F8F5", borderTop: "1px solid #D3D1C7", gap: 1 }}>
-          <Typography variant="body2" sx={{ color: "#5F5E5A" }}>Tổng: {total}</Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+        <Box className="admin-catalog-page__table-footer">
+          <Typography variant="body2" className="admin-catalog-page__table-footer-total">Tổng: {total}</Typography>
+          <Box className="admin-catalog-page__table-footer-controls">
             <Button variant="outlined" sx={muBtnSmOutlined} size="small" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>Trang trước</Button>
             <Button variant="outlined" sx={muBtnSmOutlined} size="small" disabled={(page + 1) * size >= total} onClick={() => setPage((p) => p + 1)}>Trang sau</Button>
             <TextField select size="small" value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} sx={{ width: 86, ...muTextFieldSx }}>

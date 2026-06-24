@@ -45,15 +45,15 @@ export function useStudentAccountProfile(): StudentAccountProfile {
       try {
         const accountResponse = await apiGetAccount();
         const accountUser = readUserFromAccountResponse(accountResponse);
-        const fromAccountName = normalizeText(accountUser?.name);
-        const fromAccountAvatar = normalizeText(accountUser?.avatarUrl);
+        if (accountUser) {
+          const fromAccountName = normalizeText(accountUser.name);
+          const fromAccountAvatar = normalizeText(accountUser.avatarUrl);
 
-        if (!cancelled && (fromAccountName || fromAccountAvatar)) {
-          cacheLoginUserProfile({ name: fromAccountName, avatarUrl: fromAccountAvatar });
-          if (fromAccountName) {
-            setDisplayName(fromAccountName);
-          }
-          if (fromAccountAvatar) {
+          if (!cancelled) {
+            cacheLoginUserProfile({ name: fromAccountName, avatarUrl: fromAccountAvatar });
+            if (fromAccountName) {
+              setDisplayName(fromAccountName);
+            }
             setAvatarUrl(fromAccountAvatar);
           }
           return;
@@ -69,17 +69,14 @@ export function useStudentAccountProfile(): StudentAccountProfile {
         const detail =
           (userResponse as { data?: AccountUser; result?: AccountUser })?.data ??
           (userResponse as { result?: AccountUser })?.result;
-        const fromUserName = normalizeText(detail?.name);
-        const fromUserAvatar = normalizeText(detail?.avatarUrl);
-
-        if (!cancelled && (fromUserName || fromUserAvatar)) {
+        if (!cancelled && detail) {
+          const fromUserName = normalizeText(detail.name);
+          const fromUserAvatar = normalizeText(detail.avatarUrl);
           cacheLoginUserProfile({ name: fromUserName, avatarUrl: fromUserAvatar });
           if (fromUserName) {
             setDisplayName(fromUserName);
           }
-          if (fromUserAvatar) {
-            setAvatarUrl(fromUserAvatar);
-          }
+          setAvatarUrl(fromUserAvatar);
         }
       } catch {
         const cachedName = getCachedDisplayName();

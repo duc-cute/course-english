@@ -38,4 +38,7 @@ public class ReqClassSessionDTO {
     private String locationLabel;
 
     private String notes;
+
+    /** When true with meetLink, skip Start → meet.new flow (Zoom / fixed Meet room). */
+    private Boolean usePreSavedLink;
 }

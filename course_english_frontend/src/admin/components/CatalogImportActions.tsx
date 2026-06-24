@@ -15,9 +15,11 @@ type CatalogImportActionsProps = {
   onImported?: () => void;
   /** Gộp nút vào toolbar — không bọc card riêng */
   inline?: boolean;
+  /** `ghost` — nút text mảnh (mockup enrollment); mặc định outlined */
+  appearance?: "default" | "ghost";
 };
 
-export function CatalogImportActions({ type, onImported, inline = false }: CatalogImportActionsProps) {
+export function CatalogImportActions({ type, onImported, inline = false, appearance = "default" }: CatalogImportActionsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -68,23 +70,27 @@ export function CatalogImportActions({ type, onImported, inline = false }: Catal
     }
   };
 
+  const isGhost = appearance === "ghost";
+
   const buttons = (
     <>
       <Button
-        variant="outlined"
+        variant={isGhost ? "text" : "outlined"}
         size="small"
-        sx={muBtnSmOutlined}
-        startIcon={loading ? <CircularProgress size={14} /> : <DownloadIcon sx={{ fontSize: 15 }} />}
+        className={isGhost ? "catalog-import-btn--ghost" : undefined}
+        sx={isGhost ? undefined : muBtnSmOutlined}
+        startIcon={loading ? <CircularProgress size={14} /> : <DownloadIcon sx={{ fontSize: isGhost ? 16 : 15 }} />}
         disabled={loading}
         onClick={() => void handleDownloadTemplate()}
       >
         Mẫu import
       </Button>
       <Button
-        variant="outlined"
+        variant={isGhost ? "text" : "outlined"}
         size="small"
-        sx={muBtnSmOutlined}
-        startIcon={loading ? <CircularProgress size={14} /> : <UploadFileIcon sx={{ fontSize: 15 }} />}
+        className={isGhost ? "catalog-import-btn--ghost" : undefined}
+        sx={isGhost ? undefined : muBtnSmOutlined}
+        startIcon={loading ? <CircularProgress size={14} /> : <UploadFileIcon sx={{ fontSize: isGhost ? 16 : 15 }} />}
         disabled={loading}
         onClick={() => fileInputRef.current?.click()}
       >
@@ -101,7 +107,11 @@ export function CatalogImportActions({ type, onImported, inline = false }: Catal
   );
 
   if (inline) {
-    return <>{buttons}</>;
+    return (
+      <span className={isGhost ? "catalog-import-actions catalog-import-actions--ghost" : "catalog-import-actions"}>
+        {buttons}
+      </span>
+    );
   }
 
   return (

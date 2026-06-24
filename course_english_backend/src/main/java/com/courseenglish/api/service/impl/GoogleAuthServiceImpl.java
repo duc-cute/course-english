@@ -77,7 +77,7 @@ public class GoogleAuthServiceImpl implements GoogleAuthService {
 
         if (googleUser.picture() != null && !googleUser.picture().isBlank()) {
             String picture = trimOrNull(googleUser.picture());
-            if (picture != null && (user.getAvatarUrl() == null || user.getAvatarUrl().isBlank())) {
+            if (picture != null && !picture.equals(user.getAvatarUrl())) {
                 user.setAvatarUrl(picture);
                 changed = true;
             }

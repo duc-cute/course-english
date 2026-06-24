@@ -1,0 +1,151 @@
+/* Quản lý phân lớp — page-specific overrides (shared shell: admin-catalog-soft.css) */
+
+/* Alias giữ tương thích nếu còn class cũ trong JSX */
+.enrollment-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 4px 32px;
+  box-sizing: border-box;
+}
+
+.enrollment-table-card {
+  background: var(--ac-surface-container-lowest, #fff);
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(0, 74, 198, 0.05);
+}
+
+.enrollment-table-grid {
+  display: grid;
+  column-gap: 16px;
+  align-items: center;
+  padding: 0 16px;
+  min-width: 900px;
+}
+
+.enrollment-table-grid--head {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ac-on-surface-variant, #434655);
+  background: var(--ac-surface-container-low, #eff4ff);
+  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.enrollment-table-grid--row {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
+  transition: background 0.15s ease;
+}
+
+.enrollment-table-grid--row:hover {
+  background: rgba(219, 225, 255, 0.35);
+}
+
+.enrollment-table-grid--row:last-of-type {
+  border-bottom: none;
+}
+
+.enrollment-table-grid__muted {
+  color: var(--ac-on-surface-variant, #434655);
+}
+
+.enrollment-class-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: var(--ac-primary-fixed, #dbe1ff);
+  color: var(--ac-primary, #004ac6);
+  white-space: nowrap;
+}
+
+.enrollment-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.enrollment-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.enrollment-status__dot--active {
+  background: #22c55e;
+}
+
+.enrollment-status__dot--inactive {
+  background: #94a3b8;
+}
+
+.enrollment-status--active {
+  color: #15803d;
+}
+
+.enrollment-status--inactive {
+  color: #64748b;
+}
+
+.enrollment-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.enrollment-table-actions .MuiIconButton-root {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.enrollment-table-actions .MuiIconButton-root.enrollment-action-edit {
+  color: var(--ac-primary, #004ac6);
+}
+
+.enrollment-table-actions .MuiIconButton-root.enrollment-action-edit:hover {
+  background: var(--ac-primary-fixed, #dbe1ff);
+}
+
+.enrollment-table-actions .MuiIconButton-root.enrollment-action-delete {
+  color: #dc2626;
+}
+
+.enrollment-table-actions .MuiIconButton-root.enrollment-action-delete:hover {
+  background: #fee2e2;
+}
+
+.enrollment-table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--ac-surface-container-low, #eff4ff);
+  border-top: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.enrollment-table-footer__total {
+  color: var(--ac-on-surface-variant, #434655) !important;
+  font-size: 0.875rem !important;
+}
+
+.enrollment-table-footer__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

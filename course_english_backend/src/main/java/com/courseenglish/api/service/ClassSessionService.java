@@ -34,4 +34,10 @@ public interface ClassSessionService {
     ResClassSessionDTO cancel(UUID id, RecurrenceScopeEnum scope) throws IdInvalidException;
 
     void delete(UUID id) throws IdInvalidException;
+
+    ResClassSessionDTO startOnlineClass(UUID id) throws IdInvalidException;
+
+    ResClassSessionDTO saveMeetingLink(UUID id, String meetLink) throws IdInvalidException;
+
+    ResClassSessionDTO cancelOnlineClassStart(UUID id) throws IdInvalidException;
 }

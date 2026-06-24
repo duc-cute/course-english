@@ -26,6 +26,7 @@ export const paths = {
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",
   AI_ASSISTANT: "ai-assistant",
+  ACTIVITY_LOGS: "activity-logs",
   USAGE_GUIDE: "huong-dan",
 } as const;
 

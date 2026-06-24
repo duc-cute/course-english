@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#e0e3e5",
+                        "on-surface-variant": "#434655",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "surface": "#faf8ff",
+                        "tertiary": "#46566c",
+                        "surface-tint": "#0053db",
+                        "surface-container": "#eaedff",
+                        "outline": "#737686",
+                        "secondary-fixed-dim": "#c4c7c9",
+                        "primary-fixed": "#dbe1ff",
+                        "surface-bright": "#faf8ff",
+                        "inverse-surface": "#283044",
+                        "inverse-primary": "#b4c5ff",
+                        "on-secondary-container": "#626567",
+                        "on-error": "#ffffff",
+                        "background": "#faf8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e2e7ff",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#eeefff",
+                        "inverse-on-surface": "#eef0ff",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#dae2fd",
+                        "on-tertiary-fixed-variant": "#38485d",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#004ac6",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed-variant": "#444749",
+                        "surface-container-highest": "#dae2fd",
+                        "surface-container-low": "#f2f3ff",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#191c1e",
+                        "on-tertiary-fixed": "#0b1c30",
+                        "secondary-container": "#e0e3e5",
+                        "on-tertiary-container": "#e9f0ff",
+                        "surface-dim": "#d2d9f4",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "primary-container": "#2563eb",
+                        "outline-variant": "#c3c6d7",
+                        "on-surface": "#131b2e",
+                        "tertiary-fixed": "#d3e4fe",
+                        "tertiary-container": "#5e6e85",
+                        "secondary": "#5c5f61",
+                        "tertiary-fixed-dim": "#b7c8e1",
+                        "on-background": "#131b2e",
+                        "on-primary-fixed": "#00174b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "1rem",
+                        "container-max": "1200px",
+                        "sm": "0.5rem",
+                        "lg": "1.5rem",
+                        "xl": "2.5rem",
+                        "sidebar-width": "280px",
+                        "base": "4px",
+                        "xs": "0.25rem"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-md": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .chat-bubble-user {
+            border-bottom-right-radius: 2px !important;
+        }
+        .chat-bubble-ai {
+            border-bottom-left-radius: 2px !important;
+        }
+        .glass-blur {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md overflow-hidden">
+<!-- Blurred Background Content Mockup -->
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none opacity-40 blur-sm flex flex-col">
+<header class="flex justify-between items-center px-lg py-md border-b border-outline-variant bg-surface">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 bg-primary rounded-lg"></div>
+<div class="font-title-md text-title-md text-primary">LinguistAI</div>
+</div>
+<nav class="flex gap-md text-on-surface-variant font-label-md">
+<span>Courses</span>
+<span>Community</span>
+<span>Pricing</span>
+</nav>
+</header>
+<main class="flex-1 p-xl">
+<div class="max-w-4xl mx-auto space-y-lg">
+<div class="h-12 w-3/4 bg-surface-variant rounded-xl"></div>
+<div class="grid grid-cols-3 gap-md">
+<div class="h-40 bg-surface-container rounded-xl"></div>
+<div class="h-40 bg-surface-container rounded-xl"></div>
+<div class="h-40 bg-surface-container rounded-xl"></div>
+</div>
+<div class="h-64 bg-surface-container-low rounded-xl"></div>
+</div>
+</main>
+</div>
+<!-- Main Overlay Container -->
+<div class="fixed inset-0 z-10 flex items-end justify-end p-lg">
+<!-- Expanded Chatbox -->
+<div class="w-[360px] h-[550px] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl flex flex-col overflow-hidden transition-all duration-300 transform scale-100 origin-bottom-right" id="chatbox">
+<!-- Header -->
+<div class="flex items-center justify-between px-md py-sm bg-surface-container-low border-b border-outline-variant">
+<div class="flex items-center gap-sm">
+<div class="relative">
+<div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-surface-container-lowest rounded-full"></div>
+</div>
+<div>
+<div class="font-title-md text-body-md font-bold text-on-surface leading-none">LinguistAI</div>
+<div class="text-[10px] text-green-600 font-medium">Online</div>
+</div>
+</div>
+<div class="flex items-center gap-xs">
+<button class="p-1 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant" onclick="toggleChat()">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<button class="p-1 hover:bg-surface-container-high rounded-full transition-colors text-on-surface-variant" onclick="toggleChat()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<!-- Message Area -->
+<div class="flex-1 overflow-y-auto p-md space-y-md scrollbar-hide bg-surface-container-lowest">
+<!-- AI Message -->
+<div class="flex items-start gap-sm max-w-[85%]">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined text-[14px] text-primary">smart_toy</span>
+</div>
+<div class="bg-surface-variant text-on-surface p-md rounded-xl chat-bubble-ai">
+                        Hello! I'm your LinguistAI tutor. How can I help you improve your English today?
+                    </div>
+</div>
+<!-- User Message -->
+<div class="flex flex-col items-end gap-sm ml-auto max-w-[85%]">
+<div class="bg-primary text-on-primary p-md rounded-xl chat-bubble-user">
+                        How can I improve my pronunciation? I struggle with the 'th' sound.
+                    </div>
+<div class="text-[10px] text-on-surface-variant px-1">Read • 10:24 AM</div>
+</div>
+<!-- AI Message -->
+<div class="flex items-start gap-sm max-w-[90%]">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined text-[14px] text-primary">smart_toy</span>
+</div>
+<div class="bg-surface-variant text-on-surface p-md rounded-xl chat-bubble-ai space-y-sm">
+<p>Great question! The 'th' sound involves placing your tongue lightly between your teeth.</p>
+<div class="p-sm bg-surface-container-high rounded-lg border border-outline-variant flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">graphic_eq</span>
+<span class="text-xs font-medium">Try repeating: "Think thoroughly"</span>
+</div>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex flex-col items-end gap-sm ml-auto max-w-[85%]">
+<div class="bg-primary text-on-primary p-md rounded-xl chat-bubble-user">
+                        Can you give me some vocabulary words for business meetings?
+                    </div>
+</div>
+<!-- AI Typing Indicator -->
+<div class="flex items-start gap-sm opacity-60">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[14px] text-primary">smart_toy</span>
+</div>
+<div class="bg-surface-variant px-md py-sm rounded-xl flex gap-1">
+<div class="w-1.5 h-1.5 bg-on-surface-variant rounded-full animate-bounce"></div>
+<div class="w-1.5 h-1.5 bg-on-surface-variant rounded-full animate-bounce [animation-delay:0.2s]"></div>
+<div class="w-1.5 h-1.5 bg-on-surface-variant rounded-full animate-bounce [animation-delay:0.4s]"></div>
+</div>
+</div>
+</div>
+<!-- Suggestion Chips & Input -->
+<div class="p-md space-y-md border-t border-outline-variant bg-surface-container-low">
+<!-- Suggestion Chips -->
+<div class="flex gap-sm overflow-x-auto scrollbar-hide pb-1">
+<button class="shrink-0 px-md py-1.5 rounded-full border border-outline-variant bg-surface-container-lowest text-xs font-medium text-on-surface hover:bg-surface-container-highest transition-all active:scale-95 shadow-sm">
+                        Grammar check
+                    </button>
+<button class="shrink-0 px-md py-1.5 rounded-full border border-outline-variant bg-surface-container-lowest text-xs font-medium text-on-surface hover:bg-surface-container-highest transition-all active:scale-95 shadow-sm">
+                        Translate
+                    </button>
+<button class="shrink-0 px-md py-1.5 rounded-full border border-outline-variant bg-surface-container-lowest text-xs font-medium text-on-surface hover:bg-surface-container-highest transition-all active:scale-95 shadow-sm">
+                        Vocabulary
+                    </button>
+</div>
+<!-- Input Area -->
+<div class="relative flex items-center">
+<button class="absolute left-3 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl pl-10 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md placeholder:text-on-surface-variant/50" placeholder="Ask anything..." type="text"/>
+<button class="absolute right-2 p-1.5 bg-primary text-on-primary rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+<div class="text-[10px] text-center text-on-surface-variant/60 font-medium">
+                    Powered by LinguistAI Pro
+                </div>
+</div>
+</div>
+<!-- FAB (Visible when chat is closed, hidden initially in this layout because expanded is requested) -->
+<button class="hidden w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform" id="chat-fab" onclick="toggleChat()">
+<span class="material-symbols-outlined text-[28px]">chat</span>
+</button>
+</div>
+<script>
+        let isOpen = true;
+        const chatbox = document.getElementById('chatbox');
+        const fab = document.getElementById('chat-fab');
+
+        function toggleChat() {
+            if (isOpen) {
+                chatbox.classList.add('scale-0', 'opacity-0');
+                chatbox.classList.remove('scale-100', 'opacity-100');
+                setTimeout(() => {
+                    chatbox.classList.add('hidden');
+                    fab.classList.remove('hidden');
+                }, 300);
+            } else {
+                chatbox.classList.remove('hidden');
+                fab.classList.add('hidden');
+                setTimeout(() => {
+                    chatbox.classList.remove('scale-0', 'opacity-0');
+                    chatbox.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
+            isOpen = !isOpen;
+        }
+
+        // Auto-scroll to bottom of messages
+        const messageArea = chatbox.querySelector('.overflow-y-auto');
+        messageArea.scrollTop = messageArea.scrollHeight;
+
+        // Interaction for chips
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if(btn.innerText.includes('Grammar') || btn.innerText.includes('Translate')) {
+                    const input = document.querySelector('input');
+                    input.value = `Help me with ${btn.innerText.toLowerCase()} for: `;
+                    input.focus();
+                }
+            });
+        });
+    </script>
+</body></html>

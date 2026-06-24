@@ -5,5 +5,9 @@ public enum SessionUiStateEnum {
     LIVE,
     UPCOMING,
     PAST,
-    NEEDS_SETUP
+    /** @deprecated use NEEDS_START */
+    @Deprecated
+    NEEDS_SETUP,
+    NEEDS_START,
+    WAITING_TEACHER
 }

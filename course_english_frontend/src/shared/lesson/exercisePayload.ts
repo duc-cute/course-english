@@ -275,6 +275,80 @@ export function getQuestionTypeLabel(question: ExerciseQuestion): string {
   return question.type;
 }
 
+/** Short labels for exercise-set block preview (lesson editor list). */
+export function getExerciseSetQuestionCountParts(questions: ExerciseQuestion[]): string[] {
+  let mcq = 0;
+  let listen = 0;
+  let spelling = 0;
+  let listenType = 0;
+  let fillBlank = 0;
+  let gapFillMcq = 0;
+  let reading = 0;
+  let readingSub = 0;
+  let reorder = 0;
+  let matching = 0;
+  let trueFalse = 0;
+
+  for (const q of questions) {
+    switch (q.type) {
+      case "MULTIPLE_CHOICE":
+        mcq += 1;
+        break;
+      case "LISTEN_CHOOSE":
+        listen += 1;
+        break;
+      case "SPELLING":
+        spelling += 1;
+        break;
+      case "LISTEN_TYPE":
+        listenType += 1;
+        break;
+      case "FILL_BLANK":
+        fillBlank += 1;
+        break;
+      case "GAP_FILL_MCQ":
+        gapFillMcq += 1;
+        break;
+      case "READING_COMPREHENSION":
+        reading += 1;
+        readingSub += q.subQuestions.length;
+        break;
+      case "REORDER_SENTENCE":
+        reorder += 1;
+        break;
+      case "MATCHING":
+        matching += 1;
+        break;
+      case "TRUE_FALSE":
+        trueFalse += 1;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return [
+    mcq ? `${mcq} MCQ` : "",
+    listen ? `${listen} nghe chọn` : "",
+    spelling ? `${spelling} gõ chính tả` : "",
+    listenType ? `${listenType} nghe gõ` : "",
+    fillBlank ? `${fillBlank} điền khuyết` : "",
+    gapFillMcq ? `${gapFillMcq} chọn điền` : "",
+    reading
+      ? `${reading} đọc hiểu${readingSub > 0 ? ` (${readingSub} câu con)` : ""}`
+      : "",
+    reorder ? `${reorder} sắp xếp` : "",
+    matching ? `${matching} ghép cặp` : "",
+    trueFalse ? `${trueFalse} đúng/sai` : "",
+  ].filter(Boolean);
+}
+
+export function formatExerciseSetQuestionCountLabel(questions: ExerciseQuestion[]): string {
+  const parts = getExerciseSetQuestionCountParts(questions);
+  if (parts.length > 0) return parts.join(" · ");
+  return questions.length > 0 ? `${questions.length} câu` : "0 câu";
+}
+
 export function validateMatchingQuestion(question: MatchingQuestion): ExerciseSetValidation {
   const errors: string[] = [];
   if (question.pairs.length < 2) {

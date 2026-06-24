@@ -1,0 +1,371 @@
+/* Academic Core — admin catalog page shell + soft toolbar (shared) */
+
+.admin-catalog-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 4px 32px;
+  box-sizing: border-box;
+}
+
+.admin-catalog-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-catalog-page__title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.admin-catalog-page__title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--ac-primary-fixed, #dbe1ff);
+  color: var(--ac-primary, #004ac6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-catalog-page__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ac-on-surface, #0b1c30);
+  line-height: 1.3;
+}
+
+.admin-catalog-page__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--ac-on-surface-variant, #434655);
+  line-height: 1.45;
+}
+
+.admin-catalog-page__filter-card {
+  background: var(--ac-surface-container-lowest, #fff);
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 74, 198, 0.04);
+}
+
+.admin-catalog-page__toolbar-wrap {
+  padding: 12px 16px;
+}
+
+.admin-catalog-page__toolbar-wrap > div {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Soft toolbar row */
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar--soft .admin-catalog-toolbar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search {
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 420px;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search .MuiOutlinedInput-root {
+  min-height: 34px;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  background: var(--ac-surface-container-low, #eff4ff);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search .MuiOutlinedInput-notchedOutline {
+  border-color: transparent;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search .MuiOutlinedInput-root:hover {
+  background: #e8efff;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--ac-outline-variant, #c3c6d7);
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search .MuiOutlinedInput-root.Mui-focused {
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 74, 198, 0.12);
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--ac-primary, #004ac6);
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__search .MuiInputAdornment-root {
+  color: var(--ac-outline, #737686);
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn {
+  min-height: 32px !important;
+  padding: 5px 14px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  text-transform: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  flex-shrink: 0;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn .MuiButton-startIcon {
+  margin-right: 4px !important;
+  margin-left: -2px !important;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn--primary {
+  background: var(--ac-primary, #004ac6) !important;
+  color: #fff !important;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn--primary:hover {
+  background: #003da3 !important;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn--outlined {
+  color: var(--ac-on-surface-variant, #434655) !important;
+  border: 1px solid var(--ac-outline-variant, #c3c6d7) !important;
+  background: #fff !important;
+  font-weight: 500 !important;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn--outlined:hover {
+  border-color: var(--ac-primary-fixed-dim, #b4c5ff) !important;
+  background: var(--ac-surface-container-low, #eff4ff) !important;
+  color: var(--ac-primary, #004ac6) !important;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn--add {
+  margin-left: auto;
+  background: var(--ac-primary, #004ac6) !important;
+  color: #fff !important;
+  padding-left: 12px !important;
+  padding-right: 16px !important;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn--add:hover {
+  background: #003da3 !important;
+}
+
+@media (max-width: 720px) {
+  .admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__btn--add {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Import ghost buttons (CatalogImportActions appearance=ghost) */
+.catalog-import-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.catalog-import-actions--ghost .catalog-import-btn--ghost {
+  min-height: 32px !important;
+  padding: 4px 10px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  text-transform: none !important;
+  color: var(--ac-on-surface-variant, #434655) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.catalog-import-actions--ghost .catalog-import-btn--ghost .MuiButton-startIcon {
+  margin-right: 4px !important;
+  margin-left: 0 !important;
+  color: var(--ac-outline, #737686);
+}
+
+.catalog-import-actions--ghost .catalog-import-btn--ghost:hover {
+  background: var(--ac-surface-container-low, #eff4ff) !important;
+  color: var(--ac-primary, #004ac6) !important;
+}
+
+.catalog-import-actions--ghost .catalog-import-btn--ghost:hover .MuiButton-startIcon {
+  color: var(--ac-primary, #004ac6);
+}
+
+.catalog-import-actions--ghost .catalog-import-btn--ghost.Mui-disabled {
+  color: var(--ac-outline-variant, #c3c6d7) !important;
+  background: transparent !important;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__divider {
+  display: none;
+}
+
+.admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__divider--before-add {
+  display: block;
+  width: 1px;
+  height: 22px;
+  background: var(--ac-outline-variant, #c3c6d7);
+  margin: 0 4px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+@media (max-width: 720px) {
+  .admin-catalog-page__toolbar-wrap .admin-catalog-toolbar__divider--before-add {
+    display: none;
+  }
+}
+
+/* Table card shell (optional — dùng chung cho catalog list) */
+.admin-catalog-page__table-card {
+  background: var(--ac-surface-container-lowest, #fff);
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+  border-radius: 12px;
+  overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(0, 74, 198, 0.05);
+}
+
+.admin-catalog-page__table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--ac-surface-container-low, #eff4ff);
+  border-top: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.admin-catalog-page__empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ac-on-surface-variant, #434655);
+  font-size: 0.875rem;
+}
+
+.admin-catalog-page__table-footer-total {
+  color: var(--ac-on-surface-variant, #434655) !important;
+  font-size: 0.875rem !important;
+}
+
+.admin-catalog-page__table-footer-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Grid list (catalog pages) */
+.catalog-table-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ac-on-surface-variant, #434655);
+  background: var(--ac-surface-container-low, #eff4ff);
+}
+
+.catalog-table-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
+  font-size: 0.875rem;
+  align-items: center;
+  transition: background 0.15s ease;
+}
+
+.catalog-table-row:hover {
+  background: rgba(219, 225, 255, 0.35);
+}
+
+.catalog-table-row:last-of-type {
+  border-bottom: none;
+}
+
+.catalog-table-muted {
+  color: var(--ac-on-surface-variant, #434655);
+}
+
+.catalog-table-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.catalog-table-actions .MuiIconButton-root {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+/* MUI Table inside table card */
+.admin-catalog-page__table-card .MuiTableHead-root .MuiTableCell-root {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ac-on-surface-variant, #434655);
+  background: var(--ac-surface-container-low, #eff4ff);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.admin-catalog-page__table-card .MuiTableBody-root .MuiTableCell-root {
+  font-size: 0.875rem;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.admin-catalog-page__table-card .MuiTableBody-root .MuiTableRow-root:hover {
+  background: rgba(219, 225, 255, 0.35);
+}
+
+.admin-catalog-page__table-card .MuiTablePagination-root {
+  border-top: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+/* Custom filter row (activity-logs) — field trong filter card */
+.admin-catalog-page__filter-card .admin-catalog-soft-filter__field {
+  flex: 0 1 140px;
+  min-width: 130px;
+}
+
+.admin-catalog-page__filter-card .admin-catalog-soft-filter__field .MuiOutlinedInput-root {
+  min-height: 40px;
+  font-size: 0.875rem;
+  border-radius: 8px;
+}
+
+.admin-catalog-page__filter-card .admin-catalog-soft-filter__field .MuiInputLabel-root {
+  font-size: 0.8125rem;
+}
+
+/* User page table card padding */
+.admin-catalog-page__table-card--padded {
+  padding: 12px 16px;
+}
+
+.admin-catalog-page__table-card--padded .mu-role-legend {
+  margin-bottom: 8px;
+}
+

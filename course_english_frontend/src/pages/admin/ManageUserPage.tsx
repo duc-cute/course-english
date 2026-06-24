@@ -1,6 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
 import {
   Alert,
   Box,
@@ -19,6 +20,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+  AdminCatalogPageHeader,
   AdminCatalogToolbar,
   ConfirmDialog,
   LessonImageUpload,
@@ -42,14 +44,11 @@ import {
   muCardTitle,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFieldLabel,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
   muHighlightBox,
   muHighlightSubTitle,
-  muPageShell,
-  muPageTitle,
   muRequired,
   muRoleAdmin,
   muRoleUser,
@@ -351,7 +350,7 @@ export function ManageUserPage() {
       return (
         <tr>
           <td colSpan={4} style={{ ...muTd, borderBottom: "none" }}>
-            <div style={muEmptyState}>
+            <Box className="admin-catalog-page__empty">
               <div style={{ fontWeight: 600, color: "#0C447C", marginBottom: 4 }}>
                 {searchText || roleFilter ? "Không tìm thấy người dùng" : "Chưa có người dùng"}
               </div>
@@ -369,7 +368,7 @@ export function ManageUserPage() {
                   Xóa bộ lọc
                 </Button>
               )}
-            </div>
+            </Box>
           </td>
         </tr>
       );
@@ -414,35 +413,40 @@ export function ManageUserPage() {
   };
 
   return (
-    <Box sx={muPageShell} className="mu-page">
-      <Typography variant="h5" sx={muPageTitle}>
-        Quản lý người dùng
-      </Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tên hoặc email"
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={handleSearch}
-        onReset={handleClearFilters}
-        addLabel="Thêm user"
-        onAdd={handleOpenCreate}
-        importType="users"
-        onImported={() => void fetchUsers()}
-        extraFilters={
-          <Box sx={{ minWidth: 140, maxWidth: 200, flex: "0 1 180px" }} className="mu-role-filter">
-            <RolePagingAutocomplete
-              multiple={false}
-              value={roleFilter}
-              onChange={(val) => {
-                setRoleFilter((val as RoleRecord | null) ?? null);
-                setPage(0);
-              }}
-              helperText=""
-            />
-          </Box>
-        }
+    <Box className="admin-catalog-page mu-page">
+      <AdminCatalogPageHeader
+        title="Quản lý người dùng"
+        subtitle="Tài khoản, email và vai trò"
+        icon={<PeopleOutlinedIcon />}
       />
+
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tên hoặc email"
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={handleSearch}
+          onReset={handleClearFilters}
+          addLabel="Thêm user"
+          onAdd={handleOpenCreate}
+          importType="users"
+          toolbarVariant="soft"
+          onImported={() => void fetchUsers()}
+          extraFilters={
+            <Box sx={{ minWidth: 140, maxWidth: 200, flex: "0 1 180px" }} className="mu-role-filter">
+              <RolePagingAutocomplete
+                multiple={false}
+                value={roleFilter}
+                onChange={(val) => {
+                  setRoleFilter((val as RoleRecord | null) ?? null);
+                  setPage(0);
+                }}
+                helperText=""
+              />
+            </Box>
+          }
+        />
+      </Box>
 
       {error ? (
         <Alert
@@ -463,7 +467,7 @@ export function ManageUserPage() {
         </Alert>
       ) : null}
 
-      <div style={{ ...muCard, padding: "8px 10px" }}>
+      <Box className="admin-catalog-page__table-card admin-catalog-page__table-card--padded">
         <div className="mu-role-legend">
           <span>
             <span style={muRoleAdmin}>Quản trị</span> ADMIN_ROLE
@@ -500,7 +504,7 @@ export function ManageUserPage() {
           rowsPerPageOptions={[5, 10, 20, 50]}
           labelRowsPerPage="Số dòng:"
         />
-      </div>
+      </Box>
 
       {/* Form popup — Archetype C stacked */}
       <Dialog

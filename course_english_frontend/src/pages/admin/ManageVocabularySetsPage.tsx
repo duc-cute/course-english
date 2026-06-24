@@ -1,3 +1,4 @@
+import CollectionsBookmarkOutlinedIcon from "@mui/icons-material/CollectionsBookmarkOutlined";
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
@@ -22,7 +23,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
 import { VocabGenerateListenDialog } from "../../admin/components/vocabulary/VocabGenerateListenDialog";
 import { VocabGenerateListenTypeDialog } from "../../admin/components/vocabulary/VocabGenerateListenTypeDialog";
 import { VocabGenerateMcqDialog } from "../../admin/components/vocabulary/VocabGenerateMcqDialog";
@@ -38,15 +39,13 @@ import {
 } from "../../admin/components/vocabulary/VocabularySetForm";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muPageShell,
-  muPageTitle,
   muTextFieldSx,
+  muSelectAllowEmpty,
+  muSelectFilterInputLabelProps,
 } from "./manageUserUiStyles";
 import {
   apiCreateVocabularySet,
@@ -271,48 +270,58 @@ export function ManageVocabularySetsPage() {
   };
 
   return (
-    <Box sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>
-        Bộ từ vựng
-      </Typography>
-      <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
-        Nhập bộ từ (Word | Meaning) → sinh MCQ → bấm <strong>Gắn vào bài học</strong> (không cần copy JSON).
-      </Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm theo tiêu đề bộ từ..."
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(0);
-          setSearchText(searchInput);
-        }}
-        onReset={() => {
-          setSearchInput("");
-          setSearchText("");
-          setFilterStatus("");
-          setPage(0);
-        }}
-        addLabel="Thêm bộ từ"
-        onAdd={openCreate}
-        extraFilters={
-          <TextField
-            select
-            size="small"
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setPage(0);
-            }}
-            sx={{ ...muTextFieldSx, minWidth: 120 }}
-          >
-            <MenuItem value="">Mọi TT</MenuItem>
-            <MenuItem value="DRAFT">Nháp</MenuItem>
-            <MenuItem value="PUBLISHED">Published</MenuItem>
-            <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
-          </TextField>
+    <Box className="admin-catalog-page">
+      <AdminCatalogPageHeader
+        title="Bộ từ vựng"
+        subtitle={
+          <>
+            Nhập bộ từ (Word | Meaning) → sinh MCQ → bấm <strong>Gắn vào bài học</strong> (không cần copy JSON).
+          </>
         }
+        icon={<CollectionsBookmarkOutlinedIcon />}
       />
+
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tìm theo tiêu đề bộ từ..."
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={() => {
+            setPage(0);
+            setSearchText(searchInput);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearchText("");
+            setFilterStatus("");
+            setPage(0);
+          }}
+          addLabel="Thêm bộ từ"
+          onAdd={openCreate}
+          toolbarVariant="soft"
+          extraFilters={
+            <TextField
+              select
+              size="small"
+              label="Trạng thái"
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setPage(0);
+              }}
+              SelectProps={muSelectAllowEmpty}
+              InputLabelProps={muSelectFilterInputLabelProps}
+              className="admin-catalog-soft-filter__field"
+              sx={{ ...muTextFieldSx, minWidth: 148 }}
+            >
+              <MenuItem value="">Mọi trạng thái</MenuItem>
+              <MenuItem value="DRAFT">Nháp</MenuItem>
+              <MenuItem value="PUBLISHED">Published</MenuItem>
+              <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
+            </TextField>
+          }
+        />
+      </Box>
 
       {error ? (
         <Alert severity="error" sx={{ mb: 1 }} onClose={() => setError("")}>
@@ -320,18 +329,13 @@ export function ManageVocabularySetsPage() {
         </Alert>
       ) : null}
 
-      <Box sx={muCatalogTableShell}>
+      <Box className="admin-catalog-page__table-card">
         <Box
+          className="catalog-table-head"
           sx={{
-            px: 1.25,
-            py: 0.75,
-            borderBottom: "1px solid #D3D1C7",
             display: "grid",
             gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 208px",
             columnGap: 1,
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#0C447C",
           }}
         >
           <Box>#</Box>
@@ -347,32 +351,28 @@ export function ManageVocabularySetsPage() {
             <Skeleton height={36} />
           </Box>
         ) : rows.length === 0 ? (
-          <Box sx={muEmptyState}>Chưa có bộ từ vựng. Bấm &quot;Thêm bộ từ&quot; hoặc import CSV.</Box>
+          <Box className="admin-catalog-page__empty">Chưa có bộ từ vựng. Bấm &quot;Thêm bộ từ&quot; hoặc import CSV.</Box>
         ) : (
           rows.map((row, index) => (
             <Box
               key={row.id}
+              className="catalog-table-row"
               sx={{
-                px: 1.25,
-                py: 0.75,
-                borderBottom: "1px solid #ECEAE3",
                 display: "grid",
                 gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 208px",
                 columnGap: 1,
-                alignItems: "center",
-                fontSize: 13,
               }}
             >
-              <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
+              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
               <Box>
                 <Box sx={{ fontWeight: 500 }}>{row.title}</Box>
                 {row.description ? (
-                  <Box sx={{ fontSize: 11, color: "#5F5E5A", mt: 0.25 }}>{row.description}</Box>
+                  <Box className="catalog-table-muted" sx={{ fontSize: 11, mt: 0.25 }}>{row.description}</Box>
                 ) : null}
               </Box>
-              <Box sx={{ color: "#5F5E5A" }}>{row.itemCount ?? 0}</Box>
+              <Box className="catalog-table-muted">{row.itemCount ?? 0}</Box>
               <Box>{statusChip(row.status)}</Box>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+              <Box className="catalog-table-actions">
                 <Tooltip title="Sinh MCQ">
                   <IconButton size="small" color="secondary" onClick={() => void openGenerate(row)}>
                     <AutoFixHighOutlinedIcon fontSize="small" />
@@ -415,20 +415,11 @@ export function ManageVocabularySetsPage() {
           ))
         )}
 
-        <Box
-          sx={{
-            p: 1.5,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            bgcolor: "#F9F8F5",
-            borderTop: "1px solid #D3D1C7",
-          }}
-        >
-          <Typography variant="body2" sx={{ color: "#5F5E5A" }}>
+        <Box className="admin-catalog-page__table-footer">
+          <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng {total} bộ từ
           </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box className="admin-catalog-page__table-footer-controls">
             <Button
               size="small"
               disabled={page <= 0}

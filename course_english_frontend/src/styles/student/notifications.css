@@ -28,6 +28,11 @@
   transform: scale(0.95);
 }
 
+.student-notification-bell svg {
+  width: 22px;
+  height: 22px;
+}
+
 .student-notification-bell__badge {
   position: absolute;
   top: -4px;

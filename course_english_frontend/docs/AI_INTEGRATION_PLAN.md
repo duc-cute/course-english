@@ -566,34 +566,274 @@ Upload PDF hoặc Word
 | `error_message` | TEXT | |
 | `started_at`, `finished_at` | TIMESTAMPTZ | |
 
-### Output JSON schema (draft question)
+### Output JSON envelope (`ai_tasks.output_json`)
+
+**Nguyên tắc:** mỗi phần tử trong `questions[]` = **`ReqQuestionDTO` / `QuestionFormPayload`** (field names khớp API Question Bank) + metadata preview. Không dùng alias riêng (`isCorrect`, `text`…) — tránh mapper lệch khi scale.
 
 ```json
 {
+  "schemaVersion": 1,
   "questions": [
     {
       "tempId": "q1",
+      "selected": true,
+      "validationErrors": [],
       "questionType": "MULTIPLE_CHOICE",
-      "promptText": "Choose the correct answer: She ___ to school every day.",
+      "promptText": "She ___ to school every day.",
       "promptLang": "en",
-      "explanation": "Present simple for habits.",
+      "explanation": "Present simple, third person.",
       "difficulty": 2,
       "choices": [
-        { "text": "go", "isCorrect": false },
-        { "text": "goes", "isCorrect": true },
-        { "text": "going", "isCorrect": false }
-      ],
-      "selected": true
+        { "choiceKey": "a", "choiceText": "go", "correct": false, "displayOrder": 0 },
+        { "choiceKey": "b", "choiceText": "goes", "correct": true, "displayOrder": 1 },
+        { "choiceKey": "c", "choiceText": "going", "correct": false, "displayOrder": 2 },
+        { "choiceKey": "d", "choiceText": "went", "correct": false, "displayOrder": 3 }
+      ]
+    },
+    {
+      "tempId": "q2",
+      "selected": true,
+      "validationErrors": [],
+      "questionType": "TRUE_FALSE",
+      "promptText": "London is the capital of France.",
+      "promptLang": "en",
+      "explanation": "Paris is the capital of France.",
+      "difficulty": 1,
+      "contentJson": { "correctAnswer": false }
+    },
+    {
+      "tempId": "q3",
+      "selected": true,
+      "validationErrors": [],
+      "questionType": "FILL_BLANK",
+      "promptText": "I ___ (go) to the park yesterday.",
+      "promptLang": "en",
+      "explanation": "Past simple of go.",
+      "difficulty": 2,
+      "contentJson": {
+        "blanks": [{ "id": "b1", "acceptedAnswers": ["went"] }],
+        "caseSensitive": false
+      }
     }
   ],
   "meta": {
     "sourcePageRange": "1-3",
-    "model": "anthropic/claude-3.5-sonnet"
+    "model": "anthropic/claude-3.5-sonnet",
+    "requestedTypes": ["MULTIPLE_CHOICE", "TRUE_FALSE", "FILL_BLANK"]
   }
 }
 ```
 
-Chỉ hỗ trợ Phase 2: `MULTIPLE_CHOICE`, `TRUE_FALSE`, `FILL_BLANK` — mở rộng type sau.
+| Field | Lưu DB? | Ghi chú |
+|-------|---------|---------|
+| `tempId`, `selected`, `validationErrors` | Không | Chỉ preview / import filter |
+| `questionType` … `tags` | Có | Map 1:1 `ReqQuestionDTO` |
+| `choices` | Có (MCQ) | `choiceKey` = `a/b/c/d`, đúng 1 `correct: true` |
+| `contentJson` | Có (TF, FILL) | Trong draft có thể là **object**; BE stringify trước khi `Question.content_json` |
+
+**Phase 2 implement:** `MULTIPLE_CHOICE`, `TRUE_FALSE`, `FILL_BLANK`.  
+**Phase 2.5+:** thêm handler mới — không đổi envelope, không đổi API import.
+
+---
+
+## 2.3.1 Kiến trúc mở rộng theo loại câu (Type Handler Registry)
+
+Mục tiêu: thêm `READING_COMPREHENSION`, `MATCHING`, … chỉ bằng **1 handler BE + 1 entry FE registry**, không sửa core pipeline.
+
+### Phân loại storage (3 tier — quyết định khi thêm type mới)
+
+| Tier | Loại | Lưu trữ Question Bank | Ví dụ Phase 2 |
+|------|------|------------------------|---------------|
+| **A — Choices** | Đáp án trong `question_choices` | `choices[]` trên draft | `MULTIPLE_CHOICE` |
+| **B — ContentJson flat** | Payload nhỏ, 1 object | `contentJson` stringify | `TRUE_FALSE`, `FILL_BLANK` |
+| **C — ContentJson nested** | Câu con / cấu trúc sâu | `contentJson` stringify | `READING_COMPREHENSION` (sau), `GAP_FILL_MCQ` (sau) |
+
+Tier C dùng cùng cột `content_json` — chỉ khác schema bên trong và validator.
+
+### Backend — `AiQuestionTypeHandler` (Strategy + Registry)
+
+```
+com.courseenglish.api.service.ai.question
+├── AiQuestionTypeHandler.java          // interface
+├── AiQuestionTypeHandlerRegistry.java  // Map<QuestionTypeEnum, Handler>
+├── AiQuestionGenResultValidator.java   // orchestrator: gọi từng handler
+├── AiQuestionPromptAssembler.java      // ghép prompt từ handlers được chọn
+├── dto/
+│   ├── AiQuestionGenEnvelopeDTO.java
+│   ├── AiDraftQuestionDTO.java         // ReqQuestionDTO fields + tempId, selected, validationErrors
+│   └── content/
+│       ├── TrueFalseContentDTO.java    // { correctAnswer: boolean }
+│       └── FillBlankContentDTO.java    // { blanks[], caseSensitive? }
+└── impl/
+    ├── McqQuestionTypeHandler.java
+    ├── TrueFalseQuestionTypeHandler.java
+    └── FillBlankQuestionTypeHandler.java
+```
+
+```java
+public interface AiQuestionTypeHandler {
+    QuestionTypeEnum supportedType();
+
+    /** Fragment JSON schema + rules — ghép vào system prompt */
+    String promptSchemaFragment();
+
+    /** Ví dụ 1 câu hoàn chỉnh — few-shot trong prompt */
+    String promptExampleJson();
+
+    /** Sau parse Jackson: normalize (gán choiceKey a/b/c, sync blank ids…) */
+    void normalize(AiDraftQuestionDTO draft);
+
+    /** Trả về lỗi tiếng Việt; rỗng = hợp lệ */
+    List<String> validate(AiDraftQuestionDTO draft);
+
+    /** Map sang ReqQuestionDTO (contentJson đã stringify nếu cần) */
+    ReqQuestionDTO toImportDto(AiDraftQuestionDTO draft, ImportContext ctx);
+}
+```
+
+**Luồng generation:**
+
+```mermaid
+flowchart TD
+  A[OpenRouter raw JSON] --> B[Jackson → AiQuestionGenEnvelopeDTO]
+  B --> C{For each question}
+  C --> D[Registry.get handler by questionType]
+  D --> E[handler.normalize]
+  E --> F[handler.validate]
+  F --> G[Gắn validationErrors vào draft]
+  G --> H[Lưu output_json]
+```
+
+**Luồng import:**
+
+```mermaid
+flowchart LR
+  A[selectedTempIds] --> B[Load draft từ task]
+  B --> C[Merge overrides từ FE]
+  C --> D[Re-validate ALL selected]
+  D --> E{errors?}
+  E -->|có| F[400 + chi tiết]
+  E -->|không| G[handler.toImportDto × N]
+  G --> H[QuestionService.create DRAFT]
+```
+
+**Mở rộng type mới (ví dụ READING_COMPREHENSION):**
+
+1. Thêm `ReadingComprehensionContentDTO` (passage + `subQuestions[]`)
+2. Implement `ReadingComprehensionQuestionTypeHandler` (`@Component`)
+3. Đăng ký tự động qua `AiQuestionTypeHandlerRegistry`
+4. Bật type trong `AI_SUPPORTED_GEN_TYPES` config
+5. FE: thêm 1 entry `aiQuestionTypeRegistry` + canvas preview có sẵn
+
+Không sửa: `AiTaskWorker`, `AiQuestionImportService` (chỉ gọi registry), API contract.
+
+### `contentJson` schema — Phase 2 (khớp exercise player)
+
+| Type | `contentJson` object (trước stringify) | Khớp FE |
+|------|----------------------------------------|---------|
+| `TRUE_FALSE` | `{ "correctAnswer": true \| false }` | `TrueFalseQuestion.correctAnswer`, ids `true`/`false` khi render |
+| `FILL_BLANK` | `{ "blanks": [{ "id": "b1", "acceptedAnswers": ["went"], "placeholder?": "" }], "caseSensitive?": false }` | `FillBlankQuestion`, `fillBlankUtils` |
+
+`FILL_BLANK` rules (reuse `validateFillBlankQuestion`):
+
+- `promptText` có ít nhất một `___`
+- `blanks.length` = số `___` (tối đa 12)
+- Mỗi blank có ≥ 1 `acceptedAnswers` không rỗng
+
+`TRUE_FALSE` rules:
+
+- `contentJson.correctAnswer` bắt buộc boolean
+- Không dùng `choices[]` (tránh trùng với MCQ)
+
+### Prompt assembly — scale khi thêm type
+
+`AiQuestionPromptAssembler` build system prompt động:
+
+```
+BASE_RULES (JSON only, no markdown, bám tài liệu)
++ for each type in request.questionTypes:
+    handler.promptSchemaFragment()
+    handler.promptExampleJson()
++ OUTPUT_ENVELOPE { schemaVersion, questions[], meta }
+```
+
+User prompt giữ nguyên (excerpt + count + difficulty).  
+`questionTypes` trong request quyết định fragment nào được đưa vào — AI không sinh type ngoài danh sách.
+
+### Frontend — `aiQuestionTypeRegistry`
+
+```
+src/shared/ai/questionGen/
+├── types.ts                    // AiDraftQuestion, AiQuestionGenEnvelope
+├── aiQuestionTypeRegistry.ts   // Record<QuestionType, AiQuestionTypeDef>
+├── draftValidators.ts          // delegate → exercisePayload validate*
+├── draftToExercise.ts          // draft → ExerciseQuestion (preview)
+├── draftToFormPayload.ts       // draft → QuestionFormPayload (import)
+└── handlers/
+    ├── mcqHandler.ts
+    ├── trueFalseHandler.ts
+    └── fillBlankHandler.ts
+```
+
+```typescript
+export type AiQuestionTypeDef = {
+  type: QuestionType;
+  label: string;
+  summaryLine: (draft: AiDraftQuestion) => string;
+  validate: (draft: AiDraftQuestion) => string[];
+  toExerciseQuestion: (draft: AiDraftQuestion) => ExerciseQuestion;
+  toFormPayload: (draft: AiDraftQuestion) => QuestionFormPayload;
+  PreviewEditor: React.FC<{ draft: AiDraftQuestion; onChange: (d: AiDraftQuestion) => void }>;
+};
+```
+
+**Preview wizard bước 4:**
+
+```
+AiQuestionPreviewTable
+  ├── row: checkbox, type badge, summaryLine, validationErrors chips
+  └── expand row → registry[type].PreviewEditor
+        MCQ  → McqQuestionCanvas (reuse)
+        TF   → TrueFalse inline editor (prompt + Đúng/Sai toggle)
+        FILL → FillBlankQuestionCanvas (reuse)
+```
+
+**Import:** `selected` + `validationErrors.length === 0` → `POST import-questions`.  
+Sửa trên preview → `PATCH /tasks/{id}/draft` (cập nhật `output_json` whole hoặc merge theo `tempId`).
+
+### API bổ sung cho preview/edit
+
+| Method | Path | Mô tả |
+|--------|------|-------|
+| `PATCH` | `/tasks/{id}/draft` | Body: `{ questions: AiDraftQuestion[] }` — sau khi GV sửa preview |
+| `GET` | `/tasks/{id}` | `outputJson` khi DONE; mỗi câu có `validationErrors` |
+
+### Config — supported types (feature flag scale)
+
+| Key | Mô tả | Default Phase 2 |
+|-----|-------|-----------------|
+| `AI_SUPPORTED_GEN_TYPES` | CSV enum được phép gen | `MULTIPLE_CHOICE,TRUE_FALSE,FILL_BLANK` |
+
+Request gửi `questionTypes` ⊆ `AI_SUPPORTED_GEN_TYPES`; BE từ chối type chưa có handler.
+
+### Checklist thêm type mới (template)
+
+| # | Backend | Frontend |
+|---|---------|----------|
+| 1 | `XxxContentDTO` | — |
+| 2 | `XxxQuestionTypeHandler` | `xxxHandler.ts` trong registry |
+| 3 | Unit test validate + toImportDto | Test `draftToExercise` |
+| 4 | Prompt fragment + example | `PreviewEditor` → canvas có sẵn |
+| 5 | Thêm vào `AI_SUPPORTED_GEN_TYPES` | Bật checkbox config step |
+
+### Roadmap type (sau Phase 2)
+
+| Phase | Types | Tier |
+|-------|-------|------|
+| **2** | MCQ, TF, FILL | A + B |
+| **2.5** | `READING_COMPREHENSION` | C |
+| **3** | `MATCHING`, `GAP_FILL_MCQ`, `REORDER_SENTENCE` | C |
+| **4** | `LISTEN_*`, `SPELLING` | C + media pipeline |
 
 ---
 
@@ -638,13 +878,19 @@ sequenceDiagram
 ```
 com.courseenglish.api
 ├── service
-│   ├── AiDocumentService.java       // upload, extract
-│   ├── AiTaskService.java           // create, poll, cancel
-│   ├── AiQuestionGenerationService.java
-│   ├── DocumentTextExtractor.java   // PDF + DOCX
-│   └── AiQuestionImportService.java // map → Question entity
+│   ├── AiDocumentService.java
+│   ├── AiTaskService.java
+│   ├── AiQuestionGenerationService.java   // orchestrator: prompt → OR → validate envelope
+│   ├── AiQuestionImportService.java       // registry.toImportDto → QuestionService
+│   ├── DocumentTextExtractor.java
+│   └── ai/question/                       // §2.3.1 Type Handler Registry
+│       ├── AiQuestionTypeHandler.java
+│       ├── AiQuestionTypeHandlerRegistry.java
+│       ├── AiQuestionGenResultValidator.java
+│       ├── AiQuestionPromptAssembler.java
+│       └── impl/{Mcq,TrueFalse,FillBlank}QuestionTypeHandler.java
 ├── worker
-│   └── AiTaskWorker.java            // @Async PROCESSING
+│   └── AiTaskWorker.java
 └── controller
     ├── AiDocumentController.java
     └── AiTaskController.java
@@ -659,18 +905,18 @@ com.courseenglish.api
 
 ### `AiQuestionGenerationService`
 
-- Model gợi ý: `anthropic/claude-3.5-sonnet` hoặc `openai/gpt-4o` (config `AI_QUESTION_GEN_MODEL`)
-- Prompt: system + user (extracted text + params)
-- **Bắt buộc** parse JSON + validate schema trước lưu `output_json`
-- Retry 1 lần nếu JSON invalid
+- Model: config `AI_QUESTION_GEN_MODEL`
+- `AiQuestionPromptAssembler` ghép schema từ handlers theo `questionTypes` request
+- Sync completion (không stream) — JSON only
+- Parse → `AiQuestionGenResultValidator` (registry per type) → gắn `validationErrors`
+- Retry 1 lần nếu JSON không parse được; task `FAILED` nếu vẫn lỗi
 
 ### `AiQuestionImportService`
 
-- Input: `taskId` + list `tempId` được chọn
-- Map → `ReqQuestionDTO` / `QuestionService.create`
-- `status = DRAFT` (đã có `QuestionStatusEnum`)
-- Gắn `category_id` từ `input_json`
-- Transaction: all or nothing per batch
+- Input: `taskId` + `selectedTempIds` + optional `overrides`
+- Re-validate qua registry trước import
+- `handler.toImportDto` → `QuestionService.create`, `status = DRAFT`
+- Transaction batch; skip câu có `validationErrors` (hoặc reject cả batch — khuyến nghị reject nếu còn lỗi)
 
 ---
 
@@ -684,6 +930,7 @@ Base: `/api/v1/ai`
 | `GET` | `/documents/{id}` | Metadata + `status` (không trả full `extracted_text` mặc định) |
 | `POST` | `/tasks/question-generation` | Body bên dưới |
 | `GET` | `/tasks/{id}` | Status + `outputJson` khi DONE |
+| `PATCH` | `/tasks/{id}/draft` | GV sửa câu trên preview → cập nhật `output_json` |
 | `POST` | `/tasks/{id}/import-questions` | Import các câu đã chọn |
 | `DELETE` | `/tasks/{id}` | Hủy nếu PENDING |
 
@@ -694,7 +941,7 @@ Base: `/api/v1/ai`
   "documentId": "uuid",
   "categoryId": "uuid",
   "questionCount": 20,
-  "questionTypes": ["MULTIPLE_CHOICE", "TRUE_FALSE"],
+  "questionTypes": ["MULTIPLE_CHOICE", "TRUE_FALSE", "FILL_BLANK"],
   "difficulty": 2,
   "promptLang": "en",
   "conversationId": null
@@ -753,12 +1000,16 @@ Response:
 
 ```
 src/pages/admin/AiQuestionImportPage.tsx
+src/shared/ai/questionGen/           // §2.3.1 registry + validators + mappers
 src/admin/components/ai/
 ├── AiDocumentUploadStep.tsx
-├── AiQuestionGenConfigStep.tsx
+├── AiQuestionGenConfigStep.tsx      // checkbox 3 loại: MCQ / TF / FILL
 ├── AiTaskProgressStep.tsx
-├── AiQuestionPreviewTable.tsx
-└── aiQuestionImportUtils.ts
+├── AiQuestionPreviewTable.tsx       // expand row → PreviewEditor từ registry
+└── AiQuestionPreviewEditors/        // thin wrappers quanh canvas có sẵn
+    ├── McqDraftEditor.tsx           // → McqQuestionCanvas
+    ├── TrueFalseDraftEditor.tsx
+    └── FillBlankDraftEditor.tsx     // → FillBlankQuestionCanvas
 ```
 
 ### Preview table columns
@@ -776,14 +1027,17 @@ Sau import thành công → link “Mở ngân hàng câu hỏi” filter `statu
 
 ## 2.8 Prompt engineering (Phase 2)
 
-**System prompt (tóm tắt):**
+**System prompt** — do `AiQuestionPromptAssembler` sinh, gồm:
 
-- Bạn là chuyên gia biên soạn đề tiếng Anh cho trung tâm.
-- Chỉ trả về JSON hợp lệ theo schema.
-- Câu hỏi phải bám nội dung tài liệu, không bịa fact.
-- Mỗi MULTIPLE_CHOICE: đúng 1 đáp án đúng, 3–4 lựa chọn.
-- Ngôn ngữ stem theo `promptLang`.
-- Độ khó 1–5 theo CEFR gợi ý.
+- Chuyên gia biên soạn đề tiếng Anh; **chỉ JSON**, không markdown
+- Câu bám nội dung tài liệu
+- Envelope: `{ "schemaVersion": 1, "questions": [...], "meta": {...} }`
+- Mỗi câu: field names **đúng** `ReqQuestionDTO` (`choiceKey`, `choiceText`, `correct` — không `isCorrect`)
+- Fragment theo type (từ handler):
+  - **MCQ:** 4 choices `a`–`d`, đúng 1 `correct: true`
+  - **TF:** `contentJson: { "correctAnswer": boolean }`, không `choices`
+  - **FILL:** `promptText` có `___`, `contentJson.blanks[].acceptedAnswers`
+- 1 example JSON hoàn chỉnh / type được chọn (few-shot)
 
 **User prompt template:**
 
@@ -812,17 +1066,16 @@ Return JSON only.
 | `AI_MAX_DOCUMENT_PAGES` | Max trang extract | `20` |
 | `AI_MAX_QUESTIONS_PER_TASK` | Max câu / lần | `50` |
 | `AI_DAILY_GEN_TASK_LIMIT` | Max task sinh câu / user / ngày | `5` |
-
----
+| `AI_SUPPORTED_GEN_TYPES` | Enum được phép gen | `MULTIPLE_CHOICE,TRUE_FALSE,FILL_BLANK` |
 
 ## 2.10 Acceptance criteria — Phase 2
 
 | # | Tiêu chí | Pass khi |
 |---|----------|----------|
 | AC1 | Upload PDF 5 trang | Extract text thành công, status READY |
-| AC2 | Sinh 15 câu MCQ | Task DONE trong < 2 phút (model ổn định) |
-| AC3 | Preview | Teacher sửa stem, bỏ chọn 3 câu, import 12 câu |
-| AC4 | Import | 12 `questions` DRAFT + `question_choices` đúng trong DB |
+| AC2 | Sinh mix MCQ+TF+FILL | Task DONE; mỗi type validate đúng qua handler |
+| AC3 | Preview | Sửa stem TF/FILL, bỏ chọn câu, import phần còn lại |
+| AC4 | Import | Câu DRAFT: MCQ có `choices`; TF/FILL có `content_json` đúng schema |
 | AC5 | Validation | JSON lỗi từ AI → task FAILED, không import rác |
 | AC6 | Manage Questions | Câu import hiện trong search filter DRAFT |
 | AC7 | Không lag chat | `output_json` không nằm trong `ai_messages.content` — chỉ summary |
@@ -836,9 +1089,12 @@ Return JSON only.
 - [ ] Entity `AiDocument`, `AiTask`
 - [ ] `DocumentTextExtractor` (PDF + DOCX)
 - [ ] `AiDocumentController`, `AiTaskController`
+- [ ] `AiQuestionTypeHandler` + registry (MCQ, TF, FILL)
+- [ ] `AiQuestionPromptAssembler` + `AiQuestionGenResultValidator`
 - [ ] `AiQuestionGenerationService` + prompt template
 - [ ] `AiTaskWorker` (@Async)
-- [ ] `AiQuestionImportService` → `QuestionService`
+- [ ] `AiQuestionImportService` → registry → `QuestionService`
+- [ ] `PATCH /tasks/{id}/draft`
 - [ ] Config limits + daily gen quota
 - [ ] Integration test: sample PDF → import 5 câu
 
@@ -846,7 +1102,8 @@ Return JSON only.
 
 - [ ] `AiQuestionImportPage` wizard
 - [ ] API client `aiDocument.ts`, `aiTask.ts`
-- [ ] Preview table + inline edit
+- [ ] `src/shared/ai/questionGen/` registry + 3 handlers
+- [ ] Preview expand row → Mcq / TF / Fill editors (reuse canvas)
 - [ ] Link từ `ManageQuestionsPage`
 - [ ] Error states: file quá lớn, extract fail, gen fail
 

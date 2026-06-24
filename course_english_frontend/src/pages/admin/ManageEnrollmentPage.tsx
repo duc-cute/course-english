@@ -1,5 +1,6 @@
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import {
   Alert,
   Box,
@@ -17,6 +18,7 @@ import {
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import {
+  AdminCatalogPageHeader,
   AdminCatalogToolbar,
   ClassroomPagingAutocomplete,
   ConfirmDialog,
@@ -24,15 +26,11 @@ import {
 } from "../../admin/components";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFieldLabel,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muPageShell,
-  muPageTitle,
   muRequired,
   muTextFieldSx,
 } from "./manageUserUiStyles";
@@ -59,6 +57,9 @@ const defaultForm: EnrollmentForm = {
   student: null,
   status: "ACTIVE",
 };
+
+const TABLE_GRID =
+  "72px minmax(200px,1fr) minmax(180px,1fr) minmax(220px,1fr) 100px 160px 120px";
 
 export function ManageEnrollmentPage() {
   const [rows, setRows] = useState<EnrollmentRecord[]>([]);
@@ -182,77 +183,161 @@ export function ManageEnrollmentPage() {
   };
 
   return (
-    <Box sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>
-        Quản lý phân lớp
-      </Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm theo lớp/học sinh/email"
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(0);
-          setSearchText(searchInput);
-        }}
-        onReset={() => {
-          setSearchInput("");
-          setSearchText("");
-          setPage(0);
-        }}
-        addLabel="Thêm phân lớp"
-        onAdd={openCreate}
-        importType="enrollments"
-        onImported={() => void fetchData()}
+    <Box className="admin-catalog-page">
+      <AdminCatalogPageHeader
+        title="Quản lý phân lớp"
+        subtitle="Quản lý danh sách lớp học và học sinh thuộc từng lớp"
+        icon={<GroupsOutlinedIcon />}
       />
 
-      {error ? <Alert severity="error" sx={{ mb: 1, py: 0.25, fontSize: 12 }}>{error}</Alert> : null}
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tìm theo lớp/học sinh/email"
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={() => {
+            setPage(0);
+            setSearchText(searchInput);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearchText("");
+            setPage(0);
+          }}
+          addLabel="Thêm phân lớp"
+          onAdd={openCreate}
+          importType="enrollments"
+          toolbarVariant="soft"
+          onImported={() => void fetchData()}
+        />
+      </Box>
 
-      <Box sx={muCatalogTableShell}>
-        <Box sx={{ px: 1.25, py: 0.75, borderBottom: "1px solid #D3D1C7", display: "grid", gridTemplateColumns: "72px minmax(200px,1fr) minmax(180px,1fr) minmax(220px,1fr) 100px 160px 120px", columnGap: 1.5, fontSize: 12, fontWeight: 700, color: "#0C447C" }}>
-          <Box>STT</Box><Box>Lớp học</Box><Box>Học sinh</Box><Box>Email</Box><Box>Trạng thái</Box><Box>Ngày tham gia</Box><Box sx={{ textAlign: "center" }}>Thao tác</Box>
+      {error ? <Alert severity="error" sx={{ mb: 1.5, py: 0.25, fontSize: 12 }}>{error}</Alert> : null}
+
+      <Box className="enrollment-table-card">
+        <Box
+          className="enrollment-table-grid enrollment-table-grid--head"
+          sx={{ gridTemplateColumns: TABLE_GRID }}
+        >
+          <Box>STT</Box>
+          <Box>Lớp học</Box>
+          <Box>Học sinh</Box>
+          <Box>Email</Box>
+          <Box>Trạng thái</Box>
+          <Box>Ngày tham gia</Box>
+          <Box sx={{ textAlign: "center" }}>Thao tác</Box>
         </Box>
         {loading ? (
-          <Box sx={{ p: 2 }}><Skeleton height={36} /><Skeleton height={36} /><Skeleton height={36} /></Box>
+          <Box sx={{ p: 2 }}>
+            <Skeleton height={36} />
+            <Skeleton height={36} />
+            <Skeleton height={36} />
+          </Box>
         ) : rows.length === 0 ? (
-          <Box sx={muEmptyState}>Không có dữ liệu phân lớp.</Box>
+          <Box className="admin-catalog-page__empty">Không có dữ liệu phân lớp.</Box>
         ) : (
-          rows.map((item, index) => (
-            <Box key={item.id} sx={{ px: 1.25, py: 0.75, borderBottom: "1px solid #ECEAE3", display: "grid", gridTemplateColumns: "72px minmax(200px,1fr) minmax(180px,1fr) minmax(220px,1fr) 100px 160px 120px", columnGap: 1.5, alignItems: "center", fontSize: 13 }}>
-              <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
-              <Box sx={{ fontWeight: 600, color: "#0C447C" }}>{item.classroomName || "—"}</Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.studentName || "—"}</Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.studentEmail || "—"}</Box>
-              <Box sx={{ color: item.status === "ACTIVE" ? "#2f7d56" : "#8b9099", fontWeight: 600 }}>{item.status || "ACTIVE"}</Box>
-              <Box sx={{ color: "#5F5E5A" }}>{item.joinedAt ? new Date(item.joinedAt).toLocaleString("vi-VN") : "—"}</Box>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
-                <Tooltip title="Sửa">
-                  <IconButton size="small" color="primary" onClick={() => void openEdit(item)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Xóa">
-                  <IconButton size="small" color="error" onClick={() => { setDeleting(item); setOpenDelete(true); }}>
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+          rows.map((item, index) => {
+            const isActive = item.status !== "INACTIVE";
+            return (
+              <Box
+                key={item.id}
+                className="enrollment-table-grid enrollment-table-grid--row"
+                sx={{ gridTemplateColumns: TABLE_GRID }}
+              >
+                <Box className="enrollment-table-grid__muted">{page * size + index + 1}</Box>
+                <Box>
+                  <span className="enrollment-class-badge">{item.classroomName || "—"}</span>
+                </Box>
+                <Box>{item.studentName || "—"}</Box>
+                <Box className="enrollment-table-grid__muted">{item.studentEmail || "—"}</Box>
+                <Box>
+                  <span className={`enrollment-status enrollment-status--${isActive ? "active" : "inactive"}`}>
+                    <span
+                      className={`enrollment-status__dot enrollment-status__dot--${isActive ? "active" : "inactive"}`}
+                    />
+                    {item.status || "ACTIVE"}
+                  </span>
+                </Box>
+                <Box className="enrollment-table-grid__muted">
+                  {item.joinedAt ? new Date(item.joinedAt).toLocaleString("vi-VN") : "—"}
+                </Box>
+                <Box className="enrollment-table-actions">
+                  <Tooltip title="Sửa">
+                    <IconButton
+                      size="small"
+                      className="enrollment-action-edit"
+                      onClick={() => void openEdit(item)}
+                    >
+                      <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Xóa">
+                    <IconButton
+                      size="small"
+                      className="enrollment-action-delete"
+                      onClick={() => {
+                        setDeleting(item);
+                        setOpenDelete(true);
+                      }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </Box>
-            </Box>
-          ))
+            );
+          })
         )}
-        <Box sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#F9F8F5", borderTop: "1px solid #D3D1C7", gap: 1 }}>
-          <Typography variant="body2" sx={{ color: "#5F5E5A" }}>Tổng: {total}</Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button variant="outlined" sx={muBtnSmOutlined} size="small" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>Trang trước</Button>
-            <Button variant="outlined" sx={muBtnSmOutlined} size="small" disabled={(page + 1) * size >= total} onClick={() => setPage((p) => p + 1)}>Trang sau</Button>
-            <TextField select size="small" value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }} sx={{ width: 86, ...muTextFieldSx }}>
-              {[10, 20, 50].map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+        <Box className="enrollment-table-footer">
+          <Typography variant="body2" className="enrollment-table-footer__total">
+            Tổng: {total}
+          </Typography>
+          <Box className="enrollment-table-footer__controls">
+            <Button
+              variant="outlined"
+              sx={muBtnSmOutlined}
+              size="small"
+              disabled={page <= 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Trang trước
+            </Button>
+            <Button
+              variant="outlined"
+              sx={muBtnSmOutlined}
+              size="small"
+              disabled={(page + 1) * size >= total}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Trang sau
+            </Button>
+            <TextField
+              select
+              size="small"
+              value={size}
+              onChange={(e) => {
+                setSize(Number(e.target.value));
+                setPage(0);
+              }}
+              sx={{ width: 86, ...muTextFieldSx }}
+            >
+              {[10, 20, 50].map((opt) => (
+                <MenuItem key={opt} value={opt}>
+                  {opt}
+                </MenuItem>
+              ))}
             </TextField>
           </Box>
         </Box>
       </Box>
 
-      <Dialog open={openForm} onClose={submitting ? undefined : () => setOpenForm(false)} fullWidth maxWidth="sm" PaperProps={{ sx: muDialogPaper }}>
+      <Dialog
+        open={openForm}
+        onClose={submitting ? undefined : () => setOpenForm(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{ sx: muDialogPaper }}
+      >
         <DialogTitle>{editing?.id ? "Cập nhật phân lớp" : "Thêm phân lớp mới"}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1, display: "grid", rowGap: 1.5 }}>
@@ -282,7 +367,9 @@ export function ManageEnrollmentPage() {
               size="small"
               sx={muTextFieldSx}
               value={form.status}
-              onChange={(e) => setForm((p) => ({ ...p, status: (e.target.value as "ACTIVE" | "INACTIVE") ?? "ACTIVE" }))}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, status: (e.target.value as "ACTIVE" | "INACTIVE") ?? "ACTIVE" }))
+              }
             >
               <MenuItem value="ACTIVE">ACTIVE</MenuItem>
               <MenuItem value="INACTIVE">INACTIVE</MenuItem>
@@ -290,7 +377,9 @@ export function ManageEnrollmentPage() {
           </Box>
         </DialogContent>
         <DialogActions sx={muDialogFooter}>
-          <Button onClick={() => setOpenForm(false)} sx={muFooterBtnOutlined} disabled={submitting}>Hủy</Button>
+          <Button onClick={() => setOpenForm(false)} sx={muFooterBtnOutlined} disabled={submitting}>
+            Hủy
+          </Button>
           <Button variant="contained" sx={muFooterBtnPrimary} onClick={() => void submitForm()} disabled={submitting}>
             {editing?.id ? "Lưu thay đổi" : "Tạo mới"}
           </Button>
@@ -303,7 +392,12 @@ export function ManageEnrollmentPage() {
         content={`Bạn có chắc chắn muốn xóa phân lớp của "${deleting?.studentName || ""}"?`}
         cancelText="Hủy"
         confirmText="Xóa"
-        onClose={() => { if (!submitting) { setOpenDelete(false); setDeleting(null); } }}
+        onClose={() => {
+          if (!submitting) {
+            setOpenDelete(false);
+            setDeleting(null);
+          }
+        }}
         onConfirm={() => void confirmDelete()}
         loading={submitting}
       />

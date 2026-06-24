@@ -1,5 +1,6 @@
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import {
   Alert,
   Box,
@@ -17,18 +18,14 @@ import {
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AdminCatalogToolbar } from "../../admin/components";
+import { AdminCatalogPageHeader, AdminCatalogToolbar } from "../../admin/components";
 import { VocabularyAudioPreview } from "../../admin/components/vocabulary/VocabularyAudioPreview";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muDialogFooter,
   muDialogPaper,
-  muEmptyState,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muPageShell,
-  muPageTitle,
   muTextFieldSx,
 } from "./manageUserUiStyles";
 import {
@@ -182,31 +179,37 @@ export function ManageVocabularyWordsPage() {
   };
 
   return (
-    <Box sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>
-        Thư viện từ vựng
-      </Typography>
-      <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>
-        Mỗi từ chỉ lưu một lần (IPA + audio UK/US). Dùng trong{" "}
-        <Link to={`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_SETS}`}>Bộ từ vựng</Link> qua &quot;Chọn từ thư viện&quot;.
-      </Typography>
-
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm word_en, nghĩa..."
-        searchInput={searchInput}
-        onSearchInputChange={setSearchInput}
-        onSearch={() => {
-          setPage(0);
-          setSearchText(searchInput);
-        }}
-        onReset={() => {
-          setSearchInput("");
-          setSearchText("");
-          setPage(0);
-        }}
-        addLabel="Thêm từ"
-        onAdd={openCreate}
+    <Box className="admin-catalog-page">
+      <AdminCatalogPageHeader
+        title="Thư viện từ vựng"
+        subtitle={
+          <>
+            Mỗi từ chỉ lưu một lần (IPA + audio UK/US). Dùng trong{" "}
+            <Link to={`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_SETS}`}>Bộ từ vựng</Link> qua &quot;Chọn từ thư viện&quot;.
+          </>
+        }
+        icon={<MenuBookOutlinedIcon />}
       />
+
+      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
+        <AdminCatalogToolbar
+          searchPlaceholder="Tìm word_en, nghĩa..."
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onSearch={() => {
+            setPage(0);
+            setSearchText(searchInput);
+          }}
+          onReset={() => {
+            setSearchInput("");
+            setSearchText("");
+            setPage(0);
+          }}
+          addLabel="Thêm từ"
+          onAdd={openCreate}
+          toolbarVariant="soft"
+        />
+      </Box>
 
       {error ? (
         <Alert severity="error" sx={{ mb: 1 }} onClose={() => setError("")}>
@@ -214,18 +217,13 @@ export function ManageVocabularyWordsPage() {
         </Alert>
       ) : null}
 
-      <Box sx={muCatalogTableShell}>
+      <Box className="admin-catalog-page__table-card">
         <Box
+          className="catalog-table-head"
           sx={{
-            px: 1.25,
-            py: 0.75,
-            borderBottom: "1px solid #D3D1C7",
             display: "grid",
             gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 56px",
             columnGap: 1,
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#0C447C",
           }}
         >
           <Box>#</Box>
@@ -243,26 +241,22 @@ export function ManageVocabularyWordsPage() {
             <Skeleton height={36} />
           </Box>
         ) : rows.length === 0 ? (
-          <Box sx={muEmptyState}>Chưa có từ trong thư viện. Thêm từ hoặc lưu bộ từ vựng để tự enrich.</Box>
+          <Box className="admin-catalog-page__empty">Chưa có từ trong thư viện. Thêm từ hoặc lưu bộ từ vựng để tự enrich.</Box>
         ) : (
           rows.map((row, index) => (
             <Box
               key={row.id ?? row.wordEn}
+              className="catalog-table-row"
               sx={{
-                px: 1.25,
-                py: 0.75,
-                borderBottom: "1px solid #ECEAE3",
                 display: "grid",
                 gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 56px",
                 columnGap: 1,
-                alignItems: "center",
-                fontSize: 13,
               }}
             >
-              <Box sx={{ color: "#5F5E5A" }}>{page * size + index + 1}</Box>
+              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
               <Box sx={{ fontWeight: 500 }}>{row.wordEn}</Box>
-              <Box sx={{ color: "#5F5E5A", fontSize: 12 }}>{row.meaningVi ?? "—"}</Box>
-              <Box sx={{ fontSize: 12, color: "#5F5E5A" }}>{row.phonetic ?? "—"}</Box>
+              <Box className="catalog-table-muted" sx={{ fontSize: 12 }}>{row.meaningVi ?? "—"}</Box>
+              <Box className="catalog-table-muted" sx={{ fontSize: 12 }}>{row.phonetic ?? "—"}</Box>
               <Box>
                 {hasAudio(row) ? (
                   <VocabularyAudioPreview audioUkUrl={row.audioUkUrl} audioUsUrl={row.audioUsUrl} compact />
@@ -271,7 +265,7 @@ export function ManageVocabularyWordsPage() {
                 )}
               </Box>
               {/* <Box sx={{ fontSize: 11, color: "#5F5E5A" }}>{row.partOfSpeech ?? "—"}</Box> */}
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Box className="catalog-table-actions">
                 <Tooltip title="Chi tiết / Enrich">
                   <IconButton size="small" color="primary" onClick={() => void openDetail(row)}>
                     <EditOutlinedIcon fontSize="small" />
@@ -282,20 +276,11 @@ export function ManageVocabularyWordsPage() {
           ))
         )}
 
-        <Box
-          sx={{
-            p: 1.5,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            bgcolor: "#F9F8F5",
-            borderTop: "1px solid #D3D1C7",
-          }}
-        >
-          <Typography variant="body2" sx={{ color: "#5F5E5A" }}>
+        <Box className="admin-catalog-page__table-footer">
+          <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng {total} từ
           </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box className="admin-catalog-page__table-footer-controls">
             <Button
               size="small"
               disabled={page <= 0}

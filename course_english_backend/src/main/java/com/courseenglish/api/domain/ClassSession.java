@@ -59,6 +59,9 @@ public class ClassSession extends BaseObject {
     @Column(name = "meet_link", columnDefinition = "TEXT")
     private String meetLink;
 
+    @Column(name = "started_at")
+    private Instant startedAt;
+
     @Column(name = "location_label", length = 128)
     private String locationLabel;
 

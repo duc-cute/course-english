@@ -1,3 +1,4 @@
+export { AdminCatalogPageHeader } from "./AdminCatalogPageHeader";
 export { AdminCatalogToolbar } from "./AdminCatalogToolbar";
 export { CatalogImportActions } from "./CatalogImportActions";
 export { AppButton } from "./AppButton";

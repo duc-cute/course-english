@@ -1,0 +1,8 @@
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--ac-primary, #004ac6);
+  color: #fff;
+}

@@ -15,6 +15,7 @@ import SecurityIcon from "@mui/icons-material/Security";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import {
   Avatar,
   Box,
@@ -130,6 +131,11 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         label: "AI Assistant",
         icon: <SmartToyOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.AI_ASSISTANT}`,
+      },
+      {
+        label: "Nhật ký hệ thống",
+        icon: <HistoryOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.ACTIVITY_LOGS}`,
       },
     ],
     [],

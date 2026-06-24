@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { apiGoogleLogin } from "../../shared/api/user";
+import { readGoogleIdTokenProfile } from "../../shared/auth/googleIdToken";
 import { resolvePostLoginRedirect } from "../../shared/auth/resolvePostLoginRedirect";
 import { setAccessToken } from "../../shared/auth/token";
 import { cacheLoginUserProfile } from "../../shared/auth/userProfileCache";
@@ -22,7 +23,11 @@ export function useGoogleLoginHandler() {
       }
 
       setAccessToken(token);
-      cacheLoginUserProfile(user);
+      const googleProfile = readGoogleIdTokenProfile(idToken);
+      cacheLoginUserProfile({
+        name: user?.name ?? googleProfile.name,
+        avatarUrl: user?.avatarUrl ?? googleProfile.picture,
+      });
       toast.success(response?.message || "Đăng nhập thành công");
       const redirectTo = resolvePostLoginRedirect(fromPath, user?.role, user?.roles);
       navigate(redirectTo, { replace: true });

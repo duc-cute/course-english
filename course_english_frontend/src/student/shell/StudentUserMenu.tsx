@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { paths, studentRoutePaths } from "../../shared/constants/paths";
+import { ProfileAvatar } from "../../shared/ui/ProfileAvatar";
 import { buildDailyGoals } from "../home/dailyGoalsUtils";
 import { useStudentAccountProfile } from "../shared/auth/useStudentAccountProfile";
 import { initialsFromDisplayName } from "../shared/auth/studentInitials";
@@ -67,16 +68,13 @@ export function StudentUserMenu() {
         aria-label="Menu tài khoản"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span
-          className={`student-vq-user-menu__avatar${avatarUrl ? " student-vq-user-menu__avatar--has-image" : ""}`}
-          aria-hidden
-        >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="student-vq-user-menu__avatar-img" />
-          ) : (
-            initials
-          )}
-        </span>
+        <ProfileAvatar
+          avatarUrl={avatarUrl}
+          initials={initials}
+          className="student-vq-user-menu__avatar"
+          hasImageClassName="student-vq-user-menu__avatar--has-image"
+          imgClassName="student-vq-user-menu__avatar-img"
+        />
       </button>
 
       {open ? (

@@ -30,6 +30,79 @@ export function formatTodayIsoInTz(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TEACHING_PLAN_TZ }).format(new Date());
 }
 
+/** datetime-local for now in VN (minute precision). */
+export function nowDatetimeLocalInTz(): string {
+  return isoToDatetimeLocal(new Date().toISOString());
+}
+
+export const SESSION_DEFAULT_DURATION_MIN = 120;
+
+export function addMinutesToDatetimeLocal(local: string, minutes: number): string {
+  if (!local) return "";
+  const ms = new Date(datetimeLocalToIso(local)).getTime() + minutes * 60_000;
+  return isoToDatetimeLocal(new Date(ms).toISOString());
+}
+
+export function mergeDateWithTime(dateIso: string, timeSourceLocal: string): string {
+  return `${dateIso}T${extractTimeFromDatetimeLocal(timeSourceLocal)}`;
+}
+
+/** So sánh HH:mm — true nếu `end` sau `start` (cùng ngày). */
+export function isSessionEndTimeAfterStart(startTime: string, endTime: string): boolean {
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+  if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return false;
+  return eh * 60 + em > sh * 60 + sm;
+}
+
+export function buildSessionTimes(
+  initialDay?: string,
+  initialStartHour?: number,
+  initialStartMinute?: number,
+): { startLocal: string; endLocal: string } {
+  const now = nowDatetimeLocalInTz();
+  if (!initialDay) {
+    return {
+      startLocal: now,
+      endLocal: addMinutesToDatetimeLocal(now, SESSION_DEFAULT_DURATION_MIN),
+    };
+  }
+
+  const nowTime = extractTimeFromDatetimeLocal(now);
+  const [nowHour, nowMinute] = nowTime.split(":").map(Number);
+  const hour = initialStartHour ?? nowHour ?? 0;
+  const minute = initialStartMinute ?? nowMinute ?? 0;
+  const time = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  const startLocal = `${initialDay}T${time}`;
+  return {
+    startLocal,
+    endLocal: addMinutesToDatetimeLocal(startLocal, SESSION_DEFAULT_DURATION_MIN),
+  };
+}
+
+export function mergeDayWithTimeHHmm(dayIso: string, timeHHmm: string): string {
+  const time = timeHHmm.trim().slice(0, 5);
+  return `${dayIso}T${time}`;
+}
+
+export function syncSessionEndOnStartDay(startLocal: string, endTimeOrLocal: string): string {
+  const day = extractDateFromDatetimeLocal(startLocal);
+  const time = endTimeOrLocal.includes("T")
+    ? extractTimeFromDatetimeLocal(endTimeOrLocal)
+    : endTimeOrLocal.trim().slice(0, 5);
+  return mergeDayWithTimeHHmm(day, time);
+}
+
+export function formatIsoDateVi(iso: string): string {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: TEACHING_PLAN_TZ,
+  }).format(new Date(`${iso}T12:00:00+07:00`));
+}
+
 /** datetime-local value (VN) → ISO UTC for API */
 export function datetimeLocalToIso(local: string): string {
   if (!local) return "";
@@ -84,12 +157,37 @@ export const SESSION_TYPE_OPTIONS = [
   { value: "OTHER", label: "Khác" },
 ] as const;
 
+export const SESSION_LONG_DURATION_MIN = 60;
+
+export function sessionDurationMinutes(startAt: string, endAt: string): number {
+  const ms = new Date(endAt).getTime() - new Date(startAt).getTime();
+  return Math.round(ms / 60_000);
+}
+
+export function sessionMeetStatusLabel(session: {
+  meetLink?: string | null;
+  usePreSavedLink?: boolean;
+  uiState?: string;
+  canStartOnlineClass?: boolean;
+  needsSetup?: boolean;
+}): string {
+  if (session.usePreSavedLink) return "Link có sẵn";
+  if (session.uiState === "WAITING_TEACHER") return "Chờ dán link Meet";
+  if (session.canStartOnlineClass || session.needsSetup) return "Chưa bắt đầu lớp";
+  if (session.meetLink) return "Đã có link";
+  return "Chưa có link";
+}
+
 export function sessionSubtitle(session: {
   activeStudentCount?: number;
   locationLabel?: string | null;
   meetLink?: string | null;
   lessonTitle?: string | null;
   lessonId?: string | null;
+  usePreSavedLink?: boolean;
+  uiState?: string;
+  canStartOnlineClass?: boolean;
+  needsSetup?: boolean;
 }): string {
   const parts: string[] = [];
   if (session.lessonTitle || session.lessonId) {
@@ -98,9 +196,8 @@ export function sessionSubtitle(session: {
     parts.push("Chưa gán bài");
   }
   const count = session.activeStudentCount ?? 0;
-  const location = session.locationLabel?.trim() || (session.meetLink ? "Link meet" : "Link TBD");
   parts.push(`HS active: ${count}`);
-  parts.push(location);
+  parts.push(sessionMeetStatusLabel(session));
   return parts.join(" • ");
 }
 
@@ -158,4 +255,12 @@ export function extractDateFromDatetimeLocal(local: string): string {
 export function extractTimeFromDatetimeLocal(local: string): string {
   const time = local.split("T")[1];
   return time ? time.slice(0, 5) : "19:00";
+}
+
+/** Last day of recurring series — mirrors BE: rangeStart + weekCount weeks − 1 day. */
+export function recurringRangeEndDate(rangeStart: string, weekCount: number): string {
+  const weeks = Math.max(1, weekCount);
+  const date = new Date(`${rangeStart}T12:00:00+07:00`);
+  date.setDate(date.getDate() + weeks * 7 - 1);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TEACHING_PLAN_TZ }).format(date);
 }

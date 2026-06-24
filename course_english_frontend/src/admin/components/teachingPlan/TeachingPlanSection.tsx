@@ -22,8 +22,10 @@ import {
 import { paths } from "../../../shared/constants/paths";
 import { ClassSessionFormModal } from "./ClassSessionFormModal";
 import { AssignLessonDialog } from "./AssignLessonDialog";
+import { StartOnlineClassDialog } from "./StartOnlineClassDialog";
 import { TeachingPlanTimelineItem } from "./TeachingPlanTimelineItem";
-import { formatNextClassLabel, formatPlanDateLabel } from "./teachingPlanUtils";
+import { useOnlineClassFlow } from "./useOnlineClassFlow";
+import { formatNextClassLabel, formatPlanDateLabel, formatTodayIsoInTz } from "./teachingPlanUtils";
 
 export function TeachingPlanSection() {
   const navigate = useNavigate();
@@ -34,6 +36,8 @@ export function TeachingPlanSection() {
   const [editing, setEditing] = useState<ClassSessionRecord | null>(null);
   const [assignSession, setAssignSession] = useState<ClassSessionRecord | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [savingMeetLink, setSavingMeetLink] = useState(false);
+  const [cancellingStart, setCancellingStart] = useState(false);
 
   const loadPlan = useCallback(async () => {
     setLoading(true);
@@ -49,17 +53,23 @@ export function TeachingPlanSection() {
     }
   }, []);
 
+  const {
+    pasteSession,
+    startingId,
+    flowError,
+    handleStartOnlineClass,
+    openPasteDialog,
+    closePasteDialog,
+    handleSaveMeetingLink,
+    handleCancelOnlineClassStart,
+  } = useOnlineClassFlow(loadPlan);
+
   useEffect(() => {
     void loadPlan();
   }, [loadPlan]);
 
-  const openCreate = () => {
+  const openCreateToday = () => {
     setEditing(null);
-    setFormOpen(true);
-  };
-
-  const openSetup = (session: ClassSessionRecord) => {
-    setEditing(session);
     setFormOpen(true);
   };
 
@@ -138,17 +148,30 @@ export function TeachingPlanSection() {
             size="small"
             variant="contained"
             startIcon={<EventOutlinedIcon />}
-            onClick={openCreate}
+            onClick={openCreateToday}
             sx={{ textTransform: "none", fontWeight: 700, boxShadow: "0 4px 0 0 #004395" }}
           >
-            Lên lịch
+            + Ca hôm nay
           </Button>
         </Stack>
       </Box>
 
-      {error ? (
-        <Alert severity="error" sx={{ mt: 2 }} action={<Button onClick={() => void loadPlan()}>Thử lại</Button>}>
-          {error}
+      {error || flowError ? (
+        <Alert
+          severity="error"
+          sx={{ mt: 2 }}
+          action={
+            <Button
+              onClick={() => {
+                setError("");
+                void loadPlan();
+              }}
+            >
+              Thử lại
+            </Button>
+          }
+        >
+          {error || flowError}
         </Alert>
       ) : null}
 
@@ -162,10 +185,10 @@ export function TeachingPlanSection() {
         ) : sessions.length === 0 ? (
           <Box className="teaching-plan-empty">
             <Typography variant="body1" sx={{ mb: 2, color: "var(--ac-on-surface-variant)" }}>
-              Hôm nay bạn chưa có buổi dạy nào.
+              Hôm nay bạn chưa có ca dạy nào.
             </Typography>
-            <Button variant="contained" startIcon={<EventOutlinedIcon />} onClick={openCreate} sx={{ textTransform: "none" }}>
-              Lên lịch buổi dạy
+            <Button variant="contained" startIcon={<EventOutlinedIcon />} onClick={openCreateToday} sx={{ textTransform: "none" }}>
+              + Ca hôm nay
             </Button>
           </Box>
         ) : (
@@ -175,16 +198,44 @@ export function TeachingPlanSection() {
               session={session}
               onJoinMeet={handleJoinMeet}
               onOpenLesson={handleOpenLesson}
-              onSetup={openSetup}
+              onStartOnlineClass={(s) => void handleStartOnlineClass(s)}
+              onPasteMeetingLink={openPasteDialog}
               onAssignLesson={openAssignLesson}
+              startOnlineClassLoadingId={startingId}
             />
           ))
         )}
       </Box>
 
+      <StartOnlineClassDialog
+        open={Boolean(pasteSession)}
+        session={pasteSession}
+        saving={savingMeetLink}
+        cancelling={cancellingStart}
+        onClose={closePasteDialog}
+        onSave={async (meetLink) => {
+          setSavingMeetLink(true);
+          try {
+            await handleSaveMeetingLink(meetLink);
+          } finally {
+            setSavingMeetLink(false);
+          }
+        }}
+        onCancelStart={async () => {
+          setCancellingStart(true);
+          try {
+            await handleCancelOnlineClassStart();
+          } finally {
+            setCancellingStart(false);
+          }
+        }}
+      />
+
       <ClassSessionFormModal
         open={formOpen}
         editing={editing}
+        mode="quick"
+        initialDay={formatTodayIsoInTz()}
         onClose={() => setFormOpen(false)}
         onSaved={() => void loadPlan()}
       />
