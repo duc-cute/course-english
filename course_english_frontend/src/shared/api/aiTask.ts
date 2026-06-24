@@ -1,6 +1,6 @@
 import api from "./axios";
 import type { ApiResponse } from "./types";
-import type { AiGenQuestionType, AiQuestionGenEnvelope } from "../ai/questionGen/types";
+import type { AiGenQuestionType, AiDraftQuestion, AiQuestionGenEnvelope } from "../ai/questionGen/types";
 
 export type AiDocumentStatus = "UPLOADED" | "EXTRACTING" | "READY" | "FAILED";
 
@@ -81,4 +81,12 @@ export async function apiGetAiTask(taskId: string): Promise<AiTaskRecord> {
 
 export async function apiReportAiTaskPollTimeout(taskId: string): Promise<void> {
   await api.post(`/ai/tasks/${taskId}/client-poll-timeout`);
+}
+
+export async function apiPatchAiTaskDraft(
+  taskId: string,
+  payload: { questions: AiDraftQuestion[] },
+): Promise<AiTaskRecord> {
+  const response = (await api.patch(`/ai/tasks/${taskId}/draft`, payload)) as ApiResponse<AiTaskRecord>;
+  return unwrapEntity(response);
 }

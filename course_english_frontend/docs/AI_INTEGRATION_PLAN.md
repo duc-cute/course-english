@@ -1094,7 +1094,7 @@ Return JSON only.
 - [ ] `AiQuestionGenerationService` + prompt template
 - [ ] `AiTaskWorker` (@Async)
 - [ ] `AiQuestionImportService` → registry → `QuestionService`
-- [ ] `PATCH /tasks/{id}/draft`
+- [x] `PATCH /tasks/{id}/draft`
 - [ ] Config limits + daily gen quota
 - [ ] Integration test: sample PDF → import 5 câu
 

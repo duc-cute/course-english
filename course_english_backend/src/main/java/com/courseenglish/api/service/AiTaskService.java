@@ -1,6 +1,7 @@
 package com.courseenglish.api.service;
 
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
+import com.courseenglish.api.domain.request.ReqUpdateAiTaskDraftDTO;
 import com.courseenglish.api.domain.response.ResAiTaskDTO;
 import com.courseenglish.api.domain.response.ResCreateAiTaskDTO;
 import com.courseenglish.api.service.ai.AiTaskCommandService;
@@ -28,5 +29,10 @@ public class AiTaskService {
 
   public void reportClientPollTimeout(UUID taskId) throws IdInvalidException {
     aiTaskCommandService.reportClientPollTimeout(taskId);
+  }
+
+  public ResAiTaskDTO updateTaskDraft(UUID taskId, ReqUpdateAiTaskDraftDTO request)
+      throws IdInvalidException {
+    return aiTaskCommandService.updateTaskDraft(taskId, request);
   }
 }

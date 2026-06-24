@@ -3,6 +3,7 @@ package com.courseenglish.api.service.ai;
 import com.courseenglish.api.domain.AiDocument;
 import com.courseenglish.api.domain.AiTask;
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
+import com.courseenglish.api.domain.request.ReqUpdateAiTaskDraftDTO;
 import com.courseenglish.api.domain.response.ResAiTaskDTO;
 import com.courseenglish.api.domain.response.ResCreateAiTaskDTO;
 import com.courseenglish.api.repository.AiTaskRepository;
@@ -11,7 +12,10 @@ import com.courseenglish.api.service.activitylog.ActivityLogWriteContext;
 import com.courseenglish.api.util.constant.ActivityLogActionEnum;
 import com.courseenglish.api.util.constant.ActivityLogModuleEnum;
 import com.courseenglish.api.util.constant.ActivityLogSeverityEnum;
+import com.courseenglish.api.service.ai.question.AiQuestionGenResultValidator;
 import com.courseenglish.api.service.ai.question.AiQuestionTypeHandlerRegistry;
+import com.courseenglish.api.service.ai.question.dto.AiDraftQuestionDTO;
+import com.courseenglish.api.service.ai.question.dto.AiQuestionGenEnvelopeDTO;
 import com.courseenglish.api.util.constant.AiTaskStatusEnum;
 import com.courseenglish.api.util.constant.AiTaskTypeEnum;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
@@ -38,6 +42,7 @@ public class AiTaskCommandService {
   private final AiDocumentService aiDocumentService;
   private final AiAccessSupport aiAccessSupport;
   private final AiQuestionTypeHandlerRegistry handlerRegistry;
+  private final AiQuestionGenResultValidator resultValidator;
   private final AiTaskWorker aiTaskWorker;
   private final ActivityLogService activityLogService;
   private final ObjectMapper objectMapper;
@@ -56,6 +61,7 @@ public class AiTaskCommandService {
       AiDocumentService aiDocumentService,
       AiAccessSupport aiAccessSupport,
       AiQuestionTypeHandlerRegistry handlerRegistry,
+      AiQuestionGenResultValidator resultValidator,
       AiTaskWorker aiTaskWorker,
       ActivityLogService activityLogService,
       ObjectMapper objectMapper) {
@@ -63,6 +69,7 @@ public class AiTaskCommandService {
     this.aiDocumentService = aiDocumentService;
     this.aiAccessSupport = aiAccessSupport;
     this.handlerRegistry = handlerRegistry;
+    this.resultValidator = resultValidator;
     this.aiTaskWorker = aiTaskWorker;
     this.activityLogService = activityLogService;
     this.objectMapper = objectMapper;
@@ -155,6 +162,49 @@ public class AiTaskCommandService {
             .put("taskStatus", task.getStatus() != null ? task.getStatus().name() : null)
             .put("documentId", task.getDocumentId())
             .put("pollTimeoutMs", 180_000));
+  }
+
+  @Transactional
+  public ResAiTaskDTO updateTaskDraft(UUID taskId, ReqUpdateAiTaskDraftDTO request)
+      throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+    UUID userId = aiAccessSupport.currentUserId();
+
+    AiTask task = aiTaskRepository.findByIdAndUserIdAndVoidedFalse(taskId, userId)
+        .orElseThrow(() -> new IdInvalidException("Tác vụ không tồn tại"));
+
+    if (task.getStatus() != AiTaskStatusEnum.DONE) {
+      throw new IdInvalidException("Chỉ sửa được bản nháp khi tác vụ đã hoàn thành");
+    }
+
+    List<AiDraftQuestionDTO> questions = request.getQuestions();
+    if (questions.size() > maxQuestionsPerTask) {
+      throw new IdInvalidException("Tối đa " + maxQuestionsPerTask + " câu hỏi mỗi tác vụ");
+    }
+
+    AiQuestionGenEnvelopeDTO envelope = readEnvelope(task);
+    envelope.setQuestions(questions);
+    resultValidator.normalizeAndValidate(envelope);
+
+    try {
+      task.setOutputJson(objectMapper.writeValueAsString(envelope));
+    } catch (JsonProcessingException e) {
+      throw new IdInvalidException("Không lưu được bản nháp");
+    }
+    aiTaskRepository.save(task);
+    return toDto(task);
+  }
+
+  private AiQuestionGenEnvelopeDTO readEnvelope(AiTask task) throws IdInvalidException {
+    if (task.getOutputJson() == null || task.getOutputJson().isBlank()) {
+      return new AiQuestionGenEnvelopeDTO();
+    }
+    try {
+      return objectMapper.readValue(task.getOutputJson(), AiQuestionGenEnvelopeDTO.class);
+    } catch (JsonProcessingException e) {
+      throw new IdInvalidException("output_json hiện tại không hợp lệ");
+    }
   }
 
   private void enforceDailyGenQuota(UUID userId) throws IdInvalidException {

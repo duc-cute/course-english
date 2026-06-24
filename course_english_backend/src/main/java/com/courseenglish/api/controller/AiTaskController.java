@@ -1,6 +1,7 @@
 package com.courseenglish.api.controller;
 
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
+import com.courseenglish.api.domain.request.ReqUpdateAiTaskDraftDTO;
 import com.courseenglish.api.domain.response.ResAiTaskDTO;
 import com.courseenglish.api.domain.response.ResCreateAiTaskDTO;
 import com.courseenglish.api.service.AiTaskService;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,5 +48,13 @@ public class AiTaskController {
   public ResponseEntity<Void> reportClientPollTimeout(@PathVariable UUID id) throws IdInvalidException {
     aiTaskService.reportClientPollTimeout(id);
     return ResponseEntity.ok().build();
+  }
+
+  @PatchMapping("/{id}/draft")
+  @ApiMessage("Update AI question generation draft after preview edits")
+  public ResponseEntity<ResAiTaskDTO> updateDraft(
+      @PathVariable UUID id,
+      @Valid @RequestBody ReqUpdateAiTaskDraftDTO request) throws IdInvalidException {
+    return ResponseEntity.ok(aiTaskService.updateTaskDraft(id, request));
   }
 }

@@ -42,10 +42,12 @@ import {
   apiCreateQuestionGenTask,
   apiCreateTextAiDocument,
   apiGetAiTask,
+  apiPatchAiTaskDraft,
   apiReportAiTaskPollTimeout,
   apiUploadAiDocument,
   type AiDocumentRecord,
 } from "../../../shared/api/aiTask";
+import type { AiDraftQuestion } from "../../../shared/ai/questionGen/types";
 import type { ExerciseQuestion } from "../../../student/lessonPlayer/exercise/types";
 
 function draftTypeLabel(type: AiGenQuestionType | string): string {
@@ -70,6 +72,14 @@ function toggleDraftSelection(drafts: AiDraftQuestion[], tempId: string, selecte
   return drafts.map((d) => (d.tempId === tempId ? { ...d, selected } : d));
 }
 
+function normalizeDrafts(questions: AiDraftQuestion[]): AiDraftQuestion[] {
+  return questions.map((q) => ({
+    ...q,
+    selected: q.selected !== false,
+    validationErrors: q.validationErrors ?? [],
+  }));
+}
+
 export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollStartedRef = useRef(0);
@@ -92,6 +102,7 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
   const [taskId, setTaskId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [error, setError] = useState("");
 
   const reset = useCallback(() => {
@@ -109,6 +120,7 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
     setTaskId(null);
     setUploading(false);
     setProcessing(false);
+    setApplying(false);
     setError("");
     pollStartedRef.current = 0;
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -243,13 +255,7 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
         const status = task.status;
         if (status === "DONE") {
           const questions = task.outputJson?.questions ?? [];
-          setDrafts(
-            questions.map((q) => ({
-              ...q,
-              selected: q.selected !== false,
-              validationErrors: q.validationErrors ?? [],
-            })),
-          );
+          setDrafts(normalizeDrafts(questions));
           setProcessing(false);
           setStep(3);
           return;
@@ -299,14 +305,28 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
 
   const selectedCount = drafts.filter((d) => d.selected && !(d.validationErrors?.length)).length;
 
-  const handleApply = () => {
-    const next = draftsToExerciseQuestions(drafts);
-    if (!next.length) {
-      setError("Chọn ít nhất một câu hợp lệ để thêm vào bài tập.");
-      return;
+  const handleApply = async () => {
+    setError("");
+    setApplying(true);
+    try {
+      let currentDrafts = drafts;
+      if (taskId) {
+        const task = await apiPatchAiTaskDraft(taskId, { questions: drafts });
+        currentDrafts = normalizeDrafts(task.outputJson?.questions ?? drafts);
+        setDrafts(currentDrafts);
+      }
+      const next = draftsToExerciseQuestions(currentDrafts);
+      if (!next.length) {
+        setError("Chọn ít nhất một câu hợp lệ để thêm vào bài tập.");
+        return;
+      }
+      onApplied(next);
+      handleClose();
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? "Không lưu được bản nháp.");
+    } finally {
+      setApplying(false);
     }
-    onApplied(next);
-    handleClose();
   };
 
   return (
@@ -562,13 +582,13 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
       </DialogContent>
 
       <DialogActions sx={muDialogFooter}>
-        <Button sx={muFooterBtnOutlined} onClick={handleClose} disabled={uploading || processing}>
+        <Button sx={muFooterBtnOutlined} onClick={handleClose} disabled={uploading || processing || applying}>
           Hủy
         </Button>
         {step > 0 && step < 3 ? (
           <Button
             sx={muFooterBtnOutlined}
-            disabled={uploading || processing}
+            disabled={uploading || processing || applying}
             onClick={() => setStep((s) => Math.max(0, s - 1))}
           >
             Quay lại
@@ -592,8 +612,8 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
           </Button>
         ) : null}
         {step === 3 ? (
-          <Button sx={muFooterBtnPrimary} disabled={selectedCount === 0} onClick={handleApply}>
-            Thêm {selectedCount} câu vào bài tập
+          <Button sx={muFooterBtnPrimary} disabled={selectedCount === 0 || applying} onClick={() => void handleApply()}>
+            {applying ? "Đang lưu…" : `Thêm ${selectedCount} câu vào bài tập`}
           </Button>
         ) : null}
       </DialogActions>
