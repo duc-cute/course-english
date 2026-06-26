@@ -100,7 +100,12 @@ public class AiDocumentService {
     entity.setFileSizeBytes(file.getSize());
     entity.setStatus(AiDocumentStatusEnum.EXTRACTING);
 
+    Long extractMs = null;
+    Integer extractedPageCount = null;
+    int extractedTextChars = 0;
+
     try {
+      long extractStartedMs = System.currentTimeMillis();
       Path filePath = storageProperties.getRootPath()
           .resolve(AiDocument.STORAGE_FOLDER)
           .resolve(storedName)
@@ -120,6 +125,10 @@ public class AiDocumentService {
       entity.setPageCount(extracted.pageCount());
       entity.setStatus(AiDocumentStatusEnum.READY);
       entity.setErrorMessage(null);
+
+      extractMs = System.currentTimeMillis() - extractStartedMs;
+      extractedPageCount = extracted.pageCount();
+      extractedTextChars = text.length();
     } catch (IOException e) {
       entity.setStatus(AiDocumentStatusEnum.FAILED);
       entity.setErrorMessage("Không đọc được file: " + e.getMessage());
@@ -144,6 +153,26 @@ public class AiDocumentService {
               .put("fileName", entity.getFileName())
               .put("mimeType", entity.getMimeType()));
       throw new IdInvalidException(err);
+    }
+
+    if (extractMs != null) {
+      activityLogService.log(
+          ActivityLogWriteContext.of(
+                  ActivityLogSeverityEnum.INFO,
+                  ActivityLogModuleEnum.AI,
+                  ActivityLogActionEnum.AI_DOC_READY,
+                  formatDocReadyMessage("upload", extractedTextChars, extractMs, extractedPageCount))
+              .userId(userId)
+              .ref("AI_DOCUMENT", entity.getId())
+              .put("documentId", entity.getId())
+              .put("step", "extract_text")
+              .put("source", "upload")
+              .put("durationMs", extractMs)
+              .put("textChars", extractedTextChars)
+              .put("estimatedTextTokens", Math.max(1, extractedTextChars / 4))
+              .put("pageCount", extractedPageCount)
+              .put("fileName", originalName)
+              .put("mimeType", entity.getMimeType()));
     }
     return toDto(entity);
   }
@@ -179,6 +208,26 @@ public class AiDocumentService {
     entity.setErrorMessage(null);
 
     aiDocumentRepository.save(entity);
+
+    int textChars = text.length();
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_DOC_READY,
+                formatDocReadyMessage("paste", textChars, 0L, 1))
+            .userId(userId)
+            .ref("AI_DOCUMENT", entity.getId())
+            .put("documentId", entity.getId())
+            .put("step", "extract_text")
+            .put("source", "paste")
+            .put("durationMs", 0)
+            .put("textChars", textChars)
+            .put("estimatedTextTokens", Math.max(1, textChars / 4))
+            .put("pageCount", 1)
+            .put("fileName", fileName)
+            .put("mimeType", entity.getMimeType()));
+
     return toDto(entity);
   }
 
@@ -227,5 +276,39 @@ public class AiDocumentService {
       return mime.substring(0, 128);
     }
     return mime.isEmpty() ? null : mime;
+  }
+
+  private static String formatDocReadyMessage(String source, int textChars, long extractMs, Integer pageCount) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("[").append(source).append("] ");
+    sb.append(formatThousands(textChars)).append(" chars (~").append(formatThousands(Math.max(1, textChars / 4)))
+        .append(" tok)");
+    if ("upload".equals(source) && extractMs > 0) {
+      sb.append(" | extract ").append(formatDuration(extractMs));
+    }
+    if (pageCount != null && pageCount > 0) {
+      sb.append(" | ").append(pageCount).append(" trang");
+    }
+    return sb.toString();
+  }
+
+  private static String formatThousands(int value) {
+    if (value >= 1_000_000) {
+      return String.format(Locale.ROOT, "%.1fM", value / 1_000_000.0);
+    }
+    if (value >= 1_000) {
+      return String.format(Locale.ROOT, "%.1fk", value / 1_000.0);
+    }
+    return String.valueOf(value);
+  }
+
+  private static String formatDuration(long durationMs) {
+    if (durationMs >= 60_000) {
+      return String.format(Locale.ROOT, "%.1f phút", durationMs / 60_000.0);
+    }
+    if (durationMs >= 1_000) {
+      return String.format(Locale.ROOT, "%.1fs", durationMs / 1_000.0);
+    }
+    return durationMs + "ms";
   }
 }

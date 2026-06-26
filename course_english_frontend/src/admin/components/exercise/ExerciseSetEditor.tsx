@@ -44,6 +44,7 @@ import type {
   MultipleChoiceQuestion,
   ReorderSentenceQuestion,
   SpellingQuestion,
+  TrueFalseQuestion,
 } from "../../../student/lessonPlayer/exercise/types";
 import { FillBlankQuestionCanvas } from "./FillBlankQuestionCanvas";
 import { GapFillMcqQuestionCanvas } from "./GapFillMcqQuestionCanvas";
@@ -57,6 +58,7 @@ import { ListenChooseQuestionCanvas } from "./ListenChooseQuestionCanvas";
 import { MatchingQuestionCanvas } from "./MatchingQuestionCanvas";
 import { McqQuestionCanvas } from "./McqQuestionCanvas";
 import { QuestionListPanel } from "./QuestionListPanel";
+import { TrueFalseQuestionCanvas } from "./TrueFalseQuestionCanvas";
 import { TypedExerciseQuestionCanvas } from "./TypedExerciseQuestionCanvas";
 
 type ExerciseSetEditorProps = {
@@ -232,6 +234,12 @@ export function ExerciseSetEditor({
           id: generateQuestionId(),
           tokens: (source as ReorderSentenceQuestion).tokens.map((t) => ({ ...t })),
           correctOrder: [...(source as ReorderSentenceQuestion).correctOrder],
+        };
+      } else if (source.type === "TRUE_FALSE") {
+        copy = {
+          ...(source as TrueFalseQuestion),
+          id: generateQuestionId(),
+          prompt: { ...(source as TrueFalseQuestion).prompt },
         };
       } else {
         copy = {
@@ -469,6 +477,15 @@ export function ExerciseSetEditor({
           ) : activeQuestion?.type === "REORDER_SENTENCE" ? (
             <ReorderSentenceQuestionCanvas
               question={activeQuestion as ReorderSentenceQuestion}
+              index={activeIndex}
+              canDelete={questions.length > 1}
+              onChange={(next) => updateQuestion(activeIndex, next)}
+              onDelete={() => deleteQuestion(activeIndex)}
+              onDuplicate={() => duplicateQuestion(activeIndex)}
+            />
+          ) : activeQuestion?.type === "TRUE_FALSE" ? (
+            <TrueFalseQuestionCanvas
+              question={activeQuestion as TrueFalseQuestion}
               index={activeIndex}
               canDelete={questions.length > 1}
               onChange={(next) => updateQuestion(activeIndex, next)}

@@ -15,6 +15,7 @@ type AiChatMessageBubbleProps = {
 export function AiChatMessageBubble({ item, onCopy, compact = false }: AiChatMessageBubbleProps) {
   const time = formatMessageTime(item.createdAt);
   const isStreaming = item.id.startsWith("stream-");
+  const isWaitingForStream = isStreaming && !item.content.trim();
 
   if (item.role === "USER") {
     return (
@@ -37,9 +38,11 @@ export function AiChatMessageBubble({ item, onCopy, compact = false }: AiChatMes
         <AutoAwesomeRoundedIcon sx={{ fontSize: compact ? 14 : 20 }} />
       </div>
       <div className="ai-assistant-msg-ai-body">
-        <div className="ai-assistant-bubble-ai">
-          {isStreaming && !item.content ? (
-            <div className="ai-assistant-typing-dots">
+        <div
+          className={`ai-assistant-bubble-ai${isWaitingForStream ? " ai-assistant-bubble-ai--typing" : ""}`}
+        >
+          {isWaitingForStream ? (
+            <div className="ai-assistant-typing-dots" aria-label="AI is typing">
               <span className="ai-assistant-typing-dot" />
               <span className="ai-assistant-typing-dot" />
               <span className="ai-assistant-typing-dot" />

@@ -83,7 +83,8 @@ function GridSessionEvent({
     <button
       type="button"
       className={`schedule-week-grid-event ${sessionTypeClass(session.sessionType)} ${uiStateClass(session.uiState)}`}
-      style={{ top: layout.topPx, height: layout.heightPx }}
+      // style={{ top: layout.topPx, height: layout.heightPx }}
+      style={{ top: layout.topPx}}
       onClick={(e) => {
         e.stopPropagation();
         onEdit(session);

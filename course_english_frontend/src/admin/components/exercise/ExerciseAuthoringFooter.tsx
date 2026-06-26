@@ -54,7 +54,15 @@ export function ExerciseAuthoringFooter({
         <Button
           size="small"
           startIcon={<AutoAwesomeOutlinedIcon />}
-          sx={muBtnSmOutlined}
+          className="ai-gen-footer-ai-btn"
+          sx={{
+            borderRadius: "6px",
+            padding: "3px 12px",
+            fontSize: 12,
+            fontWeight: 600,
+            minHeight: 28,
+            textTransform: "none",
+          }}
           onClick={onAiGen}
           disabled={!onAiGen}
         >

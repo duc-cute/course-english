@@ -16,20 +16,28 @@ public class AiQuestionPromptAssembler {
   }
 
   public String buildSystemPrompt(List<QuestionTypeEnum> questionTypes) {
+    return buildSystemPromptForTypes(questionTypes);
+  }
+
+  public String buildSystemPromptForType(QuestionTypeEnum type) {
+    return buildSystemPromptForTypes(List.of(type));
+  }
+
+  private String buildSystemPromptForTypes(List<QuestionTypeEnum> questionTypes) {
     StringBuilder sb = new StringBuilder();
     sb.append(
         """
             You are an expert English assessment item writer for a language center.
             Output ONLY valid JSON matching the envelope schema below. No markdown, no commentary.
             Questions must be grounded in the provided document excerpt — do not invent facts.
-            Each question object uses field names exactly as shown (choiceKey, choiceText, correct — NOT isCorrect).
-            Assign tempId as q1, q2, ... and selected: true for each question.
+            Use choiceText and correct (boolean) for choices — NOT isCorrect.
+            Do NOT output tempId, selected, promptLang, difficulty, displayOrder, or choiceKey — the server fills these.
 
             Envelope schema:
             {
               "schemaVersion": 1,
               "questions": [ ... ],
-              "meta": { "sourcePageRange": "1-N", "model": "..." }
+              "meta": { "sourcePageRange": "1-N" }
             }
 
             """);

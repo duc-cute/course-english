@@ -67,6 +67,12 @@ public class AiTask extends BaseObject {
   @Column(name = "error_message", columnDefinition = "TEXT")
   private String errorMessage;
 
+  @Column(name = "progress_message", length = 512)
+  private String progressMessage;
+
+  @Column(name = "progress_percent")
+  private Integer progressPercent;
+
   @Column(name = "started_at")
   private Instant startedAt;
 

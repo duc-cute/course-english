@@ -4,6 +4,8 @@ import com.courseenglish.api.service.ai.question.AiQuestionTypeHandler;
 import com.courseenglish.api.service.ai.question.dto.AiDraftQuestionDTO;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -27,8 +29,9 @@ public class FillBlankQuestionTypeHandler implements AiQuestionTypeHandler {
     return """
         FILL_BLANK:
         - Use exactly three underscores "___" per blank (NOT "____" or "______")
-        - contentJson: { "blanks": [{ "id": "b1", "acceptedAnswers": ["answer"] }], "caseSensitive": false }
+        - contentJson: { "blanks": [{ "acceptedAnswers": ["answer"] }], "caseSensitive": false }
         - blanks.length must equal the number of blank placeholders in promptText
+        - Do NOT output blank id — server assigns b1, b2, ...
         """;
   }
 
@@ -36,15 +39,11 @@ public class FillBlankQuestionTypeHandler implements AiQuestionTypeHandler {
   public String promptExampleJson() {
     return """
         {
-          "tempId": "q3",
-          "selected": true,
           "questionType": "FILL_BLANK",
           "promptText": "I ___ (go) to the park yesterday.",
-          "promptLang": "en",
           "explanation": "Past simple of go.",
-          "difficulty": 2,
           "contentJson": {
-            "blanks": [{ "id": "b1", "acceptedAnswers": ["went"] }],
+            "blanks": [{ "acceptedAnswers": ["went"] }],
             "caseSensitive": false
           }
         }""";
@@ -55,6 +54,19 @@ public class FillBlankQuestionTypeHandler implements AiQuestionTypeHandler {
     draft.setChoices(null);
     if (draft.getPromptText() != null) {
       draft.setPromptText(normalizeBlankRuns(draft.getPromptText()));
+    }
+    JsonNode node = draft.getContentJson();
+    if (node != null && node.isObject() && node.has("blanks") && node.get("blanks").isArray()) {
+      ArrayNode blanks = (ArrayNode) node.get("blanks");
+      for (int i = 0; i < blanks.size(); i++) {
+        JsonNode blank = blanks.get(i);
+        if (blank.isObject()) {
+          ObjectNode blankObj = (ObjectNode) blank;
+          if (!blankObj.has("id") || blankObj.get("id").asText("").isBlank()) {
+            blankObj.put("id", "b" + (i + 1));
+          }
+        }
+      }
     }
   }
 

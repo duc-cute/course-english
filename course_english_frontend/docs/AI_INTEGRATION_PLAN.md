@@ -1,6 +1,6 @@
 # Kế hoạch tích hợp AI (OpenRouter) — Course English LMS
 
-> Cập nhật: **23/06/2026**  
+> Cập nhật: **24/06/2026**  
 > Tham chiếu ý tưởng: `promt.md` (AI-first LMS vision)  
 > Repo: `course_english_backend` + `course_english_frontend`  
 > LLM gateway: [OpenRouter](https://openrouter.ai/) — API key **chỉ** trên backend  
@@ -90,7 +90,31 @@ React  →  Spring Boot  →  OpenRouter
 | Tối ưu context token (§1.11) | Khi chat dài / pilot mở rộng |
 | Admin UI chỉnh prompt (§1.12) | Env đủ cho dev |
 
-**Tiếp theo:** Phase 2 — PDF/Word → sinh câu hỏi → import Question Bank.
+**Tiếp theo (sản phẩm):** Ưu tiên Lesson Player / Student UI / nội dung bài học — xem `docs/REVIEW.html` mục 14, tab Student.
+
+**AI — kế hoạch sau (chưa triển khai):** Phase 3 Sprint 1 (context LMS + quick actions + attach file). Spec chi tiết §3 bên dưới; checklist §3.7 **defer** cho đến khi nền LMS ổn định.
+
+---
+
+## Phase 2 — Trạng thái triển khai (cập nhật 24/06/2026)
+
+**Phase 2 MVP — đã xong (đủ pilot GV):**
+
+| Hạng mục | Ghi chú |
+|----------|---------|
+| `ai_documents`, `ai_tasks` + extract PDF/DOCX / paste text | Migrations 022–023 |
+| Sinh câu async + poll + activity log | `AiTaskWorker`, `AiExerciseGenDialog` trong ExerciseSetEditor |
+| Preview + PATCH draft + thêm thẳng vào bài tập | Shortcut, chưa qua Question Bank |
+| Poll timeout | FE 300s, BE question-gen 180s × retry, `AI_CLIENT_POLL_TIMEOUT_MS` |
+| Inline preview edit | Expand row: stem, đáp án MCQ/TF, passage đọc hiểu |
+
+**Defer Phase 2.1 (sau Phase 3 hoặc khi cần tái sử dụng câu):**
+
+| Hạng mục | Ghi chú |
+|----------|---------|
+| `POST /tasks/{id}/import-questions` → Question Bank DRAFT | `AiQuestionImportService` |
+| Wizard `/admin/ai-question-import` | Entry riêng + link Manage Questions |
+| Integration test PDF → import 5 câu | AC6 Manage Questions |
 
 ---
 
@@ -421,7 +445,7 @@ src/
 
 | # | Hạng mục | Mô tả | Khi làm |
 |---|----------|-------|---------|
-| O1 | **Conversation summary** | Cột `ai_conversations.summary`; sau ~15–20 tin, AI tóm tắt 1 đoạn; prompt = summary + 5–10 tin gần nhất | Chat > 30 tin / user |
+| O1 | **Conversation summary** | Cột `ai_conversations.summary`; sau ~15–20 tin, AI tóm tắt 1 đoạn; prompt = summary + 5–10 tin gần nhất | Chat > 30 tin / user → **§1.13** |
 | O2 | **Sliding window có cấu hình** | Giảm `AI_MAX_CONTEXT_MESSAGES` theo role (student 10, teacher 20) | Pilot 15+ user |
 | O3 | **Truncate content trong context** | Gửi LLM: assistant message > 2KB → cắt + `...`; DB vẫn full | Response AI thường dài |
 | O4 | **Artifact tách khỏi context** | Tin `ARTIFACT_REF` không đưa JSON vào prompt; chỉ summary 1 dòng | Phase 2 |
@@ -487,6 +511,258 @@ Model trả lời theo vai trợ lý EdTech (vocabulary, grammar, lesson plan…
 - Tên assistant: **Course English** (hoặc tên trung tâm)
 - Phân biệt teacher vs student trong prompt khi mở student chat (Phase 3)
 - Tiếng Việt / tiếng Anh: trả lời theo ngôn ngữ user hoặc config
+
+---
+
+## 1.13 Conversation summary — plan triển khai (O1)
+
+> **Trạng thái:** Plan — chưa code.  
+> **Ưu tiên:** Có thể làm **độc lập Phase 3** (chỉ chat Phase 1), ước tính **3–5 ngày** BE + 0–1 ngày FE tùy chọn.  
+> **Mục tiêu:** Hội thoại dài vẫn giữ ngữ cảnh mà **không** gửi lại toàn bộ 20+ tin lên OpenRouter mỗi lần.
+
+### 1.13.1 Vấn đề hiện tại
+
+```
+Hiện tại (AiChatServiceImpl.buildHistoryPayload):
+  system prompt
+  + tối đa 20 tin gần nhất (AI_MAX_CONTEXT_MESSAGES)
+  + tin user mới
+
+Hội thoại > 20 tin → tin cũ BIẾN MẤT khỏi context (không tóm tắt).
+Assistant trả lời dài → mỗi request sau càng nặng token → chậm + đắt.
+```
+
+**DB vẫn lưu full** (`ai_messages`) — UI load-more không đổi. Chỉ thay **payload gửi OpenRouter**.
+
+### 1.13.2 Giải pháp (rolling summary)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  OpenRouter payload (mỗi lần chat)                          │
+├─────────────────────────────────────────────────────────────┤
+│  1. system prompt (LinguistAI)                               │
+│  2. [optional] block "Conversation summary so far: …"        │
+│     ← ai_conversations.summary (TEXT, cập nhật định kỳ)      │
+│  3. N tin gần nhất (AI_SUMMARY_RECENT_MESSAGES, mặc định 10) │
+│  4. tin user hiện tại                                         │
+└─────────────────────────────────────────────────────────────┘
+
+DB: toàn bộ ai_messages giữ nguyên — không xóa, không cắt.
+```
+
+**Nguyên tắc:** Summary = **nén phần đã qua**, recent window = **chi tiết đoạn gần đây**. Giống §1.11 — không chuyển sang single-turn.
+
+### 1.13.3 Khi nào tạo / cập nhật summary
+
+| Trigger | Điều kiện | Hành vi |
+|---------|-----------|---------|
+| **T1 — Ngưỡng tin** | `messageCount >= AI_SUMMARY_TRIGGER_MESSAGES` (mặc định **16** cặp user+assistant ≈ 32 row) | Chạy summarizer |
+| **T2 — Sau mỗi chunk** | Có summary cũ + thêm `>= AI_SUMMARY_REFRESH_EVERY` tin mới kể từ `summary_updated_at` (mặc định **10** tin) | **Merge** summary cũ + tin “đã rời window” |
+| **T3 — Không block chat** | Mọi T1/T2 | Chạy **async** sau khi lưu turn thành công; chat tiếp dùng summary cũ đến khi refresh xong |
+
+**Lần đầu (chưa có summary):** Lấy các tin **cũ hơn** recent window (ví dụ tin 1…N-10), gửi model rẻ → paragraph summary.
+
+**Lần sau (đã có summary):** Input = `summary hiện tại` + batch tin mới “rời window” → summary mới (rolling merge).
+
+**Không summarize** khi conversation < trigger (giữ behavior Phase 1).
+
+### 1.13.4 Data model
+
+**Migration `027_ai_conversation_summary.sql`:**
+
+```sql
+ALTER TABLE ai_conversations
+  ADD COLUMN summary TEXT NULL COMMENT 'Rolling summary for OpenRouter context',
+  ADD COLUMN summary_updated_at DATETIME(6) NULL,
+  ADD COLUMN summary_covers_through_message_id CHAR(36) NULL COMMENT 'Last message id included in summary',
+  ADD COLUMN summary_message_count INT NOT NULL DEFAULT 0 COMMENT 'Paired turns covered at last refresh';
+```
+
+| Cột | Mô tả |
+|-----|--------|
+| `summary` | Đoạn tóm tắt tiếng Việt/Anh (theo ngôn ngữ chủ đạo hội thoại) |
+| `summary_updated_at` | Lần refresh cuối |
+| `summary_covers_through_message_id` | Cursor — tin cuối đã đưa vào summary |
+| `summary_message_count` | Số turn đã cover (debug / trigger T2) |
+
+**Không** tạo bảng `ai_conversation_summaries` lịch sử v1 — chỉ 1 summary hiện tại/conv. (Audit sau nếu cần.)
+
+### 1.13.5 Backend — component mới
+
+```
+service/ai/chat/
+├── AiConversationSummaryService.java    // orchestration: shouldRefresh?, refreshAsync
+├── AiConversationSummaryPrompt.java     // system + user template summarize
+└── AiChatContextAssembler.java          // tách từ AiChatServiceImpl.buildHistoryPayload
+```
+
+#### `AiChatContextAssembler.buildPayload(conversation, currentUserContent)`
+
+1. Load `AiConversation` (+ `summary` nếu có).
+2. Load recent `AI_SUMMARY_RECENT_MESSAGES` tin (paired only, giữ `keepCompletedTurnsOnly`).
+3. Nếu `summary` không blank → inject sau system prompt:
+
+```
+Previous conversation summary (for context only):
+---
+{summary}
+---
+```
+
+4. Append recent messages + current user message.
+
+#### `AiConversationSummaryService`
+
+- `maybeScheduleRefresh(conversationId)` — gọi sau `persistTurnAfterAiSuccess` (sync + stream).
+- `@Async` `refreshSummary(conversationId)`:
+  - Lock optimistic: `summary_updated_at` hoặc version (tránh 2 job song song).
+  - Query messages **older than** recent window, **newer than** `summary_covers_through_message_id`.
+  - Gọi `OpenRouterClient.chat()` model **`AI_SUMMARY_MODEL`** (mặc định `google/gemini-2.0-flash-001` — rẻ, nhanh).
+  - Lưu `summary`, cập nhật cursor + `summary_updated_at`.
+  - Activity log `AI_CHAT_SUMMARY` (mới).
+
+**Prompt summarize (gợi ý):**
+
+```
+System: You compress chat history for an English-teaching assistant.
+Keep: topics discussed, user goals, corrections, vocabulary/grammar points, open questions.
+Drop: greetings, filler. Same language as the transcript. Max 400 words. Plain text only.
+
+User:
+[Existing summary — if any]
+---
+[New messages to merge]
+---
+Update the summary.
+```
+
+### 1.13.6 Config (`.env` / `application.properties`)
+
+| Key | Mặc định | Mô tả |
+|-----|----------|--------|
+| `AI_SUMMARY_ENABLED` | `true` | Feature toggle |
+| `AI_SUMMARY_MODEL` | `google/gemini-2.0-flash-001` | Model chỉ cho summarize |
+| `AI_SUMMARY_TRIGGER_MESSAGES` | `16` | Số **cặp** turn trước khi bật summary |
+| `AI_SUMMARY_RECENT_MESSAGES` | `10` | Số tin gần nhất gửi kèm summary |
+| `AI_SUMMARY_REFRESH_EVERY` | `10` | Mỗi N tin mới → refresh summary |
+| `AI_SUMMARY_MAX_CHARS` | `4000` | Cắt summary khi inject context |
+| `AI_MAX_CONTEXT_MESSAGES` | `20` | Giữ; khi summary ON, effective recent = `RECENT_MESSAGES` |
+
+**Quan hệ:** `RECENT_MESSAGES` ≤ `MAX_CONTEXT_MESSAGES`. Khi summary bật, `buildPayload` dùng `RECENT_MESSAGES` thay vì 20 full.
+
+### 1.13.7 Luồng end-to-end
+
+```mermaid
+sequenceDiagram
+  participant U as GV
+  participant FE as LinguistAI
+  participant BE as AiChatService
+  participant OR as OpenRouter
+  participant SUM as SummaryService
+
+  U->>FE: Gửi tin
+  FE->>BE: POST messages (SSE)
+  BE->>BE: buildPayload(summary + 10 tin gần)
+  BE->>OR: chat / stream
+  OR-->>BE: assistant reply
+  BE->>BE: persist user + assistant
+  BE-->>FE: done
+  BE->>SUM: maybeScheduleRefresh (async)
+  SUM->>OR: summarize (flash model)
+  SUM->>BE: UPDATE ai_conversations.summary
+```
+
+### 1.13.8 Activity log
+
+| Action | Khi | context_json |
+|--------|-----|----------------|
+| `AI_CHAT_SUMMARY` | Refresh bắt đầu / xong / lỗi | `conversationId`, `durationMs`, `inputMessageCount`, `summaryChars`, `model` |
+
+Thêm vào `ActivityLogActionEnum` + FE `activityLog.ts`.
+
+### 1.13.9 Frontend (tùy chọn v1)
+
+| Hạng mục | Bắt buộc? | Ghi chú |
+|----------|-----------|---------|
+| Chat UX | Không đổi | User không cần thấy summary |
+| Admin debug | Tuỳ chọn | `GET /conversations/{id}` trả `summaryPreview` (truncate 200 chars) — chỉ admin |
+| Activity log | Có (filter) | GV xem refresh có chạy / mất bao lâu |
+
+**Không** hiện summary trong bubble chat v1.
+
+### 1.13.10 Kết hợp O3 (truncate tin dài) — phase nhỏ cùng sprint
+
+Trong `AiChatContextAssembler`, trước khi add message vào payload:
+
+- `assistant` content > `AI_CONTEXT_MESSAGE_MAX_CHARS` (2048) → `substring + "\n...(truncated for context)"`
+- DB vẫn full content
+
+Làm cùng sprint summary vì cùng file assembler — **~0.5 ngày thêm**.
+
+### 1.13.11 Acceptance criteria
+
+| ID | Tiêu chí |
+|----|----------|
+| AC-SUM-1 | Hội thoại 40+ tin: AI vẫn nhắc chủ đề từ **đầu thread** (manual test 3 câu hỏi follow-up) |
+| AC-SUM-2 | `ai_messages` không mất dòng; UI load-more vẫn đủ lịch sử |
+| AC-SUM-3 | Conversation < 16 turn: behavior giống hiện tại (không summary block) |
+| AC-SUM-4 | Summary refresh **không** làm chậm response chat (async) |
+| AC-SUM-5 | Activity log có `AI_CHAT_SUMMARY` + `durationMs` |
+| AC-SUM-6 | `AI_SUMMARY_ENABLED=false` → fallback window 20 tin như Phase 1 |
+
+### 1.13.12 Checklist triển khai
+
+**Database**
+
+- [ ] Migration `027_ai_conversation_summary.sql`
+
+**Backend**
+
+- [ ] Entity `AiConversation` + DTO fields
+- [ ] `AiChatContextAssembler` — summary block + recent window + O3 truncate
+- [ ] Refactor `AiChatServiceImpl` dùng assembler (sync + stream)
+- [ ] `AiConversationSummaryService` + `@Async` executor (reuse `aiStreamExecutor` hoặc `aiTaskExecutor`)
+- [ ] `AI_CHAT_SUMMARY` activity log
+- [ ] Config keys + `.env.example`
+- [ ] Unit test: `buildPayload` with/without summary; trigger threshold
+
+**Frontend**
+
+- [ ] (Optional) `summaryPreview` trên GET conversation
+- [ ] `AI_CHAT_SUMMARY` label trong Activity Logs filter
+
+**Test thủ công**
+
+- [ ] Script/chat 25 turn → kiểm tra DB `summary` populated
+- [ ] Hỏi “Ở đầu ta bàn gì?” sau turn 30 → AI trả lời đúng chủ đề đầu
+- [ ] So sánh token usage (usage stats) trước/sau trên cùng 30 turn
+
+### 1.13.13 Rủi ro & giảm thiểu
+
+| Rủi ro | Giảm thiểu |
+|--------|------------|
+| Summary sai / mất chi tiết | Recent window 10 tin giữ chi tiết gần; prompt nhấn “keep corrections, open questions” |
+| 2 refresh song song | Cursor `summary_covers_through_message_id` + skip nếu job đang chạy (in-memory set hoặc DB flag) |
+| Thêm 1 call OpenRouter/10 tin | Model flash rẻ; `AI_SUMMARY_ENABLED` tắt được |
+| Summary quá dài | `AI_SUMMARY_MAX_CHARS` cắt khi inject |
+
+### 1.13.14 Phạm vi ngoài (v1)
+
+- Summary theo **lesson/classroom context** (Phase 3 Sprint 1) — summary chỉ nén **lịch sử chat**, không inject LMS metadata.
+- Hiển thị summary cho user chỉnh sửa.
+- Vector RAG / tìm tin cũ theo semantic.
+- Student coach persona — cùng engine, khác prompt summarize (Phase sau).
+
+### 1.13.15 Thứ tự làm (đề xuất)
+
+```
+Ngày 1   Migration + entity + AiChatContextAssembler (không summary, chỉ tách code + O3 truncate)
+Ngày 2   Summary service + async refresh + config
+Ngày 3   Wire AiChatServiceImpl + activity log + manual test 30 turn
+Ngày 4   (Optional) admin preview + tune prompt/threshold
+```
+
+**Sau khi xong O1:** có thể bật **O5 token budget** nếu vẫn nặng; **O2** role-based window ít ưu tiên hơn.
 
 ---
 
@@ -1086,30 +1362,250 @@ Return JSON only.
 
 ### Backend
 
-- [ ] Entity `AiDocument`, `AiTask`
-- [ ] `DocumentTextExtractor` (PDF + DOCX)
-- [ ] `AiDocumentController`, `AiTaskController`
-- [ ] `AiQuestionTypeHandler` + registry (MCQ, TF, FILL)
-- [ ] `AiQuestionPromptAssembler` + `AiQuestionGenResultValidator`
-- [ ] `AiQuestionGenerationService` + prompt template
-- [ ] `AiTaskWorker` (@Async)
-- [ ] `AiQuestionImportService` → registry → `QuestionService`
+- [x] Entity `AiDocument`, `AiTask`
+- [x] `DocumentTextExtractor` (PDF + DOCX)
+- [x] `AiDocumentController`, `AiTaskController`
+- [x] `AiQuestionTypeHandler` + registry (MCQ, TF, FILL, READING)
+- [x] `AiQuestionPromptAssembler` + `AiQuestionGenResultValidator`
+- [x] `AiQuestionGenerationService` + prompt template
+- [x] `AiTaskWorker` (@Async)
+- [ ] `AiQuestionImportService` → registry → `QuestionService` **(Phase 2.1)**
 - [x] `PATCH /tasks/{id}/draft`
-- [ ] Config limits + daily gen quota
-- [ ] Integration test: sample PDF → import 5 câu
+- [x] Config limits + daily gen quota
+- [x] Poll timeout config (`question-gen-timeout-sec`, `client-poll-timeout-ms`)
+- [ ] Integration test: sample PDF → import 5 câu **(Phase 2.1)**
 
 ### Frontend
 
-- [ ] `AiQuestionImportPage` wizard
-- [ ] API client `aiDocument.ts`, `aiTask.ts`
-- [ ] `src/shared/ai/questionGen/` registry + 3 handlers
-- [ ] Preview expand row → Mcq / TF / Fill editors (reuse canvas)
-- [ ] Link từ `ManageQuestionsPage`
-- [ ] Error states: file quá lớn, extract fail, gen fail
+- [ ] `AiQuestionImportPage` wizard **(Phase 2.1)**
+- [x] API client `aiTask.ts` (+ documents trong cùng module)
+- [x] `src/shared/ai/questionGen/` types + draft mappers
+- [x] Preview expand row → inline stem / choices / passage (`AiDraftPreviewRow`)
+- [x] Entry từ `ExerciseSetEditor` (`AiExerciseGenDialog`)
+- [ ] Link từ `ManageQuestionsPage` **(Phase 2.1)**
+- [x] Error states: file quá lớn, extract fail, gen fail, poll timeout
 
 ---
 
-# PHASE 3 — Tóm tắt (chưa triển khai chi tiết)
+# PHASE 3 — Context LMS & Teacher AI (chi tiết)
+
+> **Trạng thái 24/06/2026:** **Chưa triển khai** — tài liệu spec + checklist cho Sprint 1/2.  
+> Đồng bộ quyết định sản phẩm: `docs/REVIEW.html` §17.2. Phase 1 + Phase 2 MVP đã đủ pilot GV cơ bản.
+
+**Thời gian:** 1–2 tháng (khi bắt đầu). **Sprint 1** (3–4 tuần) ưu tiên **giáo viên**; Sprint 2 mở **học sinh** + tối ưu token.
+
+## 3.1 Mục tiêu Phase 3
+
+Biến LinguistAI từ chat generic thành **trợ lý gắn LMS**:
+
+```
+GV mở chat từ ngữ cảnh (bài học / lớp / kế hoạch dạy)
+  → AI biết lesson title, objectives, vocabulary
+  → Quick actions (1 click) thay vì gõ prompt dài
+  → Đính kèm PDF/ảnh trong chat → vision / extract
+  → (Sprint 2) HS coach trong Lesson Reader
+```
+
+**Không làm trong Sprint 1:** Student UI, RAG vector, exam generator, conversation summary (O1 §1.11).
+
+---
+
+## 3.2 Sprint 1 — Phạm vi (Teacher only)
+
+| # | Khối | Mô tả ngắn | Ưu tiên |
+|---|------|------------|---------|
+| S1-A | **Context LMS** | `lessonId` / `classroomId` / `classSessionId` trên conversation; inject metadata vào system prompt | P0 |
+| S1-B | **Quick actions** | Chip gợi ý + API gửi tin có `actionKey` | P0 |
+| S1-C | **File attach chat** | Upload ảnh/PDF trong composer → `ai_documents` + message `ARTIFACT_REF` | P1 |
+| S1-D | **Entry points GV** | FAB / drawer từ Lesson editor, Teaching plan, Exercise editor | P0 |
+| S1-E | **ARTIFACT_REF gen câu** | Từ chat: “Sinh 10 câu từ file vừa gửi” → mở preview / link task | P1 |
+
+**Defer Sprint 2:** Student coach, `ai_conversations.summary`, token budget O1–O5, admin prompt UI (P2).
+
+---
+
+## 3.3 Data model (migration Sprint 1)
+
+### `ai_conversations` — thêm cột
+
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| `context_type` | VARCHAR(32) | `GENERAL` \| `LESSON` \| `CLASSROOM` \| `CLASS_SESSION` \| `TEACHING_PLAN` |
+| `lesson_id` | CHAR(36) NULL | FK logic tới `lessons` |
+| `classroom_id` | CHAR(36) NULL | FK logic tới `classrooms` |
+| `class_session_id` | CHAR(36) NULL | Buổi học trên teaching plan |
+| `context_snapshot_json` | TEXT NULL | Cache metadata đã load lúc tạo hội thoại (title, level, …) |
+
+Index: `(user_id, context_type, lesson_id)`.
+
+### `ai_messages` — mở rộng
+
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| `message_kind` | VARCHAR(24) | `TEXT` (default) \| `ARTIFACT_REF` |
+| `artifact_type` | VARCHAR(32) NULL | `AI_DOCUMENT` \| `AI_TASK` \| `FILE` |
+| `artifact_id` | CHAR(36) NULL | UUID tham chiếu |
+| `action_key` | VARCHAR(64) NULL | Quick action đã dùng (audit) |
+
+**Quy tắc:** `ARTIFACT_REF.content` = summary 1–2 dòng cho UI; JSON nặng **không** đưa vào OpenRouter context (O4 §1.11).
+
+---
+
+## 3.4 Backend — Sprint 1
+
+### `AiContextResolverService`
+
+Input: `contextType` + ids. Output: `AiLmsContextDTO` (plain text block cho prompt).
+
+| Context | Nguồn dữ liệu | Inject vào prompt |
+|---------|---------------|-------------------|
+| `LESSON` | `Lesson`, `LessonBlock` (text), `Subject` | Title, mô tả, danh sách block (truncate 4KB) |
+| `CLASSROOM` | `Classroom`, `Enrollment` count | Tên lớp, trình độ, sĩ số |
+| `CLASS_SESSION` | `ClassSession` + linked `Lesson` | Buổi học, ngày, lesson gắn buổi |
+| `TEACHING_PLAN` | Tuần hiện tại từ `ClassSession` search | Lịch 7 ngày tóm tắt |
+
+Staff-only; validate user có quyền xem entity (teacher của lớp / admin).
+
+### `AiChatPromptAssembler` (mới)
+
+```
+system = base AI_SYSTEM_PROMPT
+       + teacher persona block
+       + optional LMS context block (từ AiContextResolver)
+       + hướng dẫn quick actions có sẵn
+history = window 20 tin (giữ Phase 1)
+user = tin hiện tại (+ optional selected text từ client)
+```
+
+### API contract (bổ sung Phase 1)
+
+Base: `/api/v1/ai`
+
+| Method | Path | Thay đổi |
+|--------|------|----------|
+| `POST` | `/conversations` | Body thêm `contextType`, `lessonId`, `classroomId`, `classSessionId` |
+| `GET` | `/conversations/{id}` | Response thêm context fields + `availableQuickActions[]` |
+| `POST` | `/conversations/{id}/messages` | Body thêm `actionKey`, `selectedText`, `attachmentDocumentIds[]` |
+| `POST` | `/conversations/{id}/attachments` | Multipart ảnh/PDF → `ai_documents`, trả `documentId` |
+
+### Quick actions (Sprint 1)
+
+| `actionKey` | Label UI | Hành vi server |
+|-------------|----------|----------------|
+| `EXPLAIN_GRAMMAR` | Giải thích ngữ pháp | User message template + context |
+| `EXPLAIN_SELECTION` | Giải thích đoạn đã chọn | Cần `selectedText` từ FE |
+| `SUGGEST_LESSON_ACTIVITIES` | Gợi ý hoạt động bài học | Dùng lesson blocks |
+| `DRAFT_WEEKLY_PLAN` | Gợi ý plan tuần | `CLASSROOM` / teaching plan context |
+| `GEN_QUESTIONS_FROM_DOC` | Sinh câu từ file đính kèm | Tạo `ai_task`, trả `ARTIFACT_REF` |
+
+Mỗi action: `AiQuickActionHandler` registry (mở rộng sau không sửa controller).
+
+### File attach
+
+- Ảnh (png/jpg/webp, max 5MB): model vision `openai/gpt-4o` hoặc `google/gemini-2.0-flash` (config `AI_VISION_MODEL`).
+- PDF/DOCX: reuse `AiDocumentService` extract text; **không** gửi full text vào chat — chỉ excerpt 2KB + link document.
+- Quota: tối đa 3 attachment / conversation / ngày (config).
+
+---
+
+## 3.5 Frontend — Sprint 1
+
+### Entry points (teacher)
+
+| Màn hình | Hành vi |
+|----------|---------|
+| `AiAssistantPage` | Chat general (giữ nguyên) |
+| `ManageLessonPage` / lesson editor | Nút “Hỏi AI về bài này” → tạo conv `LESSON` |
+| `TeacherSchedulePage` / teaching plan | Click buổi học → “AI gợi ý” → `CLASS_SESSION` |
+| `ExerciseSetEditor` | Đã có gen câu; thêm “Mở chat về bài tập” (lesson link) |
+
+### UI component
+
+```
+src/shared/ai/context/
+├── types.ts                    // AiContextType, AiLmsContext
+├── quickActions.ts             // actionKey → label, icon, requiredContext
+└── useAiConversationContext.ts
+
+src/admin/components/ai/
+├── AiContextBanner.tsx         // Hiện lesson/lớp đang gắn
+├── AiQuickActionChips.tsx      // Chip bar trên composer
+├── AiChatAttachmentButton.tsx  // Upload ảnh/PDF
+└── AiArtifactMessage.tsx       // Bubble link tới task/document
+```
+
+### Composer flow
+
+1. User chọn quick action → prefill input (có thể chỉnh).
+2. Attach file → `POST attachments` → hiện chip file.
+3. Gửi → `POST messages` với `actionKey` + `attachmentDocumentIds`.
+4. Nếu response `ARTIFACT_REF` + `AI_TASK` → nút “Xem preview câu hỏi” mở `AiExerciseGenDialog` read-only hoặc poll task.
+
+### State
+
+- `AiAssistantDrawerContext` nhận optional `initialContext` khi mở từ lesson/plan.
+- Sidebar conversation list: badge icon theo `contextType`.
+
+---
+
+## 3.6 Acceptance criteria — Sprint 1
+
+| ID | Tiêu chí |
+|----|----------|
+| AC-S1-1 | Tạo hội thoại từ lesson editor → AI trả lời có nhắc đúng **tên bài** (không bịa) |
+| AC-S1-2 | Quick action “Giải thích ngữ pháp” hoạt động không cần gõ prompt dài |
+| AC-S1-3 | Đính PDF trong chat → AI tóm tắt nội dung file; full text không nằm trong bubble |
+| AC-S1-4 | `GEN_QUESTIONS_FROM_DOC` tạo task → user mở preview (reuse Phase 2 dialog) |
+| AC-S1-5 | Conversation không có context vẫn hoạt động như Phase 1 |
+| AC-S1-6 | Activity log: `AI_CHAT_CONTEXT`, `AI_CHAT_ATTACH`, `AI_QUICK_ACTION` |
+
+---
+
+## 3.7 Checklist triển khai — Sprint 1
+
+### Database
+
+- [ ] Migration `027_ai_conversation_context.sql`
+- [ ] Migration `028_ai_message_artifact.sql`
+
+### Backend
+
+- [ ] `AiContextTypeEnum`, entity fields
+- [ ] `AiContextResolverService` + lesson/classroom/session loaders
+- [ ] `AiChatPromptAssembler` refactor từ `AiChatServiceImpl`
+- [ ] `AiQuickActionRegistry` + 5 handlers Sprint 1
+- [ ] `POST /conversations/{id}/attachments`
+- [ ] Extend `POST /conversations`, `POST /messages`
+- [ ] Vision path trong `OpenRouterClient` (multimodal content)
+- [ ] Activity log actions mới
+
+### Frontend
+
+- [ ] `useAiConversationContext`, context banner, quick action chips
+- [ ] Attachment button + artifact message bubble
+- [ ] Entry: lesson editor + teaching plan
+- [ ] Wire `GEN_QUESTIONS_FROM_DOC` → existing task poll UI
+- [ ] API client updates `shared/api/aiChat.ts`
+
+### Test / pilot
+
+- [ ] 2 GV thử: 1 bài lesson + 1 file PDF trong chat
+- [ ] Kiểm tra token usage không tăng > 2× so với chat không context (sample 10 tin)
+
+---
+
+## 3.8 Sprint 2 preview (không làm trong Sprint 1)
+
+| Khối | Mô tả |
+|------|-------|
+| Student AI Coach | `LessonReaderPage` — grammar Q&A, prompt student persona |
+| Conversation summary | O1 §1.11 — cột `summary` |
+| Phase 2.1 import bank | Nếu pilot GV cần tái sử dụng câu |
+| Admin prompt UI | P2 §1.12 |
+
+---
+
+# PHASE 3 — Tóm tắt (toàn phase)
 
 **Thời gian:** 1–2 tháng sau Phase 2.
 
@@ -1172,7 +1668,8 @@ Return JSON only.
 
 ## Bước tiếp theo đề xuất
 
-1. Implement **Phase 1** backend trước (OpenRouter + SSE + entity).
-2. FE chat tối thiểu để validate streaming end-to-end.
-3. Phase 2 song song thiết kế prompt + JSON schema với 2–3 PDF mẫu thật của trung tâm.
-4. Pilot với 2–3 giáo viên trước khi mở student.
+1. ~~Phase 1~~ — done.
+2. ~~Phase 2 MVP~~ — done (gen câu + preview + thêm bài tập).
+3. **Sản phẩm ưu tiên:** Lesson blocks, Student UI, enrollment filter — `REVIEW.html` mục 13–14, tab Student.
+4. **AI (khi sẵn sàng):** Phase 3 Sprint 1 — migration context → `AiContextResolver` → quick actions → attach file.
+5. Pilot 2–3 GV trên AI; sau đó Sprint 2 (student coach) hoặc Phase 2.1 (import bank) tùy feedback.

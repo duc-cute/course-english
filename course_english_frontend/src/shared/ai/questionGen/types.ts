@@ -28,6 +28,12 @@ export type AiQuestionGenEnvelope = {
     sourcePageRange?: string;
     model?: string;
     requestedTypes?: QuestionType[];
+    requestedCount?: number;
+    validCount?: number;
+    invalidCount?: number;
+    generationMode?: string;
+    batchCount?: number;
+    summaryMessage?: string;
   };
 };
 

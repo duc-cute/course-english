@@ -33,18 +33,15 @@ public class ReadingComprehensionQuestionTypeHandler implements AiQuestionTypeHa
         - promptText: optional short title for the passage (or leave empty)
         - contentJson:
           {
-            "passage": { "title": "", "text": "full passage from document", "lang": "en" },
-            "presentation": "split",
+            "passage": { "title": "", "text": "full passage from document" },
             "subQuestions": [
               {
-                "id": "sq1",
                 "promptText": "According to the passage, ...",
-                "promptLang": "en",
                 "choices": [
-                  { "choiceKey": "a", "choiceText": "...", "correct": false, "displayOrder": 0 },
-                  { "choiceKey": "b", "choiceText": "...", "correct": true, "displayOrder": 1 },
-                  { "choiceKey": "c", "choiceText": "...", "correct": false, "displayOrder": 2 },
-                  { "choiceKey": "d", "choiceText": "...", "correct": false, "displayOrder": 3 }
+                  { "choiceText": "...", "correct": false },
+                  { "choiceText": "...", "correct": true },
+                  { "choiceText": "...", "correct": false },
+                  { "choiceText": "...", "correct": false }
                 ],
                 "explanation": "..."
               }
@@ -52,7 +49,7 @@ public class ReadingComprehensionQuestionTypeHandler implements AiQuestionTypeHa
           }
         - passage.text must be copied or closely paraphrased from the document excerpt
         - Each subQuestion needs exactly 4 choices and exactly one correct: true
-        - For true/false statements about the passage, use 4 choices e.g. True, False, Not given, Not stated
+        - Do NOT output id, choiceKey, displayOrder, promptLang, presentation, or passage.lang
         - Do NOT use choices[] at the top level
         """;
   }
@@ -61,42 +58,31 @@ public class ReadingComprehensionQuestionTypeHandler implements AiQuestionTypeHa
   public String promptExampleJson() {
     return """
         {
-          "tempId": "q1",
-          "selected": true,
           "questionType": "READING_COMPREHENSION",
           "promptText": "Family and social media",
-          "promptLang": "en",
-          "explanation": "",
-          "difficulty": 2,
           "contentJson": {
             "passage": {
               "title": "Family and social media",
-              "text": "Every morning, Tom wakes up at six o'clock. He brushes his teeth and eats breakfast with his family. Then he walks to school with his best friend, Anna.",
-              "lang": "en"
+              "text": "Every morning, Tom wakes up at six o'clock. He brushes his teeth and eats breakfast with his family. Then he walks to school with his best friend, Anna."
             },
-            "presentation": "split",
             "subQuestions": [
               {
-                "id": "sq1",
                 "promptText": "What time does Tom wake up?",
-                "promptLang": "en",
                 "choices": [
-                  { "choiceKey": "a", "choiceText": "6 o'clock", "correct": true, "displayOrder": 0 },
-                  { "choiceKey": "b", "choiceText": "7 o'clock", "correct": false, "displayOrder": 1 },
-                  { "choiceKey": "c", "choiceText": "8 o'clock", "correct": false, "displayOrder": 2 },
-                  { "choiceKey": "d", "choiceText": "9 o'clock", "correct": false, "displayOrder": 3 }
+                  { "choiceText": "6 o'clock", "correct": true },
+                  { "choiceText": "7 o'clock", "correct": false },
+                  { "choiceText": "8 o'clock", "correct": false },
+                  { "choiceText": "9 o'clock", "correct": false }
                 ],
                 "explanation": "The passage says six o'clock."
               },
               {
-                "id": "sq2",
                 "promptText": "Tom walks to school alone.",
-                "promptLang": "en",
                 "choices": [
-                  { "choiceKey": "a", "choiceText": "True", "correct": false, "displayOrder": 0 },
-                  { "choiceKey": "b", "choiceText": "False", "correct": true, "displayOrder": 1 },
-                  { "choiceKey": "c", "choiceText": "Not given", "correct": false, "displayOrder": 2 },
-                  { "choiceKey": "d", "choiceText": "Not stated", "correct": false, "displayOrder": 3 }
+                  { "choiceText": "True", "correct": false },
+                  { "choiceText": "False", "correct": true },
+                  { "choiceText": "Not given", "correct": false },
+                  { "choiceText": "Not stated", "correct": false }
                 ],
                 "explanation": "He walks with Anna."
               }

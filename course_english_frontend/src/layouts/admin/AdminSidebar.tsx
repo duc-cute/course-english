@@ -35,18 +35,22 @@ import { paths } from "../../shared/constants/paths";
 
 type AdminSidebarProps = {
   mobileOpen: boolean;
-  onToggleSidebar: () => void;
+  desktopCollapsed: boolean;
+  onCloseMobileSidebar: () => void;
 };
 
-const drawerPaperSx = {
-  width: ADMIN_DRAWER_WIDTH,
+const ADMIN_MINI_DRAWER_WIDTH = 64;
+
+const drawerPaperSx = (collapsed: boolean) => ({
+  width: collapsed ? ADMIN_MINI_DRAWER_WIDTH : ADMIN_DRAWER_WIDTH,
   boxSizing: "border-box" as const,
-  borderRight: "1px solid var(--ac-outline-variant, #c3c6d7)",
-  bgcolor: "var(--ac-surface, #f8f9ff)",
+  borderRight: "1px solid #e2e8f0",
+  bgcolor: "#ffffff",
+  boxShadow: "2px 0 8px -4px rgba(0, 0, 0, 0.05)",
   overflow: "hidden",
-};
+});
 
-export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps) {
+export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSidebar }: AdminSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -141,8 +145,8 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
     [],
   );
 
-  const drawerContent = (
-    <Box className="admin-sidebar-inner">
+  const renderDrawerContent = (collapsed: boolean) => (
+    <Box className={`admin-sidebar-inner ${collapsed ? "collapsed" : ""}`}>
       <Stack direction="row" alignItems="center" spacing={1.5} className="admin-sidebar-brand">
         <Box className="admin-sidebar-brand-icon">
           <SchoolOutlinedIcon fontSize="small" />
@@ -169,7 +173,9 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
                 className={`admin-nav-item ${isActive ? "active" : ""}`}
                 onClick={() => {
                   navigate(item.to);
-                  onToggleSidebar();
+                  if (mobileOpen) {
+                    onCloseMobileSidebar();
+                  }
                 }}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
@@ -186,7 +192,9 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
             className="admin-nav-item"
             onClick={() => {
               navigate(`/${paths.STUDENT}`);
-              onToggleSidebar();
+              if (mobileOpen) {
+                onCloseMobileSidebar();
+              }
             }}
           >
             <ListItemIcon>
@@ -218,17 +226,17 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
       <Drawer
         variant="temporary"
         open={mobileOpen}
-        onClose={onToggleSidebar}
+        onClose={onCloseMobileSidebar}
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
-            ...drawerPaperSx,
+            ...drawerPaperSx(false),
             height: "100%",
           },
         }}
       >
-        {drawerContent}
+        {renderDrawerContent(false)}
       </Drawer>
       <Drawer
         variant="permanent"
@@ -236,16 +244,16 @@ export function AdminSidebar({ mobileOpen, onToggleSidebar }: AdminSidebarProps)
         className="admin-sidebar-drawer"
         sx={{
           display: { xs: "none", md: "block" },
-          width: ADMIN_DRAWER_WIDTH,
+          width: desktopCollapsed ? ADMIN_MINI_DRAWER_WIDTH : ADMIN_DRAWER_WIDTH,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            ...drawerPaperSx,
+            ...drawerPaperSx(desktopCollapsed),
             position: "relative",
             height: "100vh",
           },
         }}
       >
-        {drawerContent}
+        {renderDrawerContent(desktopCollapsed)}
       </Drawer>
     </>
   );

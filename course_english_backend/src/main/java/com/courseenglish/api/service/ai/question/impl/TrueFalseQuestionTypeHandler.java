@@ -30,13 +30,9 @@ public class TrueFalseQuestionTypeHandler implements AiQuestionTypeHandler {
   public String promptExampleJson() {
     return """
         {
-          "tempId": "q2",
-          "selected": true,
           "questionType": "TRUE_FALSE",
           "promptText": "London is the capital of France.",
-          "promptLang": "en",
           "explanation": "Paris is the capital of France.",
-          "difficulty": 1,
           "contentJson": { "correctAnswer": false }
         }""";
   }

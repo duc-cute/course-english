@@ -12,25 +12,51 @@ import "../../styles/student/notifications.css";
 
 export function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
 
-  const toggleDrawer = () => {
+  const toggleMobileDrawer = () => {
     setMobileOpen((prev) => !prev);
+  };
+
+  const closeMobileDrawer = () => {
+    setMobileOpen(false);
+  };
+
+  const toggleDesktopSidebar = () => {
+    setDesktopCollapsed((prev) => !prev);
   };
 
   return (
     <AiAssistantDrawerProvider onBeforeOpenDrawer={() => setMobileOpen(false)}>
-      <AdminLayoutShell mobileOpen={mobileOpen} onToggleSidebar={toggleDrawer} onOpenAdminMenu={() => setMobileOpen(true)} />
+      <AdminLayoutShell
+        mobileOpen={mobileOpen}
+        desktopCollapsed={desktopCollapsed}
+        onToggleMobileSidebar={toggleMobileDrawer}
+        onCloseMobileSidebar={closeMobileDrawer}
+        onToggleDesktopSidebar={toggleDesktopSidebar}
+        onOpenAdminMenu={() => setMobileOpen(true)}
+      />
     </AiAssistantDrawerProvider>
   );
 }
 
 type AdminLayoutShellProps = {
   mobileOpen: boolean;
-  onToggleSidebar: () => void;
+  desktopCollapsed: boolean;
+  onToggleMobileSidebar: () => void;
+  onCloseMobileSidebar: () => void;
+  onToggleDesktopSidebar: () => void;
   onOpenAdminMenu: () => void;
 };
 
-function AdminLayoutShell({ mobileOpen, onToggleSidebar, onOpenAdminMenu }: AdminLayoutShellProps) {
+function AdminLayoutShell({
+  mobileOpen,
+  desktopCollapsed,
+  onToggleMobileSidebar,
+  onCloseMobileSidebar,
+  onToggleDesktopSidebar,
+  onOpenAdminMenu,
+}: AdminLayoutShellProps) {
   const { registerOpenAdminMenu, unregisterOpenAdminMenu } = useAiAssistantDrawer();
 
   useEffect(() => {
@@ -40,9 +66,17 @@ function AdminLayoutShell({ mobileOpen, onToggleSidebar, onOpenAdminMenu }: Admi
 
   return (
     <Box className="admin-layout-root">
-      <AdminSidebar mobileOpen={mobileOpen} onToggleSidebar={onToggleSidebar} />
+      <AdminSidebar
+        mobileOpen={mobileOpen}
+        desktopCollapsed={desktopCollapsed}
+        onCloseMobileSidebar={onCloseMobileSidebar}
+      />
       <Box className="admin-layout-frame">
-        <AdminHeader onToggleSidebar={onToggleSidebar} />
+        <AdminHeader
+          desktopCollapsed={desktopCollapsed}
+          onToggleMobileSidebar={onToggleMobileSidebar}
+          onToggleDesktopSidebar={onToggleDesktopSidebar}
+        />
         <Box
           component="main"
           className="admin-layout-main"

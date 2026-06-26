@@ -43,6 +43,10 @@ import {
   activityLogActionLabel,
   activityLogSeverityLabel,
 } from "../../shared/constants/activityLog";
+import {
+  extractActivityLogMetricFields,
+  formatActivityLogMetrics,
+} from "../../shared/activityLog/activityLogMetrics";
 
 function formatOccurredAt(value?: string): string {
   if (!value) return "—";
@@ -90,6 +94,8 @@ export function ActivityLogsPage() {
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState<ActivityLogRecord | null>(null);
+  /** Tăng khi bấm Tìm để refetch dù bộ lọc không đổi so với lần trước. */
+  const [searchNonce, setSearchNonce] = useState(0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -121,7 +127,7 @@ export function ActivityLogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, searchText, severity, module, action]);
+  }, [page, size, searchText, severity, module, action, searchNonce]);
 
   useEffect(() => {
     void fetchData();
@@ -130,6 +136,7 @@ export function ActivityLogsPage() {
   const applySearch = () => {
     setPage(0);
     setSearchText(searchInput);
+    setSearchNonce((n) => n + 1);
   };
 
   const resetFilters = () => {
@@ -255,6 +262,7 @@ export function ActivityLogsPage() {
                 <TableCell>Mức độ</TableCell>
                 <TableCell>Hành động</TableCell>
                 <TableCell>Nội dung</TableCell>
+                <TableCell sx={{ minWidth: 200 }}>Số liệu</TableCell>
                 <TableCell>Tham chiếu</TableCell>
                 <TableCell align="right">Chi tiết</TableCell>
               </TableRow>
@@ -263,7 +271,7 @@ export function ActivityLogsPage() {
               {loading
                 ? Array.from({ length: 5 }).map((_, idx) => (
                     <TableRow key={`sk-${idx}`}>
-                      {Array.from({ length: 6 }).map((__, cellIdx) => (
+                      {Array.from({ length: 7 }).map((__, cellIdx) => (
                         <TableCell key={cellIdx}>
                           <Skeleton variant="text" />
                         </TableCell>
@@ -273,13 +281,15 @@ export function ActivityLogsPage() {
                 : null}
               {!loading && rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <Box className="admin-catalog-page__empty">Chưa có bản ghi nhật ký.</Box>
                   </TableCell>
                 </TableRow>
               ) : null}
               {!loading
-                ? rows.map((row) => (
+                ? rows.map((row) => {
+                    const metrics = formatActivityLogMetrics(row);
+                    return (
                     <TableRow key={row.id} hover>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>
                         {formatOccurredAt(row.occurredAt)}
@@ -295,10 +305,26 @@ export function ActivityLogsPage() {
                       <TableCell sx={{ whiteSpace: "nowrap" }}>
                         {activityLogActionLabel(row.action)}
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 420 }}>
+                      <TableCell sx={{ maxWidth: 320 }}>
                         <Typography variant="body2" noWrap title={row.message}>
                           {row.message || "—"}
                         </Typography>
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 280 }}>
+                        {metrics ? (
+                          <Typography
+                            variant="caption"
+                            component="div"
+                            sx={{ fontFamily: "monospace", fontSize: 11, lineHeight: 1.4 }}
+                            title={metrics}
+                          >
+                            {metrics}
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            —
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell sx={{ fontFamily: "monospace", fontSize: 12 }}>
                         {row.refType ? `${row.refType}` : "—"}
@@ -312,7 +338,8 @@ export function ActivityLogsPage() {
                         </Tooltip>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 : null}
             </TableBody>
           </Table>
@@ -366,6 +393,33 @@ export function ActivityLogsPage() {
                     }}
                   >
                     {selected.detail}
+                  </Box>
+                </Box>
+              ) : null}
+              {extractActivityLogMetricFields(selected).length > 0 ? (
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>
+                    <strong>Số liệu prompt / token:</strong>
+                  </Typography>
+                  <Box
+                    component="table"
+                    sx={{
+                      width: "100%",
+                      fontSize: 12,
+                      borderCollapse: "collapse",
+                      "& td": { py: 0.25, pr: 2, verticalAlign: "top" },
+                      "& td:first-of-type": { color: "text.secondary", whiteSpace: "nowrap" },
+                      "& td:last-of-type": { fontFamily: "monospace" },
+                    }}
+                  >
+                    <tbody>
+                      {extractActivityLogMetricFields(selected).map((field) => (
+                        <tr key={field.label}>
+                          <td>{field.label}</td>
+                          <td>{field.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </Box>
                 </Box>
               ) : null}

@@ -66,7 +66,18 @@ public class OpenRouterClient {
      * Uses json_object response_format, lower temperature, and sanitizes markdown fences.
      */
     public ChatResult chatJson(String model, List<Map<String, String>> messages) throws IdInvalidException {
-        ChatResult result = chatSync(model, messages, true);
+        return chatJson(model, messages, timeoutSeconds);
+    }
+
+    public ChatResult chatJson(String model, List<Map<String, String>> messages, long timeoutSec)
+            throws IdInvalidException {
+        return chatJson(model, messages, timeoutSec, null);
+    }
+
+    public ChatResult chatJson(
+            String model, List<Map<String, String>> messages, long timeoutSec, Integer maxTokens)
+            throws IdInvalidException {
+        ChatResult result = chatSync(model, messages, true, timeoutSec, maxTokens);
         String raw = result.getContent();
         String clean = AiJsonResponseSanitizer.extractJsonObject(raw);
         if (clean.isBlank()) {
@@ -81,9 +92,132 @@ public class OpenRouterClient {
         return result;
     }
 
+    /**
+     * Stream JSON completion; accumulates chunks, sanitizes to JSON object, returns final result.
+     * {@link StreamHandler#onChunk} fires per delta; {@link StreamHandler#onComplete} receives sanitized result.
+     */
+    public ChatResult chatJsonStream(
+            String model,
+            List<Map<String, String>> messages,
+            long timeoutSec,
+            Integer maxTokens,
+            StreamHandler handler) throws IdInvalidException {
+        long startedNanos = System.nanoTime();
+        HttpRequest request = buildChatRequest(model, messages, true, true, timeoutSec, maxTokens);
+        HttpResponse<InputStream> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IdInvalidException("Kết nối AI bị gián đoạn");
+        } catch (IOException e) {
+            throw new IdInvalidException("Không gọi được OpenRouter");
+        }
+
+        if (response.statusCode() >= 400) {
+            String errorBody = readErrorBody(response);
+            if (logRequests) {
+                log.error("[OpenRouter] HTTP {} — model={} — responseBody={}", response.statusCode(), model, errorBody);
+            }
+            throw new IdInvalidException("OpenRouter lỗi: HTTP " + response.statusCode());
+        }
+
+        StringBuilder fullContent = new StringBuilder();
+        int promptTokens = 0;
+        int completionTokens = 0;
+        String responseModel = model;
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(response.body(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.startsWith("data:")) {
+                    continue;
+                }
+                String data = line.substring(5).trim();
+                if (data.isEmpty() || "[DONE]".equals(data)) {
+                    continue;
+                }
+                JsonNode root = objectMapper.readTree(data);
+                if (root.hasNonNull("model")) {
+                    responseModel = root.path("model").asText(model);
+                }
+                String delta = root.path("choices").path(0).path("delta").path("content").asText("");
+                if (!delta.isEmpty()) {
+                    fullContent.append(delta);
+                    if (handler != null) {
+                        handler.onChunk(delta);
+                    }
+                }
+                if (root.has("usage") && !root.path("usage").isMissingNode()) {
+                    promptTokens = root.path("usage").path("prompt_tokens").asInt(promptTokens);
+                    completionTokens = root.path("usage").path("completion_tokens").asInt(completionTokens);
+                }
+            }
+        } catch (IOException e) {
+            throw new IdInvalidException("Không đọc được stream từ OpenRouter");
+        }
+
+        String raw = fullContent.toString().trim();
+        String clean = AiJsonResponseSanitizer.extractJsonObject(raw);
+        if (clean.isBlank()) {
+            throw new IdInvalidException("AI không trả JSON hợp lệ");
+        }
+
+        long durationMs = (System.nanoTime() - startedNanos) / 1_000_000L;
+        if (logRequests) {
+            log.info(
+                    "[OpenRouter] <<< stream completed in {}ms model={} promptTokens={} completionTokens={}",
+                    durationMs,
+                    responseModel,
+                    promptTokens,
+                    completionTokens);
+            logOpenRouterResponse(responseModel, promptTokens, completionTokens, clean, "(stream)");
+        }
+
+        ChatResult result = new ChatResult();
+        result.setRawContent(raw);
+        result.setContent(clean);
+        result.setPromptTokens(promptTokens);
+        result.setCompletionTokens(completionTokens);
+        result.setDurationMs((int) durationMs);
+        if (handler != null) {
+            try {
+                handler.onComplete(result);
+            } catch (IOException e) {
+                throw new IdInvalidException("Không xử lý được stream completion");
+            }
+        }
+        return result;
+    }
+
+    private static String readErrorBody(HttpResponse<InputStream> response) {
+        try (InputStream errorStream = response.body()) {
+            return new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return "";
+        }
+    }
+
     private ChatResult chatSync(String model, List<Map<String, String>> messages, boolean jsonObjectMode)
             throws IdInvalidException {
-        HttpRequest request = buildChatRequest(model, messages, false, jsonObjectMode);
+        return chatSync(model, messages, jsonObjectMode, timeoutSeconds);
+    }
+
+    private ChatResult chatSync(
+            String model, List<Map<String, String>> messages, boolean jsonObjectMode, long timeoutSec)
+            throws IdInvalidException {
+        return chatSync(model, messages, jsonObjectMode, timeoutSec, null);
+    }
+
+    private ChatResult chatSync(
+            String model,
+            List<Map<String, String>> messages,
+            boolean jsonObjectMode,
+            long timeoutSec,
+            Integer maxTokens) throws IdInvalidException {
+        HttpRequest request = buildChatRequest(model, messages, false, jsonObjectMode, timeoutSec, maxTokens);
+        long startedNanos = System.nanoTime();
         HttpResponse<String> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -121,6 +255,13 @@ public class OpenRouterClient {
             }
 
             if (logRequests) {
+                long durationMs = (System.nanoTime() - startedNanos) / 1_000_000L;
+                log.info(
+                        "[OpenRouter] <<< completed in {}ms model={} promptTokens={} completionTokens={}",
+                        durationMs,
+                        responseModel,
+                        promptTokens,
+                        completionTokens);
                 logOpenRouterResponse(responseModel, promptTokens, completionTokens, content, responseBody);
             }
 
@@ -128,6 +269,7 @@ public class OpenRouterClient {
             result.setContent(content.trim());
             result.setPromptTokens(promptTokens);
             result.setCompletionTokens(completionTokens);
+            result.setDurationMs((int) ((System.nanoTime() - startedNanos) / 1_000_000L));
             return result;
         } catch (IOException e) {
             if (logRequests) {
@@ -139,7 +281,7 @@ public class OpenRouterClient {
 
     public void chatStream(String model, List<Map<String, String>> messages, StreamHandler handler)
             throws IdInvalidException {
-        HttpRequest request = buildChatRequest(model, messages, true, false);
+        HttpRequest request = buildChatRequest(model, messages, true, false, timeoutSeconds, null);
         HttpResponse<InputStream> response;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
@@ -151,12 +293,7 @@ public class OpenRouterClient {
         }
 
         if (response.statusCode() >= 400) {
-            String errorBody;
-            try (InputStream errorStream = response.body()) {
-                errorBody = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                errorBody = "";
-            }
+            String errorBody = readErrorBody(response);
             if (logRequests) {
                 log.error("[OpenRouter] HTTP {} — model={} — responseBody={}", response.statusCode(), model, errorBody);
             }
@@ -221,7 +358,9 @@ public class OpenRouterClient {
             String model,
             List<Map<String, String>> messages,
             boolean stream,
-            boolean jsonObjectMode) throws IdInvalidException {
+            boolean jsonObjectMode,
+            long timeoutSec,
+            Integer maxTokens) throws IdInvalidException {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IdInvalidException("AI chưa được cấu hình OPENROUTER_API_KEY");
         }
@@ -233,6 +372,9 @@ public class OpenRouterClient {
         payload.put("stream", stream);
         if (jsonObjectMode) {
             payload.put("response_format", Map.of("type", "json_object"));
+        }
+        if (maxTokens != null && maxTokens > 0) {
+            payload.put("max_tokens", maxTokens);
         }
         if (stream) {
             payload.put("stream_options", Map.of("include_usage", true));
@@ -251,7 +393,7 @@ public class OpenRouterClient {
 
         return HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/chat/completions"))
-                .timeout(Duration.ofSeconds(timeoutSeconds))
+                .timeout(Duration.ofSeconds(timeoutSec))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("HTTP-Referer", httpReferer)
                 .header("X-Title", xTitle)
@@ -300,6 +442,7 @@ public class OpenRouterClient {
         private String rawContent;
         private Integer promptTokens;
         private Integer completionTokens;
+        private Integer durationMs;
 
         public String getContent() {
             return content;
@@ -331,6 +474,14 @@ public class OpenRouterClient {
 
         public void setCompletionTokens(Integer completionTokens) {
             this.completionTokens = completionTokens;
+        }
+
+        public Integer getDurationMs() {
+            return durationMs;
+        }
+
+        public void setDurationMs(Integer durationMs) {
+            this.durationMs = durationMs;
         }
     }
 }

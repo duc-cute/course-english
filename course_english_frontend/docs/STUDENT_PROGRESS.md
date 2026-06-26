@@ -1,6 +1,6 @@
 # Progress — Giao diện & chức năng Học sinh
 
-> Cập nhật: **13/06/2026**  
+> Cập nhật: **25/06/2026**  
 > Repo: `course_english_frontend` + `course_english_backend`  
 > Tham chiếu thiết kế: `Design/stitch_quest_english_learning_platform/` (Vibrant Scholar)  
 > Theme đang chạy: **Vibrant Scholar** (`styles/student/vibrant-theme.css`, `--vq-*`)

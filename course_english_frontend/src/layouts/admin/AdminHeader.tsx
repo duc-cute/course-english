@@ -12,10 +12,16 @@ import {
 import { getAdminPageTitle } from "./adminPageMeta";
 
 type AdminHeaderProps = {
-  onToggleSidebar: () => void;
+  desktopCollapsed: boolean;
+  onToggleMobileSidebar: () => void;
+  onToggleDesktopSidebar: () => void;
 };
 
-export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+export function AdminHeader({
+  desktopCollapsed,
+  onToggleMobileSidebar,
+  onToggleDesktopSidebar,
+}: AdminHeaderProps) {
   const location = useLocation();
   const pageTitle = getAdminPageTitle(location.pathname);
   const theme = useTheme();
@@ -29,7 +35,11 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       aiDrawer.openDrawer();
       return;
     }
-    onToggleSidebar();
+    if (isMobile) {
+      onToggleMobileSidebar();
+      return;
+    }
+    onToggleDesktopSidebar();
   };
 
   return (
@@ -39,8 +49,14 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
           edge="start"
           onClick={handleNavClick}
           className="admin-header-icon-btn"
-          sx={{ display: { xs: "inline-flex", md: "none" } }}
-          aria-label={useChatHistoryNav ? "Lịch sử hội thoại" : "Mở menu"}
+          sx={{ display: "inline-flex" }}
+          aria-label={
+            useChatHistoryNav
+              ? "Lịch sử hội thoại"
+              : desktopCollapsed
+                ? "Mở thanh điều hướng"
+                : "Thu gọn thanh điều hướng"
+          }
         >
           {useChatHistoryNav ? <ChatBubbleOutlineIcon /> : <MenuIcon />}
         </IconButton>

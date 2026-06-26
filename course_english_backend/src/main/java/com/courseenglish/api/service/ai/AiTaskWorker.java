@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 
 @Component
 public class AiTaskWorker {
@@ -20,10 +21,22 @@ public class AiTaskWorker {
 
   @Async("aiTaskExecutor")
   public void processAsync(UUID taskId) {
+    log.info("[AiTaskWorker] dispatch taskId={}", taskId);
     try {
       aiTaskProcessingService.processTask(taskId);
     } catch (Exception e) {
       log.error("[AiTaskWorker] Unhandled error taskId={}", taskId, e);
+    }
+  }
+
+  /** Queue async work without failing the HTTP caller when the pool is saturated. */
+  public void dispatchSafely(UUID taskId) {
+    try {
+      processAsync(taskId);
+    } catch (RejectedExecutionException e) {
+      log.warn("[AiTaskWorker] dispatch rejected taskId={}: {}", taskId, e.getMessage());
+    } catch (Exception e) {
+      log.warn("[AiTaskWorker] dispatch failed taskId={}", taskId, e);
     }
   }
 }

@@ -25,7 +25,7 @@ public class McqQuestionTypeHandler implements AiQuestionTypeHandler {
   public String promptSchemaFragment() {
     return """
         MULTIPLE_CHOICE:
-        - choices: array of 4 items with choiceKey (a/b/c/d), choiceText, correct (boolean), displayOrder (0-3)
+        - choices: array of 4 items with choiceText and correct (boolean)
         - Exactly one choice has correct: true
         - Do NOT use contentJson for MCQ
         """;
@@ -35,18 +35,14 @@ public class McqQuestionTypeHandler implements AiQuestionTypeHandler {
   public String promptExampleJson() {
     return """
         {
-          "tempId": "q1",
-          "selected": true,
           "questionType": "MULTIPLE_CHOICE",
           "promptText": "She ___ to school every day.",
-          "promptLang": "en",
           "explanation": "Present simple, third person.",
-          "difficulty": 2,
           "choices": [
-            { "choiceKey": "a", "choiceText": "go", "correct": false, "displayOrder": 0 },
-            { "choiceKey": "b", "choiceText": "goes", "correct": true, "displayOrder": 1 },
-            { "choiceKey": "c", "choiceText": "going", "correct": false, "displayOrder": 2 },
-            { "choiceKey": "d", "choiceText": "went", "correct": false, "displayOrder": 3 }
+            { "choiceText": "go", "correct": false },
+            { "choiceText": "goes", "correct": true },
+            { "choiceText": "going", "correct": false },
+            { "choiceText": "went", "correct": false }
           ]
         }""";
   }

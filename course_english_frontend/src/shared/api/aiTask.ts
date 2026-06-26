@@ -22,6 +22,8 @@ export type AiTaskRecord = {
   outputJson?: AiQuestionGenEnvelope | null;
   errorMessage?: string;
   model?: string;
+  progressMessage?: string | null;
+  progressPercent?: number | null;
 };
 
 export type CreateQuestionGenTaskPayload = {

@@ -22,6 +22,7 @@ import type {
   MultipleChoiceQuestion,
   ReorderSentenceQuestion,
   SpellingQuestion,
+  TrueFalseQuestion,
 } from "../../student/lessonPlayer/exercise/types";
 
 let questionIdSeq = 0;
@@ -365,6 +366,14 @@ export function validateMatchingQuestion(question: MatchingQuestion): ExerciseSe
   return { valid: errors.length === 0, errors };
 }
 
+export function validateTrueFalseQuestion(question: TrueFalseQuestion): ExerciseSetValidation {
+  const errors: string[] = [];
+  if (!question.prompt.text.trim()) {
+    errors.push("Chưa nhập câu hỏi.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
 export function validateMcqQuestion(question: MultipleChoiceQuestion): ExerciseSetValidation {
   const errors: string[] = [];
   if (!question.prompt.text.trim()) {
@@ -543,6 +552,7 @@ export function validateQuestion(question: ExerciseQuestion): ExerciseSetValidat
   if (question.type === "READING_COMPREHENSION") return validateReadingComprehensionQuestion(question);
   if (question.type === "REORDER_SENTENCE") return validateReorderQuestion(question);
   if (question.type === "MATCHING") return validateMatchingQuestion(question);
+  if (question.type === "TRUE_FALSE") return validateTrueFalseQuestion(question);
   return { valid: false, errors: ["Loại câu chưa hỗ trợ trong editor."] };
 }
 
@@ -563,7 +573,8 @@ export function validateExerciseSetPayload(payload: ExerciseSetPayload): Exercis
       q.type === "FILL_BLANK" ||
       q.type === "GAP_FILL_MCQ" ||
       q.type === "READING_COMPREHENSION" ||
-      q.type === "REORDER_SENTENCE",
+      q.type === "REORDER_SENTENCE" ||
+      q.type === "TRUE_FALSE",
   );
   if (!editableQuestions.length) {
     errors.push("Cần ít nhất 1 câu hợp lệ.");

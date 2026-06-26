@@ -595,6 +595,14 @@
           <li class="sub"><a href="#sns-ui-flow">16.4 UI &amp; luồng GV</a></li>
           <li class="sub"><a href="#sns-api">16.5 API &amp; code</a></li>
           <li class="sub"><a href="#sns-checklist">16.6 Checklist triển khai</a></li>
+          <li><a href="#linguist-ai">17. LinguistAI (OpenRouter)</a></li>
+          <li class="sub"><a href="#ai-status">17.1 Đã triển khai</a></li>
+          <li class="sub"><a href="#ai-question-gen-perf">17.2 Tối ưu sinh câu hỏi AI</a></li>
+          <li class="sub"><a href="#ai-qg-bottleneck">17.2.1 Điểm nghẽn</a></li>
+          <li class="sub"><a href="#ai-qg-failed-attempt">17.2.2 Thử nghiệm thất bại</a></li>
+          <li class="sub"><a href="#ai-qg-solution">17.2.3 Giải pháp hiện tại</a></li>
+          <li class="sub"><a href="#ai-qg-flow">17.2.4 Luồng kỹ thuật</a></li>
+          <li class="sub"><a href="#ai-deferred">17.3 Kế hoạch sau (chưa làm)</a></li>
           <li><a href="#summary">Tổng kết</a></li>
         </ul>
         <ul class="toc toc-group" data-toc="learning">
@@ -617,14 +625,16 @@
           <li><a href="#st-overview-panel">Tổng quan</a></li>
           <li><a href="#st-routes">A. Route &amp; màn hình</a></li>
           <li><a href="#st-features">B. Chức năng đã có</a></li>
+          <li class="sub"><a href="#st-sprints">A.1 Sprint S0–S8a</a></li>
           <li class="sub"><a href="#st-home">B.1 Home &amp; list</a></li>
           <li class="sub"><a href="#st-player">B.2 Lesson Player</a></li>
           <li class="sub"><a href="#st-exercise">B.3 Exercise</a></li>
+          <li class="sub"><a href="#st-profile">B.4 Profile</a></li>
           <li><a href="#st-design-map">C. Map mock → code</a></li>
           <li><a href="#st-api">D. API backend</a></li>
           <li><a href="#st-roadmap-checklist">E. Việc tiếp theo</a></li>
           <li class="sub"><a href="#st-next-short">E.1 Ngắn hạn</a></li>
-          <li class="sub"><a href="#st-next-ui">E.2 Redesign UI</a></li>
+          <li class="sub"><a href="#st-next-ui">E.2 S8b gamification BE</a></li>
           <li class="sub"><a href="#st-next-long">E.3 Dài hạn</a></li>
           <li><a href="#st-files">F. File code</a></li>
         </ul>
@@ -640,10 +650,12 @@
             <code>course_english_*</code>.
           </p>
           <div class="meta">
-            <span class="badge ok">MVP: Lesson Player + progress server</span>
-            <span class="badge warn">V2: Assignment + Redis scale</span>
-            <span class="badge info">V3: Parent + AI + Adaptive</span>
-            <span class="badge crit">Anti: PDF viewer + bài tập</span>
+            <span class="badge ok">MVP: Lesson Player + HS Vibrant Scholar ~85%</span>
+            <span class="badge ok">AI: LinguistAI Phase 1–2 MVP</span>
+            <span class="badge warn">V2: Assignment + Redis + RabbitMQ</span>
+            <span class="badge info">V3: Parent + Adaptive + AI Coach HS</span>
+            <span class="badge crit">Anti: PDF-only lesson (có SLIDE_DECK thay thế)</span>
+            <span class="badge">Cập nhật 25/06/2026</span>
           </div>
         </div>
 
@@ -654,7 +666,7 @@
             Learning Content <span class="tab-badge">2.3 · chi tiết</span>
           </button>
           <button type="button" role="tab" data-tab="student" aria-selected="false">
-            Student UI <span class="tab-badge">HS · progress</span>
+            Student UI <span class="tab-badge">HS · ~85%</span>
           </button>
         </nav>
         <div class="progress-panel" id="review-progress-panel">
@@ -730,7 +742,7 @@
           <li><label><input type="checkbox" data-check-id="mod.auth.login" data-default="1" /><span>Login + JWT + refresh</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.auth.register" data-default="1" /><span>Register</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.auth.rbac" data-default="1" /><span>Role &amp; permission CRUD</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.auth.forgot" /><span>Forgot password (V2)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.auth.forgot" data-default="1" /><span>Forgot / reset password (<code>/forgot-password</code>)</span></label></li>
         </ul>
 
         <h3 id="chk-course">2.2 Course Management</h3>
@@ -739,7 +751,7 @@
           <li><label><input type="checkbox" data-check-id="mod.course.subject" data-default="1" /><span>Subject (Unit) CRUD</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.course.lesson" data-default="1" /><span>Lesson CRUD + publish</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.course.enroll" data-default="1" /><span>Enrollment</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.course.filter" /><span>Filter bài theo enrollment (P1)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.course.filter" data-default="1" /><span>Filter bài theo enrollment (BE + FE HS)</span></label></li>
         </ul>
 
         <h3 id="chk-content-link">2.3 Learning Content</h3>
@@ -752,10 +764,11 @@
         <ul class="checklist" data-group="mod-quiz">
           <li><label><input type="checkbox" data-check-id="mod.quiz.bank" data-default="1" /><span>Question bank — CRUD + <code>QUESTION_REF</code> resolve</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.mcq" data-default="1" /><span>MCQ + T/F + auto-grade (<code>EXERCISE_SET</code>)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.quiz.fill" /><span>Fill blank, Matching, Drag-drop</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.quiz.listen" /><span>Listening quiz</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.fill" data-default="1" /><span>Fill blank, Matching, GAP_FILL_MCQ, READING_COMPREHENSION</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.listen" data-default="1" /><span>Listening quiz (<code>LISTEN_CHOOSE</code>, <code>LISTEN_TYPE</code>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.shuffle" data-default="1" /><span>Shuffle câu/đáp án + retry câu sai (ExercisePlayer)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.speak" /><span>Speaking (V3)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.quiz.random" /><span>Random câu/đáp án + time limit + retry</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.random" /><span>Time limit + random pool đề độc lập</span></label></li>
         </ul>
 
         <h3 id="chk-assign">2.5 Assignment</h3>
@@ -784,9 +797,11 @@
 
         <h3 id="chk-notify">2.8 Notification</h3>
         <ul class="checklist" data-group="mod-notify">
-          <li><label><input type="checkbox" data-check-id="mod.n.due" /><span>Assignment due reminder</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.n.lesson" /><span>New lesson notification</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.n.quiz" /><span>Quiz result notification</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.n.inapp" data-default="1" /><span>In-app chuông + WebSocket + <code>GET /notifications</code></span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.n.lesson" data-default="1" /><span>Publish lesson → notify HS enroll (<code>@Async</code>, chưa RabbitMQ)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.n.email" data-default="1" /><span>Email khi publish lesson (async)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.n.due" /><span>Assignment due reminder (V2)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.n.quiz" /><span>Quiz result notification (V2)</span></label></li>
         </ul>
 
         <h3 id="chk-comm">2.9 Communication</h3>
@@ -843,15 +858,15 @@
         <!-- 4 -->
         <h2 class="section" id="module-tree">4. Kiến trúc chức năng (cây — EdTech 2026)</h2>
         <pre class="ascii">Course English Platform
-├── 1. Identity &amp; Access          [MVP ✓]
-├── 2. Course Management          [MVP ✓ — Classroom/Subject/Lesson]
-├── 3. Learning Content           [MVP ✓ — block engine; mở rộng theo promt.md]
-├── 4. Quiz &amp; Assessment          [V2]
+├── 1. Identity &amp; Access          [MVP ✓ — forgot password]
+├── 2. Course Management          [MVP ✓ — enrollment filter HS]
+├── 3. Learning Content           [MVP ✓ — block engine + SLIDE_DECK]
+├── 4. Quiz &amp; Assessment          [MVP ✓ — EXERCISE_SET 10 loại câu]
 ├── 5. Assignment                 [V2]
-├── 6. Progress &amp; Analytics       [P1 API → V2 dashboard]
-├── 7. Notification               [V2]
+├── 6. Progress &amp; Analytics       [MVP ✓ API + profile FE stats]
+├── 7. Notification               [P1 ✓ in-app + WS; V2 RabbitMQ]
 ├── 8. Communication              [V2–V3]
-└── 9. Platform (file, search, scale) [MVP file ✓]</pre>
+└── 9. Platform (file, search, scale) [MVP ✓ + AI module]</pre>
 
         <!-- 5 -->
         <h2 class="section" id="database">5. Database high-level</h2>
@@ -892,14 +907,14 @@ parent_student_links</code></pre>
             <tr><th>Module</th><th>MVP</th><th>Version 2</th><th>Version 3</th></tr>
           </thead>
           <tbody>
-            <tr><td>Auth + RBAC</td><td>✓ Login, register, roles</td><td>Forgot password</td><td>SSO trường</td></tr>
-            <tr><td>Course + Lesson CMS</td><td>✓ CRUD + reader</td><td>AUDIO, filter enrollment</td><td>Adaptive path</td></tr>
-            <tr><td>Quiz</td><td>Inline quick check</td><td>Full engine + bank</td><td>Speaking AI</td></tr>
+            <tr><td>Auth + RBAC</td><td>✓ Login, register, roles, forgot password</td><td>SSO trường</td><td>—</td></tr>
+            <tr><td>Course + Lesson CMS</td><td>✓ CRUD + reader + enrollment filter</td><td>VIDEO/AUDIO block editor</td><td>Adaptive path</td></tr>
+            <tr><td>Quiz</td><td>✓ EXERCISE_SET 10 loại + Question Bank</td><td>Assignment module</td><td>Speaking AI</td></tr>
             <tr><td>Assignment</td><td>—</td><td>Homework → Final test</td><td>Light proctor</td></tr>
-            <tr><td>Progress + Dashboard</td><td>Completion API</td><td>Streak, GV analytics</td><td>District view</td></tr>
-            <tr><td>Notification + Comm</td><td>—</td><td>Due + announcement</td><td>Discussion</td></tr>
-            <tr><td>Gamification</td><td>—</td><td>XP, badge, flashcard</td><td>Leaderboard (opt-in)</td></tr>
-            <tr><td>Parent / Placement / AI</td><td>—</td><td>—</td><td>✓</td></tr>
+            <tr><td>Progress + Dashboard</td><td>✓ Completion API + profile stats FE</td><td>Streak/XP BE, GV analytics</td><td>District view</td></tr>
+            <tr><td>Notification + Comm</td><td>✓ In-app + WS (publish lesson)</td><td>RabbitMQ + due + announcement</td><td>Discussion</td></tr>
+            <tr><td>Gamification</td><td>XP/badge FE-only (profile)</td><td>Leaderboard BE</td><td>Leaderboard (opt-in)</td></tr>
+            <tr><td>Parent / Placement / AI</td><td>✓ LinguistAI GV (Phase 1–2)</td><td>AI import Question Bank</td><td>AI Coach HS + adaptive</td></tr>
           </tbody>
         </table>
 
@@ -907,25 +922,27 @@ parent_student_links</code></pre>
         <h2 class="section" id="sitemap">7. Sitemap đầy đủ</h2>
         <pre class="ascii">/                          → /student (HS) hoặc /admin
 /login, /register
-/forgot-password             (V2)
+/forgot-password, /reset-password
 
 /student
-  /                          home: courses, continue, streak
-  /lessons                   danh sách bài (theo enroll P1)
-  /lessons/:id               reader + inline quiz
-  /assignments               (V2)
-  /assignments/:id/do|result (V2)
-  /quiz/:id                  bài kiểm tra độc lập (V2)
-  /flashcards/:setId         (V2)
-  /profile                   (V2)
+  /                          home bento + XP/streak (FE)
+  /lessons                   danh sách + enrollment filter
+  /path                      lộ trình theo Unit
+  /lessons/:slug             Lesson Player (study + practice)
+  /vocab, /vocab/:setId      trung tâm từ + flashcard
+  /profile                   hồ sơ 3 tab (stats, badges, history)
+  /leaderboard               placeholder (S8b)
+  /usage-guide
 
-/admin  (Teacher dùng chung hoặc tách /teacher V2)
-  /dashboard                   ← widget Students Need Support (top 3)
-  /students-need-support       ← bảng HS cần hỗ trợ + filter
-  /manage-user, /roles, /permissions
+/admin  (Teacher + Admin)
+  /dashboard                   widget Students Need Support
+  /schedule                    lịch dạy + online class
+  /students-need-support
+  /manage-user, /roles
   /classrooms, /subjects, /enrollments
   /lessons, /lessons/:id/edit
-  /catalog-import, /skills
+  /manage-questions, /vocabulary-*, /system-config
+  /ai-assistant, /activity-logs
   /review-doc                  ← tài liệu này
 
 /parent/:childId             (V3)</pre>
@@ -1003,8 +1020,8 @@ parent_student_links</code></pre>
           <p><strong>Phòng tránh:</strong> block QUIZ bắt buộc; audio checkpoint; rule hoàn thành (ví dụ ≥80% quiz đúng); progress có nghĩa trên server.</p>
         </div>
         <div class="grid-2">
-          <div class="card ok"><h4>Điểm mạnh</h4><ul><li>Block lesson + CMS + reader đã chạy</li><li>JWT, lớp, enrollment</li><li>Theme HS/Admin tách</li></ul></div>
-          <div class="card warn"><h4>Điểm yếu / rủi ro</h4><ul><li>Chưa quiz/assignment</li><li>Progress local only</li><li>Publish chưa filter lớp</li><li>Scope creep (AI trước quiz cơ bản)</li></ul></div>
+          <div class="card ok"><h4>Điểm mạnh</h4><ul><li>Lesson Player + 10 loại câu exercise + progress server</li><li>HS UI Vibrant Scholar (home, path, vocab, profile)</li><li>LinguistAI chat + sinh câu từ PDF/DOCX (schema gọn + parallel batch)</li><li>Students Need Support + notification in-app</li></ul></div>
+          <div class="card warn"><h4>Điểm yếu / rủi ro</h4><ul><li>Assignment module chưa có</li><li>XP/streak/badge chưa lưu BE</li><li>VIDEO/AUDIO block editor chưa đủ</li><li>RabbitMQ/Redis chưa bật — scale sau</li></ul></div>
         </div>
 
         <!-- 11 -->
@@ -1013,9 +1030,9 @@ parent_student_links</code></pre>
         <table>
           <thead><tr><th>Cơ chế</th><th>Mô tả</th><th>Phase</th></tr></thead>
           <tbody>
-            <tr><td>Streak</td><td>Học liên tiếp N ngày</td><td>V2</td></tr>
-            <tr><td>XP &amp; level</td><td>Sau mỗi lesson/quiz</td><td>V2</td></tr>
-            <tr><td>Badge</td><td>Perfect quiz, 7-day streak</td><td>V2</td></tr>
+            <tr><td>Streak</td><td>Học liên tiếp N ngày</td><td>FE-only (profile) → BE S8b</td></tr>
+            <tr><td>XP &amp; level</td><td>Sau mỗi lesson/quiz</td><td>FE-only → BE S8b</td></tr>
+            <tr><td>Badge</td><td>Perfect quiz, 7-day streak</td><td>6 badge FE (profile tab)</td></tr>
             <tr><td>Flashcard SRS</td><td>Ôn từ vựng</td><td>V2</td></tr>
             <tr><td>Leaderboard lớp</td><td>Tuỳ chọn (tắt cho tiểu học)</td><td>V3</td></tr>
           </tbody>
@@ -1046,9 +1063,9 @@ parent_student_links</code></pre>
             <tr><td>BE</td><td>Spring Boot, <code>course_english</code> DB, port 7070</td></tr>
           </tbody>
         </table>
-        <p><strong>Routes FE:</strong> <code>/student</code>, <code>/student/lessons/:id</code>, <code>/admin/*</code>, <code>/login</code>, <code>/register</code>.</p>
-        <p><strong>Đã triển khai:</strong> Auth, CRUD classroom/subject/enrollment/lesson, <code>LessonBlock</code> + <code>payload_json</code>, editor/reader (TEXT/IMAGE/VOCABULARY), Question Bank, <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (MCQ/MATCHING), flashcard, vocab generator; progress local + server (<code>lesson_reading_progress</code>, <code>lesson_practice_attempts</code>); <strong>Students Need Support</strong> (<code>lessons.due_at</code>, risk engine, widget + trang GV — mục <a href="#students-need-support">16</a>).</p>
-        <p><strong>Gap so với <code>promt.md</code>:</strong> syllabus sidebar; Assignment module; Redis/RabbitMQ (mục <a href="#redis-built-features">15.2b</a>). Chi tiết màn học sinh: tab <button type="button" class="link-btn" data-switch-tab="student">Student UI</button> · <code>docs/STUDENT_PROGRESS.md</code>.</p>
+        <p><strong>Routes FE:</strong> <code>/student/*</code> (app shell + player), <code>/admin/*</code>, <code>/login</code>, <code>/register</code>, <code>/forgot-password</code>.</p>
+        <p><strong>Đã triển khai:</strong> Auth (+ forgot password); CRUD classroom/subject/enrollment/lesson/system-config; <code>LessonBlock</code> + <code>payload_json</code> (TEXT, IMAGE, VOCABULARY, CALLOUT, SUMMARY, <code>SLIDE_DECK</code>); Question Bank + vocab sets; <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (10 loại câu); AI sinh câu (<code>AiExerciseGenDialog</code>); progress server; HS UI Vibrant Scholar (home, path, vocab, profile, bottom nav); notification in-app + WebSocket; <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); <strong>LinguistAI</strong> Phase 1–2 (<a href="#linguist-ai">17</a>); lịch GV + activity logs.</p>
+        <p><strong>Gap so với <code>promt.md</code>:</strong> Assignment module; VIDEO/AUDIO block đầy đủ; syllabus sidebar trong player; gamification BE (leaderboard); Redis/RabbitMQ (<a href="#redis-built-features">15.2b</a>). Chi tiết HS: tab <button type="button" class="link-btn" data-switch-tab="student">Student UI</button> · <code>docs/STUDENT_PROGRESS.md</code>.</p>
 
         <!-- 13 — Kiến trúc Lesson theo promt.md -->
         <h2 class="section" id="lessons-core">13. Kiến trúc Lesson — Learning Blocks (<code>promt.md</code>)</h2>
@@ -1092,10 +1109,10 @@ parent_student_links</code></pre>
         <table>
           <thead><tr><th>Nhóm</th><th>Loại block (<code>promt.md</code>)</th><th>Phase</th><th>Code hiện tại</th></tr></thead>
           <tbody>
-            <tr><td><strong>CONTENT</strong></td><td>TEXT, IMAGE, VIDEO, AUDIO, PDF</td><td>MVP–P1</td><td>TEXT ✓ IMAGE ✓; VIDEO/AUDIO enum, UI P1; PDF → <code>LessonAsset</code> FILE</td></tr>
-            <tr><td><strong>TEACHING</strong></td><td>VOCABULARY, GRAMMAR_RULE, CALLOUT, SUMMARY</td><td>P1–P2</td><td><code>VOCABULARY</code> ✓ (flashcard); CALLOUT/SUMMARY/GRAMMAR_RULE enum, UI chưa</td></tr>
-            <tr><td><strong>VOCAB PRACTICE</strong></td><td>FLASHCARD, MATCH_WORD, MATCH_IMAGE, …</td><td>V2</td><td>Flashcard trong <code>VOCABULARY</code>; MATCHING trong <code>EXERCISE_SET</code></td></tr>
-            <tr><td><strong>GRAMMAR PRACTICE</strong></td><td>FILL_BLANK, MULTIPLE_CHOICE, TRUE_FALSE, …</td><td>V2</td><td>MCQ/MATCHING trong <code>EXERCISE_SET</code>; Question Bank + <code>QUESTION_REF</code></td></tr>
+            <tr><td><strong>CONTENT</strong></td><td>TEXT, IMAGE, VIDEO, AUDIO, PDF</td><td>MVP–P1</td><td>TEXT ✓ IMAGE ✓ <code>SLIDE_DECK</code> ✓ (PDF→ảnh); VIDEO/AUDIO enum, editor UI chưa</td></tr>
+            <tr><td><strong>TEACHING</strong></td><td>VOCABULARY, GRAMMAR_RULE, CALLOUT, SUMMARY</td><td>P1–P2</td><td><code>VOCABULARY</code> ✓ · <code>CALLOUT</code>/<code>SUMMARY</code> ✓ editor + reader · GRAMMAR_RULE enum</td></tr>
+            <tr><td><strong>VOCAB PRACTICE</strong></td><td>FLASHCARD, MATCH_WORD, MATCH_IMAGE, …</td><td>V2</td><td>Flashcard trong <code>VOCABULARY</code> + <code>/student/vocab</code>; MATCHING trong <code>EXERCISE_SET</code></td></tr>
+            <tr><td><strong>GRAMMAR PRACTICE</strong></td><td>FILL_BLANK, MULTIPLE_CHOICE, TRUE_FALSE, …</td><td>V2</td><td>10 loại trong <code>EXERCISE_SET</code> + Question Bank + AI gen</td></tr>
             <tr><td><strong>READING</strong></td><td>READING_PASSAGE, READING_QUESTION</td><td>V2</td><td>≈ TEXT + câu hỏi riêng</td></tr>
             <tr><td><strong>LISTENING</strong></td><td>LISTENING_QUESTION, LISTENING_FILL_BLANK</td><td>V2</td><td>—</td></tr>
             <tr><td><strong>SPEAKING</strong></td><td>SPEAKING_REPEAT, SPEAKING_READ, SPEAKING_CONVERSATION</td><td>V3</td><td>—</td></tr>
@@ -1300,10 +1317,10 @@ Lesson: "Từ vựng 15A" (chủ yếu tập — tham chiếu UI N4)
         <table>
           <thead><tr><th>Vùng</th><th>Component FE (đích)</th><th>Khác code hiện tại</th></tr></thead>
           <tbody>
-            <tr><td>Tab Bài học</td><td><code>StudyPanel</code> — scroll <code>BlockRenderer</code></td><td>≈ <code>LessonReaderPage</code> + TOC block</td></tr>
-            <tr><td>Tab Bài tập</td><td><code>ExercisePlayer</code> — wizard từng câu</td><td>Chưa có — thay stub QUESTION_REF</td></tr>
-            <tr><td>Sidebar phải</td><td><code>CourseSyllabusSidebar</code> — cây Unit/Lesson</td><td>Hiện tại: TOC <strong>block trong 1 lesson</strong> — cần thêm syllabus Unit</td></tr>
-            <tr><td>Progress 3/18</td><td><code>QuestionProgressBar</code></td><td>Đếm câu trong block <code>EXERCISE_SET</code> đang làm</td></tr>
+            <tr><td>Tab Bài học</td><td><code>StudyPanel</code> — scroll <code>BlockRenderer</code></td><td>✓ TEXT, IMAGE, VOCABULARY, CALLOUT, SUMMARY, SLIDE_DECK</td></tr>
+            <tr><td>Tab Bài tập</td><td><code>ExercisePlayer</code> — wizard từng câu</td><td>✓ 10 loại câu + result/review + retry câu sai</td></tr>
+            <tr><td>Sidebar phải</td><td><code>CourseSyllabusSidebar</code> — cây Unit/Lesson</td><td>Chưa trong player — có <code>/student/path</code> riêng</td></tr>
+            <tr><td>Progress 3/18</td><td><code>QuestionProgressBar</code></td><td>✓ Đếm câu trong block <code>EXERCISE_SET</code></td></tr>
           </tbody>
         </table>
         <pre class="ascii">Luồng tab Bài tập (stepped):
@@ -1811,12 +1828,12 @@ RabbitMQ → NotificationWorker
           <li><label><input type="checkbox" data-check-id="mq.email-worker" /><span><code>EmailWorker</code> — SMTP + retry → DLQ</span></label></li>
           <li><label><input type="checkbox" data-check-id="mq.due-cron" /><span>Cron assignment due → queue</span></label></li>
         </ul>
-        <p><strong>WebSocket + FE</strong></p>
+        <p><strong>WebSocket + FE</strong> — <span class="badge ok">P1 MVP đã có</span> (chưa RabbitMQ)</p>
         <ul class="checklist" data-group="socket-v2">
-          <li><label><input type="checkbox" data-check-id="ws.endpoint" /><span>BE: <code>/ws/notifications</code> (JWT)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="ws.registry" /><span><code>WebSocketSessionRegistry</code> map userId → session</span></label></li>
-          <li><label><input type="checkbox" data-check-id="ws.push" /><span>Worker push sau INSERT notification</span></label></li>
-          <li><label><input type="checkbox" data-check-id="ws.fe-bell" /><span>FE: chuông + badge + list <code>GET /notifications</code></span></label></li>
+          <li><label><input type="checkbox" data-check-id="ws.endpoint" data-default="1" /><span>BE: WebSocket notifications (JWT)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="ws.registry" data-default="1" /><span>Push sau INSERT notification (<code>NotificationPushService</code>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="ws.push" data-default="1" /><span>Publish lesson → <code>@Async</code> fan-out + push WS</span></label></li>
+          <li><label><input type="checkbox" data-check-id="ws.fe-bell" data-default="1" /><span>FE: chuông + badge + list <code>GET /notifications</code> (HS + Admin)</span></label></li>
         </ul>
 
         <!-- 16 — Students Need Support (GV) -->
@@ -1994,6 +2011,237 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
           <li><label><input type="checkbox" data-check-id="sns.email-digest" /><span>SNS-5: Email digest tuần cho GV</span></label></li>
         </ul>
 
+        <!-- 17 -->
+        <h2 class="section" id="linguist-ai">17. LinguistAI — OpenRouter (GV / Admin)</h2>
+        <p class="lead">
+          Module AI tích hợp LMS qua OpenRouter (key chỉ trên backend). Chi tiết kỹ thuật:
+          <code>docs/AI_INTEGRATION_PLAN.md</code> · Sinh câu hỏi:
+          <code>docs/AI_QUESTION_GEN_TECHNICAL.md</code> · Cập nhật <strong>24/06/2026</strong>.
+        </p>
+
+        <div class="callout">
+          <div>
+            <strong>Quyết định sản phẩm (24/06/2026):</strong> Phase 3 Sprint 1 (context LMS, quick actions, attach file)
+            <strong>chưa triển khai</strong> — ghi trong kế hoạch sau. Ưu tiên hiện tại: Lesson Player / HS UI / nội dung bài học
+            (mục <a href="#execution-plan">14</a>, tab <button type="button" class="link-btn" data-switch-tab="student">Student UI</button>).
+          </div>
+        </div>
+
+        <h3 id="ai-status">17.1 Đã triển khai (đủ pilot GV cơ bản)</h3>
+        <table>
+          <thead><tr><th>Phase</th><th>Chức năng</th><th>Entry / code</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Phase 1</strong></td>
+              <td>Chat LinguistAI, SSE stream, lưu hội thoại, quota ngày, đổi tên/xóa conv, usage stats</td>
+              <td><code>/admin/ai-assistant</code>, FAB drawer</td>
+            </tr>
+            <tr>
+              <td><strong>Phase 2 MVP</strong></td>
+              <td>Upload PDF/DOCX hoặc dán text → AI sinh câu (MCQ, TF, Fill, Đọc hiểu) → preview inline (<code>AiDraftPreviewRow</code>) → PATCH draft → thêm vào bài tập</td>
+              <td><code>AiExerciseGenDialog</code>, <code>aiTaskPolling.ts</code>, ExerciseSetEditor</td>
+            </tr>
+            <tr>
+              <td><strong>Phase 2 — tối ưu</strong> <span class="badge ok">mới</span></td>
+              <td>Schema output gọn + parallel batch theo loại câu; stream progress; partial success (18/20 câu). Xem <a href="#ai-question-gen-perf">17.2</a>.</td>
+              <td><code>AiQuestionGenerationService</code>, <code>AiQuestionBatchPlanner</code>, <code>aiOpenRouterExecutor</code></td>
+            </tr>
+            <tr>
+              <td><strong>Hỗ trợ vận hành</strong></td>
+              <td>Activity logs (module AI), poll timeout 5 phút, PATCH draft, <code>progress_message</code> / <code>progress_percent</code> trên <code>ai_tasks</code></td>
+              <td><code>/admin/activity-logs</code>, <code>ai_tasks</code></td>
+            </tr>
+            <tr>
+              <td><strong>Teaching plan</strong></td>
+              <td>Online class (meet link), lịch GV — không phải AI nhưng cùng sprint GV</td>
+              <td><code>TeacherSchedulePage</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="ai-question-gen-perf">17.2 Tối ưu hiệu năng sinh câu hỏi AI <span class="badge ok">đã triển khai</span></h3>
+        <p>
+          Tính năng sinh câu từ tài liệu (Phase 2) ban đầu dùng <strong>một lần gọi OpenRouter</strong> cho toàn bộ câu hỏi.
+          Với 15–25 câu và 3–4 loại (MCQ, Fill, Reading…), thời gian chờ có thể lên <strong>5–7 phút</strong> dù UI đã có progress bar.
+          Sau vòng đo và thử nghiệm, team chuyển sang <strong>hai lớp tối ưu</strong> — giảm output tokens và song song hóa wall-clock — kết quả pilot: <strong>nhanh và chính xác hơn rõ rệt</strong>.
+        </p>
+
+        <h4 id="ai-qg-bottleneck">17.2.1 Công nghệ &amp; điểm nghẽn thực tế</h4>
+        <table>
+          <thead><tr><th>Thành phần</th><th>Công nghệ</th><th>Vai trò</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>LLM gateway</td>
+              <td><strong>OpenRouter</strong> (<code>response_format: json_object</code>)</td>
+              <td>Model mặc định pilot: <code>deepseek/deepseek-v4-flash</code> (nhanh, input rẻ)</td>
+            </tr>
+            <tr>
+              <td>Backend</td>
+              <td>Spring Boot — <code>AiTaskProcessingService</code> async trên <code>aiTaskExecutor</code></td>
+              <td>1 task DB / 1 lần bấm Sinh; worker gọi <code>AiQuestionGenerationService</code></td>
+            </tr>
+            <tr>
+              <td>Prompt</td>
+              <td><code>AiQuestionPromptAssembler</code> + <code>*QuestionTypeHandler</code> (registry theo loại)</td>
+              <td>System = schema + example JSON; User = excerpt + số câu + difficulty</td>
+            </tr>
+            <tr>
+              <td>Validate</td>
+              <td><code>AiQuestionGenResultValidator</code> + handler per type</td>
+              <td><code>normalize()</code> + <code>validate()</code> → <code>validationErrors[]</code> trên từng draft</td>
+            </tr>
+            <tr>
+              <td>Frontend</td>
+              <td>React — <code>AiExerciseGenDialog</code> poll <code>GET /ai/tasks/{id}</code> 2s, max 5 phút</td>
+              <td>Preview inline; import chỉ câu <code>selected</code> và không lỗi</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <div>
+            <strong>Insight đo được:</strong> Thời gian chờ chủ yếu = <strong>output tokens</strong> (model sinh JSON tuần tự), không phải parse JSON hay poll FE.
+            Input ~2–4k tokens; output 15–25 câu full schema có thể ~4–9k tokens → 1–7 phút tuỳ model.
+            Stream chỉ cải thiện <em>cảm nhận</em> (progress bar), không cắt wall-clock đáng kể khi vẫn single-shot.
+          </div>
+        </div>
+
+        <h4 id="ai-qg-failed-attempt">17.2.2 Khó khăn &amp; thử nghiệm đã bỏ (batch v1)</h4>
+        <p>Lần tối ưu đầu (trước khi có giải pháp ổn định) gặp các vấn đề sau — đã <strong>revert</strong> khỏi codebase:</p>
+        <table>
+          <thead><tr><th>Hướng thử</th><th>Mục tiêu</th><th>Vì sao thất bại</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Batch theo loại (v1)</strong></td>
+              <td>Chia N câu → nhiều request OpenRouter, merge <code>questions[]</code></td>
+              <td>Excerpt lặp mỗi batch (~8.6k chars × 3); merge lệch số câu; skeleton JSON (<code>promptText</code> trống)</td>
+            </tr>
+            <tr>
+              <td><strong>Slim prompt (bỏ example)</strong></td>
+              <td>Giảm input tokens</td>
+              <td>Model sinh JSON kém ổn định — preview 5 MCQ toàn lỗi <em>«Thiếu nội dung câu hỏi»</em></td>
+            </tr>
+            <tr>
+              <td><strong>Batch + slim kết hợp</strong></td>
+              <td>Cả hai cùng lúc</td>
+              <td>Lỗi chồng lỗi; task có thể DONE nhưng preview không dùng được</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          <strong>Bài học:</strong> Không được bỏ hẳn example JSON — cần <em>example tối giản</em> (1 mẫu ngắn/loại).
+          Batch phải validate <strong>per batch</strong>, chấp nhận partial success, và system prompt mỗi batch chỉ <strong>1 loại câu</strong> (không nhồi 4 schema).
+        </p>
+
+        <h4 id="ai-qg-solution">17.2.3 Giải pháp hiện tại — lý do đổi cách làm</h4>
+        <div class="card ok">
+          <h4>A. Tối giản output schema (giảm ~15–20% output tokens)</h4>
+          <p><strong>Trước:</strong> Model phải sinh <code>tempId</code>, <code>selected</code>, <code>promptLang</code>, <code>difficulty</code>, <code>choiceKey</code>, <code>displayOrder</code>… cho mỗi câu và mỗi đáp án.</p>
+          <p><strong>Sau:</strong> Model chỉ sinh nội dung học thuật — <code>questionType</code>, <code>promptText</code>, <code>explanation</code>, <code>choices[{choiceText, correct}]</code> (và <code>contentJson</code> cho TF / Fill / Reading).</p>
+          <p><strong>Backend gắn metadata:</strong> <code>AiQuestionGenResultValidator</code> + <code>normalize()</code> trên từng handler → <code>tempId</code> (q1, q2…), <code>selected=true</code>, <code>promptLang</code>, <code>difficulty</code>, <code>choiceKey</code> a/b/c/d, blank <code>id</code> b1/b2, Reading <code>sq1</code>…</p>
+          <p style="margin-bottom:0"><strong>Lý do:</strong> Mỗi ký tự output = thời gian sinh; metadata là quy ước cố định của LMS — không cần LLM «sáng tạo».</p>
+        </div>
+
+        <div class="card ok" style="margin-top:16px">
+          <h4>B. Parallel batch v2 (giảm wall-clock)</h4>
+          <p><strong>Điều kiện bật:</strong> ≥2 loại câu <strong>và</strong> tổng ≥ <code>AI_QUESTION_GEN_BATCH_MIN_QUESTIONS</code> (mặc định 10). Ngược lại → single-shot + stream.</p>
+          <p><strong>Cách chia:</strong> <code>AiQuestionBatchPlanner</code> chia đều (vd. 20 câu MCQ+Fill → 10+10). Mỗi nhóm = 1 request OpenRouter, system prompt <strong>chỉ 1 loại</strong> + example tối giản của loại đó.</p>
+          <p><strong>Song song:</strong> <code>CompletableFuture</code> trên <code>aiOpenRouterExecutor</code> (max 2 concurrent). Wall-clock ≈ thời gian nhóm chậm nhất, không phải tổng.</p>
+          <p><strong>Chấp nhận trade-off:</strong> Excerpt tài liệu lặp mỗi batch — input token tăng nhưng Flash input rẻ; đổi lại tiết kiệm phút chờ của GV.</p>
+          <p><strong>Partial success:</strong> Task vẫn <code>DONE</code> nếu ≥1 batch thành công; câu lỗi giữ <code>validationErrors[]</code>; <code>meta.summaryMessage</code> (vd. «Đã sinh 18/20 câu hợp lệ») hiện banner ở bước Xem trước.</p>
+          <p style="margin-bottom:0"><strong>Lý do đổi so với v1:</strong> Per-type prompt mỏng hơn + example vẫn có + validate/merge an toàn + không fail cả task vì 1–2 câu skeleton.</p>
+        </div>
+
+        <h4 id="ai-qg-flow">17.2.4 Luồng xử lý kỹ thuật (sau tối ưu)</h4>
+        <pre class="ascii">GV bấm «Sinh câu hỏi»
+  → POST /ai/tasks (PENDING) → aiTaskExecutor worker
+  → AiQuestionGenerationService
+       ├─ [&lt;10 câu hoặc 1 loại] single-shot
+       │     OpenRouter stream → progress_message trên ai_tasks
+       │     parse envelope → normalizeAndValidate
+       └─ [≥10 câu và ≥2 loại] parallel batch
+             BatchPlanner → N CompletableFuture (aiOpenRouterExecutor)
+             mỗi batch: 1 loại, không stream
+             merge questions[] → assignTempIds → validate
+             meta.generationMode = "parallel_batch"
+  → ai_tasks DONE + output_json
+  → FE poll → AiExerciseGenDialog step «Xem trước»
+  → PATCH draft (tùy chọn sửa) → thêm vào EXERCISE_SET</pre>
+
+        <h4>17.2.5 File code chính</h4>
+        <table>
+          <thead><tr><th>File</th><th>Trách nhiệm</th></tr></thead>
+          <tbody>
+            <tr><td><code>AiQuestionGenerationService.java</code></td><td>Routing single-shot vs parallel batch; gọi OpenRouter; merge; meta counts</td></tr>
+            <tr><td><code>AiQuestionBatchPlanner.java</code></td><td>Chia <code>questionCount</code> theo <code>questionTypes</code></td></tr>
+            <tr><td><code>AiQuestionPromptAssembler.java</code></td><td>System/user prompt; <code>buildSystemPromptForType()</code> cho từng batch</td></tr>
+            <tr><td><code>*QuestionTypeHandler.java</code> (4 loại)</td><td>Schema fragment + example JSON tối giản; <code>normalize()</code> gắn key/order</td></tr>
+            <tr><td><code>AiQuestionGenResultValidator.java</code></td><td><code>applyDefaults</code>, <code>assignTempIds</code>, <code>countValid</code></td></tr>
+            <tr><td><code>AsyncConfig.java</code></td><td><code>aiOpenRouterExecutor</code> (tách khỏi <code>aiTaskExecutor</code>)</td></tr>
+            <tr><td><code>AiExerciseGenDialog.tsx</code></td><td>Poll + progress; banner <code>meta.summaryMessage</code></td></tr>
+          </tbody>
+        </table>
+
+        <h4>17.2.6 Cấu hình (.env)</h4>
+        <pre><code>AI_QUESTION_GEN_MODEL=deepseek/deepseek-v4-flash
+AI_QUESTION_GEN_STREAM_ENABLED=true          # single-shot only
+AI_QUESTION_GEN_BATCH_ENABLED=true           # false = luôn single-shot
+AI_QUESTION_GEN_BATCH_MIN_QUESTIONS=10       # ngưỡng bật parallel batch
+AI_QUESTION_GEN_BATCH_MAX_CONCURRENT=2
+AI_QUESTION_GEN_TIMEOUT_SEC=180
+AI_CLIENT_POLL_TIMEOUT_MS=300000</code></pre>
+
+        <h4>17.2.7 Hướng tối ưu tiếp (chưa làm)</h4>
+        <ul>
+          <li><code>AI_GEN_EXCERPT_CHARS</code> — cap excerpt gửi LLM khi doc &gt;50k ký tự (lưu DB vẫn full).</li>
+          <li><code>max_tokens</code> theo <code>questionCount</code> — tránh output phình / timeout.</li>
+          <li>Stream incremental preview từng câu trên FE (SSE) — cải thiện cảm nhận, cần đổi kiến trúc poll.</li>
+        </ul>
+        <p style="margin-bottom:0">
+          Spec đầy đủ cho reviewer ngoài: <code>docs/AI_QUESTION_GEN_TECHNICAL.md</code> (§12–14 bottleneck, thử nghiệm, checklist).
+        </p>
+
+        <h3 id="ai-deferred">17.3 Kế hoạch sau — <span class="badge warn">chưa làm</span></h3>
+        <p>Chi tiết spec đã viết sẵn trong <code>AI_INTEGRATION_PLAN.md</code> §3 — chờ đủ nền sản phẩm (quiz/lesson/enrollment) rồi mới code.</p>
+        <table>
+          <thead><tr><th>Hạng mục</th><th>Mô tả</th><th>Khi nào</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Phase 2.1</strong></td>
+              <td><code>POST /ai/tasks/{id}/import-questions</code> → Question Bank DRAFT; wizard riêng</td>
+              <td>Khi GV cần tái sử dụng câu nhiều bài</td>
+            </tr>
+            <tr>
+              <td><strong>Phase 3 Sprint 1</strong></td>
+              <td>Context LMS (<code>lessonId</code>, lớp, buổi học); quick actions; đính file trong chat; mở AI từ lesson editor</td>
+              <td>Sau khi ưu tiên HS/Lesson ổn định</td>
+            </tr>
+            <tr>
+              <td><strong>Phase 3 Sprint 2</strong></td>
+              <td>Student AI Coach; conversation summary (giảm token)</td>
+              <td>Sau Sprint 1 GV</td>
+            </tr>
+            <tr>
+              <td><strong>Tối ưu §1.11</strong></td>
+              <td>Token budget, truncate context, summary thread dài</td>
+              <td>Khi pilot &gt;15 user hoặc cost tăng</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>Phase 3 Sprint 1 — tóm tắt (tham chiếu, không implement)</h4>
+        <ul>
+          <li><strong>S1-A Context:</strong> AI biết bài học / lớp đang mở → inject vào prompt, ít bịa nội dung.</li>
+          <li><strong>S1-B Quick actions:</strong> Chip “Giải thích ngữ pháp”, “Gợi ý hoạt động”, … — 1 click thay vì gõ prompt.</li>
+          <li><strong>S1-C Attach:</strong> PDF/ảnh trong chat composer (reuse <code>ai_documents</code>).</li>
+          <li><strong>S1-D Entry:</strong> Nút “Hỏi AI” trên lesson editor + teaching plan.</li>
+          <li><strong>S1-E:</strong> Từ chat → sinh câu → preview (nối Phase 2).</li>
+        </ul>
+        <p style="margin-bottom:0">
+          Migration dự kiến: <code>027_ai_conversation_context</code>, <code>028_ai_message_artifact</code>.
+          Checklist đầy đủ: <code>AI_INTEGRATION_PLAN.md</code> §3.7.
+        </p>
+
         <h2 class="section" id="summary">Tổng kết</h2>
         <p>
           <strong>Course English</strong> bám <code>promt.md</code>: 9 module nghiệp vụ + <strong>Lesson = chuỗi Learning Blocks</strong>
@@ -2001,9 +2249,10 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
           <strong>Draft → Publish → Assign → Submit → Grade</strong>.
         </p>
         <p>
-          <strong>Đã có:</strong> Lesson Player (tab Bài học/Bài tập), <code>EXERCISE_SET</code>, MCQ/MATCHING, vocab flashcard, progress server (đọc + practice); <strong>Students Need Support</strong> cho GV (<a href="#students-need-support">mục 16</a>).<br />
-          <strong>Đích tiếp:</strong> CALLOUT/SUMMARY/VIDEO/AUDIO; syllabus sidebar; Assignment V2 — <a href="#lesson-impl-plan">13.10</a>.<br />
-          <strong>Scale:</strong> Redis ưu tiên theo <a href="#redis-built-features">15.2b</a> khi &gt;1k HS hoặc DB đọc nặng.
+          <strong>Đã có:</strong> Lesson Player (10 loại câu), Vibrant Scholar HS UI (~85%), progress server, enrollment filter, notification in-app; <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); <strong>LinguistAI</strong> chat + sinh câu MVP + <strong>tối ưu sinh câu</strong> (<a href="#ai-question-gen-perf">17.2</a>).<br />
+          <strong>Đích tiếp:</strong> Assignment V2; gamification BE (S8b); VIDEO/AUDIO blocks; syllabus trong player — <a href="#lesson-impl-plan">13.10</a>, tab Student.<br />
+          <strong>AI sau:</strong> Phase 2.1 import Question Bank; Phase 3 context LMS — <a href="#ai-deferred">17.3</a>.<br />
+          <strong>Scale:</strong> Redis + RabbitMQ theo <a href="#redis-built-features">15.2b</a> khi &gt;1k HS.
         </p>
 
 
@@ -2045,7 +2294,7 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
             <li><label><input type="checkbox" data-check-id="lc.f.st.toc" data-default="1" /><span>Student: TOC + scroll spy theo heading TEXT</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.st.continue" data-default="1" /><span>Student: Continue learning (local + <code>resolveContinueLearning</code>)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.st.focus" data-default="1" /><span>Student: Focus mode + in bài</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.f.enroll-filter" /><span>P1: Lọc bài theo <code>Enrollment</code> (chỉ lớp đã ghi danh)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.f.enroll-filter" data-default="1" /><span>FE lọc bài theo <code>Enrollment</code> (list + path + vocab)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.progress-api" data-default="1" /><span>API <code>lesson_reading_progress</code> — PUT/GET/continue (<code>006</code>)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.practice-api" data-default="1" /><span>API <code>lesson_practice_attempts</code> — POST + summary batch (<code>005</code>)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.f.progress-sync" data-default="1" /><span>FE <code>lessonProgressSync</code> — debounce PUT + merge <code>updatedAt</code></span></label></li>
@@ -2105,7 +2354,8 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
             <li><label><input type="checkbox" data-check-id="lc.p.upload" data-default="1" /><span>Upload PDF qua FileController</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.p.block-ref" /><span>Block TEXT/IMAGE link tới PDF asset</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.p.embed" /><span>Student: embed PDF viewer HOẶC nút tải</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.p.no-pdf-only" /><span>Rule: không cho bài chỉ PDF (anti PDF viewer)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.p.slide-deck" data-default="1" /><span>Block <code>SLIDE_DECK</code> — import ZIP/PDF → trình chiếu + scroll</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.p.no-pdf-only" data-default="1" /><span>Rule: không bài chỉ PDF tĩnh — dùng SLIDE_DECK + exercise</span></label></li>
           </ul>
 
           <h2 class="section" id="lc-vocab">G. Vocabulary (promt)</h2>
@@ -2123,19 +2373,19 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
           <h2 class="section" id="lc-grammar">H. Grammar — CALLOUT (promt: Grammar)</h2>
           <ul class="checklist" data-group="lc-grammar">
             <li><label><input type="checkbox" data-check-id="lc.h.enum" data-default="1" /><span>Enum <code>CALLOUT</code> (BE)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.h.editor-add" /><span>Admin: thêm block CALLOUT</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.h.variants" /><span>Payload <code>variant</code>: tip | warning | definition | grammar-rule</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.h.form" /><span>Admin: form HTML ngắn + chọn variant</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.h.reader-style" /><span>Student: UI callout (màu/icon theo variant)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.editor-add" data-default="1" /><span>Admin: thêm block CALLOUT</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.variants" data-default="1" /><span>Payload <code>variant</code>: tip | warning | definition | grammar-rule</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.form" data-default="1" /><span>Admin: form HTML ngắn + chọn variant</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.h.reader-style" data-default="1" /><span>Student: UI callout (màu/icon theo variant)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.h.rule-box" /><span>P1: Template “Grammar rule” + ví dụ minh họa</span></label></li>
           </ul>
 
           <h2 class="section" id="lc-summary">I. Key takeaways — SUMMARY</h2>
           <ul class="checklist" data-group="lc-summary">
             <li><label><input type="checkbox" data-check-id="lc.s.enum" data-default="1" /><span>Enum <code>SUMMARY</code> (BE)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.s.editor-add" /><span>Admin: thêm block SUMMARY</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.s.items-payload" /><span>Payload <code>items: string[]</code> (bullet editor)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="lc.s.reader" /><span>Student: UI “Key takeaways” (teal box)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.s.editor-add" data-default="1" /><span>Admin: thêm block SUMMARY</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.s.items-payload" data-default="1" /><span>Payload <code>items: string[]</code> (bullet editor)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="lc.s.reader" data-default="1" /><span>Student: UI “Key takeaways” (teal box)</span></label></li>
             <li><label><input type="checkbox" data-check-id="lc.s.end-lesson" /><span>P1: SUMMARY luôn ở cuối bài (publish rule gợi ý)</span></label></li>
           </ul>
 
@@ -2206,42 +2456,43 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
             <span class="eyebrow">Học sinh · Giao diện &amp; chức năng</span>
             <h1 style="font-size:2rem">Student Progress</h1>
             <p>
-              Snapshot tiến độ màn HS — theme hiện tại <strong>English Glass</strong>, mục tiêu redesign
-              <strong>Vibrant Scholar</strong> (<code>Design/stitch_quest_english_learning_platform/</code>).
-              Bản đầy đủ: <code>docs/STUDENT_PROGRESS.md</code> · Cập nhật <strong>13/06/2026</strong>.
+              Theme đang chạy: <strong>Vibrant Scholar</strong> (<code>styles/student/vibrant-theme.css</code>, token <code>--vq-*</code>).
+              Bản đầy đủ + sprint S0–S8b: <code>docs/STUDENT_PROGRESS.md</code> · Cập nhật <strong>25/06/2026</strong>.
             </p>
             <div class="meta">
-              <span class="badge ok">Chức năng cốt lõi ~65%</span>
-              <span class="badge warn">UI mock LingoQuest ~15%</span>
-              <span class="badge info">Exercise 7/8 loại câu</span>
+              <span class="badge ok">Chức năng cốt lõi ~85%</span>
+              <span class="badge ok">Vibrant Scholar UI ~75%</span>
+              <span class="badge info">Exercise 10/10 loại câu</span>
+              <span class="badge warn">Leaderboard BE — S8b</span>
             </div>
           </div>
 
           <div class="progress-panel" id="st-overview-panel">
             <div class="progress-head">
               <strong>Tổng quan theo nhóm</strong>
-              <span class="progress-pct">~65% chức năng</span>
+              <span class="progress-pct">~85% chức năng</span>
             </div>
             <table style="width:100%;font-size:14px;margin-top:8px">
               <thead><tr><th>Nhóm</th><th>Tiến độ</th><th>Ghi chú</th></tr></thead>
               <tbody>
-                <tr><td>Shell &amp; điều hướng</td><td><strong>40%</strong></td><td>Sidebar 3 mục; chưa bottom nav, Path, Profile</td></tr>
-                <tr><td>Trang chủ &amp; danh sách bài</td><td><strong>55%</strong></td><td>Home + list + search; chưa dashboard gamified</td></tr>
-                <tr><td>Lesson Player</td><td><strong>75%</strong></td><td>TOC, focus, Up Next, sync server</td></tr>
-                <tr><td>Bài tập (Exercise)</td><td><strong>80%</strong></td><td>7/8 loại câu; attempt server; reskin UI chưa</td></tr>
-                <tr><td>Gamification</td><td><strong>0%</strong></td><td>XP, streak, badge, leaderboard</td></tr>
-                <tr><td>Enrollment filter</td><td><strong>10%</strong></td><td>BE có; FE chưa lọc lesson list</td></tr>
+                <tr><td>Shell &amp; điều hướng</td><td><strong>85%</strong></td><td>Sidebar + bottom nav; 6 mục chính</td></tr>
+                <tr><td>Trang chủ &amp; danh sách bài</td><td><strong>90%</strong></td><td>Home bento + XP/streak FE + enrollment filter</td></tr>
+                <tr><td>Lesson Player</td><td><strong>85%</strong></td><td>Vq reskin, TOC, focus, sync server, SLIDE_DECK</td></tr>
+                <tr><td>Bài tập (Exercise)</td><td><strong>90%</strong></td><td>10 loại câu; retry câu sai; result/review Vq</td></tr>
+                <tr><td>Từ vựng</td><td><strong>75%</strong></td><td><code>/student/vocab</code> + flashcard practice</td></tr>
+                <tr><td>Gamification (FE)</td><td><strong>40%</strong></td><td>XP/streak/badge client-side (S8a); chưa BE</td></tr>
+                <tr><td>Enrollment filter</td><td><strong>70%</strong></td><td>BE + FE list/path/vocab (S6)</td></tr>
                 <tr><td>Assignment / nộp bài</td><td><strong>0%</strong></td><td>Roadmap v1 — chưa có màn HS</td></tr>
-                <tr><td>Redesign Vibrant Scholar</td><td><strong>0%</strong></td><td>Mock HTML + DESIGN.md</td></tr>
+                <tr><td>Leaderboard</td><td><strong>5%</strong></td><td>Placeholder — <code>GAMIFICATION_PLAN.md</code> S8b</td></tr>
               </tbody>
             </table>
           </div>
 
           <div class="callout">
             <div>
-              <strong>Theme:</strong> đang chạy <code>student-english-theme.css</code> ·
-              <strong>Đích:</strong> <code>student-vibrant-theme.css</code> (Quicksand, Nunito, tactile 3D).
-              Admin giữ Academic Core — không trộn token.
+              <strong>Layout:</strong> <code>StudentAppLayout</code> (sidebar + bottom nav) ·
+              <code>StudentPlayerLayout</code> (lesson player, không app nav).
+              Admin giữ Academic Core — không trộn token HS.
             </div>
           </div>
 
@@ -2249,28 +2500,45 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
           <table>
             <thead><tr><th>Route</th><th>Trang</th><th>Trạng thái</th></tr></thead>
             <tbody>
-              <tr><td><code>/student</code></td><td>Trang chủ</td><td><span class="badge ok">✓ Cơ bản</span></td></tr>
-              <tr><td><code>/student/lessons</code></td><td>Danh sách bài publish</td><td><span class="badge ok">✓ Search + card</span></td></tr>
-              <tr><td><code>/student/lessons/:slug</code></td><td>Lesson Player</td><td><span class="badge ok">✓ Study + Practice</span></td></tr>
+              <tr><td><code>/student</code></td><td>Trang chủ bento</td><td><span class="badge ok">✓ S2</span></td></tr>
+              <tr><td><code>/student/lessons</code></td><td>Danh sách bài + enrollment filter</td><td><span class="badge ok">✓ S3/S6</span></td></tr>
+              <tr><td><code>/student/lessons/:slug</code></td><td>Lesson Player</td><td><span class="badge ok">✓ S4/S5</span></td></tr>
+              <tr><td><code>/student/path</code></td><td>Lộ trình theo Unit</td><td><span class="badge ok">✓ S3</span></td></tr>
+              <tr><td><code>/student/vocab</code></td><td>Trung tâm từ vựng</td><td><span class="badge ok">✓ S7</span></td></tr>
+              <tr><td><code>/student/vocab/:setId</code></td><td>Flashcard practice</td><td><span class="badge ok">✓ S7</span></td></tr>
+              <tr><td><code>/student/profile</code></td><td>Hồ sơ 3 tab</td><td><span class="badge ok">✓ S8a</span></td></tr>
+              <tr><td><code>/student/leaderboard</code></td><td>Bảng xếp hạng</td><td><span class="badge warn">Placeholder S8b</span></td></tr>
               <tr><td><code>/student/usage-guide</code></td><td>Hướng dẫn</td><td><span class="badge ok">✓</span></td></tr>
-              <tr><td><code>/student/path</code></td><td>Lộ trình học (map)</td><td><span class="badge crit">Chưa có</span></td></tr>
-              <tr><td><code>/student/vocab</code></td><td>Trung tâm từ vựng</td><td><span class="badge crit">Chưa có</span></td></tr>
-              <tr><td><code>/student/profile</code></td><td>Hồ sơ</td><td><span class="badge crit">Chưa có</span></td></tr>
-              <tr><td><code>/student/leaderboard</code></td><td>Bảng xếp hạng</td><td><span class="badge crit">Chưa có</span></td></tr>
             </tbody>
           </table>
-          <p><strong>Nav hiện tại:</strong> Trang chủ · Bài học · Hướng dẫn (<code>StudentSidebar.tsx</code>, 240px).</p>
+          <p><strong>Nav:</strong> Trang chủ · Lộ trình · Bài học · Từ vựng · Hồ sơ · Hướng dẫn (<code>studentNavItems.ts</code>) + bottom nav 4 mục.</p>
+
+          <h2 class="section" id="st-sprints">A.1 Sprint đã hoàn thành (S0–S8a)</h2>
+          <table>
+            <thead><tr><th>Sprint</th><th>Phạm vi</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              <tr><td>S0–S1</td><td>Shell 2 mode, UI kit Vq, login → <code>/student</code></td><td>✓</td></tr>
+              <tr><td>S2</td><td>Home dashboard bento + XP hero</td><td>✓</td></tr>
+              <tr><td>S3</td><td>Lesson list reskin + learning path</td><td>✓</td></tr>
+              <tr><td>S4</td><td>Lesson player Vq reskin</td><td>✓</td></tr>
+              <tr><td>S5</td><td>TRUE_FALSE, retry câu sai, result/review Vq</td><td>✓</td></tr>
+              <tr><td>S6</td><td>Enrollment filter BE + FE</td><td>✓</td></tr>
+              <tr><td>S7</td><td>Vocab center MVP</td><td>✓</td></tr>
+              <tr><td><strong>S8a</strong></td><td>Profile MVP — stats + badges + history (FE-only)</td><td>✓</td></tr>
+              <tr><td>S8b</td><td>Gamification BE — streak, rank, leaderboard</td><td>📋 <code>GAMIFICATION_PLAN.md</code></td></tr>
+            </tbody>
+          </table>
 
           <h2 class="section" id="st-features">B. Chức năng đã có</h2>
 
           <h3 id="st-home">B.1 Trang chủ &amp; danh sách</h3>
           <ul class="checklist" data-group="st-done-home">
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Tiếp tục học (<code>ContinueLearningCard</code> + merge server)</span></label></li>
-            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Link danh sách bài + search publish</span></label></li>
-            <li><label><input type="checkbox" disabled /><span>Card Quiz home (⚠ lỗi thời — exercise đã có trong lesson)</span></label></li>
-            <li><label><input type="checkbox" disabled /><span>Hero mascot, streak, XP, Daily Goals</span></label></li>
-            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Badge practice passed trên list</span></label></li>
-            <li><label><input type="checkbox" disabled /><span>Lọc bài theo Enrollment</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Home bento + XP/streak thật (derive FE)</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Danh sách bài + search + badge practice passed</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Lọc theo lớp đã ghi danh (<code>EnrollmentClassroomFilter</code>)</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Lộ trình <code>/student/path</code> theo Unit</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Chuông thông báo trên topbar HS (<code>NotificationBell</code> + WebSocket)</span></label></li>
           </ul>
 
           <h3 id="st-player">B.2 Lesson Player</h3>
@@ -2280,7 +2548,7 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Focus mode + in bài</span></label></li>
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Up Next cùng môn</span></label></li>
             <li class="is-done"><label><input type="checkbox" checked disabled /><span><code>lessonProgressSync</code> → API reading progress</span></label></li>
-            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Study blocks: TEXT, IMAGE, VIDEO, AUDIO, CALLOUT, SUMMARY, VOCABULARY</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Study: TEXT, IMAGE, VOCABULARY, CALLOUT, SUMMARY, <code>SLIDE_DECK</code></span></label></li>
           </ul>
 
           <h3 id="st-exercise">B.3 Bài tập (ExercisePlayer)</h3>
@@ -2288,37 +2556,46 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
             <thead><tr><th>Loại câu</th><th>Player</th><th>Component</th></tr></thead>
             <tbody>
               <tr><td><code>MULTIPLE_CHOICE</code></td><td>✓</td><td><code>MultipleChoiceQuestion</code></td></tr>
+              <tr><td><code>TRUE_FALSE</code></td><td>✓</td><td><code>TrueFalseQuestion</code></td></tr>
               <tr><td><code>MATCHING</code></td><td>✓</td><td><code>MatchingQuestion</code></td></tr>
               <tr><td><code>FILL_BLANK</code></td><td>✓</td><td><code>FillBlankQuestion</code></td></tr>
+              <tr><td><code>GAP_FILL_MCQ</code></td><td>✓</td><td><code>GapFillMcqQuestion</code></td></tr>
+              <tr><td><code>READING_COMPREHENSION</code></td><td>✓</td><td><code>ReadingComprehensionQuestion</code></td></tr>
               <tr><td><code>LISTEN_CHOOSE</code></td><td>✓</td><td><code>ListenChooseQuestion</code></td></tr>
-              <tr><td><code>SPELLING</code></td><td>✓</td><td><code>SpellingQuestion</code></td></tr>
               <tr><td><code>LISTEN_TYPE</code></td><td>✓</td><td><code>ListenTypeQuestion</code></td></tr>
+              <tr><td><code>SPELLING</code></td><td>✓</td><td><code>SpellingQuestion</code></td></tr>
               <tr><td><code>REORDER_SENTENCE</code></td><td>✓</td><td><code>ReorderSentenceQuestion</code></td></tr>
-              <tr><td><code>TRUE_FALSE</code></td><td>✗</td><td>Chưa có component</td></tr>
             </tbody>
           </table>
           <ul class="checklist" data-group="st-done-exercise">
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Stepped + shuffle + passScorePercent</span></label></li>
-            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Result + Review + confetti pass</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Result + Review Vq + confetti pass</span></label></li>
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Lưu attempt server (<code>lesson_practice_attempts</code>)</span></label></li>
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Session localStorage (F5)</span></label></li>
-            <li><label><input type="checkbox" disabled /><span>Luyện lại chỉ câu sai</span></label></li>
-            <li><label><input type="checkbox" disabled /><span>Reskin UI mock (tactile, feedback tray)</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Luyện lại chỉ câu sai (<code>onRetryWrong</code>)</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>Polish UI mock còn lại (tactile tray 100%)</span></label></li>
+          </ul>
+
+          <h3 id="st-profile">B.4 Profile (S8a — FE-only)</h3>
+          <ul class="checklist" data-group="st-done-profile">
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Header: avatar, tên, email JWT, lớp ghi danh</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Tab Tổng quan: 4 metric + streak + CTA</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Tab Huy hiệu: 6 badge unlock theo rule client</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Tab Lịch sử: 15 lần làm bài gần nhất</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>XP/streak lưu server (S8b)</span></label></li>
           </ul>
 
           <h2 class="section" id="st-design-map">C. Map mock thiết kế → code</h2>
           <table>
             <thead><tr><th>Mock (<code>stitch_quest/…</code>)</th><th>Code / màn</th><th>Phase</th></tr></thead>
             <tbody>
-              <tr><td><code>student_home_dashboard</code></td><td><code>StudentHomePage.tsx</code></td><td>P1</td></tr>
-              <tr><td><code>learning_path</code></td><td><code>StudentLearningPathPage</code> (mới)</td><td>P2</td></tr>
-              <tr><td><code>lesson_player_content_block</code></td><td><code>StudyPanel</code> focus layout</td><td>P2</td></tr>
-              <tr><td><code>quiz_unscramble_letters</code></td><td><code>SpellingQuestion</code> reskin</td><td>P2</td></tr>
-              <tr><td><code>vocab_center_match_word_to_image</code></td><td><code>MatchingQuestion</code> + <code>/student/vocab</code></td><td>P2</td></tr>
-              <tr><td><code>quiz_result_encouragement</code></td><td><code>ExerciseResultScreen</code> fail</td><td>P2</td></tr>
-              <tr><td><code>lesson_completion_passed</code></td><td><code>ExerciseResultScreen</code> pass</td><td>P2</td></tr>
-              <tr><td><code>student_achievements</code></td><td>Profile tab</td><td>P3</td></tr>
-              <tr><td><code>profile_leaderboard</code></td><td><code>StudentLeaderboardPage</code></td><td>P3</td></tr>
+              <tr><td><code>student_home_dashboard</code></td><td><code>student/home/HomePage.tsx</code></td><td>✓ S2</td></tr>
+              <tr><td><code>learning_path</code></td><td><code>student/lessons/LearningPathPage.tsx</code></td><td>✓ S3</td></tr>
+              <tr><td><code>lesson_player_content_block</code></td><td><code>StudyPanel</code> + <code>lesson-player-vq.css</code></td><td>✓ S4</td></tr>
+              <tr><td><code>vocab_center_*</code></td><td><code>VocabCenterPage</code> + <code>VocabSetPracticePage</code></td><td>✓ S7</td></tr>
+              <tr><td><code>quiz_result_encouragement</code></td><td><code>ExerciseResultScreen</code></td><td>✓ S5</td></tr>
+              <tr><td><code>student_achievements</code></td><td><code>ProfileBadgesTab</code></td><td>✓ S8a</td></tr>
+              <tr><td><code>profile_leaderboard</code></td><td><code>StudentLeaderboardPage</code> placeholder</td><td>S8b</td></tr>
             </tbody>
           </table>
           <p>Design tokens: <code>Design/stitch_quest_english_learning_platform/vibrant_scholar/DESIGN.md</code></p>
@@ -2327,12 +2604,15 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
           <table>
             <thead><tr><th>Endpoint</th><th>Dùng ở</th></tr></thead>
             <tbody>
-              <tr><td><code>GET /api/v1/lessons</code> (published)</td><td>Danh sách bài</td></tr>
+              <tr><td><code>GET /api/v1/lessons</code> (+ <code>classroomId</code>, enrolled)</td><td>Danh sách bài</td></tr>
               <tr><td><code>GET /api/v1/lessons/:id</code> / by slug</td><td>Lesson Player</td></tr>
+              <tr><td><code>GET /api/v1/enrollments/my</code></td><td>Filter lớp HS</td></tr>
               <tr><td><code>PUT /api/v1/lesson-reading-progress/:lessonId</code></td><td>Sync tiến độ đọc</td></tr>
               <tr><td><code>GET /api/v1/lesson-reading-progress/continue</code></td><td>Tiếp tục học</td></tr>
-              <tr><td><code>POST /api/v1/lesson-practice-attempt</code></td><td>Nộp bài tập</td></tr>
-              <tr><td><code>GET …/latest</code>, <code>/best</code>, summary</td><td>List + banner</td></tr>
+              <tr><td><code>POST /api/v1/lesson-practice-attempts</code></td><td>Nộp bài tập</td></tr>
+              <tr><td><code>GET …/latest</code>, <code>/best</code>, summary</td><td>List + banner + profile</td></tr>
+              <tr><td><code>GET /api/v1/vocabulary-sets</code></td><td>Vocab center</td></tr>
+              <tr><td><code>GET /api/v1/notifications</code></td><td>Chuông thông báo</td></tr>
             </tbody>
           </table>
 
@@ -2350,41 +2630,41 @@ Rule +20 khi scoreTrendPercent &lt;= -15</code></pre>
             </p>
           </div>
 
-          <h3 id="st-next-short">E.1 Ngắn hạn — polish chức năng</h3>
+          <h3 id="st-next-short">E.1 Ngắn hạn — polish</h3>
           <ul class="checklist" data-group="st-next-short">
-            <li><label><input type="checkbox" data-check-id="st.n.home-quiz" /><span>Sửa/bỏ card “Quiz sắp ra mắt” trên Home</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.n.true-false" /><span>Player <code>TRUE_FALSE</code></span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.n.enroll-filter" /><span>Lọc bài theo Enrollment (FE + API)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.n.wrong-only" /><span>Luyện câu sai từ Review screen</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.syllabus-player" /><span>Syllabus sidebar trong Lesson Player (hiện dùng <code>/student/path</code> riêng)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.video-audio" /><span>Block VIDEO/AUDIO trong StudyPanel (editor + reader)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.n.speak" /><span>Speaking questions (V3)</span></label></li>
           </ul>
 
-          <h3 id="st-next-ui">E.2 Trung hạn — redesign Vibrant Scholar</h3>
+          <h3 id="st-next-ui">E.2 Trung hạn — S8b gamification BE</h3>
           <ul class="checklist" data-group="st-next-ui">
-            <li><label><input type="checkbox" data-check-id="st.u.p0-theme" /><span>P0: <code>student-vibrant-theme.css</code> + primitives</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.u.p1-shell" /><span>P1: Bottom nav + Home dashboard bento</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.u.p2-path" /><span>P2: Learning Path map</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.u.p2-reskin" /><span>P2: Reskin lesson player + exercise</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.u.p2-vocab" /><span>P2: Vocab center (<code>/student/vocab</code>)</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.u.p3-gamify" /><span>P3: XP / streak / profile / leaderboard (BE)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.s8b-stats" /><span>API stats server — XP/streak persistent</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.s8b-leaderboard" /><span><code>StudentLeaderboardPage</code> thật (theo lớp)</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.u.s8b-badge" /><span>Badge unlock sync server</span></label></li>
           </ul>
 
           <h3 id="st-next-long">E.3 Dài hạn — roadmap v1</h3>
           <ul class="checklist" data-group="st-next-long">
             <li><label><input type="checkbox" data-check-id="st.l.assign" /><span>Assignment &amp; Submission flow</span></label></li>
             <li><label><input type="checkbox" data-check-id="st.l.grade-view" /><span>HS xem điểm / feedback GV</span></label></li>
-            <li><label><input type="checkbox" data-check-id="st.l.teacher-report" /><span>Báo cáo tiến độ cho GV</span></label></li>
+            <li><label><input type="checkbox" data-check-id="st.l.ai-coach" /><span>AI Coach HS (Phase 3 Sprint 2)</span></label></li>
           </ul>
 
           <h2 class="section" id="st-files">F. File code chính</h2>
-          <pre class="ascii">src/pages/student/          StudentHomePage, StudentLessonListPage, LessonReaderPage
-src/layouts/student/        StudentLayout, StudentSidebar, StudentHeader
+          <pre class="ascii">src/pages/student/          Route adapters → student/* modules
+src/student/shell/          StudentAppLayout, StudentSidebar, bottom nav
+src/student/home/           HomePage (bento dashboard)
+src/student/lessons/        LessonListPage, LearningPathPage, enrollment filter
 src/student/lessonPlayer/   StudyPanel, ExercisePlayer, *Question.tsx
-src/student/                lessonProgressStorage, lessonProgressSync
-src/styles/                 student-english-theme.css, lesson-reader.css, lesson-player.css
+src/student/vocab/          VocabCenterPage, VocabSetPracticePage
+src/student/profile/        ProfilePage, badges, useStudentStats
+src/student/notifications/  NotificationBell, useNotifications
+src/styles/student/         vibrant-theme.css, lesson-player-vq.css, profile.css
 docs/STUDENT_PROGRESS.md    Bản markdown đầy đủ (cùng nội dung tab này)</pre>
 
           <footer class="page-foot">
-            Snapshot: <code>docs/STUDENT_PROGRESS.md</code> · Tick roadmap lưu <code>course-english.review.checks.v1</code>.
+            Snapshot: <code>docs/STUDENT_PROGRESS.md</code> · Tick roadmap lưu <code>course-english.review.checks.v1</code> · Cập nhật 25/06/2026.
           </footer>
         </section>
 

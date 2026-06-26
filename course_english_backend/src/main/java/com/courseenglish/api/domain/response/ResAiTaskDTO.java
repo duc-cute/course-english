@@ -16,4 +16,8 @@ public class ResAiTaskDTO {
   private JsonNode outputJson;
   private String errorMessage;
   private String model;
+  /** Human-readable step while PROCESSING (batch label, stream chars, etc.). */
+  private String progressMessage;
+  /** 0–100 while PROCESSING; null when idle or done. */
+  private Integer progressPercent;
 }

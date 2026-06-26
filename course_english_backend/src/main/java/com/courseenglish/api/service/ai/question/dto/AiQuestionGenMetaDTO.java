@@ -12,4 +12,10 @@ public class AiQuestionGenMetaDTO {
   private String sourcePageRange;
   private String model;
   private List<QuestionTypeEnum> requestedTypes;
+  private Integer requestedCount;
+  private Integer validCount;
+  private Integer invalidCount;
+  private String generationMode;
+  private Integer batchCount;
+  private String summaryMessage;
 }

@@ -26,14 +26,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AiTaskCommandService {
@@ -53,8 +58,17 @@ public class AiTaskCommandService {
   @Value("${app.ai.daily-gen-task-limit:5}")
   private int dailyGenTaskLimit;
 
+  @Value("${app.ai.client-poll-timeout-ms:300000}")
+  private long clientPollTimeoutMs;
+
   @Value("${app.ai.supported-gen-types:MULTIPLE_CHOICE,TRUE_FALSE,FILL_BLANK,READING_COMPREHENSION}")
   private String supportedGenTypesCsv;
+
+  @Value("${app.ai.task-redispatch-sec:20}")
+  private int taskRedispatchSec;
+
+  /** At most one redispatch per task — avoids flooding aiTaskExecutor on every poll. */
+  private final Set<UUID> redispatchAttempted = ConcurrentHashMap.newKeySet();
 
   public AiTaskCommandService(
       AiTaskRepository aiTaskRepository,
@@ -128,7 +142,7 @@ public class AiTaskCommandService {
             .put("questionCount", count)
             .put("questionTypes", types));
 
-    aiTaskWorker.processAsync(task.getId());
+    scheduleProcessAfterCommit(task.getId());
 
     ResCreateAiTaskDTO dto = new ResCreateAiTaskDTO();
     dto.setTaskId(task.getId());
@@ -141,6 +155,7 @@ public class AiTaskCommandService {
     UUID userId = aiAccessSupport.currentUserId();
     AiTask task = aiTaskRepository.findByIdAndUserIdAndVoidedFalse(taskId, userId)
         .orElseThrow(() -> new IdInvalidException("Tác vụ không tồn tại"));
+    maybeRedispatchStalePendingTask(task);
     return toDto(task);
   }
 
@@ -161,7 +176,7 @@ public class AiTaskCommandService {
             .put("taskId", task.getId())
             .put("taskStatus", task.getStatus() != null ? task.getStatus().name() : null)
             .put("documentId", task.getDocumentId())
-            .put("pollTimeoutMs", 180_000));
+            .put("pollTimeoutMs", clientPollTimeoutMs));
   }
 
   @Transactional
@@ -194,6 +209,52 @@ public class AiTaskCommandService {
     }
     aiTaskRepository.save(task);
     return toDto(task);
+  }
+
+  private void scheduleProcessAfterCommit(UUID taskId) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCommit() {
+          aiTaskWorker.dispatchSafely(taskId);
+        }
+      });
+    } else {
+      aiTaskWorker.dispatchSafely(taskId);
+    }
+  }
+
+  /**
+   * Safety net: worker may have skipped (race before fix) or been queued behind a stuck job.
+   * Re-dispatch if still PENDING with no startedAt after threshold.
+   */
+  private void maybeRedispatchStalePendingTask(AiTask task) {
+    if (task.getStatus() != AiTaskStatusEnum.PENDING) {
+      return;
+    }
+    if (task.getStartedAt() != null || task.getCreatedAt() == null) {
+      return;
+    }
+    long pendingSec = Duration.between(task.getCreatedAt(), Instant.now()).getSeconds();
+    if (pendingSec < taskRedispatchSec) {
+      return;
+    }
+    if (!redispatchAttempted.add(task.getId())) {
+      return;
+    }
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.WARN,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_GEN_SKIP,
+                "Tác vụ PENDING " + pendingSec + "s — kích hoạt lại worker")
+            .userId(task.getUserId())
+            .ref("AI_TASK", task.getId())
+            .put("taskId", task.getId())
+            .put("documentId", task.getDocumentId())
+            .put("step", "redispatch")
+            .put("pendingSec", pendingSec));
+    aiTaskWorker.dispatchSafely(task.getId());
   }
 
   private AiQuestionGenEnvelopeDTO readEnvelope(AiTask task) throws IdInvalidException {
@@ -249,6 +310,8 @@ public class AiTaskCommandService {
     dto.setTaskType(task.getTaskType() != null ? task.getTaskType().name() : null);
     dto.setErrorMessage(task.getErrorMessage());
     dto.setModel(task.getModel());
+    dto.setProgressMessage(task.getProgressMessage());
+    dto.setProgressPercent(task.getProgressPercent());
     if (task.getOutputJson() != null && !task.getOutputJson().isBlank()) {
       try {
         JsonNode node = objectMapper.readTree(task.getOutputJson());

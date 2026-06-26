@@ -1093,11 +1093,13 @@
   --ai-primary: #004ac6;
   --ai-on-primary: #ffffff;
   --ai-surface-container-low: #f2f3ff;
+  --ai-surface-container: #eaedff;
   --ai-surface-container-high: #e2e7ff;
   --ai-surface-container-highest: #dae2fd;
   --ai-surface-container-lowest: #ffffff;
   --ai-on-surface: #131b2e;
   --ai-on-surface-variant: #434655;
+  --ai-outline: #737686;
   --ai-outline-variant: #c3c6d7;
   --ai-surface-variant: #dae2fd;
 
@@ -1331,6 +1333,36 @@
 
 .ai-chat-widget-messages .ai-assistant-msg-ai {
   max-width: 90%;
+}
+
+.ai-chat-widget-messages .ai-assistant-bubble-ai--typing {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 6px 4px;
+  min-height: 0;
+}
+
+.ai-chat-widget-messages .ai-assistant-typing-dots {
+  background: transparent;
+  border: none;
+  padding: 0;
+  gap: 5px;
+}
+
+.ai-chat-widget-messages .ai-assistant-typing-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--ai-primary);
+  opacity: 0.35;
+}
+
+.ai-chat-widget-messages .ai-assistant-typing-dot:nth-child(2) {
+  opacity: 0.55;
+}
+
+.ai-chat-widget-messages .ai-assistant-typing-dot:nth-child(3) {
+  opacity: 0.75;
 }
 
 .ai-chat-widget-loading {
