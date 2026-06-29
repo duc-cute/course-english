@@ -11,18 +11,19 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Skeleton,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  AdminCatalogGridTable,
   AdminCatalogPageHeader,
   AdminCatalogToolbar,
   ClassroomPagingAutocomplete,
   ConfirmDialog,
   StudentPagingAutocomplete,
+  type CatalogGridColumn,
 } from "../../admin/components";
 import {
   muBtnSmOutlined,
@@ -58,8 +59,15 @@ const defaultForm: EnrollmentForm = {
   status: "ACTIVE",
 };
 
-const TABLE_GRID =
-  "72px minmax(200px,1fr) minmax(180px,1fr) minmax(220px,1fr) 100px 160px 120px";
+function EnrollmentStatusBadge({ status }: { status?: string }) {
+  const isActive = status !== "INACTIVE";
+  return (
+    <span className={`enrollment-status enrollment-status--${isActive ? "active" : "inactive"}`}>
+      <span className={`enrollment-status__dot enrollment-status__dot--${isActive ? "active" : "inactive"}`} />
+      {status || "ACTIVE"}
+    </span>
+  );
+}
 
 export function ManageEnrollmentPage() {
   const [rows, setRows] = useState<EnrollmentRecord[]>([]);
@@ -182,6 +190,86 @@ export function ManageEnrollmentPage() {
     }
   };
 
+  const enrollmentColumns = useMemo<CatalogGridColumn<EnrollmentRecord>[]>(
+    () => [
+      {
+        key: "stt",
+        header: "STT",
+        width: "72px",
+        mobileRole: "hidden",
+        className: "catalog-table-muted",
+        render: (_item, index) => page * size + index + 1,
+      },
+      {
+        key: "classroom",
+        header: "Lớp học",
+        width: "minmax(200px, 1fr)",
+        mobileRole: "meta",
+        render: (item) => <span className="enrollment-class-badge">{item.classroomName || "—"}</span>,
+      },
+      {
+        key: "student",
+        header: "Học sinh",
+        width: "minmax(180px, 1fr)",
+        mobileRole: "title",
+        render: (item) => item.studentName || "—",
+      },
+      {
+        key: "email",
+        header: "Email",
+        width: "minmax(220px, 1fr)",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (item) => item.studentEmail || "—",
+      },
+      {
+        key: "status",
+        header: "Trạng thái",
+        width: "100px",
+        mobileRole: "meta",
+        render: (item) => <EnrollmentStatusBadge status={item.status} />,
+      },
+      {
+        key: "joinedAt",
+        header: "Ngày tham gia",
+        width: "160px",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (item) => (item.joinedAt ? new Date(item.joinedAt).toLocaleString("vi-VN") : "—"),
+      },
+      {
+        key: "actions",
+        header: "Thao tác",
+        width: "120px",
+        align: "center",
+        mobileRole: "actions",
+        className: "enrollment-table-actions",
+        render: (item) => (
+          <>
+            <Tooltip title="Sửa">
+              <IconButton size="small" className="enrollment-action-edit" onClick={() => void openEdit(item)}>
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Xóa">
+              <IconButton
+                size="small"
+                className="enrollment-action-delete"
+                onClick={() => {
+                  setDeleting(item);
+                  setOpenDelete(true);
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ),
+      },
+    ],
+    [page, size],
+  );
+
   return (
     <Box className="admin-catalog-page">
       <AdminCatalogPageHeader
@@ -214,85 +302,19 @@ export function ManageEnrollmentPage() {
 
       {error ? <Alert severity="error" sx={{ mb: 1.5, py: 0.25, fontSize: 12 }}>{error}</Alert> : null}
 
-      <Box className="enrollment-table-card">
-        <Box
-          className="enrollment-table-grid enrollment-table-grid--head"
-          sx={{ gridTemplateColumns: TABLE_GRID }}
-        >
-          <Box>STT</Box>
-          <Box>Lớp học</Box>
-          <Box>Học sinh</Box>
-          <Box>Email</Box>
-          <Box>Trạng thái</Box>
-          <Box>Ngày tham gia</Box>
-          <Box sx={{ textAlign: "center" }}>Thao tác</Box>
-        </Box>
-        {loading ? (
-          <Box sx={{ p: 2 }}>
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-          </Box>
-        ) : rows.length === 0 ? (
-          <Box className="admin-catalog-page__empty">Không có dữ liệu phân lớp.</Box>
-        ) : (
-          rows.map((item, index) => {
-            const isActive = item.status !== "INACTIVE";
-            return (
-              <Box
-                key={item.id}
-                className="enrollment-table-grid enrollment-table-grid--row"
-                sx={{ gridTemplateColumns: TABLE_GRID }}
-              >
-                <Box className="enrollment-table-grid__muted">{page * size + index + 1}</Box>
-                <Box>
-                  <span className="enrollment-class-badge">{item.classroomName || "—"}</span>
-                </Box>
-                <Box>{item.studentName || "—"}</Box>
-                <Box className="enrollment-table-grid__muted">{item.studentEmail || "—"}</Box>
-                <Box>
-                  <span className={`enrollment-status enrollment-status--${isActive ? "active" : "inactive"}`}>
-                    <span
-                      className={`enrollment-status__dot enrollment-status__dot--${isActive ? "active" : "inactive"}`}
-                    />
-                    {item.status || "ACTIVE"}
-                  </span>
-                </Box>
-                <Box className="enrollment-table-grid__muted">
-                  {item.joinedAt ? new Date(item.joinedAt).toLocaleString("vi-VN") : "—"}
-                </Box>
-                <Box className="enrollment-table-actions">
-                  <Tooltip title="Sửa">
-                    <IconButton
-                      size="small"
-                      className="enrollment-action-edit"
-                      onClick={() => void openEdit(item)}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Xóa">
-                    <IconButton
-                      size="small"
-                      className="enrollment-action-delete"
-                      onClick={() => {
-                        setDeleting(item);
-                        setOpenDelete(true);
-                      }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Box>
-            );
-          })
-        )}
-        <Box className="enrollment-table-footer">
-          <Typography variant="body2" className="enrollment-table-footer__total">
+      <Box className="admin-catalog-page__table-card enrollment-table-card">
+        <AdminCatalogGridTable
+          columns={enrollmentColumns}
+          rows={rows}
+          loading={loading}
+          emptyText="Không có dữ liệu phân lớp."
+          getRowKey={(item) => item.id}
+        />
+        <Box className="admin-catalog-page__table-footer enrollment-table-footer">
+          <Typography variant="body2" className="admin-catalog-page__table-footer-total enrollment-table-footer__total">
             Tổng: {total}
           </Typography>
-          <Box className="enrollment-table-footer__controls">
+          <Box className="admin-catalog-page__table-footer-controls enrollment-table-footer__controls">
             <Button
               variant="outlined"
               sx={muBtnSmOutlined}

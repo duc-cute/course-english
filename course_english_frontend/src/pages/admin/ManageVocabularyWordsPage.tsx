@@ -11,14 +11,18 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Skeleton,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AdminCatalogPageHeader, AdminCatalogToolbar } from "../../admin/components";
+import {
+  AdminCatalogGridTable,
+  AdminCatalogPageHeader,
+  AdminCatalogToolbar,
+  type CatalogGridColumn,
+} from "../../admin/components";
 import { VocabularyAudioPreview } from "../../admin/components/vocabulary/VocabularyAudioPreview";
 import {
   muBtnSmOutlined,
@@ -178,6 +182,69 @@ export function ManageVocabularyWordsPage() {
     }
   };
 
+  const vocabularyColumns = useMemo<CatalogGridColumn<VocabularyWordRecord>[]>(
+    () => [
+      {
+        key: "stt",
+        header: "#",
+        width: "48px",
+        mobileRole: "hidden",
+        className: "catalog-table-muted",
+        render: (_row, index) => page * size + index + 1,
+      },
+      {
+        key: "wordEn",
+        header: "Từ (EN)",
+        width: "minmax(120px, 1fr)",
+        mobileRole: "title",
+        render: (row) => row.wordEn,
+      },
+      {
+        key: "meaningVi",
+        header: "Nghĩa (VI)",
+        width: "minmax(140px, 1.2fr)",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (row) => row.meaningVi ?? "—",
+      },
+      {
+        key: "phonetic",
+        header: "IPA",
+        width: "120px",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (row) => row.phonetic ?? "—",
+      },
+      {
+        key: "audio",
+        header: "Audio",
+        width: "72px",
+        mobileRole: "inline",
+        render: (row) =>
+          hasAudio(row) ? (
+            <VocabularyAudioPreview audioUkUrl={row.audioUkUrl} audioUsUrl={row.audioUsUrl} compact />
+          ) : (
+            <Chip size="small" label="—" variant="outlined" sx={{ height: 20, fontSize: 10 }} />
+          ),
+      },
+      {
+        key: "actions",
+        header: "Thao tác",
+        width: "56px",
+        align: "center",
+        mobileRole: "actions",
+        render: (row) => (
+          <Tooltip title="Chi tiết / Enrich">
+            <IconButton size="small" color="primary" onClick={() => void openDetail(row)}>
+              <EditOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ),
+      },
+    ],
+    [page, size],
+  );
+
   return (
     <Box className="admin-catalog-page">
       <AdminCatalogPageHeader
@@ -218,64 +285,13 @@ export function ManageVocabularyWordsPage() {
       ) : null}
 
       <Box className="admin-catalog-page__table-card">
-        <Box
-          className="catalog-table-head"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 56px",
-            columnGap: 1,
-          }}
-        >
-          <Box>#</Box>
-          <Box>Từ (EN)</Box>
-          <Box>Nghĩa (VI)</Box>
-          <Box>IPA</Box>
-          <Box>Audio</Box>
-          {/* <Box>POS</Box> */}
-          <Box sx={{ textAlign: "center" }} />
-        </Box>
-
-        {loading ? (
-          <Box sx={{ p: 2 }}>
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-          </Box>
-        ) : rows.length === 0 ? (
-          <Box className="admin-catalog-page__empty">Chưa có từ trong thư viện. Thêm từ hoặc lưu bộ từ vựng để tự enrich.</Box>
-        ) : (
-          rows.map((row, index) => (
-            <Box
-              key={row.id ?? row.wordEn}
-              className="catalog-table-row"
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "48px minmax(120px,1fr) minmax(140px,1.2fr) 120px 72px 56px",
-                columnGap: 1,
-              }}
-            >
-              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
-              <Box sx={{ fontWeight: 500 }}>{row.wordEn}</Box>
-              <Box className="catalog-table-muted" sx={{ fontSize: 12 }}>{row.meaningVi ?? "—"}</Box>
-              <Box className="catalog-table-muted" sx={{ fontSize: 12 }}>{row.phonetic ?? "—"}</Box>
-              <Box>
-                {hasAudio(row) ? (
-                  <VocabularyAudioPreview audioUkUrl={row.audioUkUrl} audioUsUrl={row.audioUsUrl} compact />
-                ) : (
-                  <Chip size="small" label="—" variant="outlined" sx={{ height: 20, fontSize: 10 }} />
-                )}
-              </Box>
-              {/* <Box sx={{ fontSize: 11, color: "#5F5E5A" }}>{row.partOfSpeech ?? "—"}</Box> */}
-              <Box className="catalog-table-actions">
-                <Tooltip title="Chi tiết / Enrich">
-                  <IconButton size="small" color="primary" onClick={() => void openDetail(row)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-          ))
-        )}
-
+        <AdminCatalogGridTable
+          columns={vocabularyColumns}
+          rows={rows}
+          loading={loading}
+          emptyText="Chưa có từ trong thư viện. Thêm từ hoặc lưu bộ từ vựng để tự enrich."
+          getRowKey={(row) => row.id ?? row.wordEn}
+        />
         <Box className="admin-catalog-page__table-footer">
           <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng {total} từ

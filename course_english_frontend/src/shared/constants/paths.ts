@@ -20,6 +20,8 @@ export const paths = {
   MANAGE_ENROLLMENT: "manage-enrollment",
   MANAGE_LESSON: "manage-lesson",
   MANAGE_QUESTIONS: "questions",
+  MANAGE_EXAM_PAPERS: "exam-papers",
+  EXAM_PAPER_EDITOR: "exam-papers/:examPaperId/edit",
   MANAGE_VOCABULARY_WORDS: "vocabulary-words",
   MANAGE_VOCABULARY_SETS: "vocabulary-sets",
   MANAGE_SYSTEM_CONFIG: "system-config",

@@ -69,6 +69,14 @@ public final class CatalogSearchSpecs {
         );
     }
 
+    public static Specification<ExamPaper> examPaperSearch(ReqSearchExamPaperDTO req) {
+        return and(
+                examPaperKeywordLike(req.getKeyword()),
+                examPaperStatusEquals(req.getStatus()),
+                examPaperSubjectIdEquals(req.getSubjectId())
+        );
+    }
+
     public static Specification<VocabularySet> vocabularySetSubjectIdsIn(List<UUID> subjectIds) {
         if (subjectIds == null || subjectIds.isEmpty()) {
             return (root, query, cb) -> cb.disjunction();
@@ -136,6 +144,35 @@ public final class CatalogSearchSpecs {
         }
         return (root, query, cb) -> {
             Join<VocabularySet, Subject> subjectJoin = root.join("subject", JoinType.INNER);
+            return cb.equal(subjectJoin.get("id"), subjectId);
+        };
+    }
+
+    private static Specification<ExamPaper> examPaperKeywordLike(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + keyword.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("title")), pattern),
+                cb.like(cb.lower(root.get("instruction")), pattern)
+        );
+    }
+
+    private static Specification<ExamPaper> examPaperStatusEquals(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("status")), normalized);
+    }
+
+    private static Specification<ExamPaper> examPaperSubjectIdEquals(java.util.UUID subjectId) {
+        if (subjectId == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            Join<ExamPaper, Subject> subjectJoin = root.join("subject", JoinType.LEFT);
             return cb.equal(subjectJoin.get("id"), subjectId);
         };
     }

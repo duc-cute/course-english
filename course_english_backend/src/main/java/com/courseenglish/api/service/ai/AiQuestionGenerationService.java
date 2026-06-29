@@ -16,6 +16,7 @@ import com.courseenglish.api.util.constant.ActivityLogSeverityEnum;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,11 +32,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
 
 @Service
 public class AiQuestionGenerationService {
 
   private static final int LOG_PROMPT_MAX_LEN = 1200;
+  private static final int MAX_QUOTA_RETRIES = 2;
 
   private final OpenRouterClient openRouterClient;
   private final ObjectMapper objectMapper;
@@ -64,6 +67,9 @@ public class AiQuestionGenerationService {
   @Value("${app.ai.question-gen-batch-max-concurrent:2}")
   private int batchMaxConcurrent;
 
+  @Value("${app.ai.exam-section-log-detail-max-chars:50000}")
+  private int examSectionLogDetailMaxChars;
+
   public AiQuestionGenerationService(
       OpenRouterClient openRouterClient,
       ObjectMapper objectMapper,
@@ -88,8 +94,19 @@ public class AiQuestionGenerationService {
       int questionCount,
       List<QuestionTypeEnum> questionTypes,
       int difficulty,
-      String promptLang) throws IdInvalidException {
-    return generate(documentExcerpt, questionCount, questionTypes, difficulty, promptLang, null);
+      String promptLang,
+      AiGenTraceContext trace) throws IdInvalidException {
+    return generate(
+        documentExcerpt,
+        questionCount,
+        questionTypes,
+        difficulty,
+        promptLang,
+        trace,
+        null,
+        false,
+        4,
+        null);
   }
 
   public GenerationResult generate(
@@ -98,13 +115,125 @@ public class AiQuestionGenerationService {
       List<QuestionTypeEnum> questionTypes,
       int difficulty,
       String promptLang,
-      AiGenTraceContext trace) throws IdInvalidException {
-    if (shouldUseParallelBatch(questionCount, questionTypes)) {
+      AiGenTraceContext trace,
+      Map<QuestionTypeEnum, Integer> typeQuotas,
+      boolean topicMode,
+      int readingSubQuestionCount,
+      Map<QuestionTypeEnum, String> customUserPromptByType) throws IdInvalidException {
+    if (typeQuotas != null && !typeQuotas.isEmpty()) {
+      List<BatchSpec> specs = batchPlanner.planFromQuotas(typeQuotas);
+      if (specs.isEmpty()) {
+        throw new IdInvalidException("typeQuotas không hợp lệ");
+      }
       return generateParallelBatched(
-          documentExcerpt, questionCount, questionTypes, difficulty, promptLang, trace);
+          documentExcerpt,
+          specs,
+          questionTypes,
+          questionCount,
+          difficulty,
+          promptLang,
+          trace,
+          topicMode,
+          readingSubQuestionCount,
+          typeQuotas,
+          customUserPromptByType);
+    }
+    if (shouldUseParallelBatch(questionCount, questionTypes)) {
+      List<BatchSpec> specs = batchPlanner.plan(questionCount, questionTypes);
+      return generateParallelBatched(
+          documentExcerpt,
+          specs,
+          questionTypes,
+          questionCount,
+          difficulty,
+          promptLang,
+          trace,
+          topicMode,
+          readingSubQuestionCount,
+          null,
+          customUserPromptByType);
     }
     return generateSingleShot(
-        documentExcerpt, questionCount, questionTypes, difficulty, promptLang, trace, streamEnabled);
+        documentExcerpt,
+        questionCount,
+        questionTypes,
+        difficulty,
+        promptLang,
+        trace,
+        streamEnabled,
+        topicMode,
+        readingSubQuestionCount,
+        customUserPromptByType);
+  }
+
+  /** Backward-compatible overload without custom prompts. */
+  public GenerationResult generate(
+      String documentExcerpt,
+      int questionCount,
+      List<QuestionTypeEnum> questionTypes,
+      int difficulty,
+      String promptLang,
+      AiGenTraceContext trace,
+      Map<QuestionTypeEnum, Integer> typeQuotas,
+      boolean topicMode,
+      int readingSubQuestionCount) throws IdInvalidException {
+    return generate(
+        documentExcerpt,
+        questionCount,
+        questionTypes,
+        difficulty,
+        promptLang,
+        trace,
+        typeQuotas,
+        topicMode,
+        readingSubQuestionCount,
+        null);
+  }
+
+  /** One exam section — instruction distinguishes MCQ variants (Synonyms vs Antonyms). */
+  public GenerationResult generateExamSection(
+      String documentExcerpt,
+      QuestionTypeEnum type,
+      int questionCount,
+      int difficulty,
+      String promptLang,
+      AiGenTraceContext trace,
+      int readingSubQuestionCount,
+      String sectionTitle,
+      String sectionInstruction,
+      ExamSectionLogInfo sectionLog)
+      throws IdInvalidException {
+    String system = promptAssembler.buildSystemPromptForType(type, false);
+    String user =
+        promptAssembler.buildExamSectionUserPrompt(
+            documentExcerpt,
+            questionCount,
+            type,
+            difficulty,
+            promptLang,
+            readingSubQuestionCount,
+            sectionTitle,
+            sectionInstruction);
+
+    List<Map<String, String>> messages =
+        List.of(
+            Map.of("role", "system", "content", system),
+            Map.of("role", "user", "content", user));
+
+    if (sectionLog != null) {
+      logExamSectionPrompt(trace, sectionLog, system, user, documentExcerpt.length());
+    } else {
+      logPromptAssembled(trace, documentExcerpt, system, user, questionCount, List.of(type), "exam_section");
+    }
+
+    OpenRouterClient.ChatResult chatResult = callWithJsonRetry(messages, trace, streamEnabled);
+
+    if (sectionLog != null && chatResult.getContent() != null) {
+      logExamSectionResponse(trace, sectionLog, chatResult);
+    }
+
+    return buildGenerationResult(
+        chatResult, List.of(type), questionCount, difficulty, promptLang, "exam_section", null);
   }
 
   private boolean shouldUseParallelBatch(int questionCount, List<QuestionTypeEnum> questionTypes) {
@@ -121,10 +250,25 @@ public class AiQuestionGenerationService {
       int difficulty,
       String promptLang,
       AiGenTraceContext trace,
-      boolean useStream) throws IdInvalidException {
+      boolean useStream,
+      boolean topicMode,
+      int readingSubQuestionCount,
+      Map<QuestionTypeEnum, String> customUserPromptByType) throws IdInvalidException {
     String system = promptAssembler.buildSystemPrompt(questionTypes);
-    String user = promptAssembler.buildUserPrompt(
-        documentExcerpt, questionCount, questionTypes, difficulty, promptLang);
+    if (topicMode && questionTypes.size() == 1) {
+      system = promptAssembler.buildSystemPromptForType(questionTypes.get(0), true);
+    }
+    String user = resolveUserPrompt(
+        documentExcerpt,
+        questionCount,
+        questionTypes,
+        difficulty,
+        promptLang,
+        topicMode,
+        readingSubQuestionCount,
+        customUserPromptByType,
+        questionTypes.size() == 1 ? questionTypes.get(0) : null,
+        null);
 
     List<Map<String, String>> messages = List.of(
         Map.of("role", "system", "content", system),
@@ -139,12 +283,16 @@ public class AiQuestionGenerationService {
 
   private GenerationResult generateParallelBatched(
       String documentExcerpt,
-      int questionCount,
+      List<BatchSpec> specs,
       List<QuestionTypeEnum> questionTypes,
+      int questionCount,
       int difficulty,
       String promptLang,
-      AiGenTraceContext trace) throws IdInvalidException {
-    List<BatchSpec> specs = batchPlanner.plan(questionCount, questionTypes);
+      AiGenTraceContext trace,
+      boolean topicMode,
+      int readingSubQuestionCount,
+      Map<QuestionTypeEnum, Integer> typeQuotas,
+      Map<QuestionTypeEnum, String> customUserPromptByType) throws IdInvalidException {
     if (specs.isEmpty()) {
       throw new IdInvalidException("Không thể chia batch sinh câu hỏi");
     }
@@ -192,7 +340,11 @@ public class AiQuestionGenerationService {
                       promptLang,
                       trace,
                       batchIndex,
-                      specs.size());
+                      specs.size(),
+                      topicMode,
+                      readingSubQuestionCount,
+                      customUserPromptByType,
+                      null);
                 } catch (InterruptedException e) {
                   Thread.currentThread().interrupt();
                   return BatchOutcome.failed(spec, "Bị gián đoạn");
@@ -254,7 +406,29 @@ public class AiQuestionGenerationService {
     envelope.getMeta().setBatchCount(specs.size());
 
     resultValidator.normalizeAndValidate(envelope, promptLang, difficulty);
-    applyMetaCounts(envelope, questionCount);
+
+    Map<QuestionTypeEnum, Integer> quotaMap =
+        typeQuotas != null && !typeQuotas.isEmpty()
+            ? typeQuotas
+            : specs.stream()
+                .collect(Collectors.toMap(BatchSpec::type, BatchSpec::count, Integer::sum, LinkedHashMap::new));
+
+    if (!quotaMap.isEmpty()) {
+      fillQuotaDeficits(
+          mergedQuestions,
+          quotaMap,
+          documentExcerpt,
+          difficulty,
+          promptLang,
+          topicMode,
+          readingSubQuestionCount,
+          customUserPromptByType,
+          trace);
+      envelope.setQuestions(mergedQuestions);
+      resultValidator.normalizeAndValidate(envelope, promptLang, difficulty);
+    }
+
+    applyMetaCounts(envelope, questionCount, quotaMap.isEmpty() ? null : quotaMap);
 
     if (!batchErrors.isEmpty() && trace != null) {
       activityLogService.log(
@@ -284,7 +458,11 @@ public class AiQuestionGenerationService {
       String promptLang,
       AiGenTraceContext trace,
       int batchIndex,
-      int totalBatches) {
+      int totalBatches,
+      boolean topicMode,
+      int readingSubQuestionCount,
+      Map<QuestionTypeEnum, String> customUserPromptByType,
+      List<String> existingSummariesForDeficit) {
     try {
       if (trace != null) {
         int startPercent = 12 + (batchIndex * 65 / Math.max(1, totalBatches));
@@ -294,9 +472,29 @@ public class AiQuestionGenerationService {
             startPercent);
       }
 
-      String system = promptAssembler.buildSystemPromptForType(spec.type());
-      String user = promptAssembler.buildUserPrompt(
-          documentExcerpt, spec.count(), List.of(spec.type()), difficulty, promptLang);
+      String system = promptAssembler.buildSystemPromptForType(spec.type(), topicMode);
+      String user =
+          existingSummariesForDeficit != null
+              ? promptAssembler.buildDeficitUserPrompt(
+                  documentExcerpt,
+                  spec.type(),
+                  spec.count(),
+                  difficulty,
+                  promptLang,
+                  topicMode,
+                  readingSubQuestionCount,
+                  existingSummariesForDeficit)
+              : resolveUserPrompt(
+                  documentExcerpt,
+                  spec.count(),
+                  List.of(spec.type()),
+                  difficulty,
+                  promptLang,
+                  topicMode,
+                  readingSubQuestionCount,
+                  customUserPromptByType,
+                  spec.type(),
+                  null);
       List<Map<String, String>> messages = List.of(
           Map.of("role", "system", "content", system),
           Map.of("role", "user", "content", user));
@@ -355,7 +553,7 @@ public class AiQuestionGenerationService {
     }
 
     resultValidator.normalizeAndValidate(envelope, promptLang, difficulty);
-    applyMetaCounts(envelope, questionCount);
+    applyMetaCounts(envelope, questionCount, null);
 
     GenerationResult result = new GenerationResult();
     result.setEnvelope(envelope);
@@ -366,6 +564,13 @@ public class AiQuestionGenerationService {
   }
 
   private void applyMetaCounts(AiQuestionGenEnvelopeDTO envelope, int requestedCount) {
+    applyMetaCounts(envelope, requestedCount, null);
+  }
+
+  private void applyMetaCounts(
+      AiQuestionGenEnvelopeDTO envelope,
+      int requestedCount,
+      Map<QuestionTypeEnum, Integer> typeQuotas) {
     if (envelope.getMeta() == null) {
       envelope.setMeta(new AiQuestionGenMetaDTO());
     }
@@ -375,13 +580,178 @@ public class AiQuestionGenerationService {
     envelope.getMeta().setRequestedCount(requestedCount);
     envelope.getMeta().setValidCount(valid);
     envelope.getMeta().setInvalidCount(invalid);
+
+    StringBuilder summary = new StringBuilder();
     if (invalid > 0 || total < requestedCount) {
-      envelope
-          .getMeta()
-          .setSummaryMessage(
-              "Đã sinh " + valid + "/" + requestedCount + " câu hợp lệ"
-                  + (invalid > 0 ? " (" + invalid + " câu lỗi định dạng)" : ""));
+      summary
+          .append("Đã sinh ")
+          .append(valid)
+          .append("/")
+          .append(requestedCount)
+          .append(" câu hợp lệ");
+      if (invalid > 0) {
+        summary.append(" (").append(invalid).append(" câu lỗi định dạng)");
+      }
     }
+    if (typeQuotas != null && !typeQuotas.isEmpty()) {
+      Map<QuestionTypeEnum, Integer> actual =
+          resultValidator.countValidByType(envelope.getQuestions());
+      List<String> gaps = new ArrayList<>();
+      for (Map.Entry<QuestionTypeEnum, Integer> entry : typeQuotas.entrySet()) {
+        int got = actual.getOrDefault(entry.getKey(), 0);
+        if (got != entry.getValue()) {
+          gaps.add(entry.getKey().name() + " " + got + "/" + entry.getValue());
+        }
+      }
+      if (!gaps.isEmpty()) {
+        if (summary.length() > 0) {
+          summary.append(" — ");
+        }
+        summary.append("Quota: ").append(String.join(", ", gaps));
+      }
+    }
+    if (summary.length() > 0) {
+      envelope.getMeta().setSummaryMessage(summary.toString());
+    }
+  }
+
+  private String resolveUserPrompt(
+      String documentExcerpt,
+      int questionCount,
+      List<QuestionTypeEnum> questionTypes,
+      int difficulty,
+      String promptLang,
+      boolean topicMode,
+      int readingSubQuestionCount,
+      Map<QuestionTypeEnum, String> customUserPromptByType,
+      QuestionTypeEnum singleType,
+      List<String> existingSummariesForDeficit) {
+    if (existingSummariesForDeficit != null && singleType != null) {
+      return promptAssembler.buildDeficitUserPrompt(
+          documentExcerpt,
+          singleType,
+          questionCount,
+          difficulty,
+          promptLang,
+          topicMode,
+          readingSubQuestionCount,
+          existingSummariesForDeficit);
+    }
+    if (singleType != null && customUserPromptByType != null) {
+      String override = customUserPromptByType.get(singleType);
+      if (override != null && !override.isBlank()) {
+        return override.trim();
+      }
+    }
+    return promptAssembler.buildUserPrompt(
+        documentExcerpt,
+        questionCount,
+        questionTypes,
+        difficulty,
+        promptLang,
+        topicMode,
+        readingSubQuestionCount);
+  }
+
+  private void fillQuotaDeficits(
+      List<AiDraftQuestionDTO> merged,
+      Map<QuestionTypeEnum, Integer> quotas,
+      String documentExcerpt,
+      int difficulty,
+      String promptLang,
+      boolean topicMode,
+      int readingSubQuestionCount,
+      Map<QuestionTypeEnum, String> customUserPromptByType,
+      AiGenTraceContext trace) throws IdInvalidException {
+    for (int round = 0; round < MAX_QUOTA_RETRIES; round++) {
+      Map<QuestionTypeEnum, Integer> deficits = computeDeficits(merged, quotas);
+      if (deficits.isEmpty()) {
+        return;
+      }
+      for (Map.Entry<QuestionTypeEnum, Integer> entry : deficits.entrySet()) {
+        QuestionTypeEnum type = entry.getKey();
+        int deficit = entry.getValue();
+        if (trace != null) {
+          progressReporter.report(
+              trace.getTaskId(),
+              "Bù quota " + type.name() + " (+" + deficit + ", lần " + (round + 1) + ")…",
+              88);
+        }
+        List<String> existing = summarizeExistingForType(merged, type);
+        BatchSpec spec = new BatchSpec(type, deficit);
+        BatchOutcome outcome =
+            runBatch(
+                documentExcerpt,
+                spec,
+                difficulty,
+                promptLang,
+                trace,
+                0,
+                1,
+                topicMode,
+                readingSubQuestionCount,
+                customUserPromptByType,
+                existing);
+        if (outcome.error() == null && outcome.questions() != null && !outcome.questions().isEmpty()) {
+          merged.addAll(outcome.questions());
+        }
+        AiQuestionGenEnvelopeDTO tmp = new AiQuestionGenEnvelopeDTO();
+        tmp.setQuestions(new ArrayList<>(merged));
+        resultValidator.normalizeAndValidate(tmp, promptLang, difficulty);
+        merged.clear();
+        merged.addAll(tmp.getQuestions());
+      }
+    }
+  }
+
+  private Map<QuestionTypeEnum, Integer> computeDeficits(
+      List<AiDraftQuestionDTO> merged, Map<QuestionTypeEnum, Integer> quotas) {
+    Map<QuestionTypeEnum, Integer> actual = resultValidator.countValidByType(merged);
+    Map<QuestionTypeEnum, Integer> deficits = new LinkedHashMap<>();
+    for (Map.Entry<QuestionTypeEnum, Integer> entry : quotas.entrySet()) {
+      int got = actual.getOrDefault(entry.getKey(), 0);
+      int need = entry.getValue() - got;
+      if (need > 0) {
+        deficits.put(entry.getKey(), need);
+      }
+    }
+    return deficits;
+  }
+
+  private List<String> summarizeExistingForType(List<AiDraftQuestionDTO> merged, QuestionTypeEnum type) {
+    List<String> summaries = new ArrayList<>();
+    if (merged == null) {
+      return summaries;
+    }
+    for (AiDraftQuestionDTO draft : merged) {
+      if (draft.getQuestionType() != type) {
+        continue;
+      }
+      if (draft.getValidationErrors() != null && !draft.getValidationErrors().isEmpty()) {
+        continue;
+      }
+      summaries.add(summarizeDraftItem(draft));
+    }
+    return summaries;
+  }
+
+  private String summarizeDraftItem(AiDraftQuestionDTO draft) {
+    if (draft.getQuestionType() == QuestionTypeEnum.READING_COMPREHENSION && draft.getContentJson() != null) {
+      JsonNode node = draft.getContentJson();
+      JsonNode passage = node.get("passage");
+      if (passage != null && passage.hasNonNull("title")) {
+        return passage.get("title").asText();
+      }
+      if (passage != null && passage.hasNonNull("text")) {
+        String text = passage.get("text").asText().trim();
+        return text.length() > 64 ? text.substring(0, 64) + "…" : text;
+      }
+    }
+    String text = draft.getPromptText() != null ? draft.getPromptText().trim() : "";
+    if (text.length() > 72) {
+      return text.substring(0, 72) + "…";
+    }
+    return text.isEmpty() ? draft.getQuestionType().name() : text;
   }
 
   private void logPromptAssembled(
@@ -429,6 +799,130 @@ public class AiQuestionGenerationService {
             .put("questionCount", questionCount)
             .put("questionTypes", questionTypes));
     progressReporter.report(trace.getTaskId(), "Đang sinh câu hỏi…", 5);
+  }
+
+  private void logExamSectionPrompt(
+      AiGenTraceContext trace,
+      ExamSectionLogInfo section,
+      String system,
+      String user,
+      int documentChars) {
+    if (trace == null) {
+      return;
+    }
+    int systemChars = system.length();
+    int userChars = user.length();
+    int totalChars = systemChars + userChars;
+    String sectionLabel = formatExamSectionLogLabel(section);
+    String detail =
+        sectionLabel
+            + "\n\n--- SYSTEM PROMPT ---\n"
+            + system
+            + "\n\n--- USER PROMPT (document + section instructions) ---\n"
+            + user;
+
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_GEN_PROMPT,
+                "[Section "
+                    + (section.sectionIndex() + 1)
+                    + "/"
+                    + section.sectionTotal()
+                    + "] Prompt gửi AI"
+                    + (section.sectionTitle() != null && !section.sectionTitle().isBlank()
+                        ? " — " + section.sectionTitle().trim()
+                        : ""))
+            .userId(trace.getUserId())
+            .ref("AI_TASK", trace.getTaskId())
+            .detail(detail)
+            .detailMaxChars(examSectionLogDetailMaxChars)
+            .put("taskId", trace.getTaskId())
+            .put("documentId", trace.getDocumentId())
+            .put("documentSource", trace.getDocumentSource())
+            .put("step", "exam_section_prompt")
+            .put("generationMode", "exam_section")
+            .put("sectionIndex", section.sectionIndex())
+            .put("sectionTotal", section.sectionTotal())
+            .put("sectionTitle", section.sectionTitle())
+            .put("sectionInstruction", section.sectionInstruction())
+            .put("questionType", section.questionType() != null ? section.questionType().name() : null)
+            .put("questionCount", section.questionCount())
+            .put("readingSubQuestionCount", section.readingSubQuestionCount())
+            .put("model", questionGenModel)
+            .put("documentChars", documentChars)
+            .put("systemPromptChars", systemChars)
+            .put("userPromptChars", userChars)
+            .put("totalPromptChars", totalChars)
+            .put("estimatedInputTokens", Math.max(1, totalChars / 4)));
+  }
+
+  private void logExamSectionResponse(
+      AiGenTraceContext trace, ExamSectionLogInfo section, OpenRouterClient.ChatResult chatResult) {
+    if (trace == null) {
+      return;
+    }
+    String rawJson = chatResult.getContent() != null ? chatResult.getContent().trim() : "";
+    String sectionLabel = formatExamSectionLogLabel(section);
+    String detail = sectionLabel + "\n\n--- AI JSON RESPONSE ---\n" + rawJson;
+
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_GEN_RESPONSE,
+                "[Section "
+                    + (section.sectionIndex() + 1)
+                    + "/"
+                    + section.sectionTotal()
+                    + "] JSON AI trả về"
+                    + (section.sectionTitle() != null && !section.sectionTitle().isBlank()
+                        ? " — " + section.sectionTitle().trim()
+                        : ""))
+            .userId(trace.getUserId())
+            .ref("AI_TASK", trace.getTaskId())
+            .detail(detail)
+            .detailMaxChars(examSectionLogDetailMaxChars)
+            .put("taskId", trace.getTaskId())
+            .put("documentId", trace.getDocumentId())
+            .put("step", "exam_section_response_json")
+            .put("generationMode", "exam_section")
+            .put("sectionIndex", section.sectionIndex())
+            .put("sectionTotal", section.sectionTotal())
+            .put("sectionTitle", section.sectionTitle())
+            .put("questionType", section.questionType() != null ? section.questionType().name() : null)
+            .put("model", questionGenModel)
+            .put("promptTokens", chatResult.getPromptTokens())
+            .put("completionTokens", chatResult.getCompletionTokens())
+            .put("responseChars", rawJson.length())
+            .put("durationMs", chatResult.getDurationMs()));
+  }
+
+  private static String formatExamSectionLogLabel(ExamSectionLogInfo section) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("=== SECTION ")
+        .append(section.sectionIndex() + 1)
+        .append("/")
+        .append(section.sectionTotal());
+    if (section.sectionTitle() != null && !section.sectionTitle().isBlank()) {
+      sb.append(": ").append(section.sectionTitle().trim());
+    }
+    sb.append(" ===");
+    if (section.questionType() != null) {
+      sb.append("\nType: ").append(section.questionType().name());
+    }
+    if (section.questionType() == QuestionTypeEnum.READING_COMPREHENSION) {
+      sb.append(" | 1 passage × ")
+          .append(section.readingSubQuestionCount())
+          .append(" sub-questions");
+    } else {
+      sb.append(" | questionCount: ").append(section.questionCount());
+    }
+    if (section.sectionInstruction() != null && !section.sectionInstruction().isBlank()) {
+      sb.append("\nInstruction: ").append(section.sectionInstruction().trim());
+    }
+    return sb.toString();
   }
 
   private OpenRouterClient.ChatResult callWithJsonRetry(

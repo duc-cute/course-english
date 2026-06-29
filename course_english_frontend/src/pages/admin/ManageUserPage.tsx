@@ -52,7 +52,6 @@ import {
   muRequired,
   muRoleAdmin,
   muRoleUser,
-  muTableWrap,
   muTd,
   muTextFieldSx,
   muTh,
@@ -86,14 +85,19 @@ function getUserRoleNames(user: UserRecord): string[] {
   return user.role ? [user.role] : [];
 }
 
+function roleDisplayLabel(role?: string): string {
+  if (role === "ADMIN_ROLE") return "Quản trị";
+  if (role === "USER_ROLE") return "Người dùng";
+  if (role === "TEACHER_ROLE") return "Giáo viên";
+  if (role === "STUDENT_ROLE") return "Học sinh";
+  return role || "—";
+}
+
 function RoleBadge({ role }: { role?: string }) {
   if (role === "ADMIN_ROLE") {
-    return <span style={muRoleAdmin}>Quản trị</span>;
+    return <span style={muRoleAdmin}>{roleDisplayLabel(role)}</span>;
   }
-  if (role === "USER_ROLE") {
-    return <span style={muRoleUser}>Người dùng</span>;
-  }
-  return <span style={muRoleUser}>{role || "—"}</span>;
+  return <span style={muRoleUser}>{roleDisplayLabel(role)}</span>;
 }
 
 export function ManageUserPage() {
@@ -376,12 +380,14 @@ export function ManageUserPage() {
 
     return users.map((user) => (
       <tr key={user.id} style={{ background: "#fff" }}>
-        <td style={muTd}>
+        <td className="mu-cell-name" style={muTd}>
           <div style={{ fontWeight: 600, color: "#333" }}>{user.name || "—"}</div>
         </td>
-        <td style={{ ...muTd, color: "#5F5E5A" }}>{user.email}</td>
-        <td style={muTd}>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+        <td className="mu-cell-email" style={{ ...muTd, color: "#5F5E5A" }}>
+          {user.email}
+        </td>
+        <td className="mu-cell-roles" style={muTd}>
+          <Box className="mu-role-badges" sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
             {getUserRoleNames(user).length ? (
               getUserRoleNames(user).map((r) => <RoleBadge key={r} role={r} />)
             ) : (
@@ -389,7 +395,7 @@ export function ManageUserPage() {
             )}
           </Box>
         </td>
-        <td style={{ ...muTd, textAlign: "right" }}>
+        <td className="mu-cell-actions" style={{ ...muTd, textAlign: "right" }}>
           <div className="mu-table-actions">
             <Tooltip title="Chỉnh sửa">
               <IconButton size="small" aria-label="Chỉnh sửa" onClick={() => void handleOpenEdit(user)}>
@@ -470,21 +476,23 @@ export function ManageUserPage() {
       <Box className="admin-catalog-page__table-card admin-catalog-page__table-card--padded">
         <div className="mu-role-legend">
           <span>
-            <span style={muRoleAdmin}>Quản trị</span> ADMIN_ROLE
+            <span style={muRoleAdmin}>Quản trị</span>
+            <span className="mu-role-legend-code"> ADMIN_ROLE</span>
           </span>
           <span>
-            <span style={muRoleUser}>Người dùng</span> USER_ROLE
+            <span style={muRoleUser}>Người dùng</span>
+            <span className="mu-role-legend-code"> USER_ROLE</span>
           </span>
         </div>
 
-        <div style={muTableWrap}>
-          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <div className="mu-table-wrap mu-table-wrap--responsive">
+          <table className="mu-users-table">
             <thead>
               <tr>
-                <th style={{ ...muTh, width: "28%" }}>Họ tên</th>
-                <th style={{ ...muTh, width: "36%" }}>Email</th>
-                <th style={{ ...muTh, width: "18%" }}>Vai trò</th>
-                <th style={{ ...muTh, width: "18%", textAlign: "right" }}>Thao tác</th>
+                <th style={{ ...muTh, width: "24%" }}>Họ tên</th>
+                <th style={{ ...muTh, width: "34%" }}>Email</th>
+                <th style={{ ...muTh, width: "22%" }}>Vai trò</th>
+                <th style={{ ...muTh, width: "20%", textAlign: "right" }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>{renderTableBody()}</tbody>

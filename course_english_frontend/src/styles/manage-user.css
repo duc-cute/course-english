@@ -44,6 +44,156 @@
   gap: 6px;
 }
 
+.mu-table-wrap {
+  border: 1px solid #eceae3;
+  border-radius: 6px;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-top: 6px;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.mu-users-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.mu-users-table .mu-cell-name,
+.mu-users-table .mu-cell-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0;
+}
+
+.mu-users-table .mu-cell-roles {
+  overflow: hidden;
+}
+
+.mu-users-table .mu-cell-roles .mu-role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mu-users-table .mu-cell-actions {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .mu-role-legend {
+    gap: 8px;
+    font-size: 10.5px;
+  }
+
+  .mu-role-legend .mu-role-legend-code {
+    display: none;
+  }
+
+  .mu-table-wrap--responsive {
+    overflow-x: visible;
+    border: none;
+    border-radius: 0;
+    margin-top: 4px;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table {
+    min-width: 0;
+    table-layout: auto;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table thead {
+    display: none;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    background: #fff;
+    border: 1px solid #eceae3;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    padding: 10px 12px;
+    gap: 3px 8px;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table tbody tr.mu-skeleton-row {
+    padding: 12px;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table td {
+    display: block;
+    border: none !important;
+    padding: 0 !important;
+    max-width: none !important;
+    text-align: left !important;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table .mu-cell-name,
+  .mu-table-wrap--responsive .mu-users-table .mu-cell-email {
+    width: auto;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table .mu-cell-name {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0;
+    white-space: normal;
+    padding-right: 4px;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table .mu-cell-email {
+    order: 10;
+    flex: 0 0 100%;
+    width: 100%;
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin-bottom: 4px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table .mu-cell-roles {
+    order: 10;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table .mu-cell-actions {
+    order: 2;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    margin-left: auto;
+    align-self: flex-start;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table .mu-cell-actions .mu-table-actions {
+    justify-content: flex-end;
+    gap: 2px;
+  }
+
+  .mu-table-wrap--responsive .mu-users-table td[colspan] {
+    flex: 0 0 100%;
+    width: 100%;
+    border: 1px dashed #d3d1c7 !important;
+    border-radius: 10px;
+    padding: 16px !important;
+  }
+}
+
 .mu-table-actions {
   display: flex;
   justify-content: flex-end;

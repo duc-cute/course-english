@@ -15,6 +15,8 @@ public class ActivityLogWriteContext {
   private ActivityLogActionEnum action;
   private String message;
   private String detail;
+  /** Override default detail truncation (e.g. full section prompt for debugging). */
+  private Integer detailMaxChars;
   private final Map<String, Object> context = new LinkedHashMap<>();
   private String refType;
   private UUID refId;
@@ -38,6 +40,11 @@ public class ActivityLogWriteContext {
 
   public ActivityLogWriteContext detail(String detail) {
     this.detail = detail;
+    return this;
+  }
+
+  public ActivityLogWriteContext detailMaxChars(int maxChars) {
+    this.detailMaxChars = maxChars;
     return this;
   }
 
@@ -84,6 +91,10 @@ public class ActivityLogWriteContext {
 
   public String getDetail() {
     return detail;
+  }
+
+  public Integer getDetailMaxChars() {
+    return detailMaxChars;
   }
 
   public Map<String, Object> getContext() {

@@ -29,6 +29,12 @@ import type { VocabularyItemRecord } from "../../../shared/api/vocabularySet";
 import { useFeatureFlags } from "../../../shared/featureFlags/useFeatureFlags";
 import { generateListenTypeFromVocabItems } from "../../../shared/lesson/vocabActivityGenerator";
 import { parseExerciseSetPayload } from "../../../student/lessonPlayer/exercise/parseExerciseSet";
+import {
+  countWordExportableQuestions,
+  downloadExerciseSetWord,
+  type ExerciseWordExportMode,
+} from "../../../shared/lesson/exerciseWordExport";
+import { apiGetFeatureFlags } from "../../../shared/api/systemConfig";
 import { VocabularyWordPicker } from "../vocabulary/VocabularyWordPicker";
 import { syncBlanksWithPrompt } from "../../../shared/lesson/fillBlankUtils";
 import { syncGapFillBlanksWithPrompt } from "../../../shared/lesson/gapFillMcqUtils";
@@ -53,6 +59,7 @@ import { ReorderSentenceQuestionCanvas } from "./ReorderSentenceQuestionCanvas";
 import { ExerciseAuthoringFooter } from "./ExerciseAuthoringFooter";
 import { ExerciseImportDialog, type ExerciseImportFormat } from "./ExerciseImportDialog";
 import { AiExerciseGenDialog } from "./AiExerciseGenDialog";
+import { AiAutoExerciseGenDialog } from "./AiAutoExerciseGenDialog";
 import { ExerciseSetSettings } from "./ExerciseSetSettings";
 import { ListenChooseQuestionCanvas } from "./ListenChooseQuestionCanvas";
 import { MatchingQuestionCanvas } from "./MatchingQuestionCanvas";
@@ -67,6 +74,13 @@ type ExerciseSetEditorProps = {
   error?: string;
   onSave: (payloadJson: string) => Promise<void>;
   onCancel: () => void;
+  /** Ẩn accordion cài đặt (dùng trong section đề thi) */
+  hideSettingsAccordion?: boolean;
+  /** Ẩn nút Hủy */
+  hideCancel?: boolean;
+  /** Ẩn footer import/AI/Word (dùng trong section đề thi — import riêng ở ExamPaperEditor) */
+  hideAuthoringFooter?: boolean;
+  saveLabel?: string;
 };
 
 function normalizeExerciseQuestion(question: ExerciseQuestion): ExerciseQuestion {
@@ -97,6 +111,10 @@ export function ExerciseSetEditor({
   error,
   onSave,
   onCancel,
+  hideSettingsAccordion = false,
+  hideCancel = false,
+  hideAuthoringFooter = false,
+  saveLabel = "Lưu bài tập",
 }: ExerciseSetEditorProps) {
   const parsed = useMemo(
     () => parseExerciseSetPayload(payloadJson),
@@ -121,12 +139,22 @@ export function ExerciseSetEditor({
   const [importOpen, setImportOpen] = useState(false);
   const [importFormat, setImportFormat] = useState<ExerciseImportFormat>("csv");
   const [aiGenOpen, setAiGenOpen] = useState(false);
+  const [aiAutoGenOpen, setAiAutoGenOpen] = useState(false);
   const [listenTypePickerOpen, setListenTypePickerOpen] = useState(false);
   const [listenTypeFeedback, setListenTypeFeedback] = useState<{
     severity: "success" | "warning" | "error";
     message: string;
   } | null>(null);
+  const [wordExportFeedback, setWordExportFeedback] = useState<{
+    severity: "success" | "warning" | "error";
+    message: string;
+  } | null>(null);
   const { flags } = useFeatureFlags();
+
+  const wordExportStats = useMemo(
+    () => countWordExportableQuestions(questions),
+    [questions],
+  );
 
   useEffect(() => {
     const next = parseExerciseSetPayload(payloadJson);
@@ -147,6 +175,51 @@ export function ExerciseSetEditor({
     ...settings,
     questions,
   });
+
+  const handleExportWord = async (mode: ExerciseWordExportMode) => {
+    setWordExportFeedback(null);
+    try {
+      let logoUrl = flags.wordExportLogoUrl ?? "";
+      let watermarkText = flags.wordExportWatermarkText ?? "";
+      try {
+        const response = await apiGetFeatureFlags();
+        const data = (response?.result ?? response?.data ?? {}) as {
+          wordExportLogoUrl?: string;
+          wordExportWatermarkText?: string;
+        };
+        logoUrl = (data.wordExportLogoUrl ?? logoUrl).trim();
+        watermarkText = (data.wordExportWatermarkText ?? watermarkText).trim();
+      } catch {
+        /* dùng cache local */
+      }
+
+      const result = await downloadExerciseSetWord(buildPayload(), mode, {
+        logoUrl,
+        watermarkText,
+      });
+      if (!result.ok) {
+        setWordExportFeedback({
+          severity: "error",
+          message: result.error ?? "Không thể xuất Word.",
+        });
+        return;
+      }
+      const label = mode === "worksheet" ? "đề làm bài" : "đáp án";
+      if (result.skippedCount > 0) {
+        setWordExportFeedback({
+          severity: "warning",
+          message: `Đã tải Word (${label}): ${result.exportedCount} câu. Bỏ qua ${result.skippedCount} câu (${result.skippedTypeLabels.join(", ")}).`,
+        });
+      } else {
+        setWordExportFeedback({
+          severity: "success",
+          message: `Đã tải Word (${label}) — ${result.exportedCount} câu.`,
+        });
+      }
+    } catch {
+      setWordExportFeedback({ severity: "error", message: "Lỗi khi tạo file Word." });
+    }
+  };
 
   const updateSettings = (patch: Partial<ExerciseSetPayload>) => {
     setSettings((s) => ({ ...s, ...patch }));
@@ -341,6 +414,20 @@ export function ExerciseSetEditor({
     setValidationErrors([]);
   };
 
+  const applyAutoAiQuestions = (
+    newQuestions: ExerciseQuestion[],
+    mode: "replace" | "append",
+  ) => {
+    if (!newQuestions.length) return;
+    if (mode === "replace") {
+      setQuestions(normalizeQuestions(newQuestions));
+      setActiveIndex(0);
+    } else {
+      appendAiQuestions(newQuestions);
+    }
+    setValidationErrors([]);
+  };
+
   const handleSave = async () => {
     const payload = buildPayload();
     const validation = validateExerciseSetPayload(payload);
@@ -356,6 +443,7 @@ export function ExerciseSetEditor({
 
   return (
     <Box sx={{ display: "grid", gap: 0, pt: 0 }}>
+      {!hideSettingsAccordion ? (
       <Accordion
         disableGutters
         elevation={0}
@@ -378,14 +466,15 @@ export function ExerciseSetEditor({
           <ExerciseSetSettings settings={settings} onChange={updateSettings} />
         </AccordionDetails>
       </Accordion>
+      ) : null}
 
       <Box
         sx={{
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          border: "1px solid #ECEAE3",
-          borderTop: "none",
-          borderRadius: "0 0 10px 10px",
+          border: hideSettingsAccordion ? "1px solid #ECEAE3" : "1px solid #ECEAE3",
+          borderTop: hideSettingsAccordion ? undefined : "none",
+          borderRadius: hideSettingsAccordion ? "10px" : "0 0 10px 10px",
           overflow: "hidden",
           bgcolor: "#fff",
         }}
@@ -502,8 +591,10 @@ export function ExerciseSetEditor({
         </Box>
       </Box>
 
+      {!hideAuthoringFooter ? (
       <ExerciseAuthoringFooter
         questionCount={questions.length}
+        wordExportableCount={wordExportStats.exportable}
         onImportExcel={() => {
           setImportFormat("excel");
           setImportOpen(true);
@@ -512,13 +603,25 @@ export function ExerciseSetEditor({
           setImportFormat("csv");
           setImportOpen(true);
         }}
+        onExportWord={(mode) => void handleExportWord(mode)}
         onAiGen={() => setAiGenOpen(true)}
+        onAiAutoGen={() => setAiAutoGenOpen(true)}
       />
+      ) : null}
 
+      {!hideAuthoringFooter ? (
+      <>
       <AiExerciseGenDialog
         open={aiGenOpen}
         onClose={() => setAiGenOpen(false)}
         onApplied={appendAiQuestions}
+      />
+
+      <AiAutoExerciseGenDialog
+        open={aiAutoGenOpen}
+        onClose={() => setAiAutoGenOpen(false)}
+        applyMode="replace"
+        onApplied={applyAutoAiQuestions}
       />
 
       <ExerciseImportDialog
@@ -528,12 +631,24 @@ export function ExerciseSetEditor({
         onClose={() => setImportOpen(false)}
         onApplied={applyImportedPayload}
       />
+      </>
+      ) : null}
 
       <VocabularyWordPicker
         open={listenTypePickerOpen}
         onClose={() => setListenTypePickerOpen(false)}
         onSelect={appendListenTypeFromVocab}
       />
+
+      {wordExportFeedback ? (
+        <Alert
+          severity={wordExportFeedback.severity}
+          sx={{ fontSize: 12, mt: 1 }}
+          onClose={() => setWordExportFeedback(null)}
+        >
+          {wordExportFeedback.message}
+        </Alert>
+      ) : null}
 
       {listenTypeFeedback ? (
         <Alert
@@ -560,9 +675,11 @@ export function ExerciseSetEditor({
       ) : null}
 
       <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end", mt: 1, px: 1.25, pb: 1.25 }}>
-        <Button size="small" sx={muFooterBtnOutlined} onClick={onCancel}>
-          Hủy
-        </Button>
+        {!hideCancel ? (
+          <Button size="small" sx={muFooterBtnOutlined} onClick={onCancel}>
+            Hủy
+          </Button>
+        ) : null}
         <Button
           size="small"
           variant="contained"
@@ -570,7 +687,7 @@ export function ExerciseSetEditor({
           disabled={saving}
           onClick={() => void handleSave()}
         >
-          {saving ? "Đang lưu..." : "Lưu bài tập"}
+          {saving ? "Đang lưu..." : saveLabel}
         </Button>
       </Box>
     </Box>

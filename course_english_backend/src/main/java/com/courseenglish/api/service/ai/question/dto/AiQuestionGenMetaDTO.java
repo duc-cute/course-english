@@ -1,10 +1,11 @@
 package com.courseenglish.api.service.ai.question.dto;
 
+import java.util.List;
+
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
+
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 
 @Getter
 @Setter

@@ -1,4 +1,6 @@
 export { AdminCatalogPageHeader } from "./AdminCatalogPageHeader";
+export { AdminCatalogGridTable } from "./AdminCatalogGridTable";
+export type { CatalogGridColumn, CatalogGridMobileRole } from "./AdminCatalogGridTable";
 export { AdminCatalogToolbar } from "./AdminCatalogToolbar";
 export { CatalogImportActions } from "./CatalogImportActions";
 export { AppButton } from "./AppButton";

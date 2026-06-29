@@ -12,13 +12,18 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Skeleton,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AdminCatalogGridTable,
+  AdminCatalogPageHeader,
+  AdminCatalogToolbar,
+  ConfirmDialog,
+  type CatalogGridColumn,
+} from "../../admin/components";
 import { QuestionBankForm } from "../../admin/components/question/QuestionBankForm";
 import {
   QuestionBankImportDialog,
@@ -196,6 +201,70 @@ export function ManageQuestionsPage() {
     }
   };
 
+  const questionColumns = useMemo<CatalogGridColumn<QuestionRecord>[]>(
+    () => [
+      {
+        key: "stt",
+        header: "#",
+        width: "48px",
+        mobileRole: "hidden",
+        className: "catalog-table-muted",
+        render: (_row, index) => page * size + index + 1,
+      },
+      {
+        key: "prompt",
+        header: "Câu hỏi",
+        width: "minmax(200px, 2fr)",
+        mobileRole: "title",
+        render: (row) => row.promptText,
+      },
+      {
+        key: "category",
+        header: "Danh mục",
+        width: "minmax(100px, 1fr)",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (row) => row.categoryName ?? "—",
+      },
+      {
+        key: "status",
+        header: "Trạng thái",
+        width: "100px",
+        mobileRole: "inline",
+        render: (row) => statusChip(row.status),
+      },
+      {
+        key: "actions",
+        header: "Thao tác",
+        width: "100px",
+        align: "center",
+        mobileRole: "actions",
+        render: (row) => (
+          <>
+            <Tooltip title="Sửa">
+              <IconButton size="small" color="primary" onClick={() => void openEdit(row)}>
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Xóa">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => {
+                  setDeleting(row);
+                  setOpenDelete(true);
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ),
+      },
+    ],
+    [page, size],
+  );
+
   return (
     <Box className="admin-catalog-page">
       <AdminCatalogPageHeader
@@ -286,59 +355,13 @@ export function ManageQuestionsPage() {
       ) : null}
 
       <Box className="admin-catalog-page__table-card">
-        <Box
-          className="catalog-table-head"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "48px minmax(200px, 2fr) minmax(100px, 1fr) 100px 100px",
-            columnGap: 1,
-          }}
-        >
-          <Box>#</Box>
-          <Box>Câu hỏi</Box>
-          <Box>Danh mục</Box>
-          <Box>Trạng thái</Box>
-          <Box sx={{ textAlign: "center" }}>Thao tác</Box>
-        </Box>
-
-        {loading ? (
-          <Box sx={{ p: 2 }}>
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-          </Box>
-        ) : rows.length === 0 ? (
-          <Box className="admin-catalog-page__empty">Chưa có câu hỏi trong ngân hàng.</Box>
-        ) : (
-          rows.map((row, index) => (
-            <Box
-              key={row.id}
-              className="catalog-table-row"
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "48px minmax(200px, 2fr) minmax(100px, 1fr) 100px 100px",
-                columnGap: 1,
-              }}
-            >
-              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
-              <Box sx={{ fontWeight: 500 }}>{row.promptText}</Box>
-              <Box className="catalog-table-muted" sx={{ fontSize: 12 }}>{row.categoryName ?? "—"}</Box>
-              <Box>{statusChip(row.status)}</Box>
-              <Box className="catalog-table-actions">
-                <Tooltip title="Sửa">
-                  <IconButton size="small" color="primary" onClick={() => void openEdit(row)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Xóa">
-                  <IconButton size="small" color="error" onClick={() => { setDeleting(row); setOpenDelete(true); }}>
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-          ))
-        )}
-
+        <AdminCatalogGridTable
+          columns={questionColumns}
+          rows={rows}
+          loading={loading}
+          emptyText="Chưa có câu hỏi trong ngân hàng."
+          getRowKey={(row) => row.id}
+        />
         <Box className="admin-catalog-page__table-footer">
           <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng: {total}

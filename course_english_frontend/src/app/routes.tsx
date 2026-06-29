@@ -13,6 +13,8 @@ import { LessonEditorPage } from "../pages/admin/LessonEditorPage";
 import { ManageUserPage } from "../pages/admin/ManageUserPage";
 import { ReviewDocPage } from "../pages/admin/ReviewDocPage";
 import { ManageQuestionsPage } from "../pages/admin/ManageQuestionsPage";
+import { ManageExamPapersPage } from "../pages/admin/ManageExamPapersPage";
+import { ExamPaperEditorPage } from "../pages/admin/ExamPaperEditorPage";
 import { ManageVocabularySetsPage } from "../pages/admin/ManageVocabularySetsPage";
 import { ManageVocabularyWordsPage } from "../pages/admin/ManageVocabularyWordsPage";
 import { ManageSystemConfigPage } from "../pages/admin/ManageSystemConfigPage";
@@ -188,6 +190,14 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.MANAGE_QUESTIONS,
         element: <ManageQuestionsPage />,
+      },
+      {
+        path: paths.MANAGE_EXAM_PAPERS,
+        element: <ManageExamPapersPage />,
+      },
+      {
+        path: paths.EXAM_PAPER_EDITOR,
+        element: <ExamPaperEditorPage />,
       },
       {
         path: paths.MANAGE_VOCABULARY_WORDS,

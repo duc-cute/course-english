@@ -24,7 +24,15 @@ public enum SystemConfigKeyEnum {
     NOTIFICATION_EMAIL_ENABLED(
             "NOTIFICATION_EMAIL_ENABLED",
             "false",
-            "Gửi email cho HS khi GV publish bài học (true/1=bật, cần cấu hình SMTP)");
+            "Gửi email cho HS khi GV publish bài học (true/1=bật, cần cấu hình SMTP)"),
+    WORD_EXPORT_LOGO_URL(
+            "WORD_EXPORT_LOGO_URL",
+            "",
+            "URL logo hiển thị đầu trang 1 khi xuất Word bài tập (PNG/JPG, upload qua Cấu hình hệ thống)"),
+    WORD_EXPORT_WATERMARK_TEXT(
+            "WORD_EXPORT_WATERMARK_TEXT",
+            "",
+            "Chữ watermark in chìm trên file đề Word (vd: Ms Mitra). Để trống = không watermark");
 
     private final String key;
     private final String defaultValue;

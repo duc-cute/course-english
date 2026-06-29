@@ -47,7 +47,7 @@ public class ReadingComprehensionQuestionTypeHandler implements AiQuestionTypeHa
               }
             ]
           }
-        - passage.text must be copied or closely paraphrased from the document excerpt
+        - passage.text: from source material or original writing for the topic brief
         - Each subQuestion needs exactly 4 choices and exactly one correct: true
         - Do NOT output id, choiceKey, displayOrder, promptLang, presentation, or passage.lang
         - Do NOT use choices[] at the top level

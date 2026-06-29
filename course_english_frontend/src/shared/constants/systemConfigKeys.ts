@@ -1,4 +1,4 @@
-export type SystemConfigValueType = "boolean" | "select" | "text";
+export type SystemConfigValueType = "boolean" | "select" | "text" | "image_url";
 
 export type SystemConfigSelectOption = {
   value: string;
@@ -12,6 +12,8 @@ export type SystemConfigKeyMeta = {
   defaultValue: string;
   defaultNote: string;
   options?: SystemConfigSelectOption[];
+  /** Cho phép lưu giá trị rỗng */
+  optional?: boolean;
 };
 
 export type VocabularyAudioAccent = "UK" | "US" | "BOTH";
@@ -59,6 +61,22 @@ export const SYSTEM_CONFIG_KEY_OPTIONS: SystemConfigKeyMeta[] = [
     defaultValue: "true",
     defaultNote: "Cho phép gửi email thông báo (true/1=bật)",
   },
+  {
+    key: "WORD_EXPORT_LOGO_URL",
+    label: "Logo xuất Word bài tập",
+    type: "image_url",
+    defaultValue: "",
+    defaultNote: "Logo hiển thị đầu trang 1 file Word (PNG/JPG, để trống = không logo)",
+    optional: true,
+  },
+  {
+    key: "WORD_EXPORT_WATERMARK_TEXT",
+    label: "Watermark xuất Word (đề)",
+    type: "text",
+    defaultValue: "",
+    defaultNote: "Chữ watermark in chìm trên file đề Word (vd: Ms Mitra). Để trống = không watermark",
+    optional: true,
+  },
 ];
 
 export const BOOLEAN_CONFIG_OPTIONS = [
@@ -95,6 +113,10 @@ export function formatConfigDisplayValue(configKey?: string, configValue?: strin
   if (meta?.type === "select" && meta.options) {
     const match = meta.options.find((item) => item.value === (configValue ?? "").trim().toUpperCase());
     if (match) return match.label;
+  }
+  if (meta?.type === "image_url") {
+    const url = (configValue ?? "").trim();
+    return url ? "Đã có logo" : "Chưa có";
   }
   return configValue ?? "—";
 }

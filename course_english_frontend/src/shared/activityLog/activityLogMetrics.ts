@@ -49,6 +49,20 @@ export function formatActivityLogMetrics(row: ActivityLogRecord): string | null 
   const src = sourceLabel(ctx);
 
   if (action === "AI_GEN_PROMPT") {
+    if (step === "exam_section_prompt") {
+      const sec = num(ctx, "sectionIndex");
+      const total = num(ctx, "sectionTotal");
+      const title = typeof ctx.sectionTitle === "string" ? ctx.sectionTitle : "";
+      const parts: string[] = [];
+      if (sec != null && total != null) parts.push(`section ${sec + 1}/${total}`);
+      if (title.trim()) parts.push(title.trim());
+      const user = num(ctx, "userPromptChars");
+      const totalChars = num(ctx, "totalPromptChars");
+      if (user != null && totalChars != null) {
+        parts.push(`prompt ${formatThousands(totalChars)} chars`);
+      }
+      if (parts.length) return parts.join(" · ");
+    }
     const total = num(ctx, "totalPromptChars");
     const system = num(ctx, "systemPromptChars");
     const user = num(ctx, "userPromptChars");
@@ -104,6 +118,17 @@ export function formatActivityLogMetrics(row: ActivityLogRecord): string | null 
   }
 
   if (action === "AI_GEN_RESPONSE") {
+    if (step === "exam_section_response_json") {
+      const sec = num(ctx, "sectionIndex");
+      const total = num(ctx, "sectionTotal");
+      const title = typeof ctx?.sectionTitle === "string" ? ctx.sectionTitle : "";
+      const respChars = num(ctx, "responseChars");
+      const parts: string[] = [];
+      if (sec != null && total != null) parts.push(`section ${sec + 1}/${total}`);
+      if (title.trim()) parts.push(title.trim());
+      if (respChars != null) parts.push(`JSON ${formatThousands(respChars)} chars`);
+      if (parts.length) return parts.join(" · ");
+    }
     const total = num(ctx, "totalTaskMs");
     const orTotal = num(ctx, "openRouterTotalMs");
     const attempts = num(ctx, "openRouterAttempts");
@@ -166,6 +191,17 @@ export function extractActivityLogMetricFields(row: ActivityLogRecord): Activity
   add("Queue wait", "queueWaitMs", formatDurationMs);
   add("Số câu", "questionCount");
   add("Lần gọi OR", "openRouterAttempts");
+  if (typeof ctx.sectionTitle === "string" && ctx.sectionTitle.trim()) {
+    fields.push({ label: "Section", value: ctx.sectionTitle.trim() });
+  }
+  const sectionIndex = num(ctx, "sectionIndex");
+  const sectionTotal = num(ctx, "sectionTotal");
+  if (sectionIndex != null && sectionTotal != null) {
+    fields.push({ label: "Section #", value: `${sectionIndex + 1}/${sectionTotal}` });
+  }
+  if (typeof ctx.step === "string" && ctx.step.trim()) {
+    fields.push({ label: "Step", value: ctx.step });
+  }
   if (typeof ctx.model === "string" && ctx.model.trim()) {
     fields.push({ label: "Model", value: ctx.model });
   }

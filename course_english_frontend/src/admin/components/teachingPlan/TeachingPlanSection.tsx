@@ -27,6 +27,22 @@ import { TeachingPlanTimelineItem } from "./TeachingPlanTimelineItem";
 import { useOnlineClassFlow } from "./useOnlineClassFlow";
 import { formatNextClassLabel, formatPlanDateLabel, formatTodayIsoInTz } from "./teachingPlanUtils";
 
+const headerIconBtnSx = {
+  textTransform: "none" as const,
+  fontWeight: 700,
+  minWidth: { xs: 36, sm: "auto" },
+  width: { xs: 36, sm: "auto" },
+  height: { xs: 36, sm: "auto" },
+  p: { xs: 0, sm: undefined },
+  px: { xs: 0, sm: 1.5 },
+  boxSizing: "border-box" as const,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  "& .MuiButton-startIcon": { margin: 0, mr: { xs: 0, sm: 1 } },
+  "& .MuiButton-endIcon": { margin: 0, ml: { xs: 0, sm: 0.5 } },
+};
+
 export function TeachingPlanSection() {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<TeachingPlanDTO | null>(null);
@@ -95,7 +111,7 @@ export function TeachingPlanSection() {
   const dateLabel = plan?.date ? formatPlanDateLabel(plan.date) : formatPlanDateLabel(new Date().toISOString());
 
   return (
-    <Box className="teaching-plan-section admin-panel-card" sx={{ mb: 3, p: 3 }}>
+    <Box className="teaching-plan-section admin-panel-card" sx={{ mb: 3, p: { xs: 2, md: 3 } }}>
       <Box className="teaching-plan-header">
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
@@ -121,38 +137,74 @@ export function TeachingPlanSection() {
             </Stack>
           ) : null}
         </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography variant="body2" sx={{ color: "var(--ac-on-surface-variant)", fontWeight: 600 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          flexWrap="nowrap"
+          useFlexGap
+          className="teaching-plan-header-actions"
+        >
+          <Typography
+            variant="body2"
+            noWrap
+            sx={{
+              color: "var(--ac-on-surface-variant)",
+              fontWeight: 600,
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
             {dateLabel}
           </Typography>
+          <Stack direction="row" spacing={0.5} alignItems="center" flexShrink={0}>
           <Button
             size="small"
             variant="text"
-            endIcon={<ChevronRightIcon />}
+            className="teaching-plan-header-icon-btn"
             onClick={() => navigate(`/${paths.ADMIN}/${paths.SCHEDULE}`)}
-            sx={{ textTransform: "none", fontWeight: 700, color: "var(--ac-primary)" }}
+            sx={{ ...headerIconBtnSx, color: "var(--ac-primary)" }}
+            aria-label="Xem tuần"
           >
-            Xem tuần
+            <ChevronRightIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.5 }}>
+              Xem tuần
+            </Box>
           </Button>
           <Button
             size="small"
             variant="outlined"
-            startIcon={<RefreshOutlinedIcon />}
+            className="teaching-plan-header-icon-btn"
             onClick={() => void loadPlan()}
             disabled={loading}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={headerIconBtnSx}
+            aria-label="Làm mới"
           >
-            Làm mới
+            <RefreshOutlinedIcon sx={{ fontSize: { xs: 20, sm: 24 }, display: { xs: "inline-flex", sm: "none" } }} />
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline-flex" }, alignItems: "center", gap: 0.5 }}>
+              <RefreshOutlinedIcon fontSize="small" />
+              Làm mới
+            </Box>
           </Button>
           <Button
             size="small"
             variant="contained"
-            startIcon={<EventOutlinedIcon />}
+            className="teaching-plan-header-icon-btn"
             onClick={openCreateToday}
-            sx={{ textTransform: "none", fontWeight: 700, boxShadow: "0 4px 0 0 #004395" }}
+            sx={{
+              ...headerIconBtnSx,
+              boxShadow: { xs: "none", sm: "0 4px 0 0 #004395" },
+              "&:hover": { boxShadow: { xs: "none", sm: "0 4px 0 0 #004395" } },
+            }}
+            aria-label="Thêm ca hôm nay"
           >
-            + Ca hôm nay
+            <EventOutlinedIcon sx={{ fontSize: { xs: 20, sm: 24 }, display: { xs: "inline-flex", sm: "none" } }} />
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline-flex" }, alignItems: "center", gap: 0.5 }}>
+              <EventOutlinedIcon fontSize="small" />
+              + Ca hôm nay
+            </Box>
           </Button>
+          </Stack>
         </Stack>
       </Box>
 

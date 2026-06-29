@@ -11,13 +11,18 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Skeleton,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AdminCatalogGridTable,
+  AdminCatalogPageHeader,
+  AdminCatalogToolbar,
+  ConfirmDialog,
+  type CatalogGridColumn,
+} from "../../admin/components";
 import {
   muBtnSmOutlined,
   muDialogFooter,
@@ -37,6 +42,7 @@ import {
   type SystemConfigRecord,
   type SystemConfigsPaginationResult,
 } from "../../shared/api/systemConfig";
+import { apiUploadFile, buildStoragePublicUrl, resolveStorageAssetUrl } from "../../shared/api/file";
 import {
   BOOLEAN_CONFIG_OPTIONS,
   SYSTEM_CONFIG_KEY_OPTIONS,
@@ -74,6 +80,7 @@ export function ManageSystemConfigPage() {
   const [formError, setFormError] = useState("");
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState<SystemConfigRecord | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const formMeta = findSystemConfigMeta(form.configKey);
 
@@ -116,6 +123,7 @@ export function ManageSystemConfigPage() {
     setEditing(null);
     setForm(defaultForm);
     setFormError("");
+    setUploadingLogo(false);
     setOpenForm(true);
   };
 
@@ -146,7 +154,7 @@ export function ManageSystemConfigPage() {
       setFormError("Mã cấu hình không được để trống.");
       return;
     }
-    if (!form.configValue?.trim()) {
+    if (!form.configValue?.trim() && !formMeta?.optional) {
       setFormError("Giá trị cấu hình không được để trống.");
       return;
     }
@@ -165,7 +173,7 @@ export function ManageSystemConfigPage() {
 
       const payload = {
         configKey,
-        configValue: form.configValue.trim(),
+        configValue: form.configValue.trim() || undefined,
         note: form.note.trim() || undefined,
       };
 
@@ -200,6 +208,92 @@ export function ManageSystemConfigPage() {
       setSubmitting(false);
     }
   };
+
+  const uploadWordExportLogo = async (file: File) => {
+    setUploadingLogo(true);
+    setFormError("");
+    try {
+      const uploaded = await apiUploadFile(file, "system-config/word-export-logo");
+      const url = buildStoragePublicUrl("system-config/word-export-logo", uploaded.fileName);
+      setForm((prev) => ({ ...prev, configValue: url }));
+    } catch (err) {
+      setFormError((err as { message?: string })?.message || "Upload logo thất bại.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const configColumns = useMemo<CatalogGridColumn<SystemConfigRecord>[]>(
+    () => [
+      {
+        key: "stt",
+        header: "STT",
+        width: "72px",
+        mobileRole: "hidden",
+        className: "catalog-table-muted",
+        render: (_item, index) => page * size + index + 1,
+      },
+      {
+        key: "configKey",
+        header: "Mã cấu hình",
+        width: "minmax(220px, 1fr)",
+        mobileRole: "title",
+        render: (item) => (
+          <Box component="span" sx={{ fontFamily: "monospace", fontSize: 12 }}>
+            {item.configKey || "—"}
+          </Box>
+        ),
+      },
+      {
+        key: "configValue",
+        header: "Giá trị",
+        width: "140px",
+        mobileRole: "meta",
+        render: (item) => (
+          <Box component="span" sx={{ color: "#0C447C", fontWeight: 600 }}>
+            {formatConfigDisplayValue(item.configKey, item.configValue)}
+          </Box>
+        ),
+      },
+      {
+        key: "note",
+        header: "Mô tả",
+        width: "minmax(220px, 1fr)",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (item) => item.note || "—",
+      },
+      {
+        key: "actions",
+        header: "Thao tác",
+        width: "120px",
+        align: "center",
+        mobileRole: "actions",
+        render: (item) => (
+          <>
+            <Tooltip title="Sửa">
+              <IconButton size="small" color="primary" onClick={() => void openEdit(item)}>
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Xóa">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => {
+                  setDeleting(item);
+                  setOpenDelete(true);
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ),
+      },
+    ],
+    [page, size],
+  );
 
   return (
     <Box className="admin-catalog-page">
@@ -236,69 +330,13 @@ export function ManageSystemConfigPage() {
       ) : null}
 
       <Box className="admin-catalog-page__table-card">
-        <Box
-          className="catalog-table-head"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "72px minmax(220px,1fr) 140px minmax(220px,1fr) 120px",
-            columnGap: 1.5,
-          }}
-        >
-          <Box>STT</Box>
-          <Box>Mã cấu hình</Box>
-          <Box>Giá trị</Box>
-          <Box>Mô tả</Box>
-          <Box sx={{ textAlign: "center" }}>Thao tác</Box>
-        </Box>
-        {loading ? (
-          <Box sx={{ p: 2 }}>
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-          </Box>
-        ) : rows.length === 0 ? (
-          <Box className="admin-catalog-page__empty">Chưa có cấu hình nào.</Box>
-        ) : (
-          rows.map((item, index) => (
-            <Box
-              key={item.id}
-              className="catalog-table-row"
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "72px minmax(220px,1fr) 140px minmax(220px,1fr) 120px",
-                columnGap: 1.5,
-              }}
-            >
-              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
-              <Box sx={{ fontWeight: 600, color: "#0C447C", fontFamily: "monospace", fontSize: 12 }}>
-                {item.configKey || "—"}
-              </Box>
-              <Box sx={{ color: "#0C447C", fontWeight: 600 }}>
-                {formatConfigDisplayValue(item.configKey, item.configValue)}
-              </Box>
-              <Box className="catalog-table-muted">{item.note || "—"}</Box>
-              <Box className="catalog-table-actions">
-                <Tooltip title="Sửa">
-                  <IconButton size="small" color="primary" onClick={() => void openEdit(item)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Xóa">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => {
-                      setDeleting(item);
-                      setOpenDelete(true);
-                    }}
-                  >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-          ))
-        )}
+        <AdminCatalogGridTable
+          columns={configColumns}
+          rows={rows}
+          loading={loading}
+          emptyText="Chưa có cấu hình nào."
+          getRowKey={(item) => item.id}
+        />
         <Box className="admin-catalog-page__table-footer">
           <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng: {total}
@@ -415,11 +453,74 @@ export function ManageSystemConfigPage() {
                   </MenuItem>
                 ))}
               </TextField>
+            ) : formMeta?.type === "image_url" ? (
+              <Box>
+                <Typography component="label" sx={{ ...muFieldLabel, mb: 0.75 }}>
+                  Logo header Word
+                </Typography>
+                {form.configValue?.trim() ? (
+                  <Box
+                    component="img"
+                    src={resolveStorageAssetUrl(form.configValue)}
+                    alt="Logo xuất Word"
+                    sx={{
+                      display: "block",
+                      maxWidth: 220,
+                      maxHeight: 72,
+                      objectFit: "contain",
+                      mb: 1,
+                      border: "1px solid #ECEAE3",
+                      borderRadius: "6px",
+                      p: 0.5,
+                      bgcolor: "#fff",
+                    }}
+                  />
+                ) : (
+                  <Typography sx={{ fontSize: 12, color: "#888780", mb: 1 }}>
+                    Chưa có logo — file Word sẽ không có header ảnh.
+                  </Typography>
+                )}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+                  <Button
+                    component="label"
+                    size="small"
+                    variant="outlined"
+                    sx={muBtnSmOutlined}
+                    disabled={submitting || uploadingLogo}
+                  >
+                    {uploadingLogo ? "Đang tải lên…" : form.configValue ? "Đổi logo" : "Tải logo lên"}
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) void uploadWordExportLogo(file);
+                      }}
+                    />
+                  </Button>
+                  {form.configValue ? (
+                    <Button
+                      size="small"
+                      color="error"
+                      sx={muBtnSmOutlined}
+                      disabled={submitting || uploadingLogo}
+                      onClick={() => setForm((p) => ({ ...p, configValue: "" }))}
+                    >
+                      Xóa logo
+                    </Button>
+                  ) : null}
+                </Box>
+              </Box>
             ) : (
               <TextField
                 label="Giá trị"
                 size="small"
-                required
+                required={!formMeta?.optional}
+                placeholder={
+                  form.configKey === "WORD_EXPORT_WATERMARK_TEXT" ? "vd: Ms Mitra" : undefined
+                }
                 sx={muTextFieldSx}
                 value={form.configValue}
                 onChange={(e) => setForm((p) => ({ ...p, configValue: e.target.value }))}

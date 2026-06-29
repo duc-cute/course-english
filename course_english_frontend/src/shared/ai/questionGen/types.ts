@@ -39,13 +39,14 @@ export type AiQuestionGenEnvelope = {
 
 export type AiGenQuestionType = Extract<
   QuestionType,
-  "MULTIPLE_CHOICE" | "TRUE_FALSE" | "FILL_BLANK" | "READING_COMPREHENSION"
+  "MULTIPLE_CHOICE" | "TRUE_FALSE" | "FILL_BLANK" | "GAP_FILL_MCQ" | "READING_COMPREHENSION"
 >;
 
 export const AI_GEN_QUESTION_TYPE_OPTIONS: { value: AiGenQuestionType; label: string }[] = [
   { value: "MULTIPLE_CHOICE", label: "Trắc nghiệm (MCQ)" },
   { value: "TRUE_FALSE", label: "Đúng / Sai" },
-  { value: "FILL_BLANK", label: "Điền khuyết" },
+  { value: "FILL_BLANK", label: "Điền từ (gõ chữ)" },
+  { value: "GAP_FILL_MCQ", label: "Chọn điền khuyết (A/B/C/D)" },
   { value: "READING_COMPREHENSION", label: "Đọc hiểu (passage + câu con)" },
 ];
 
@@ -73,6 +74,16 @@ export function aiDraftSummaryLine(draft: AiDraftQuestion): string {
     if (text) return text.length > 72 ? `${text.slice(0, 72)}…` : text;
     const subs = Array.isArray(payload?.subQuestions) ? payload.subQuestions.length : 0;
     return subs > 0 ? `Đọc hiểu — ${subs} câu con` : "Đọc hiểu";
+  }
+  if (draft.questionType === "GAP_FILL_MCQ") {
+    const payload = parseContentJsonObject(draft.contentJson);
+    const blankCount = Array.isArray(payload?.blanks) ? payload.blanks.length : 0;
+    const text = draft.promptText?.trim() ?? "";
+    if (text) {
+      const snippet = text.length > 60 ? `${text.slice(0, 60)}…` : text;
+      return blankCount > 0 ? `Cloze — ${blankCount} ô: ${snippet}` : `Cloze: ${snippet}`;
+    }
+    return blankCount > 0 ? `Chọn điền khuyết — ${blankCount} ô` : "Chọn điền khuyết";
   }
   const text = draft.promptText?.trim() ?? "";
   return text.length > 72 ? `${text.slice(0, 72)}…` : text || "—";

@@ -27,6 +27,8 @@ export type FeatureFlags = {
   vocabularyAudioEnabled: boolean;
   vocabularyAudioAccent: VocabularyAudioAccent;
   studentSelfRegistrationEnabled: boolean;
+  wordExportLogoUrl?: string;
+  wordExportWatermarkText?: string;
 };
 
 function unwrapResponse<T>(response: ApiResponse<T>): ApiResponse<T> {

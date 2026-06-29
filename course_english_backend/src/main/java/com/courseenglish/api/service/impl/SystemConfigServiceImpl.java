@@ -142,6 +142,10 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         dto.setVocabularyAudioEnabled(AppConstants.vocabularyAudioEnabled);
         dto.setVocabularyAudioAccent(AppConstants.vocabularyAudioAccent.getValue());
         dto.setStudentSelfRegistrationEnabled(AppConstants.studentSelfRegistrationEnabled);
+        dto.setWordExportLogoUrl(
+                AppConstants.wordExportLogoUrl != null ? AppConstants.wordExportLogoUrl : "");
+        dto.setWordExportWatermarkText(
+                AppConstants.wordExportWatermarkText != null ? AppConstants.wordExportWatermarkText : "");
         return dto;
     }
 
@@ -174,6 +178,10 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         AppConstants.notificationEmailEnabled = readBoolean(
                 findValue(all, SystemConfigKeyEnum.NOTIFICATION_EMAIL_ENABLED.getKey()),
                 false);
+        AppConstants.wordExportLogoUrl = trimToEmpty(
+                findValue(all, SystemConfigKeyEnum.WORD_EXPORT_LOGO_URL.getKey()));
+        AppConstants.wordExportWatermarkText = trimToEmpty(
+                findValue(all, SystemConfigKeyEnum.WORD_EXPORT_WATERMARK_TEXT.getKey()));
     }
 
     private String findValue(List<SystemConfig> all, String key) {
@@ -190,6 +198,10 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         }
         String normalized = value.trim();
         return "1".equals(normalized) || Boolean.parseBoolean(normalized);
+    }
+
+    private static String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private ResSystemConfigDTO toDto(SystemConfig entity) {

@@ -15,4 +15,8 @@ public final class AppConstants {
     public static VocabularyAudioAccentEnum vocabularyAudioAccent = VocabularyAudioAccentEnum.UK;
     public static boolean studentSelfRegistrationEnabled = true;
     public static boolean notificationEmailEnabled = false;
+    /** Public URL — logo header xuất Word bài tập */
+    public static String wordExportLogoUrl = "";
+    /** Watermark text trên file đề Word (có thể rỗng) */
+    public static String wordExportWatermarkText = "";
 }

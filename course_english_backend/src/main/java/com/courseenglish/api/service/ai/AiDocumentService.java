@@ -231,6 +231,72 @@ public class AiDocumentService {
     return toDto(entity);
   }
 
+  @Transactional
+  public AiDocument createTopicBriefDocument(
+      UUID userId,
+      String topic,
+      Integer grade,
+      String languageLevel,
+      String additionalInstructions) throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+
+    String text = buildTopicBriefText(topic, grade, languageLevel, additionalInstructions);
+    String fileName = "Topic: " + (topic.length() > 60 ? topic.substring(0, 60) + "…" : topic);
+    String storageKey = "topic-" + UUID.randomUUID() + ".txt";
+
+    AiDocument entity = new AiDocument();
+    entity.setUserId(userId);
+    entity.setFileName(fileName);
+    entity.setMimeType("text/plain");
+    entity.setStorageFolder(AiDocument.STORAGE_FOLDER);
+    entity.setStorageFileName(storageKey);
+    entity.setFileSizeBytes((long) text.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+    entity.setPageCount(1);
+    entity.setExtractedText(text);
+    entity.setStatus(AiDocumentStatusEnum.READY);
+    entity.setErrorMessage(null);
+
+    aiDocumentRepository.save(entity);
+
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_DOC_READY,
+                "Topic brief: " + topic)
+            .userId(userId)
+            .ref("AI_DOCUMENT", entity.getId())
+            .put("documentId", entity.getId())
+            .put("step", "topic_brief")
+            .put("source", "topic")
+            .put("textChars", text.length())
+            .put("fileName", fileName));
+
+    return entity;
+  }
+
+  public static String buildTopicBriefText(
+      String topic,
+      Integer grade,
+      String languageLevel,
+      String additionalInstructions) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("TOPIC BRIEF FOR AI QUESTION GENERATION\n\n");
+    sb.append("Topic: ").append(topic.trim()).append('\n');
+    if (grade != null) {
+      sb.append("Grade: ").append(grade).append('\n');
+    }
+    if (languageLevel != null && !languageLevel.isBlank()) {
+      sb.append("Language level: ").append(languageLevel.trim()).append('\n');
+    }
+    if (additionalInstructions != null && !additionalInstructions.isBlank()) {
+      sb.append("Additional instructions: ").append(additionalInstructions.trim()).append('\n');
+    }
+    sb.append("\nCreate original English learning content aligned with this brief.");
+    return sb.toString();
+  }
+
   public ResAiDocumentDTO getById(UUID id) throws IdInvalidException {
     aiAccessSupport.requireStaffUser();
     UUID userId = aiAccessSupport.currentUserId();

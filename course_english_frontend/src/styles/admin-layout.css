@@ -48,7 +48,12 @@ html:has(.admin-layout-root) #root {
 
 .admin-sidebar-brand {
   flex-shrink: 0;
-  padding: 24px 24px 16px;
+  height: 72px;
+  padding: 0 24px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
 }
 
 .admin-sidebar-nav {
@@ -56,22 +61,41 @@ html:has(.admin-layout-root) #root {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 0 16px;
+}
+
+.admin-sidebar-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-sidebar-nav-secondary {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f8fafc;
 }
 
 .admin-sidebar-inner.collapsed .admin-sidebar-brand {
   justify-content: center;
   padding: 12px 0;
+  height: auto;
+  margin-bottom: 12px;
 }
 
 .admin-sidebar-inner.collapsed .admin-sidebar-brand > div:last-child {
   display: none;
 }
 
+.admin-sidebar-inner.collapsed .admin-sidebar-nav {
+  padding: 0 8px;
+}
+
 .admin-sidebar-inner.collapsed .admin-nav-item {
   justify-content: center !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 10px 0 !important;
   min-height: 42px !important;
+  border-radius: 12px !important;
 }
 
 .admin-sidebar-inner.collapsed .admin-nav-item .MuiListItemIcon-root {
@@ -85,19 +109,28 @@ html:has(.admin-layout-root) #root {
 
 .admin-sidebar-inner.collapsed .admin-sidebar-profile {
   margin: 8px;
-  padding: 6px 0;
+  padding: 8px 0;
   justify-content: center;
+  border-top: none;
 }
 
-.admin-sidebar-inner.collapsed .admin-sidebar-profile > div:last-child {
+.admin-sidebar-inner.collapsed .admin-sidebar-profile > div:nth-child(2),
+.admin-sidebar-inner.collapsed .admin-sidebar-profile-settings {
   display: none;
 }
 
 .admin-sidebar-profile {
   flex-shrink: 0;
+  margin: 0;
+  padding: 16px;
+  border-top: 1px solid #f8fafc;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
-
-/* Chỉ vùng main cuộn — sidebar + header cố định */
 .admin-layout-main {
   flex: 1;
   min-width: 0;
@@ -117,96 +150,127 @@ html:has(.admin-layout-root) #root {
   box-sizing: border-box;
 }
 
-/* Sidebar */
+/* Sidebar — ref promt.md modern pill nav */
 .admin-sidebar-brand-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: var(--ac-primary, #004ac6);
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #0052cc;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.22);
 }
 
 .admin-sidebar-brand-title {
-  font-size: 1.25rem !important;
+  font-size: 0.9375rem !important;
   font-weight: 700 !important;
-  color: var(--ac-primary, #004ac6) !important;
+  color: #0f172a !important;
   line-height: 1.25 !important;
+  letter-spacing: -0.02em;
 }
 
 .admin-sidebar-brand-sub {
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.05em;
-  color: #64748b !important;
+  font-size: 0.625rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em;
+  color: #94a3b8 !important;
   text-transform: uppercase;
 }
 
 .admin-nav-item {
-  border-radius: 0 !important;
-  margin-bottom: 2px !important;
+  border-radius: 12px !important;
+  margin-bottom: 0 !important;
   min-height: 44px !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
-  border-left: 4px solid transparent !important;
+  padding: 10px 12px !important;
+  border-left: none !important;
+  color: #64748b;
   transition:
     background-color 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .admin-nav-item .MuiListItemText-primary {
-  font-size: 1rem;
-  font-weight: 400;
-  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: inherit;
 }
 
 .admin-nav-item .MuiListItemIcon-root {
   color: #94a3b8;
-  min-width: 36px !important;
+  min-width: 32px !important;
+  transition: color 0.15s ease;
+}
+
+.admin-nav-item .MuiListItemIcon-root svg {
+  font-size: 1.25rem;
 }
 
 .admin-nav-item:hover {
   background: #f8fafc !important;
+  color: #0f172a !important;
 }
 
-.admin-nav-item:hover .MuiListItemText-primary,
 .admin-nav-item:hover .MuiListItemIcon-root {
-  color: #334155 !important;
+  color: #0052cc !important;
 }
 
 .admin-nav-item.active {
-  background: #eff6ff !important;
-  border-left-color: #1a56db !important;
+  background: #0052cc !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(0, 82, 204, 0.22);
 }
 
 .admin-nav-item.active .MuiListItemText-primary,
 .admin-nav-item.active .MuiListItemIcon-root {
-  color: #1a56db !important;
-  font-weight: 600;
+  color: #fff !important;
+  font-weight: 500;
 }
 
-.admin-sidebar-profile {
-  margin: 12px 16px 16px;
-  padding: 8px;
-  border-radius: 8px;
+.admin-sidebar-profile:hover {
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+}
+
+.admin-sidebar-profile-avatar {
+  width: 40px !important;
+  height: 40px !important;
+  flex-shrink: 0;
+  background: #0052cc !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .admin-sidebar-profile-name {
-  font-size: 0.75rem !important;
+  font-size: 0.875rem !important;
   font-weight: 700 !important;
-  color: var(--ac-on-surface, #0b1c30) !important;
+  color: #1e293b !important;
+  transition: color 0.15s ease;
 }
 
 .admin-sidebar-profile-role {
   font-size: 0.75rem !important;
   color: #64748b !important;
+}
+
+.admin-sidebar-profile:hover .admin-sidebar-profile-name {
+  color: #0052cc !important;
+}
+
+.admin-sidebar-profile-settings {
+  color: #cbd5e1;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.admin-sidebar-profile:hover .admin-sidebar-profile-settings {
+  color: #64748b;
 }
 
 /* Header */
@@ -224,6 +288,19 @@ html:has(.admin-layout-root) #root {
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
   box-shadow: 0 1px 2px rgba(0, 74, 198, 0.04);
+}
+
+@media (max-width: 899px) {
+  .admin-header-root {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .admin-sidebar-brand {
+    padding: 0 16px;
+    height: 64px;
+    margin-bottom: 12px;
+  }
 }
 
 .admin-header-search {

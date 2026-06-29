@@ -2,6 +2,7 @@ package com.courseenglish.api.service.ai;
 
 import com.courseenglish.api.domain.AiDocument;
 import com.courseenglish.api.domain.AiTask;
+import com.courseenglish.api.domain.request.ReqCreateExamPaperGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
 import com.courseenglish.api.repository.AiDocumentRepository;
 import com.courseenglish.api.repository.AiTaskRepository;
@@ -11,12 +12,12 @@ import com.courseenglish.api.util.constant.ActivityLogActionEnum;
 import com.courseenglish.api.util.constant.ActivityLogModuleEnum;
 import com.courseenglish.api.util.constant.ActivityLogSeverityEnum;
 import com.courseenglish.api.util.constant.AiTaskStatusEnum;
+import com.courseenglish.api.util.constant.AiTaskTypeEnum;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,26 +34,32 @@ public class AiTaskProcessingService {
   private final AiTaskRepository aiTaskRepository;
   private final AiDocumentRepository aiDocumentRepository;
   private final AiQuestionGenerationService aiQuestionGenerationService;
+  private final AiExamPaperGenerationService aiExamPaperGenerationService;
   private final ActivityLogService activityLogService;
   private final AiTaskProgressReporter progressReporter;
+  private final AiTaskLifecycleService taskLifecycleService;
   private final ObjectMapper objectMapper;
 
   public AiTaskProcessingService(
       AiTaskRepository aiTaskRepository,
       AiDocumentRepository aiDocumentRepository,
       AiQuestionGenerationService aiQuestionGenerationService,
+      AiExamPaperGenerationService aiExamPaperGenerationService,
       ActivityLogService activityLogService,
       AiTaskProgressReporter progressReporter,
+      AiTaskLifecycleService taskLifecycleService,
       ObjectMapper objectMapper) {
     this.aiTaskRepository = aiTaskRepository;
     this.aiDocumentRepository = aiDocumentRepository;
     this.aiQuestionGenerationService = aiQuestionGenerationService;
+    this.aiExamPaperGenerationService = aiExamPaperGenerationService;
     this.activityLogService = activityLogService;
     this.progressReporter = progressReporter;
+    this.taskLifecycleService = taskLifecycleService;
     this.objectMapper = objectMapper;
   }
 
-  @Transactional
+  /** AI work runs outside a long DB transaction so status/progress are visible while processing. */
   public void processTask(UUID taskId) {
     AiTask task = aiTaskRepository.findById(taskId).orElse(null);
     if (task == null) {
@@ -71,22 +78,34 @@ public class AiTaskProcessingService {
       return;
     }
 
-    task.setStatus(AiTaskStatusEnum.PROCESSING);
     Instant workerStartedAt = Instant.now();
-    task.setStartedAt(workerStartedAt);
-    task.setProgressMessage("Đang chuẩn bị sinh câu…");
-    task.setProgressPercent(0);
-    aiTaskRepository.save(task);
+    if (!taskLifecycleService.claimIfPending(taskId, workerStartedAt)) {
+      log.warn("[AiTaskProcessing] skip taskId={} reason=claim_failed", taskId);
+      logWorkerSkip(taskId, task, "already_claimed");
+      return;
+    }
+
+    task = aiTaskRepository.findById(taskId).orElse(null);
+    if (task == null) {
+      return;
+    }
+
     progressReporter.report(task.getId(), "Đang chuẩn bị sinh câu…", 0);
 
     long taskWallStartMs = System.currentTimeMillis();
 
     try {
-      ReqCreateQuestionGenTaskDTO input = objectMapper.readValue(task.getInputJson(), ReqCreateQuestionGenTaskDTO.class);
       AiDocument document = aiDocumentRepository.findById(task.getDocumentId()).orElse(null);
       if (document == null || document.getExtractedText() == null || document.getExtractedText().isBlank()) {
         throw new IllegalStateException("Tài liệu không có nội dung");
       }
+
+      if (task.getTaskType() == AiTaskTypeEnum.EXAM_PAPER_GENERATION) {
+        processExamPaperGeneration(task, document, workerStartedAt, taskWallStartMs);
+        return;
+      }
+
+      ReqCreateQuestionGenTaskDTO input = objectMapper.readValue(task.getInputJson(), ReqCreateQuestionGenTaskDTO.class);
 
       progressReporter.report(task.getId(), "Đang phân tích tài liệu…", 5);
 
@@ -131,25 +150,25 @@ public class AiTaskProcessingService {
 
       progressReporter.report(task.getId(), "Đang tạo ngân hàng câu hỏi…", 10);
 
+      boolean topicMode = input.getTopic() != null && !input.getTopic().isBlank();
+      int readingSubQuestionCount =
+          input.getReadingSubQuestionCount() != null ? input.getReadingSubQuestionCount() : 4;
+
       AiQuestionGenerationService.GenerationResult gen = aiQuestionGenerationService.generate(
           document.getExtractedText(),
           input.getQuestionCount(),
           input.getQuestionTypes(),
           difficulty,
           promptLang,
-          trace);
+          trace,
+          input.getTypeQuotas(),
+          topicMode,
+          readingSubQuestionCount,
+          input.getCustomUserPromptByType());
 
       String outputJson = objectMapper.writeValueAsString(gen.getEnvelope());
-      task.setOutputJson(outputJson);
-      task.setModel(gen.getModel());
-      task.setPromptTokens(gen.getPromptTokens());
-      task.setCompletionTokens(gen.getCompletionTokens());
-      task.setStatus(AiTaskStatusEnum.DONE);
-      task.setErrorMessage(null);
-      task.setProgressMessage("Hoàn thành");
-      task.setProgressPercent(100);
-      task.setFinishedAt(Instant.now());
-      aiTaskRepository.save(task);
+      taskLifecycleService.markDone(
+          task.getId(), outputJson, gen.getModel(), gen.getPromptTokens(), gen.getCompletionTokens());
 
       long totalTaskMs = System.currentTimeMillis() - taskWallStartMs;
 
@@ -177,24 +196,57 @@ public class AiTaskProcessingService {
     } catch (Exception e) {
       log.warn("[AiTaskProcessing] taskId={} failed: {}", taskId, e.getMessage());
       String errorMessage = e.getMessage() != null ? e.getMessage() : "Sinh câu hỏi thất bại";
-      task.setStatus(AiTaskStatusEnum.FAILED);
-      task.setErrorMessage(errorMessage);
-      task.setProgressMessage(null);
-      task.setProgressPercent(null);
-      task.setFinishedAt(Instant.now());
-      aiTaskRepository.save(task);
-      progressReporter.clear(task.getId());
+      taskLifecycleService.markFailed(taskId, errorMessage);
+      progressReporter.clear(taskId);
 
+      AiTask failedTask = aiTaskRepository.findById(taskId).orElse(task);
       ActivityLogActionEnum action = resolveAiFailureAction(errorMessage);
       activityLogService.log(
           ActivityLogWriteContext.of(ActivityLogSeverityEnum.ERROR, ActivityLogModuleEnum.AI, action, errorMessage)
-              .userId(task.getUserId())
-              .ref("AI_TASK", task.getId())
+              .userId(failedTask.getUserId())
+              .ref("AI_TASK", taskId)
               .detail(stackSummary(e))
-              .put("taskId", task.getId())
-              .put("documentId", task.getDocumentId())
-              .put("taskType", task.getTaskType() != null ? task.getTaskType().name() : null));
+              .put("taskId", taskId)
+              .put("documentId", failedTask.getDocumentId())
+              .put("taskType", failedTask.getTaskType() != null ? failedTask.getTaskType().name() : null));
     }
+  }
+
+  private void processExamPaperGeneration(
+      AiTask task, AiDocument document, Instant workerStartedAt, long taskWallStartMs)
+      throws Exception {
+    ReqCreateExamPaperGenTaskDTO input =
+        objectMapper.readValue(task.getInputJson(), ReqCreateExamPaperGenTaskDTO.class);
+
+    progressReporter.report(task.getId(), "Đang phân tích đề thi…", 5);
+
+    String documentSource = resolveDocumentSource(document);
+    AiGenTraceContext trace =
+        new AiGenTraceContext(task.getId(), task.getUserId(), task.getDocumentId(), documentSource);
+
+    progressReporter.report(task.getId(), "Đang sinh từng phần đề…", 10);
+
+    var envelope =
+        aiExamPaperGenerationService.generate(document.getExtractedText(), input, trace);
+
+    String outputJson = objectMapper.writeValueAsString(envelope);
+    String model = envelope.getMeta() != null ? envelope.getMeta().getModel() : null;
+    taskLifecycleService.markDone(task.getId(), outputJson, model, null, null);
+
+    long totalTaskMs = System.currentTimeMillis() - taskWallStartMs;
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_GEN_RESPONSE,
+                "Hoàn thành sinh đề thi — " + totalTaskMs + "ms")
+            .userId(task.getUserId())
+            .ref("AI_TASK", task.getId())
+            .put("taskId", task.getId())
+            .put("documentId", task.getDocumentId())
+            .put("step", "exam_paper_done")
+            .put("sectionCount", envelope.getSections() != null ? envelope.getSections().size() : 0)
+            .put("totalTaskMs", totalTaskMs));
   }
 
   private void logWorkerSkip(UUID taskId, AiTask task, String reason) {

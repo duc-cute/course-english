@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course English - Nền tảng Giáo dục Tiếng Anh Công nghệ AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .custom-shadow { box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05); }
+        .glow-blue { box-shadow: 0 0 50px -10px rgba(37, 99, 235, 0.15); }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-[#0F172A] antialiased overflow-x-hidden">
+
+    <header class="sticky top-0 z-50 w-full border-b border-slate-200/80 glass transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 bg-[#0052cc] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-500/20">E</div>
+                <span class="text-xl font-bold tracking-tight text-slate-900">Course <span class="text-blue-600">English</span></span>
+            </div>
+            <nav class="hidden md:flex space-x-8 text-sm font-medium text-slate-600">
+                <a href="#ai-generator" class="hover:text-blue-600 transition">AI Soạn bài</a>
+                <a href="#ai-assistant" class="hover:text-blue-600 transition">Trợ lý 24/7</a>
+                <a href="#tracking" class="hover:text-blue-600 transition">Theo dõi học sinh</a>
+                <a href="#gamification" class="hover:text-blue-600 transition">Tính năng Gamification</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <button class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Đăng nhập</button>
+                <button class="bg-[#0052cc] hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition shadow-lg shadow-blue-500/10">Thử nghiệm miễn phí</button>
+            </div>
+        </div>
+    </header>
+
+    <section class="relative pt-12 pb-24 lg:pt-20 lg:pb-32 overflow-hidden glow-blue">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+                <div class="lg:col-span-5 space-y-6 text-center lg:text-left z-10">
+                    <div class="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200/60 rounded-full px-3 py-1 text-xs font-semibold text-blue-700">
+                        <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        <span>Đột phá Công nghệ EdTech AI mới nhất</span>
+                    </div>
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 leading-[1.1]">
+                        Teach Smarter.<br><span class="text-blue-600">Learn Better.</span>
+                    </h1>
+                    <p class="text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                        Tự động hóa soạn bài từ file Word/PDF, tối ưu quản lý lớp học, phân tích học sinh yếu kém và kích hoạt lộ trình học tập gây nghiện cùng trợ lý thông minh.
+                    </p>
+                    <div class="pt-2 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                        <a href="#ai-generator" class="bg-[#0052cc] hover:bg-blue-700 text-white font-medium px-8 py-3.5 rounded-xl transition shadow-xl shadow-blue-500/20 text-center">Bắt đầu giảng dạy</a>
+                        <button class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium px-8 py-3.5 rounded-xl transition text-center flex items-center justify-center space-x-2 custom-shadow">
+                            <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                            <span>Xem Video Demo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 relative">
+                    <div class="bg-white border border-slate-200 rounded-2xl custom-shadow overflow-hidden p-3 relative bg-slate-50">
+                        <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex h-[400px]">
+                            <div class="w-48 border-r border-slate-100 bg-slate-50/50 p-3 space-y-4 hidden sm:block">
+                                <div class="h-6 w-24 bg-slate-200 rounded-md"></div>
+                                <div class="space-y-2 pt-4">
+                                    <div class="h-8 bg-blue-50 rounded-lg flex items-center px-2 text-xs font-medium text-blue-600">Lịch giảng dạy</div>
+                                    <div class="h-8 bg-transparent rounded-lg flex items-center px-2 text-xs text-slate-400">Quản lý bài học</div>
+                                    <div class="h-8 bg-transparent rounded-lg flex items-center px-2 text-xs text-slate-400">Học sinh cần hỗ trợ</div>
+                                    <div class="h-8 bg-transparent rounded-lg flex items-center px-2 text-xs text-slate-400">Trợ lý AI</div>
+                                </div>
+                            </div>
+                            <div class="flex-1 p-4 space-y-4 overflow-y-auto">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                    <div class="h-5 w-32 bg-slate-200 rounded"></div>
+                                    <div class="h-6 w-16 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold flex items-center justify-center">Đã xuất bản</div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="border border-red-100 bg-red-50/40 p-2 rounded-xl text-center"><div class="text-xs font-bold text-red-600">CRITICAL</div><div class="text-lg font-black text-red-700">0</div></div>
+                                    <div class="border border-orange-100 bg-orange-50/40 p-2 rounded-xl text-center"><div class="text-xs font-bold text-orange-600">WARNING</div><div class="text-lg font-black text-orange-700">9</div></div>
+                                    <div class="border border-yellow-100 bg-yellow-50/40 p-2 rounded-xl text-center"><div class="text-xs font-bold text-yellow-600">ATTENTION</div><div class="text-lg font-black text-yellow-700">0</div></div>
+                                </div>
+                                <div class="border border-slate-100 rounded-xl p-3 bg-white space-y-2">
+                                    <div class="h-3 w-3/4 bg-slate-200 rounded"></div>
+                                    <div class="h-3 w-1/2 bg-slate-100 rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ai-generator" class="py-20 bg-white border-t border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+                <h2 class="text-3xl font-bold tracking-tight sm:text-4xl text-slate-900">Biến File Word & PDF Thành Bài Tập Tương Tác Trong Vài Phút</h2>
+                <p class="text-slate-500 text-base">Hệ thống AI xử lý ngữ nghĩa sâu, bóc tách tài liệu và phân phối hệ thống câu hỏi đa dạng tự động hoàn toàn.</p>
+            </div>
+
+            <div class="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+                <div class="bg-[#F8FAFC] border border-slate-200/80 rounded-2xl p-6 flex flex-col justify-between custom-shadow">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">BƯỚC 1</span>
+                            <span class="text-xs text-slate-400">Chọn nguồn nội dung</span>
+                        </div>
+                        <div class="border-2 border-dashed border-slate-200 rounded-xl p-8 bg-white text-center space-y-3 cursor-pointer hover:border-blue-400 transition">
+                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto text-blue-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            </div>
+                            <p class="text-xs font-semibold text-slate-700">Kéo thả file PDF hoặc DOCX vào đây</p>
+                            <p class="text-[10px] text-slate-400">Tối đa 10MB</p>
+                            <button class="bg-[#0052cc] text-white text-xs px-4 py-1.5 rounded-lg font-medium shadow-sm">Chọn file</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#F8FAFC] border border-slate-200/80 rounded-2xl p-6 flex flex-col justify-between custom-shadow relative">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md">BƯỚC 2</span>
+                            <span class="text-xs text-slate-400">AI xử lý thông minh</span>
+                        </div>
+                        <div class="bg-white border border-slate-100 rounded-xl p-4 space-y-4">
+                            <div class="text-center space-y-1">
+                                <p class="text-xs font-bold text-slate-800">AI đang làm việc cho bạn ✨</p>
+                                <p class="text-[10px] text-slate-400">Quá trình này có thể mất 1–2 phút...</p>
+                            </div>
+                            <div class="space-y-1.5">
+                                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full" style="width: 45%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] font-medium text-slate-400">
+                                    <span>Đang khởi tạo tác vụ...</span>
+                                    <span>45%</span>
+                                </div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-100 rounded-lg p-2.5 text-[10px] text-amber-800">
+                                <span class="font-bold">Bạn có biết?</span> Cụm "Piece of cake" bắt nguồn từ thế kỷ 19 để chỉ việc gì đó cực kỳ dễ dàng.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#F8FAFC] border border-slate-200/80 rounded-2xl p-6 flex flex-col justify-between custom-shadow">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">BƯỚC 3</span>
+                            <span class="text-xs text-slate-400">Kiểm tra & Xuất bản</span>
+                        </div>
+                        <div class="bg-white border border-slate-100 rounded-xl p-4 space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-50 pb-2">
+                                <span class="text-[10px] font-bold text-slate-700">Q1. Trắc nghiệm (MCQ)</span>
+                            </div>
+                            <p class="text-xs font-medium text-slate-800">Nội dung câu hỏi: "hello" nghĩa là gì?</p>
+                            <div class="space-y-1.5">
+                                <div class="border border-blue-500 bg-blue-50/60 rounded-lg p-1.5 flex items-center justify-between text-xs font-medium text-blue-700">
+                                    <span>A. xin chào</span>
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                </div>
+                                <div class="border border-slate-100 rounded-lg p-1.5 text-xs text-slate-500 bg-slate-50/30">B. tạm biệt</div>
+                                <div class="border border-slate-100 rounded-lg p-1.5 text-xs text-slate-500 bg-slate-50/30">C. cảm ơn</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ai-assistant" class="py-20 bg-[#F8FAFC]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-5 space-y-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Trợ Lý Học Tiếng Anh Thông Minh 24/7</h2>
+                    <p class="text-slate-600 leading-relaxed">
+                        LinguistAI hoạt động như một giáo viên bản ngữ túc trực toàn thời gian, giải đáp mọi khúc mắc ngữ pháp của học sinh, sửa bài tập viết và đưa ra gợi ý giải thích chi tiết tức thì.
+                    </p>
+                    <ul class="space-y-3 text-sm text-slate-600 font-medium">
+                        <li class="flex items-center space-x-3"><span class="w-1.5 h-1.5 bg-[#0052cc] rounded-full"></span><span>Giải đáp sự khác biệt ngữ pháp phức tạp</span></li>
+                        <li class="flex items-center space-x-3"><span class="w-1.5 h-1.5 bg-[#0052cc] rounded-full"></span><span>Chấm và sửa lỗi sai trong câu trực quan</span></li>
+                        <li class="flex items-center space-x-3"><span class="w-1.5 h-1.5 bg-[#0052cc] rounded-full"></span><span>Gợi ý mở rộng vốn từ vựng theo ngữ cảnh</span></li>
+                    </ul>
+                </div>
+                <div class="lg:col-span-7">
+                    <div class="bg-white border border-slate-200 rounded-2xl custom-shadow overflow-hidden flex flex-col h-[420px]">
+                        <div class="bg-[#0052cc] text-white px-4 py-3 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></div>
+                                <span class="font-semibold text-sm">LinguistAI • Trợ lý học tập</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-4 bg-slate-50/60 overflow-y-auto space-y-4 text-xs">
+                            <div class="flex justify-end">
+                                <div class="bg-blue-500 text-white p-3 rounded-2xl rounded-tr-none max-w-xs font-medium">
+                                    Em làm câu này đúng chưa cô: "I isn't finish my homework yet."
+                                </div>
+                            </div>
+                            <div class="flex justify-start">
+                                <div class="bg-white border border-slate-200/80 p-3 rounded-2xl rounded-tl-none max-w-md shadow-sm space-y-2">
+                                    <p class="font-semibold text-red-600 flex items-center space-x-1">
+                                        ❌ isn't finish &rarr; <span class="text-emerald-600">haven't finished</span>
+                                    </p>
+                                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1 text-slate-600">
+                                        <p class="font-bold text-slate-700">💡 Giải thích chi tiết:</p>
+                                        <p>• Chủ ngữ là <strong>"I"</strong> &rarr; đi kèm trợ động từ <strong>have</strong> (không dùng is).</p>
+                                        <p>• Thể phủ định hiện tại hoàn thành: <strong>have + not + V3</strong>.</p>
+                                        <p>• Từ <strong>yet</strong> là dấu hiệu nhận biết của thì Hiện tại hoàn thành.</p>
+                                    </div>
+                                    <p class="text-slate-500 italic pt-1">Cô còn 8 câu nữa nha! Cứ làm hết rồi em chấm tiếp cho cô nhé 😊</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tracking" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-4">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Không Bao Giờ Bỏ Sót Học Sinh Bị Tụt Lại Phía Sau</h2>
+                <p class="text-slate-500 text-base">Hệ thống đo lường hành vi thông minh tự động phát hiện sớm rủi ro, phân loại mức độ cần hỗ trợ để giáo viên can thiệp kịp thời.</p>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="bg-red-50 border border-red-200/60 rounded-2xl p-6 custom-shadow">
+                    <div class="text-sm font-bold text-red-800">CRITICAL (NGUY CẤP)</div>
+                    <div class="text-4xl font-black text-red-600 mt-2">0</div>
+                    <p class="text-xs text-red-600/80 mt-2">Học sinh không tương tác > 7 ngày hoặc điểm số giảm đột ngột dưới mức sàn.</p>
+                </div>
+                <div class="bg-orange-50 border border-orange-200/60 rounded-2xl p-6 custom-shadow">
+                    <div class="text-sm font-bold text-orange-800">WARNING (CẢNH BÁO)</div>
+                    <div class="text-4xl font-black text-orange-600 mt-2">9</div>
+                    <p class="text-xs text-orange-600/80 mt-2">Học sinh trễ lịch nộp bài liên tục, điểm trung bình có xu hướng đi xuống.</p>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-200/60 rounded-2xl p-6 custom-shadow">
+                    <div class="text-sm font-bold text-yellow-800">ATTENTION (CHÚ Ý)</div>
+                    <div class="text-4xl font-black text-yellow-600 mt-2">0</div>
+                    <p class="text-xs text-yellow-600/80 mt-2">Học sinh đạt ngưỡng trung bình thấp (dưới 6.0), cần phân phối thêm bài tập bổ trợ.</p>
+                </div>
+            </div>
+
+            <div class="mt-8 border border-slate-200/80 bg-slate-50/50 rounded-2xl p-4 overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                    <thead>
+                        <tr class="text-slate-400 font-medium uppercase border-b border-slate-200 pb-2">
+                            <th class="py-3 px-4">Học sinh</th>
+                            <th class="py-3 px-4">Trạng thái rủi ro</th>
+                            <th class="py-3 px-4">Số ngày không hoạt động</th>
+                            <th class="py-3 px-4">Bài tập thiếu</th>
+                            <th class="py-3 px-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white rounded-xl">
+                        <tr>
+                            <td class="py-3.5 px-4 font-semibold text-slate-800">Hoàng Văn Cường <span class="text-slate-400 font-normal">(Lớp 10A1)</span></td>
+                            <td class="py-3.5 px-4"><span class="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Warning (50)</span></td>
+                            <td class="py-3.5 px-4 font-medium">20 ngày</td>
+                            <td class="py-3.5 px-4">0 bài</td>
+                            <td class="py-3.5 px-4"><button class="text-blue-600 font-bold hover:underline">Xem hồ sơ</button></td>
+                        </tr>
+                        <tr>
+                            <td class="py-3.5 px-4 font-semibold text-slate-800">Lê Minh An <span class="text-slate-400 font-normal">(Lớp 11B1)</span></td>
+                            <td class="py-3.5 px-4"><span class="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Warning (50)</span></td>
+                            <td class="py-3.5 px-4 font-medium">20 ngày</td>
+                            <td class="py-3.5 px-4">0 bài</td>
+                            <td class="py-3.5 px-4"><button class="text-blue-600 font-bold hover:underline">Xem hồ sơ</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-[#F8FAFC] border-t border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-7 overflow-x-auto border border-slate-200 rounded-2xl custom-shadow bg-white p-4">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                        <span class="text-sm font-bold text-slate-800">Danh sách bài học hoạt động</span>
+                        <button class="bg-[#0052cc] text-white text-xs px-3 py-1.5 rounded-lg font-medium">+ Thêm bài giảng</button>
+                    </div>
+                    <table class="w-full text-left text-xs whitespace-nowrap">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-100"><th class="py-2">Tiêu đề</th><th class="py-2">Môn học</th><th class="py-2">Trạng thái</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50 font-medium text-slate-700">
+                            <tr><td class="py-3 text-blue-600 font-semibold">UNIT: GENERATION GAP</td><td class="py-3">Tiếng Anh</td><td class="py-3"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[10px]">Đã pub</span></td></tr>
+                            <tr><td class="py-3 text-blue-600 font-semibold">Bài tập từ vựng mở rộng</td><td class="py-3">Tiếng Anh</td><td class="py-3"><span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[10px]">Đã pub</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="lg:col-span-5 space-y-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900">Quản Lý Lớp Học Tinh Gọn, Hiệu Quả</h2>
+                    <p class="text-slate-600 leading-relaxed">
+                        Theo dõi tổng quan tiến độ của toàn bộ các lớp học và phân phối học liệu chỉ qua vài thao tác chuột. Tích hợp sâu cấu trúc bài giảng thông minh giúp tối ưu thời gian lên lớp.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="gamification" class="py-20 bg-slate-900 text-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-2xl mx-auto space-y-4">
+                <span class="text-xs font-bold text-blue-400 tracking-widest uppercase">Ứng dụng hóa trò chơi (Gamification)</span>
+                <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Biến Việc Học Tiếng Anh Trở Nên Gây Nghiện</h2>
+                <p class="text-slate-400 text-sm">Áp dụng cơ chế tương tự Duolingo & Quizlet giúp học sinh chủ động duy trì ngọn lửa học tập mỗi ngày.</p>
+            </div>
+
+            <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-6 space-y-4 shadow-xl">
+                    <div class="w-10 h-10 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center text-xl font-bold">🔥</div>
+                    <h3 class="font-bold text-lg">Hệ Thống Streak</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">Duy trì học tập liên tục để bảo vệ chuỗi ngày rực lửa, thúc đẩy phản xạ học tập tự động hàng ngày.</p>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-6 space-y-4 shadow-xl">
+                    <div class="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center text-xl font-bold">⚡</div>
+                    <h3 class="font-bold text-lg">Tích lũy Điểm XP</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">Tích lũy điểm kinh nghiệm thông qua mỗi câu trả lời đúng, thăng cấp bậc danh vọng để khẳng định bản thân.</p>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-6 space-y-4 shadow-xl">
+                    <div class="w-10 h-10 bg-purple-500/10 text-purple-400 rounded-xl flex items-center justify-center text-xl font-bold">🏆</div>
+                    <h3 class="font-bold text-lg">Bảng Xếp Hạng</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">Thi đua trực tiếp trên bảng vàng xếp hạng cùng bạn bè trong lớp, tạo động lực cạnh tranh lành mạnh.</p>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-6 space-y-4 shadow-xl">
+                    <div class="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-xl font-bold">🎯</div>
+                    <h3 class="font-bold text-lg">Nhiệm Vụ Hàng Ngày</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">Thử thách bản thân với các chuỗi thử thách ngắn, tối ưu hóa khả năng ghi nhớ từ vựng cốt lõi.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-5 space-y-6">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900">Quản Lý Lịch Dạy Chuẩn Xác Vững Tâm</h2>
+                    <p class="text-slate-600 leading-relaxed">
+                        Hệ thống lên kế hoạch giảng dạy thông minh theo tuần, tích hợp sẵn link phòng học trực tuyến Google Meet, hiển thị chính xác bài giảng tương ứng cho từng ca dạy.
+                    </p>
+                </div>
+                <div class="lg:col-span-7 border border-slate-200 rounded-2xl bg-slate-50/50 p-4 custom-shadow">
+                    <div class="bg-white border border-slate-100 rounded-xl overflow-hidden p-3 space-y-3">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-700 border-b border-slate-100 pb-2">
+                            <span>Lịch dạy cá nhân</span>
+                            <span class="text-blue-600">Tháng 6, 2026</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 text-center text-[10px] font-bold text-slate-400">
+                            <div>Thứ 2 (22/6)</div><div>Thứ 3 (23/6)</div><div>Thứ 4 (24/6)</div><div>Thứ 5 (25/6)</div><div>Thứ 6 (26/6)</div>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 h-24">
+                            <div class="bg-blue-50 border border-blue-100 rounded p-1 text-[9px] text-blue-700 space-y-0.5">
+                                <span class="font-bold block">08:30 - 07:20</span>
+                                <span>Lớp 10A1</span>
+                                <span class="text-slate-400 block text-[8px]">UNIT: GENERATION GAP</span>
+                            </div>
+                            <div class="bg-purple-50 border border-purple-100 rounded p-1 text-[9px] text-purple-700 space-y-0.5">
+                                <span class="font-bold block">08:00 - 10:00</span>
+                                <span>Lớp 10A2</span>
+                                <span class="text-slate-400 block text-[8px]">Vocabulary 1</span>
+                            </div>
+                            <div class="border border-dashed border-slate-200 rounded"></div>
+                            <div class="border border-dashed border-slate-200 rounded"></div>
+                            <div class="border border-dashed border-slate-200 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-[#F8FAFC] border-t border-b border-slate-200/50">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900">Luồng Thông Báo Tối Ưu Thời Gian Thực</h2>
+            <p class="text-slate-600 text-sm max-w-2xl mx-auto">Vòng lặp thông báo tức thời gắn kết chặt chẽ mọi hoạt động của Thầy và Trò mà không có độ trễ.</p>
+            
+            <div class="relative flex flex-col space-y-4 max-w-md mx-auto text-left text-xs font-medium">
+                <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-center space-x-3 shadow-sm">
+                    <div class="w-2 h-2 bg-[#0052cc] rounded-full"></div>
+                    <p class="text-slate-700"><strong>Giáo viên</strong> vừa giao bài tập mới lên hệ thống lớp 10A1.</p>
+                </div>
+                <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-center space-x-3 shadow-sm translate-x-4">
+                    <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <p class="text-slate-700"><strong>Học sinh</strong> nhận được thông báo đẩy tức thì trên thiết bị di động.</p>
+                </div>
+                <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-center space-x-3 shadow-sm translate-x-8">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <p class="text-slate-700"><strong>Học sinh hoàn thành</strong> bài làm, hệ thống tự chấm bài và đẩy kết quả về Giáo viên.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto space-y-4 mb-16">
+                <h2 class="text-3xl font-bold tracking-tight text-slate-900">Hệ Sinh Thái Toàn Diện Đóng Kín</h2>
+                <p class="text-slate-500 text-sm">Sự kết hợp hoàn hảo giữa công cụ tối ưu cho thầy cô và trải nghiệm đỉnh cao cho học trò.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 text-center text-xs font-bold text-slate-700">
+                <div class="p-4 border border-slate-100 rounded-2xl bg-slate-50/50">Giáo Viên</div>
+                <div class="p-4 border border-blue-100 rounded-2xl bg-blue-50 text-blue-700">&rarr; Tạo Bài Học</div>
+                <div class="p-4 border border-purple-100 rounded-2xl bg-purple-50 text-purple-700">&rarr; AI Sinh Đề</div>
+                <div class="p-4 border border-slate-100 rounded-2xl bg-slate-50/50">&rarr; Học Sinh Học</div>
+                <div class="p-4 border border-amber-100 rounded-2xl bg-amber-50 text-amber-700">&rarr; Tích Lũy XP</div>
+                <div class="p-4 border border-red-100 rounded-2xl bg-red-50 text-red-700">&rarr; AI Phân Tích</div>
+                <div class="p-4 border border-emerald-100 rounded-2xl bg-emerald-50 text-emerald-700">Học Sinh Tiến Bộ</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-[#0052cc] text-white py-16 lg:py-24 relative overflow-hidden">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative z-10">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">Mọi Thứ Bạn Cần Để Dạy & Học Tiếng Anh Khác Biệt</h2>
+            <p class="text-blue-100 text-base max-w-xl mx-auto">Trải nghiệm ngay kỷ nguyên chuyển đổi số EdTech đột phá hàng đầu cùng Course English.</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+                <button class="bg-white hover:bg-slate-50 text-blue-600 font-semibold px-8 py-3.5 rounded-xl transition shadow-xl">Bắt đầu hoàn toàn miễn phí</button>
+                <button class="border border-white/40 hover:border-white text-white font-semibold px-8 py-3.5 rounded-xl transition">Liên hệ tư vấn trường học</button>
+            </div>
+        </div>
+    </section>
+
+  <!-- ĐÂY LÀ PHẦN FOOTER MỚI CẬP NHẬT -->
+    <footer class="bg-[#EEF2FF] text-slate-600 font-sans">
+        <!-- Dải màu xanh đậm phía trên cùng (mô phỏng theo ảnh) -->
+        <div class="h-4 w-full bg-[#0052cc]"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+            <!-- Cấu trúc 4 cột chính -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <!-- Cột 1: Thông tin thương hiệu -->
+                <div class="space-y-4 md:pr-6">
+                    <h3 class="font-bold text-[#0052cc] text-[15px]">Course English AI</h3>
+                    <p class="text-[13px] leading-relaxed text-slate-600">
+                        The future of language education, powered by artificial intelligence and human connection.
+                    </p>
+                </div>
+
+                <!-- Cột 2: Platform -->
+                <div class="space-y-4">
+                    <h3 class="font-bold text-slate-800 text-[14px]">Platform</h3>
+                    <ul class="space-y-3 text-[13px]">
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Features</a></li>
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">AI Assistant</a></li>
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Lesson Creator</a></li>
+                    </ul>
+                </div>
+
+                <!-- Cột 3: Resources -->
+                <div class="space-y-4">
+                    <h3 class="font-bold text-slate-800 text-[14px]">Resources</h3>
+                    <ul class="space-y-3 text-[13px]">
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Help Center</a></li>
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Webinars</a></li>
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Community</a></li>
+                    </ul>
+                </div>
+
+                <!-- Cột 4: Company -->
+                <div class="space-y-4">
+                    <h3 class="font-bold text-slate-800 text-[14px]">Company</h3>
+                    <ul class="space-y-3 text-[13px]">
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Đường line mờ phân cách và khu vực bản quyền/mạng xã hội -->
+            <div class="pt-6 border-t border-indigo-200/50 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-[12px]">
+                <p>&copy; 2024 Course English AI. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Twitter</a>
+                    <a href="#" class="hover:text-[#0052cc] transition-colors duration-200">LinkedIn</a>
+                    <a href="#" class="hover:text-[#0052cc] transition-colors duration-200">Facebook</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

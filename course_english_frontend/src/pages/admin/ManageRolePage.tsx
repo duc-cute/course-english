@@ -11,13 +11,18 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Skeleton,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AdminCatalogGridTable,
+  AdminCatalogPageHeader,
+  AdminCatalogToolbar,
+  ConfirmDialog,
+  type CatalogGridColumn,
+} from "../../admin/components";
 import {
   muBtnSmOutlined,
   muDialogFooter,
@@ -185,6 +190,56 @@ export function ManageRolePage() {
     }
   };
 
+  const roleColumns = useMemo<CatalogGridColumn<RoleRecord>[]>(
+    () => [
+      {
+        key: "stt",
+        header: "STT",
+        width: "72px",
+        mobileRole: "hidden",
+        className: "catalog-table-muted",
+        render: (_role, index) => page * size + index + 1,
+      },
+      {
+        key: "name",
+        header: "Tên role",
+        width: "minmax(220px, 1fr)",
+        mobileRole: "title",
+        render: (role) => role.name || "—",
+      },
+      {
+        key: "code",
+        header: "Mã role",
+        width: "minmax(180px, 1fr)",
+        mobileRole: "inline",
+        className: "catalog-table-muted",
+        render: (role) => role.code || "—",
+      },
+      {
+        key: "actions",
+        header: "Thao tác",
+        width: "120px",
+        align: "center",
+        mobileRole: "actions",
+        render: (role) => (
+          <>
+            <Tooltip title="Sửa role">
+              <IconButton size="small" color="primary" onClick={() => void handleOpenEdit(role)}>
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Xóa role">
+              <IconButton size="small" color="error" onClick={() => handleOpenDelete(role)}>
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ),
+      },
+    ],
+    [page, size],
+  );
+
   return (
     <Box className="admin-catalog-page">
       <AdminCatalogPageHeader
@@ -222,57 +277,13 @@ export function ManageRolePage() {
       ) : null}
 
       <Box className="admin-catalog-page__table-card">
-        <Box
-          className="catalog-table-head"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "72px minmax(220px, 1fr) minmax(180px, 1fr) 120px",
-            columnGap: 1.5,
-          }}
-        >
-          <Box>STT</Box>
-          <Box>Tên role</Box>
-          <Box>Mã role</Box>
-          <Box sx={{ textAlign: "center" }}>Thao tác</Box>
-        </Box>
-
-        {loading ? (
-          <Box sx={{ p: 2 }}>
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-          </Box>
-        ) : roles.length === 0 ? (
-          <Box className="admin-catalog-page__empty">Không có dữ liệu role.</Box>
-        ) : (
-          roles.map((role, index) => (
-            <Box
-              key={role.id}
-              className="catalog-table-row"
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "72px minmax(220px, 1fr) minmax(180px, 1fr) 120px",
-                columnGap: 1.5,
-              }}
-            >
-              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
-              <Box sx={{ fontWeight: 600, color: "#0C447C" }}>{role.name || "—"}</Box>
-              <Box className="catalog-table-muted">{role.code || "—"}</Box>
-              <Box className="catalog-table-actions">
-                <Tooltip title="Sửa role">
-                  <IconButton size="small" color="primary" onClick={() => void handleOpenEdit(role)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Xóa role">
-                  <IconButton size="small" color="error" onClick={() => handleOpenDelete(role)}>
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-          ))
-        )}
+        <AdminCatalogGridTable
+          columns={roleColumns}
+          rows={roles}
+          loading={loading}
+          emptyText="Không có dữ liệu role."
+          getRowKey={(role) => role.id}
+        />
 
         <Box className="admin-catalog-page__table-footer">
           <Typography variant="body2" className="admin-catalog-page__table-footer-total">

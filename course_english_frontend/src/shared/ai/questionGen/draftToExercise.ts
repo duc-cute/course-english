@@ -1,5 +1,6 @@
 import { generateQuestionId } from "../../lesson/exercisePayload";
 import { normalizeFillBlankPrompt, syncBlanksWithPrompt } from "../../lesson/fillBlankUtils";
+import { syncGapFillBlanksWithPrompt } from "../../lesson/gapFillMcqUtils";
 import { READING_PRESENTATION_SPLIT } from "../../lesson/readingComprehensionUtils";
 import type {
   ExerciseQuestion,
@@ -77,6 +78,44 @@ export function draftToExerciseQuestion(draft: AiDraftQuestion): ExerciseQuestio
       prompt: { text: promptText, lang: draft.promptLang ?? "en" },
       blanks: synced,
       caseSensitive: payload?.caseSensitive === true,
+      explanation,
+    };
+  }
+
+  if (draft.questionType === "GAP_FILL_MCQ") {
+    const promptText = normalizeFillBlankPrompt(draft.promptText);
+    const payload = parseContentJsonObject(draft.contentJson);
+    const rawBlanks = Array.isArray(payload?.blanks) ? payload.blanks : [];
+    const blanks = rawBlanks
+      .map((b, index) => {
+        const row = b as {
+          id?: string;
+          choices?: { choiceKey?: string; choiceText?: string; correct?: boolean }[];
+        };
+        const choices = (row.choices ?? [])
+          .map((c, ci) => ({
+            id: (c.choiceKey ?? `a${ci}`).trim().toLowerCase(),
+            text: typeof c.choiceText === "string" ? c.choiceText.trim() : "",
+          }))
+          .filter((c) => c.id && c.text);
+        const correct = row.choices?.find((c) => c.correct);
+        const correctChoiceId =
+          correct?.choiceKey?.trim().toLowerCase() ?? choices[0]?.id ?? "a";
+        if (choices.length < 2) return null;
+        return {
+          id: row.id?.trim() || `b${index + 1}`,
+          choices,
+          correctChoiceId,
+        };
+      })
+      .filter((b): b is NonNullable<typeof b> => b !== null);
+    if (blanks.length < 2) return null;
+    const synced = syncGapFillBlanksWithPrompt(promptText, blanks);
+    return {
+      id: generateQuestionId(),
+      type: "GAP_FILL_MCQ",
+      prompt: { text: promptText, lang: draft.promptLang ?? "en" },
+      blanks: synced,
       explanation,
     };
   }

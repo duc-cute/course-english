@@ -11,13 +11,18 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Skeleton,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
-import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AdminCatalogGridTable,
+  AdminCatalogPageHeader,
+  AdminCatalogToolbar,
+  ConfirmDialog,
+  type CatalogGridColumn,
+} from "../../admin/components";
 import {
   muBtnSmOutlined,
   muDialogFooter,
@@ -154,6 +159,71 @@ export function ManageClassroomPage() {
     }
   };
 
+  const classroomColumns = useMemo<CatalogGridColumn<ClassroomRecord>[]>(
+    () => [
+      {
+        key: "stt",
+        header: "STT",
+        width: "72px",
+        mobileRole: "hidden",
+        className: "catalog-table-muted",
+        render: (_item, index) => page * size + index + 1,
+      },
+      {
+        key: "name",
+        header: "Tên lớp",
+        width: "minmax(240px, 1fr)",
+        mobileRole: "title",
+        render: (item) => item.name || "—",
+      },
+      {
+        key: "code",
+        header: "Mã lớp",
+        width: "140px",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (item) => item.code || "—",
+      },
+      {
+        key: "description",
+        header: "Mô tả",
+        width: "1fr",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (item) => item.description || "—",
+      },
+      {
+        key: "actions",
+        header: "Thao tác",
+        width: "120px",
+        align: "center",
+        mobileRole: "actions",
+        render: (item) => (
+          <>
+            <Tooltip title="Sửa">
+              <IconButton size="small" color="primary" onClick={() => void openEdit(item)}>
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Xóa">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => {
+                  setDeleting(item);
+                  setOpenDelete(true);
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ),
+      },
+    ],
+    [page, size],
+  );
+
   return (
     <Box className="admin-catalog-page">
       <AdminCatalogPageHeader
@@ -187,34 +257,13 @@ export function ManageClassroomPage() {
       {error ? <Alert severity="error" sx={{ mb: 1, py: 0.25, fontSize: 12 }}>{error}</Alert> : null}
 
       <Box className="admin-catalog-page__table-card">
-        <Box
-          className="catalog-table-head"
-          sx={{ display: "grid", gridTemplateColumns: "72px minmax(240px,1fr) 140px 1fr 120px", columnGap: 1.5 }}
-        >
-          <Box>STT</Box><Box>Tên lớp</Box><Box>Mã lớp</Box><Box>Mô tả</Box><Box sx={{ textAlign: "center" }}>Thao tác</Box>
-        </Box>
-        {loading ? (
-          <Box sx={{ p: 2 }}><Skeleton height={36} /><Skeleton height={36} /><Skeleton height={36} /></Box>
-        ) : rows.length === 0 ? (
-          <Box className="admin-catalog-page__empty">Không có dữ liệu lớp học.</Box>
-        ) : (
-          rows.map((item, index) => (
-            <Box
-              key={item.id}
-              className="catalog-table-row"
-              sx={{ display: "grid", gridTemplateColumns: "72px minmax(240px,1fr) 140px 1fr 120px", columnGap: 1.5 }}
-            >
-              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
-              <Box sx={{ fontWeight: 600, color: "#0C447C" }}>{item.name || "—"}</Box>
-              <Box className="catalog-table-muted">{item.code || "—"}</Box>
-              <Box className="catalog-table-muted">{item.description || "—"}</Box>
-              <Box className="catalog-table-actions">
-                <Tooltip title="Sửa"><IconButton size="small" color="primary" onClick={() => void openEdit(item)}><EditOutlinedIcon fontSize="small" /></IconButton></Tooltip>
-                <Tooltip title="Xóa"><IconButton size="small" color="error" onClick={() => { setDeleting(item); setOpenDelete(true); }}><DeleteOutlineIcon fontSize="small" /></IconButton></Tooltip>
-              </Box>
-            </Box>
-          ))
-        )}
+        <AdminCatalogGridTable
+          columns={classroomColumns}
+          rows={rows}
+          loading={loading}
+          emptyText="Không có dữ liệu lớp học."
+          getRowKey={(item) => item.id}
+        />
         <Box className="admin-catalog-page__table-footer">
           <Typography variant="body2" className="admin-catalog-page__table-footer-total">Tổng: {total}</Typography>
           <Box className="admin-catalog-page__table-footer-controls">

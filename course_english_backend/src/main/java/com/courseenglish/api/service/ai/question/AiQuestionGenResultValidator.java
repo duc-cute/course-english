@@ -2,11 +2,14 @@ package com.courseenglish.api.service.ai.question;
 
 import com.courseenglish.api.service.ai.question.dto.AiDraftQuestionDTO;
 import com.courseenglish.api.service.ai.question.dto.AiQuestionGenEnvelopeDTO;
+import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class AiQuestionGenResultValidator {
@@ -64,6 +67,23 @@ public class AiQuestionGenResultValidator {
       }
     }
     return valid;
+  }
+
+  public Map<QuestionTypeEnum, Integer> countValidByType(List<AiDraftQuestionDTO> questions) {
+    if (questions == null || questions.isEmpty()) {
+      return Map.of();
+    }
+    Map<QuestionTypeEnum, Integer> counts = new HashMap<>();
+    for (AiDraftQuestionDTO draft : questions) {
+      if (draft.getValidationErrors() != null && !draft.getValidationErrors().isEmpty()) {
+        continue;
+      }
+      if (draft.getQuestionType() == null) {
+        continue;
+      }
+      counts.merge(draft.getQuestionType(), 1, Integer::sum);
+    }
+    return counts;
   }
 
   private static void applyDefaults(AiDraftQuestionDTO draft, String promptLang, int difficulty) {

@@ -139,6 +139,29 @@
     flex-direction: column;
   }
 
+  .teaching-plan-header-actions {
+    width: 100%;
+    padding-left: 0;
+    flex-wrap: nowrap !important;
+  }
+
+  .teaching-plan-header-actions .teaching-plan-header-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .teaching-plan-header-actions .teaching-plan-header-icon-btn.MuiButton-outlined {
+    border-width: 1px;
+  }
+
+  .teaching-plan-header-actions .teaching-plan-header-icon-btn .MuiButton-startIcon,
+  .teaching-plan-header-actions .teaching-plan-header-icon-btn .MuiButton-endIcon {
+    margin: 0 !important;
+  }
+
   .teaching-plan-timeline-actions {
     width: 100%;
     padding-left: 0;

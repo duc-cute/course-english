@@ -11,4 +11,8 @@ public class ResFeatureFlagsDTO {
     /** UK | US | BOTH */
     private String vocabularyAudioAccent;
     private boolean studentSelfRegistrationEnabled;
+    /** URL logo header khi xuất Word (có thể rỗng) */
+    private String wordExportLogoUrl;
+    /** Watermark file đề Word (có thể rỗng) */
+    private String wordExportWatermarkText;
 }

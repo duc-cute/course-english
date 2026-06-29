@@ -81,28 +81,48 @@ export function AiUsageDashboardSection() {
   }, [stats]);
 
   return (
-    <Box className="ai-usage-dashboard-section admin-panel-card" sx={{ mb: 3, p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 2 }}>
-        <Box>
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-            <AutoGraphOutlinedIcon sx={{ color: "var(--ac-primary)" }} />
-            <Typography variant="h6" fontWeight={700}>
-              Thống kê AI (toàn hệ thống)
-            </Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary">
-            Tổng hợp token và lượt chat LinguistAI trên toàn Course English.
+    <Box className="ai-usage-dashboard-section admin-panel-card" sx={{ mb: 3, p: { xs: 2, md: 3 } }}>
+      <Box sx={{ mb: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+          <AutoGraphOutlinedIcon sx={{ color: "var(--ac-primary)", flexShrink: 0 }} />
+          <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
+            Thống kê AI (toàn hệ thống)
           </Typography>
-        </Box>
+        </Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: stats ? 1 : 0 }}>
+          Tổng hợp token và lượt chat LinguistAI trên toàn Course English.
+        </Typography>
         {stats ? (
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" flexWrap="nowrap" gap={{ xs: 0.5, sm: 1 }} className="ai-usage-status-chips">
             <Chip
               size="small"
               label={stats.aiEnabled ? "AI đang bật" : "AI đang tắt"}
               color={stats.aiEnabled ? "success" : "default"}
               variant="outlined"
+              sx={{
+                flexShrink: 0,
+                "& .MuiChip-label": { px: { xs: 0.75, sm: 1.5 }, fontSize: { xs: "0.65rem", sm: "0.8125rem" } },
+              }}
             />
-            <Chip size="small" label={`Model: ${stats.defaultModel}`} variant="outlined" />
+            <Chip
+              size="small"
+              label={`Model: ${stats.defaultModel}`}
+              variant="outlined"
+              title={`Model: ${stats.defaultModel}`}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                maxWidth: "100%",
+                "& .MuiChip-label": {
+                  px: { xs: 0.75, sm: 1.5 },
+                  fontSize: { xs: "0.65rem", sm: "0.8125rem" },
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  display: "block",
+                },
+              }}
+            />
           </Stack>
         ) : null}
       </Box>
@@ -169,7 +189,16 @@ export function AiUsageDashboardSection() {
                       {card.icon}
                     </Box>
                     {card.hint ? (
-                      <Typography variant="caption" sx={{ color: "var(--ac-outline)", fontWeight: 600, textAlign: "right" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "var(--ac-outline)",
+                          fontWeight: 600,
+                          textAlign: "right",
+                          display: { xs: "none", sm: "block" },
+                          maxWidth: "50%",
+                        }}
+                      >
                         {card.hint}
                       </Typography>
                     ) : null}
@@ -198,20 +227,21 @@ export function AiUsageDashboardSection() {
           <Skeleton variant="rounded" height={180} />
         ) : (
           <>
-            <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, height: 180, px: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "flex-end", gap: { xs: 0.5, sm: 2 }, height: { xs: 140, sm: 180 }, px: { xs: 0, sm: 1 } }}>
               {chartBars.map((bar) => (
                 <Box
                   key={bar.date}
-                  sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}
+                  sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5, minWidth: 0 }}
                 >
                   <Typography
                     variant="caption"
                     sx={{
                       color: bar.total > 0 ? "var(--ac-primary)" : "var(--ac-outline)",
                       fontWeight: bar.total > 0 ? 700 : 400,
-                      fontSize: "0.7rem",
+                      fontSize: { xs: "0.6rem", sm: "0.7rem" },
                       lineHeight: 1.2,
                       textAlign: "center",
+                      display: { xs: "none", sm: "block" },
                     }}
                   >
                     {bar.total > 0 ? formatTokenCount(bar.total) : "0"}
@@ -229,22 +259,36 @@ export function AiUsageDashboardSection() {
                 </Box>
               ))}
             </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2, px: 1 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2, px: { xs: 0, sm: 1 }, gap: { xs: 0.25, sm: 0 } }}>
               {chartBars.map((bar) => (
-                <Typography key={bar.date} variant="caption" sx={{ color: "var(--ac-outline)", flex: 1, textAlign: "center" }}>
+                <Typography
+                  key={bar.date}
+                  variant="caption"
+                  sx={{
+                    color: "var(--ac-outline)",
+                    flex: 1,
+                    textAlign: "center",
+                    fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                    minWidth: 0,
+                  }}
+                >
                   {bar.label}
                 </Typography>
               ))}
             </Box>
 
-            <TableContainer sx={{ mt: 3 }}>
-              <Table size="small" className="admin-activity-table">
+            <TableContainer sx={{ mt: 3, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <Table size="small" className="admin-activity-table ai-usage-table">
                 <TableHead>
                   <TableRow>
                     <TableCell>Ngày</TableCell>
                     <TableCell align="right">Tin gửi</TableCell>
-                    <TableCell align="right">↑ Prompt</TableCell>
-                    <TableCell align="right">↓ Completion</TableCell>
+                    <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                      ↑ Prompt
+                    </TableCell>
+                    <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                      ↓ Completion
+                    </TableCell>
                     <TableCell align="right">Tổng token</TableCell>
                   </TableRow>
                 </TableHead>
@@ -253,13 +297,24 @@ export function AiUsageDashboardSection() {
                     const total = row.promptTokens + row.completionTokens;
                     return (
                       <TableRow key={row.date} hover>
-                        <TableCell>
-                          {formatDateVi(row.date)} ({formatDayLabel(row.date)})
+                        <TableCell sx={{ whiteSpace: "nowrap", fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                          <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                            {formatDateVi(row.date)}
+                          </Box>
+                          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                            {formatDateVi(row.date)} ({formatDayLabel(row.date)})
+                          </Box>
                         </TableCell>
-                        <TableCell align="right">{formatTokenCount(row.requestCount)}</TableCell>
-                        <TableCell align="right">{formatTokenCount(row.promptTokens)}</TableCell>
-                        <TableCell align="right">{formatTokenCount(row.completionTokens)}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>
+                        <TableCell align="right" sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                          {formatTokenCount(row.requestCount)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                          {formatTokenCount(row.promptTokens)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                          {formatTokenCount(row.completionTokens)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
                           {formatTokenCount(total)}
                         </TableCell>
                       </TableRow>

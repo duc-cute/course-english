@@ -1,6 +1,9 @@
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentPasteOutlinedIcon from "@mui/icons-material/ContentPasteOutlined";
+import PlaylistAddCheckOutlinedIcon from "@mui/icons-material/PlaylistAddCheckOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import {
   Alert,
@@ -18,10 +21,11 @@ import {
   Step,
   StepLabel,
   Stepper,
-  Tab,
-  Tabs,
   TextField,
+  Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -54,11 +58,16 @@ import {
 } from "../../../shared/api/aiTask";
 import type { ExerciseQuestion } from "../../../student/lessonPlayer/exercise/types";
 import { AiDraftPreviewRow } from "./AiDraftPreviewRow";
-import { AiGenFunFactsPanel, AiGenProcessingPanel } from "./AiGenProcessingPanel";
+import {
+  AiGenFunFactsPanel,
+  AiGenProcessingDecorations,
+  AiGenProcessingPanel,
+} from "./AiGenProcessingPanel";
 
 type SourceMode = "file" | "paste";
 
 const STEPS = ["Nguồn nội dung", "Cấu hình", "Đang xử lý", "Xem trước"] as const;
+const STEPS_SHORT = ["Nguồn", "Cấu hình", "Xử lý", "Xem"] as const;
 const ACCEPT = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const MIN_PASTE_CHARS = 80;
 
@@ -81,6 +90,8 @@ function normalizeDrafts(questions: AiDraftQuestion[]): AiDraftQuestion[] {
 }
 
 export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenDialogProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollStartedRef = useRef(0);
 
@@ -108,6 +119,25 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
   const [progressMessage, setProgressMessage] = useState("");
   const [progressPercent, setProgressPercent] = useState<number | null>(null);
   const [genSummaryMessage, setGenSummaryMessage] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      handleFilePick(droppedFile);
+    }
+  };
 
   const applyTaskProgress = (task: { progressMessage?: string | null; progressPercent?: number | null }) => {
     if (task.progressMessage) {
@@ -142,6 +172,7 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
     setProgressPercent(null);
     setGenSummaryMessage("");
     pollStartedRef.current = 0;
+    setIsDragOver(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -408,13 +439,23 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
       onClose={handleClose}
       maxWidth="lg"
       fullWidth
-      className="ai-gen-dialog"
-      PaperProps={{ sx: { ...muDialogPaper, minHeight: step === 2 ? 580 : 420, maxWidth: "1000px" } }}
+      fullScreen={isMobile}
+      className={`ai-gen-dialog${isMobile ? " ai-gen-dialog--mobile" : ""}`}
+      PaperProps={{
+        sx: {
+          ...muDialogPaper,
+          minHeight: isMobile ? "100%" : step === 2 ? 580 : 420,
+          maxWidth: isMobile ? "100%" : "1000px",
+          borderRadius: isMobile ? 0 : undefined,
+        },
+      }}
     >
       <DialogTitle className="ai-gen-dialog__title" sx={{ pb: 0, pr: 6, position: "relative" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
           <AutoAwesomeOutlinedIcon className="ai-gen-dialog__title-icon" />
-          Sinh câu hỏi bằng AI
+          <span className="ai-gen-dialog__title-text">
+            {isMobile ? "Sinh câu AI" : "Sinh câu hỏi bằng AI"}
+          </span>
         </Box>
         <IconButton
           aria-label="close"
@@ -433,33 +474,19 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
       <DialogContent sx={{ p: 0 }}>
         {step < 3 ? (
           <div className="ai-gen-processing">
-            {/* Decorative Sparkles */}
-            <div className="ai-gen-processing__sparkles" aria-hidden>
-              <span className="ai-gen-processing__sparkle sparkle-1">✨</span>
-              <span className="ai-gen-processing__sparkle sparkle-2">✨</span>
-              <span className="ai-gen-processing__sparkle sparkle-3">✨</span>
-            </div>
+            <AiGenProcessingDecorations />
 
-            {/* Floating AI+ Card on the left */}
-            <div className="ai-gen-processing__floating-card" aria-hidden>
-              <div className="ai-gen-processing__floating-card-badge">
-                AI<span className="ai-gen-processing__floating-card-plus">⁺</span>
-              </div>
-            </div>
-
-            {/* Floating Mascot on the right */}
-            <div className="ai-gen-processing__mascot-container" aria-hidden>
-              <img
-                src="/images/mascot.png"
-                alt="AI Robot Mascot"
-                className="ai-gen-processing__mascot-img"
-              />
-            </div>
-
-            <Stepper activeStep={step} alternativeLabel sx={{ mb: 2, mt: 0.5 }}>
-              {STEPS.map((label) => (
+            <Stepper
+              activeStep={step}
+              alternativeLabel={!isMobile}
+              className="ai-gen-stepper"
+              sx={{ mb: 2, mt: 0.5 }}
+            >
+              {STEPS.map((label, i) => (
                 <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
+                  <StepLabel className="ai-gen-stepper__label">
+                    {isMobile ? STEPS_SHORT[i] : label}
+                  </StepLabel>
                 </Step>
               ))}
             </Stepper>
@@ -471,26 +498,55 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
             ) : null}
 
             {step === 0 ? (
-              <Box>
-                <Tabs
-                  value={sourceMode}
-                  onChange={handleSourceModeChange}
-                  sx={{ mb: 1.5, minHeight: 36, "& .MuiTab-root": { minHeight: 36, fontSize: 12, py: 0 } }}
-                >
-                  <Tab icon={<UploadFileOutlinedIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Upload file" value="file" />
-                  <Tab
-                    icon={<ContentPasteOutlinedIcon sx={{ fontSize: 16 }} />}
-                    iconPosition="start"
-                    label="Dán nội dung"
-                    value="paste"
-                  />
-                </Tabs>
+              <Box sx={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                {/* Pill-shaped Tab Switcher */}
+                <div className={`ai-gen-pill-switcher${isMobile ? " ai-gen-pill-switcher--compact" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSourceMode("file");
+                      setDocument(null);
+                      setError("");
+                    }}
+                    className={`ai-gen-pill-btn ${
+                      sourceMode === "file"
+                        ? "ai-gen-pill-btn--active"
+                        : "ai-gen-pill-btn--inactive"
+                    }`}
+                    aria-label="Chọn file upload"
+                  >
+                    <UploadFileOutlinedIcon className="ai-gen-pill-btn__icon" />
+                    <span className="ai-gen-pill-btn__text">{isMobile ? "File" : "Chọn file upload"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSourceMode("paste");
+                      setDocument(null);
+                      setError("");
+                      setQuestionTypes(["READING_COMPREHENSION"]);
+                      setQuestionCount(1);
+                    }}
+                    className={`ai-gen-pill-btn ${
+                      sourceMode === "paste"
+                        ? "ai-gen-pill-btn--active"
+                        : "ai-gen-pill-btn--inactive"
+                    }`}
+                    aria-label="Dán nội dung"
+                  >
+                    <ContentPasteOutlinedIcon className="ai-gen-pill-btn__icon" />
+                    <span className="ai-gen-pill-btn__text">{isMobile ? "Dán" : "Dán nội dung"}</span>
+                  </button>
+                </div>
 
                 {sourceMode === "file" ? (
-                  <>
-                    <Typography sx={{ fontSize: 12, color: "#5F5E5A", mb: 1.5 }}>
-                      Upload PDF hoặc DOCX — AI đọc nội dung và sinh câu hỏi.
-                    </Typography>
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`ai-gen-dropzone ${isDragOver ? "ai-gen-dropzone--dragover" : ""}`}
+                  >
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -498,46 +554,61 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
                       hidden
                       onChange={(e) => handleFilePick(e.target.files?.[0] ?? null)}
                     />
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<UploadFileOutlinedIcon />}
-                      sx={muFooterBtnOutlined}
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                    >
-                      {file ? `Đã chọn: ${file.name}` : "Chọn file PDF / DOCX"}
-                    </Button>
-                  </>
+                    <div className="ai-gen-dropzone__icon-wrapper">
+                      <svg
+                        className="ai-gen-dropzone__icon"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                    </div>
+
+                    <p className="ai-gen-dropzone__primary-text">
+                      {file ? `Đã chọn: ${file.name}` : "Kéo thả file PDF hoặc DOCX vào đây"}
+                    </p>
+                    <p className="ai-gen-dropzone__sub-text">Tối đa 10MB</p>
+
+                    <button type="button" className="ai-gen-dropzone__btn">
+                      Chọn file
+                    </button>
+                  </div>
                 ) : (
-                  <>
-                    <Typography sx={{ fontSize: 12, color: "#5F5E5A", mb: 1 }}>
-                      Dán đoạn đọc hiểu (và câu hỏi có sẵn nếu có). Phù hợp khi đoạn ngắn, không cần upload file.
-                    </Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      sx={{ ...muTextFieldSx, mb: 1 }}
-                      label="Tiêu đề (tuỳ chọn)"
-                      placeholder="READING COMPREHENSION"
-                      value={pasteTitle}
-                      onChange={(e) => setPasteTitle(e.target.value)}
-                    />
-                    <TextField
-                      multiline
-                      minRows={3}
-                      maxRows={4}
-                      fullWidth
-                      sx={muTextFieldSx}
-                      placeholder="Dán đoạn văn + câu hỏi A/B/C/D (nếu có)..."
-                      value={pastedText}
-                      onChange={(e) => {
-                        setPastedText(e.target.value);
-                        setDocument(null);
-                      }}
-                      helperText={`${pastedText.trim().length} ký tự — tối thiểu ${MIN_PASTE_CHARS}`}
-                    />
-                  </>
+                  <div className="ai-gen-paste-container">
+                    <div className="ai-gen-paste-field-group">
+                      <label className="ai-gen-paste-label">Tiêu đề (tuỳ chọn)</label>
+                      <input
+                        type="text"
+                        placeholder="READING COMPREHENSION"
+                        value={pasteTitle}
+                        onChange={(e) => setPasteTitle(e.target.value)}
+                        className="ai-gen-paste-input"
+                      />
+                    </div>
+                    <div className="ai-gen-paste-field-group">
+                      <label className="ai-gen-paste-label">Nội dung văn bản</label>
+                      <textarea
+                        rows={4}
+                        placeholder="Dán đoạn văn + câu hỏi A/B/C/D (nếu có)..."
+                        value={pastedText}
+                        onChange={(e) => {
+                          setPastedText(e.target.value);
+                          setDocument(null);
+                        }}
+                        className="ai-gen-paste-textarea"
+                      />
+                      <span className="ai-gen-paste-helper">
+                        {pastedText.trim().length} ký tự — tối thiểu {MIN_PASTE_CHARS}
+                      </span>
+                    </div>
+                  </div>
                 )}
 
                 {document ? (
@@ -639,10 +710,17 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
 
         {step === 3 ? (
           <Box sx={{ p: 2.5 }}>
-            <Stepper activeStep={step} alternativeLabel sx={{ mb: 2, mt: 0.5 }}>
-              {STEPS.map((label) => (
+            <Stepper
+              activeStep={step}
+              alternativeLabel={!isMobile}
+              className="ai-gen-stepper"
+              sx={{ mb: 2, mt: 0.5 }}
+            >
+              {STEPS.map((label, i) => (
                 <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
+                  <StepLabel className="ai-gen-stepper__label">
+                    {isMobile ? STEPS_SHORT[i] : label}
+                  </StepLabel>
                 </Step>
               ))}
             </Stepper>
@@ -686,60 +764,172 @@ export function AiExerciseGenDialog({ open, onClose, onApplied }: AiExerciseGenD
       </DialogContent>
 
       <DialogActions
+        className="ai-gen-dialog__footer"
         sx={{
           ...muDialogFooter,
-          display: "grid",
-          gridTemplateColumns: "1fr auto 1fr",
-          alignItems: "center",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          gap: isMobile ? 1 : 0,
+          px: isMobile ? 1.5 : undefined,
+          py: isMobile ? 1.25 : undefined,
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
-          <Button sx={muFooterBtnOutlined} onClick={handleClose} disabled={uploading || processing || applying}>
-            Hủy
-          </Button>
-        </Box>
+        <Box
+          className="ai-gen-dialog__footer-actions"
+          sx={{
+            display: "flex",
+            width: "100%",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+            {isMobile ? (
+              <Tooltip title="Hủy" arrow>
+                <span>
+                  <IconButton
+                    onClick={handleClose}
+                    disabled={uploading || processing || applying}
+                    aria-label="Hủy"
+                    size="small"
+                    sx={{ border: "1px solid #e2e8f0", borderRadius: "8px" }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button sx={muFooterBtnOutlined} onClick={handleClose} disabled={uploading || processing || applying}>
+                Hủy
+              </Button>
+            )}
 
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
-          {step === 2 ? (
-            <Typography sx={{ fontSize: 11, color: "#64748b", fontWeight: 500, textAlign: "center" }}>
-              ✨ Mẹo: {AI_GEN_PROCESSING_TIP}
-            </Typography>
-          ) : null}
-        </Box>
+            {!isMobile && step === 2 ? (
+              <Typography className="ai-gen-dialog__footer-tip" sx={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>
+                ✨ Mẹo: {AI_GEN_PROCESSING_TIP}
+              </Typography>
+            ) : null}
+          </Box>
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
           {step > 0 && step < 3 ? (
-            <Button
-              sx={muFooterBtnOutlined}
-              disabled={uploading || processing || applying}
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
-            >
-              Quay lại
-            </Button>
+            isMobile ? (
+              <Tooltip title="Quay lại" arrow>
+                <span>
+                  <IconButton
+                    disabled={uploading || processing || applying}
+                    onClick={() => setStep((s) => Math.max(0, s - 1))}
+                    aria-label="Quay lại"
+                    size="small"
+                    sx={{ border: "1px solid #e2e8f0", borderRadius: "8px" }}
+                  >
+                    <ArrowBackIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button
+                sx={muFooterBtnOutlined}
+                disabled={uploading || processing || applying}
+                onClick={() => setStep((s) => Math.max(0, s - 1))}
+              >
+                Quay lại
+              </Button>
+            )
           ) : null}
           {step === 0 ? (
-            <Button
-              sx={muFooterBtnPrimary}
-              disabled={
-                uploading ||
-                (sourceMode === "file" ? !file : pastedText.trim().length < MIN_PASTE_CHARS)
-              }
-              onClick={() => void handleNextFromSource()}
-            >
-              {uploading ? "Đang lưu…" : "Tiếp theo"}
-            </Button>
+            isMobile ? (
+              <Tooltip title={uploading ? "Đang lưu…" : "Tiếp theo"} arrow>
+                <span>
+                  <IconButton
+                    sx={{
+                      ...muFooterBtnPrimary,
+                      borderRadius: "8px",
+                      width: 40,
+                      height: 40,
+                    }}
+                    disabled={
+                      uploading ||
+                      (sourceMode === "file" ? !file : pastedText.trim().length < MIN_PASTE_CHARS)
+                    }
+                    onClick={() => void handleNextFromSource()}
+                    aria-label={uploading ? "Đang lưu" : "Tiếp theo"}
+                  >
+                    <ArrowForwardIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button
+                sx={muFooterBtnPrimary}
+                disabled={
+                  uploading ||
+                  (sourceMode === "file" ? !file : pastedText.trim().length < MIN_PASTE_CHARS)
+                }
+                onClick={() => void handleNextFromSource()}
+              >
+                {uploading ? "Đang lưu…" : "Tiếp theo"}
+              </Button>
+            )
           ) : null}
           {step === 1 ? (
-            <Button sx={muFooterBtnPrimary} onClick={() => void handleNextFromConfig()}>
-              Sinh câu hỏi
-            </Button>
+            isMobile ? (
+              <Tooltip title="Sinh câu hỏi" arrow>
+                <span>
+                  <IconButton
+                    className="ai-gen-footer-ai-btn ai-gen-footer-ai-btn--icon"
+                    onClick={() => void handleNextFromConfig()}
+                    aria-label="Sinh câu hỏi"
+                    sx={{ width: 40, height: 40, borderRadius: "8px" }}
+                  >
+                    <AutoAwesomeOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button sx={muFooterBtnPrimary} onClick={() => void handleNextFromConfig()}>
+                Sinh câu hỏi
+              </Button>
+            )
           ) : null}
           {step === 3 ? (
-            <Button sx={muFooterBtnPrimary} disabled={selectedCount === 0 || applying} onClick={() => void handleApply()}>
-              {applying ? "Đang lưu…" : `Thêm ${selectedCount} câu vào bài tập`}
-            </Button>
+            isMobile ? (
+              <Tooltip title={applying ? "Đang lưu…" : `Thêm ${selectedCount} câu`} arrow>
+                <span>
+                  <IconButton
+                    sx={{
+                      ...muFooterBtnPrimary,
+                      borderRadius: "8px",
+                      width: 40,
+                      height: 40,
+                    }}
+                    disabled={selectedCount === 0 || applying}
+                    onClick={() => void handleApply()}
+                    aria-label={applying ? "Đang lưu" : `Thêm ${selectedCount} câu vào bài tập`}
+                  >
+                    <PlaylistAddCheckOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button sx={muFooterBtnPrimary} disabled={selectedCount === 0 || applying} onClick={() => void handleApply()}>
+                {applying ? "Đang lưu…" : `Thêm ${selectedCount} câu vào bài tập`}
+              </Button>
+            )
           ) : null}
+          </Box>
         </Box>
+
+        {isMobile && step === 2 ? (
+          <Typography
+            className="ai-gen-dialog__footer-tip ai-gen-dialog__footer-tip--mobile"
+            sx={{ fontSize: 11, color: "#64748b", textAlign: "center", width: "100%", px: 0.5, lineHeight: 1.45 }}
+          >
+            ✨ {AI_GEN_PROCESSING_TIP}
+          </Typography>
+        ) : null}
       </DialogActions>
     </Dialog>
   );

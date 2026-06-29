@@ -27,11 +27,10 @@ import {
 import type { ApiResponse } from "../../shared/api/types";
 import {
   muBtnSmOutlined,
-  muCatalogTableShell,
   muPageShell,
-  muPageTitle,
   muTextFieldSx,
 } from "./manageUserUiStyles";
+import "../../styles/admin-student-support.css";
 
 const RISK_OPTIONS: { value: "" | StudentSupportRiskLevel; label: string }[] = [
   { value: "", label: "Tất cả mức risk" },
@@ -120,24 +119,30 @@ export function TeacherStudentSupportPage() {
 
   return (
     <Box className="admin-dashboard-wrap student-support-page" sx={muPageShell}>
-      <Typography variant="h5" sx={muPageTitle}>
-        <PersonSearchOutlinedIcon fontSize="small" />
-        Học sinh cần hỗ trợ
-      </Typography>
+      <Box className="student-support-page-header">
+        <Typography className="student-support-page-title" component="h1">
+          <PersonSearchOutlinedIcon />
+          Học sinh cần hỗ trợ
+        </Typography>
+        <Typography className="student-support-page-subtitle">
+          Hệ thống tự động phát hiện các học sinh có dấu hiệu sa sút để can thiệp kịp thời.
+        </Typography>
+      </Box>
 
-      <StudentSupportSummaryStrip summary={summary} />
+      <StudentSupportSummaryStrip summary={summary} loading={loading} />
 
-      <Box
-        sx={{
-          ...muCatalogTableShell,
-          mb: 2,
-          p: 1.5,
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 1,
-          alignItems: "flex-end",
-        }}
-      >
+      <Box className="student-support-table-panel" sx={{ mb: 2 }}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: "1px solid #f1f5f9",
+            bgcolor: "rgba(248, 250, 252, 0.5)",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 1,
+            alignItems: "flex-end",
+          }}
+        >
         <FormControl size="small" sx={{ minWidth: 160, ...muTextFieldSx }}>
           <InputLabel id="sns-class-filter">Lớp học</InputLabel>
           <Select
@@ -220,15 +225,14 @@ export function TeacherStudentSupportPage() {
             Làm mới
           </Button>
         </Stack>
-      </Box>
+        </Box>
 
-      {error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      ) : null}
+        {error ? (
+          <Alert severity="error" sx={{ m: 2 }}>
+            {error}
+          </Alert>
+        ) : null}
 
-      <Box sx={muCatalogTableShell}>
         {loading ? (
           <Box sx={{ p: 2 }}>
             <Skeleton height={40} />
@@ -249,8 +253,8 @@ export function TeacherStudentSupportPage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            bgcolor: "#F9F8F5",
-            borderTop: "1px solid #D3D1C7",
+            bgcolor: "#f8fafc",
+            borderTop: "1px solid #f1f5f9",
             gap: 1,
             flexWrap: "wrap",
           }}

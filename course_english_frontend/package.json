@@ -24,6 +24,8 @@
     "@stomp/stompjs": "^7.3.0",
     "axios": "^1.13.2",
     "dayjs": "^1.11.21",
+    "docx": "^9.7.1",
+    "file-saver": "^2.0.5",
     "lucide-react": "^0.552.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -39,6 +41,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^24.10.1",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.2",

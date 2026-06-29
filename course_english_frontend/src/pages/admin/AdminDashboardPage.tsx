@@ -134,7 +134,16 @@ export function AdminDashboardPage() {
                 >
                   {stat.icon}
                 </Box>
-                <Typography variant="caption" sx={{ color: stat.deltaColor, fontWeight: 700 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: stat.deltaColor,
+                    fontWeight: 700,
+                    display: { xs: "none", sm: "block" },
+                    textAlign: "right",
+                    maxWidth: "50%",
+                  }}
+                >
                   {stat.delta}
                 </Typography>
               </Box>
@@ -154,8 +163,17 @@ export function AdminDashboardPage() {
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Box className="admin-panel-card" sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Box className="admin-panel-card" sx={{ p: { xs: 2, md: 3 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                justifyContent: "space-between",
+                alignItems: { xs: "flex-start", sm: "center" },
+                gap: 1,
+                mb: 3,
+              }}
+            >
               <Typography variant="h6" fontWeight={600}>
                 Hoạt động bài học
               </Typography>
@@ -209,7 +227,7 @@ export function AdminDashboardPage() {
         </Grid>
 
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Box className="admin-panel-card" sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+          <Box className="admin-panel-card" sx={{ p: { xs: 2, md: 3 }, height: "100%", display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" fontWeight={600} sx={{ mb: 3 }}>
               Mức độ tham gia
             </Typography>
@@ -343,14 +361,16 @@ export function AdminDashboardPage() {
         </TableContainer>
       </Box>
 
-      <Button
-        className="admin-fab"
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={() => navigate(`/${paths.ADMIN}/${paths.MANAGE_CLASSROOM}`)}
-      >
-        Tạo nhanh
-      </Button>
+      <Box className="admin-fab-wrap">
+        <Button
+          className="admin-fab"
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate(`/${paths.ADMIN}/${paths.MANAGE_CLASSROOM}`)}
+        >
+          Tạo nhanh
+        </Button>
+      </Box>
     </Box>
   );
 }

@@ -22,7 +22,7 @@ export type AiGenFunFact = {
 };
 
 /** Auto-rotate interval for fun-fact carousel (matches design). */
-export const AI_GEN_FUN_FACT_ROTATE_MS = 5_000;
+export const AI_GEN_FUN_FACT_ROTATE_MS = 8_000;
 
 export const AI_GEN_FUN_FACTS: AiGenFunFact[] = [
   {

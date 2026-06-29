@@ -75,6 +75,12 @@
   background: var(--ac-primary-container, #2563eb);
 }
 
+.admin-fab-wrap {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .admin-fab {
   position: absolute;
   bottom: 0;
@@ -91,4 +97,52 @@
 
 .admin-fab:hover {
   transform: scale(1.03);
+}
+
+@media (max-width: 899px) {
+  .admin-stat-card {
+    padding: 16px;
+  }
+
+  .admin-panel-card {
+    border-radius: 10px;
+  }
+
+  .admin-activity-table thead th,
+  .admin-activity-table tbody td {
+    padding: 12px 16px;
+  }
+
+  .admin-fab-wrap {
+    margin-top: 20px;
+    justify-content: stretch;
+  }
+
+  .admin-fab {
+    position: static;
+    width: 100%;
+    border-radius: 12px !important;
+    padding: 12px 20px !important;
+    box-shadow: 0 4px 12px rgba(0, 74, 198, 0.2) !important;
+  }
+
+  .admin-dashboard-wrap {
+    padding-bottom: 24px;
+  }
+
+  .student-support-header-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+  }
+
+  .ai-usage-status-chips {
+    width: 100%;
+  }
+
+  .ai-usage-table thead th,
+  .ai-usage-table tbody td {
+    padding: 10px 12px !important;
+  }
 }

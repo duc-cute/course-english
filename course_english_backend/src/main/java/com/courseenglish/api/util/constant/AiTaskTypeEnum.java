@@ -1,5 +1,6 @@
 package com.courseenglish.api.util.constant;
 
 public enum AiTaskTypeEnum {
-    QUESTION_GENERATION
+    QUESTION_GENERATION,
+    EXAM_PAPER_GENERATION
 }

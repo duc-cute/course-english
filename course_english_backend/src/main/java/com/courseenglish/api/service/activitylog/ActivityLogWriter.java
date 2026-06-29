@@ -41,7 +41,11 @@ public class ActivityLogWriter {
     entity.setModule(module.name());
     entity.setAction(context.getAction().name());
     entity.setMessage(truncate(context.getMessage(), MAX_MESSAGE_LEN, "Activity log"));
-    entity.setDetail(truncate(context.getDetail(), MAX_DETAIL_LEN, null));
+    int detailMax =
+        context.getDetailMaxChars() != null && context.getDetailMaxChars() > 0
+            ? context.getDetailMaxChars()
+            : MAX_DETAIL_LEN;
+    entity.setDetail(truncate(context.getDetail(), detailMax, null));
     entity.setContextJson(serializeContext(context.getContext()));
     entity.setRefType(context.getRefType());
     entity.setRefId(context.getRefId());
@@ -72,6 +76,7 @@ public class ActivityLogWriter {
     if (text.length() <= maxLen) {
       return text;
     }
-    return text.substring(0, maxLen);
+    int omitted = text.length() - maxLen;
+    return text.substring(0, maxLen) + "\n\n...(truncated " + omitted + " chars)";
   }
 }

@@ -318,6 +318,138 @@
   border-radius: 8px;
 }
 
+/* Responsive grid table → card list on mobile */
+@media (max-width: 720px) {
+  .admin-catalog-page__table-card:has(.catalog-grid-table) {
+    overflow-x: visible;
+  }
+
+  .catalog-grid-table__head {
+    display: none !important;
+  }
+
+  .catalog-grid-table__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .catalog-grid-table__row.catalog-table-row {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 3px 8px;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    border: 1px solid var(--ac-outline-variant, #c3c6d7) !important;
+    border-radius: 10px !important;
+    background: #fff;
+  }
+
+  .catalog-grid-table__row.catalog-table-row:hover {
+    background: #fff;
+  }
+
+  .catalog-grid-table__row.catalog-table-row:last-of-type {
+    border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7) !important;
+  }
+
+  .catalog-grid-table__cell--hidden {
+    display: none !important;
+  }
+
+  .catalog-grid-table__cell--title {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    padding-right: 4px;
+  }
+
+  .catalog-grid-table__cell--subtitle {
+    order: 10;
+    flex: 0 0 100%;
+    width: 100%;
+    font-size: 0.8125rem;
+    color: var(--ac-on-surface-variant, #434655);
+    line-height: 1.35;
+  }
+
+  .catalog-grid-table__cell--meta {
+    order: 10;
+    flex: 0 0 100%;
+    width: 100%;
+    font-size: 0.8125rem;
+    color: var(--ac-on-surface-variant, #434655);
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .catalog-grid-table__cell--meta::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    font-size: 0.6875rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .catalog-grid-table__cell--inline {
+    order: 10;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    font-size: 0.8125rem;
+    color: var(--ac-on-surface-variant, #434655);
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .catalog-grid-table__cell--inline::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    font-size: 0.6875rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .catalog-grid-table__cell--actions {
+    order: 2;
+    flex: 0 0 auto;
+    margin-left: auto;
+    align-self: flex-start;
+  }
+
+  .catalog-grid-table__cell--actions.catalog-table-actions {
+    justify-content: flex-end;
+    margin-top: -2px;
+  }
+
+  .catalog-grid-table__cell--actions.catalog-table-actions .MuiIconButton-root {
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+  }
+
+  .catalog-grid-table__loading {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .catalog-grid-table__skeleton-row {
+    padding: 12px;
+    border: 1px solid var(--ac-outline-variant, #c3c6d7);
+    border-radius: 10px;
+    background: #fff;
+  }
+}
+
 /* MUI Table inside table card */
 .admin-catalog-page__table-card .MuiTableHead-root .MuiTableCell-root {
   font-size: 0.75rem;

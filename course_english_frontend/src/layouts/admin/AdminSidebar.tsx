@@ -8,6 +8,7 @@ import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AbcOutlinedIcon from "@mui/icons-material/AbcOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import EmojiPeopleOutlinedIcon from "@mui/icons-material/EmojiPeopleOutlined";
@@ -19,16 +20,16 @@ import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import {
   Avatar,
   Box,
-  Divider,
   Drawer,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ADMIN_DRAWER_WIDTH } from "../../theme/academicCore";
 import { paths } from "../../shared/constants/paths";
@@ -46,7 +47,7 @@ const drawerPaperSx = (collapsed: boolean) => ({
   boxSizing: "border-box" as const,
   borderRight: "1px solid #e2e8f0",
   bgcolor: "#ffffff",
-  boxShadow: "2px 0 8px -4px rgba(0, 0, 0, 0.05)",
+  boxShadow: "none",
   overflow: "hidden",
 });
 
@@ -102,6 +103,11 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
         to: `/${paths.ADMIN}/${paths.MANAGE_QUESTIONS}`,
       },
       {
+        label: "Đề thi / Kiểm tra",
+        icon: <AssignmentOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.MANAGE_EXAM_PAPERS}`,
+      },
+      {
         label: "Thư viện từ",
         icon: <AbcOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_WORDS}`,
@@ -145,14 +151,30 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
     [],
   );
 
+  const renderNavButton = (
+    label: string,
+    icon: ReactNode,
+    onClick: () => void,
+    isActive = false,
+  ) => (
+    <ListItemButton
+      className={`admin-nav-item ${isActive ? "active" : ""}`}
+      onClick={onClick}
+      aria-label={label}
+    >
+      <ListItemIcon className="admin-nav-item-icon">{icon}</ListItemIcon>
+      <ListItemText primary={label} className="admin-nav-item-label" />
+    </ListItemButton>
+  );
+
   const renderDrawerContent = (collapsed: boolean) => (
     <Box className={`admin-sidebar-inner ${collapsed ? "collapsed" : ""}`}>
       <Stack direction="row" alignItems="center" spacing={1.5} className="admin-sidebar-brand">
-        <Box className="admin-sidebar-brand-icon">
-          <SchoolOutlinedIcon fontSize="small" />
+        <Box className="admin-sidebar-brand-icon" aria-hidden>
+          E
         </Box>
         <Box sx={{ minWidth: 0 }}>
-          <Typography className="admin-sidebar-brand-title" variant="h6" noWrap>
+          <Typography className="admin-sidebar-brand-title" noWrap>
             Course English
           </Typography>
           <Typography className="admin-sidebar-brand-sub" noWrap>
@@ -162,54 +184,74 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
       </Stack>
 
       <Box className="admin-sidebar-nav">
-        <List disablePadding>
+        <List disablePadding className="admin-sidebar-nav-list">
           {navItems.map((item) => {
             const isActive =
               location.pathname === item.to ||
               (item.to !== `/${paths.ADMIN}` && location.pathname.startsWith(item.to));
-            return (
-              <ListItemButton
-                key={item.to}
-                className={`admin-nav-item ${isActive ? "active" : ""}`}
-                onClick={() => {
-                  navigate(item.to);
-                  if (mobileOpen) {
-                    onCloseMobileSidebar();
-                  }
-                }}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            );
+            const button = renderNavButton(item.label, item.icon, () => {
+              navigate(item.to);
+              if (mobileOpen) {
+                onCloseMobileSidebar();
+              }
+            }, isActive);
+
+            if (collapsed) {
+              return (
+                <Tooltip key={item.to} title={item.label} placement="right" arrow enterTouchDelay={0}>
+                  {button}
+                </Tooltip>
+              );
+            }
+
+            return <Box key={item.to} component="div">{button}</Box>;
           })}
         </List>
 
-        <Divider sx={{ borderColor: "var(--ac-outline-variant)", my: 1 }} />
-
-        <List disablePadding>
-          <ListItemButton
-            className="admin-nav-item"
-            onClick={() => {
+        <List disablePadding className="admin-sidebar-nav-list admin-sidebar-nav-secondary">
+          {(() => {
+            const studentButton = renderNavButton("Khu vực học sinh", <EmojiPeopleOutlinedIcon />, () => {
               navigate(`/${paths.STUDENT}`);
               if (mobileOpen) {
                 onCloseMobileSidebar();
               }
-            }}
-          >
-            <ListItemIcon>
-              <EmojiPeopleOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Khu vực học sinh" />
-          </ListItemButton>
+            });
+
+            if (collapsed) {
+              return (
+                <Tooltip title="Khu vực học sinh" placement="right" arrow enterTouchDelay={0}>
+                  {studentButton}
+                </Tooltip>
+              );
+            }
+
+            return studentButton;
+          })()}
         </List>
       </Box>
 
-      <Box className="admin-sidebar-profile">
-        <Avatar sx={{ width: 40, height: 40, bgcolor: "primary.main", fontSize: 14, flexShrink: 0 }}>
-          A
-        </Avatar>
-        <Box sx={{ minWidth: 0 }}>
+      <Box
+        className="admin-sidebar-profile"
+        role="button"
+        tabIndex={0}
+        onClick={() => {
+          navigate(`/${paths.ADMIN}/${paths.MANAGE_SYSTEM_CONFIG}`);
+          if (mobileOpen) {
+            onCloseMobileSidebar();
+          }
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            navigate(`/${paths.ADMIN}/${paths.MANAGE_SYSTEM_CONFIG}`);
+            if (mobileOpen) {
+              onCloseMobileSidebar();
+            }
+          }
+        }}
+      >
+        <Avatar className="admin-sidebar-profile-avatar">A</Avatar>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography className="admin-sidebar-profile-name" noWrap>
             Quản trị viên
           </Typography>
@@ -217,6 +259,7 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
             Cell Architecture
           </Typography>
         </Box>
+        <SettingsOutlinedIcon className="admin-sidebar-profile-settings" fontSize="small" />
       </Box>
     </Box>
   );

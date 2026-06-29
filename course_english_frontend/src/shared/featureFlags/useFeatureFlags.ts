@@ -9,6 +9,8 @@ const DEFAULT_FLAGS: FeatureFlags = {
   vocabularyAudioEnabled: true,
   vocabularyAudioAccent: "UK",
   studentSelfRegistrationEnabled: true,
+  wordExportLogoUrl: "",
+  wordExportWatermarkText: "",
 };
 
 function normalizeFlags(data: Partial<FeatureFlags>): FeatureFlags {
@@ -17,6 +19,8 @@ function normalizeFlags(data: Partial<FeatureFlags>): FeatureFlags {
     vocabularyAudioEnabled: data.vocabularyAudioEnabled !== false,
     vocabularyAudioAccent: normalizeVocabularyAudioAccent(data.vocabularyAudioAccent),
     studentSelfRegistrationEnabled: data.studentSelfRegistrationEnabled !== false,
+    wordExportLogoUrl: (data.wordExportLogoUrl ?? "").trim(),
+    wordExportWatermarkText: (data.wordExportWatermarkText ?? "").trim(),
   };
 }
 
