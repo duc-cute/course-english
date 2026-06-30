@@ -24,8 +24,11 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -48,6 +51,9 @@ public class AiExamPaperGenerationService {
   @Value("${app.ai.question-gen-model:anthropic/claude-3.5-sonnet}")
   private String questionGenModel;
 
+  @Value("${app.ai.exam-paper-max-task-sec:600}")
+  private int examPaperMaxTaskSec;
+
   public AiExamPaperGenerationService(
       AiQuestionGenerationService aiQuestionGenerationService,
       AiQuestionGenResultValidator resultValidator,
@@ -66,7 +72,8 @@ public class AiExamPaperGenerationService {
   public AiExamPaperGenEnvelopeDTO generate(
       String documentExcerpt,
       ReqCreateExamPaperGenTaskDTO input,
-      AiGenTraceContext trace) throws IdInvalidException {
+      AiGenTraceContext trace,
+      long taskWallStartMs) throws IdInvalidException {
     List<ExamSectionGenSpecDTO> specs = input.getSectionSpecs();
     if (specs == null || specs.isEmpty()) {
       throw new IdInvalidException("Thiếu sectionSpecs");
@@ -76,6 +83,11 @@ public class AiExamPaperGenerationService {
     String promptLang = input.getPromptLang() != null ? input.getPromptLang() : "en";
     int readingSubQuestionCount =
         input.getReadingSubQuestionCount() != null ? input.getReadingSubQuestionCount() : 4;
+
+    boolean similarMode = isSimilarGeneration(input);
+
+    long maxTaskMs = Math.max(1, examPaperMaxTaskSec) * 1000L;
+    long deadlineMs = taskWallStartMs + maxTaskMs;
 
     int maxConcurrent = Math.max(1, Math.min(batchMaxConcurrent, specs.size()));
     Semaphore semaphore = new Semaphore(maxConcurrent);
@@ -91,7 +103,23 @@ public class AiExamPaperGenerationService {
                 long sectionStartedMs = System.currentTimeMillis();
                 try {
                   semaphore.acquire();
-                  String sectionExcerpt = examSectionSliceService.extractSectionText(documentExcerpt, spec);
+                  if (System.currentTimeMillis() >= deadlineMs) {
+                    String timeoutMsg = examPaperTimeoutMessage();
+                    logSectionEvent(
+                        trace,
+                        "failed",
+                        index,
+                        spec,
+                        specs.size(),
+                        timeoutMsg,
+                        System.currentTimeMillis() - sectionStartedMs,
+                        null,
+                        null,
+                        documentExcerpt.length(),
+                        0);
+                    return SectionOutcome.failed(spec, timeoutMsg, index, System.currentTimeMillis() - sectionStartedMs);
+                  }
+                  String sectionExcerpt = resolveSectionExcerpt(documentExcerpt, spec, similarMode);
                   logSectionEvent(
                       trace,
                       "start",
@@ -105,7 +133,7 @@ public class AiExamPaperGenerationService {
                       documentExcerpt.length(),
                       sectionExcerpt.length());
                   if (trace != null) {
-                    progressReporter.report(
+                    progressReporter.reportMilestone(
                         trace.getTaskId(),
                         "Đang sinh: " + sectionLabel(spec, index, specs.size()) + "…",
                         10 + (index * 80 / Math.max(1, specs.size())));
@@ -131,7 +159,8 @@ public class AiExamPaperGenerationService {
                           resolved.readingSubQuestionCount(),
                           spec.getTitle(),
                           spec.getInstruction(),
-                          sectionLog);
+                          sectionLog,
+                          similarMode);
                   long durationMs = System.currentTimeMillis() - sectionStartedMs;
                   logSectionEvent(
                       trace,
@@ -149,7 +178,7 @@ public class AiExamPaperGenerationService {
                 } catch (Exception e) {
                   long durationMs = System.currentTimeMillis() - sectionStartedMs;
                   String error = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-                  String sectionExcerpt = examSectionSliceService.extractSectionText(documentExcerpt, spec);
+                  String sectionExcerpt = resolveSectionExcerpt(documentExcerpt, spec, similarMode);
                   logSectionEvent(
                       trace,
                       "failed",
@@ -167,7 +196,7 @@ public class AiExamPaperGenerationService {
                   semaphore.release();
                   if (trace != null) {
                     int done = completed.incrementAndGet();
-                    progressReporter.report(
+                    progressReporter.reportMilestone(
                         trace.getTaskId(),
                         "Hoàn thành " + done + "/" + specs.size() + " section",
                         10 + (done * 85 / specs.size()));
@@ -177,7 +206,31 @@ public class AiExamPaperGenerationService {
               aiOpenRouterExecutor));
     }
 
-    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+    long waitMs = Math.max(0, deadlineMs - System.currentTimeMillis());
+    if (waitMs == 0) {
+      logExamPaperTaskTimeout(trace, taskWallStartMs, specs.size());
+      throw new IdInvalidException(examPaperTimeoutMessage());
+    }
+    try {
+      CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(waitMs, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException e) {
+      futures.forEach(f -> f.cancel(true));
+      logExamPaperTaskTimeout(trace, taskWallStartMs, specs.size());
+      throw new IdInvalidException(examPaperTimeoutMessage());
+    } catch (ExecutionException e) {
+      throw new IdInvalidException(
+          e.getCause() != null && e.getCause().getMessage() != null
+              ? e.getCause().getMessage()
+              : "Sinh đề thất bại");
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IdInvalidException("Sinh đề bị gián đoạn");
+    }
+
+    if (System.currentTimeMillis() - taskWallStartMs > maxTaskMs) {
+      logExamPaperTaskTimeout(trace, taskWallStartMs, specs.size());
+      throw new IdInvalidException(examPaperTimeoutMessage());
+    }
 
     AiExamPaperGenEnvelopeDTO envelope = new AiExamPaperGenEnvelopeDTO();
     envelope.setSchemaVersion(1);
@@ -214,6 +267,12 @@ public class AiExamPaperGenerationService {
       if (outcome.result().getCompletionTokens() != null) {
         totalCompletionTokens += outcome.result().getCompletionTokens();
       }
+    }
+
+    String timeoutMsg = examPaperTimeoutMessage();
+    if (errors.stream().anyMatch(e -> e.contains(timeoutMsg) || e.contains("quá lâu"))) {
+      logExamPaperTaskTimeout(trace, taskWallStartMs, specs.size());
+      throw new IdInvalidException(timeoutMsg);
     }
 
     if (envelope.getSections().isEmpty()) {
@@ -287,6 +346,14 @@ public class AiExamPaperGenerationService {
   private ResolvedSectionGen resolveSectionGenParams(
       ExamSectionGenSpecDTO spec, int defaultReadingSubs) {
     if (spec.getQuestionType() == QuestionTypeEnum.READING_COMPREHENSION) {
+      if (spec.getReadingSubQuestionCount() != null) {
+        int passages = Math.max(1, Math.min(5, spec.getQuestionCount()));
+        int subs =
+            Math.max(
+                READING_MIN_SUB_QUESTIONS,
+                Math.min(READING_MAX_SUB_QUESTIONS, spec.getReadingSubQuestionCount()));
+        return new ResolvedSectionGen(passages, subs);
+      }
       int subs =
           Math.max(
               READING_MIN_SUB_QUESTIONS,
@@ -295,15 +362,30 @@ public class AiExamPaperGenerationService {
     }
     if (spec.getQuestionType() == QuestionTypeEnum.GAP_FILL_MCQ) {
       int blanks =
-          Math.max(
-              2,
-              Math.min(12, spec.getQuestionCount()));
+          spec.getReadingSubQuestionCount() != null
+              ? Math.max(2, Math.min(12, spec.getReadingSubQuestionCount()))
+              : Math.max(2, Math.min(12, spec.getQuestionCount()));
       return new ResolvedSectionGen(1, blanks);
     }
     return new ResolvedSectionGen(spec.getQuestionCount(), defaultReadingSubs);
   }
 
   private record ResolvedSectionGen(int questionCount, int readingSubQuestionCount) {}
+
+  private static boolean isSimilarGeneration(ReqCreateExamPaperGenTaskDTO input) {
+    return input != null
+        && ExamPaperSimilarGenService.GENERATION_MODE_SIMILAR.equalsIgnoreCase(input.getGenerationMode());
+  }
+
+  private String resolveSectionExcerpt(
+      String documentExcerpt, ExamSectionGenSpecDTO spec, boolean similarMode) {
+    if (similarMode
+        && spec.getReferenceExcerpt() != null
+        && !spec.getReferenceExcerpt().isBlank()) {
+      return spec.getReferenceExcerpt();
+    }
+    return examSectionSliceService.extractSectionText(documentExcerpt, spec);
+  }
 
   private void logSectionEvent(
       AiGenTraceContext trace,
@@ -393,6 +475,35 @@ public class AiExamPaperGenerationService {
       ctx.put("error", error);
     }
     activityLogService.log(ctx);
+  }
+
+  private String examPaperTimeoutMessage() {
+    int sec = Math.max(1, examPaperMaxTaskSec);
+    if (sec >= 60 && sec % 60 == 0) {
+      return "Sinh đề quá lâu — vượt giới hạn " + (sec / 60) + " phút";
+    }
+    return "Sinh đề quá lâu — vượt giới hạn " + sec + " giây";
+  }
+
+  private void logExamPaperTaskTimeout(AiGenTraceContext trace, long taskWallStartMs, int sectionTotal) {
+    if (trace == null) {
+      return;
+    }
+    long elapsedMs = System.currentTimeMillis() - taskWallStartMs;
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.WARN,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_OR_TIMEOUT,
+                examPaperTimeoutMessage() + " (" + elapsedMs + "ms)")
+            .userId(trace.getUserId())
+            .ref("AI_TASK", trace.getTaskId())
+            .put("taskId", trace.getTaskId())
+            .put("documentId", trace.getDocumentId())
+            .put("step", "exam_paper_task_timeout")
+            .put("maxTaskSec", examPaperMaxTaskSec)
+            .put("elapsedMs", elapsedMs)
+            .put("sectionTotal", sectionTotal));
   }
 
   private record SectionOutcome(

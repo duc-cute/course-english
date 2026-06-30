@@ -67,36 +67,40 @@ export function ExamPaperSettings({ settings, onChange }: ExamPaperSettingsProps
           Cài đặt
         </h3>
         <div className="exam-editor-fields">
-          <div className="exam-editor-field exam-editor-field-suffix">
+          <div className="exam-editor-field">
             <FieldLabel>Thời gian làm bài</FieldLabel>
-            <TextField
-              hiddenLabel
-              size="small"
-              fullWidth
-              type="number"
-              inputProps={{ min: 1 }}
-              placeholder="0"
-              value={settings.durationMinutes ?? ""}
-              onChange={(e) =>
-                onChange({
-                  durationMinutes: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
-            />
-            <span className="exam-editor-field-suffix__unit">phút</span>
+            <div className="exam-editor-field-suffix__control">
+              <TextField
+                hiddenLabel
+                size="small"
+                fullWidth
+                type="number"
+                inputProps={{ min: 1 }}
+                placeholder="0"
+                value={settings.durationMinutes ?? ""}
+                onChange={(e) =>
+                  onChange({
+                    durationMinutes: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+              <span className="exam-editor-field-suffix__unit">phút</span>
+            </div>
           </div>
-          <div className="exam-editor-field exam-editor-field-suffix">
+          <div className="exam-editor-field">
             <FieldLabel>Điểm đạt (Pass)</FieldLabel>
-            <TextField
-              hiddenLabel
-              size="small"
-              fullWidth
-              type="number"
-              inputProps={{ min: 0, max: 100 }}
-              value={settings.passScorePercent ?? 80}
-              onChange={(e) => onChange({ passScorePercent: Number(e.target.value) })}
-            />
-            <span className="exam-editor-field-suffix__unit">%</span>
+            <div className="exam-editor-field-suffix__control">
+              <TextField
+                hiddenLabel
+                size="small"
+                fullWidth
+                type="number"
+                inputProps={{ min: 0, max: 100 }}
+                value={settings.passScorePercent ?? 80}
+                onChange={(e) => onChange({ passScorePercent: Number(e.target.value) })}
+              />
+              <span className="exam-editor-field-suffix__unit">%</span>
+            </div>
           </div>
           <div className="exam-editor-field exam-editor-field--select">
             <FieldLabel>Trạng thái xuất bản</FieldLabel>

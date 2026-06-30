@@ -148,6 +148,22 @@
   background: #dbeafe;
 }
 
+.exam-editor-btn--ai {
+  background: linear-gradient(135deg, #6366f1 0%, #2563eb 55%, #7c3aed 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.exam-editor-btn--ai:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5 0%, #1d4ed8 55%, #6d28d9 100%);
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.4);
+}
+
+.exam-editor-btn--ai .MuiSvgIcon-root {
+  color: #fff;
+}
+
 .exam-editor-btn--ghost-dashed {
   background: #fff;
   border: 2px solid #e2e8f0;
@@ -306,7 +322,7 @@
   background: #f8fafc;
 }
 
-.exam-editor-field-suffix {
+.exam-editor-field-suffix__control {
   position: relative;
 }
 
@@ -316,12 +332,15 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 13px;
+  font-weight: 500;
   color: #94a3b8;
   pointer-events: none;
+  line-height: 1;
+  z-index: 1;
 }
 
-.exam-editor-field-suffix .MuiOutlinedInput-input {
-  padding-right: 48px;
+.exam-editor-field-suffix__control .MuiOutlinedInput-input {
+  padding-right: 52px;
 }
 
 .exam-editor-hint {

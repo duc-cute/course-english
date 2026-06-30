@@ -66,7 +66,8 @@ const FORMAT_META: Record<
   },
   excel: {
     title: "Import Excel — cả đề",
-    accept: ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
+    accept:
+      ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
     chooseLabel: "Chọn file Excel (.xlsx)",
     hint: "Dòng trống section_* được fill-down. Không cần I/II nếu chỉ có instruction.",
   },
@@ -152,14 +153,24 @@ export function ExamPaperImportDialog({
     >
       <DialogTitle>{meta.title}</DialogTitle>
       <DialogContent>
-        <Typography sx={{ fontSize: 12, color: "#5F5E5A", mb: 1.5 }}>{meta.hint}</Typography>
+        <Typography sx={{ fontSize: 12, color: "#5F5E5A", mb: 1.5 }}>
+          {meta.hint}
+        </Typography>
         {currentExamTitle?.trim() ? (
           <Typography sx={{ fontSize: 11, color: "#888780", mb: 1 }}>
-            Đề hiện tại: {currentExamTitle.trim()} ({currentSections.length} phần)
+            Đề hiện tại: {currentExamTitle.trim()} ({currentSections.length}{" "}
+            phần)
           </Typography>
         ) : null}
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 1,
+            alignItems: "center",
+          }}
+        >
           <input
             ref={fileInputRef}
             type="file"
@@ -175,7 +186,11 @@ export function ExamPaperImportDialog({
             onClick={() => fileInputRef.current?.click()}
             disabled={parsing}
           >
-            {parsing ? "Đang đọc..." : fileName ? `Đã chọn: ${fileName}` : meta.chooseLabel}
+            {parsing
+              ? "Đang đọc..."
+              : fileName
+                ? `Đã chọn: ${fileName}`
+                : meta.chooseLabel}
           </Button>
           {format === "excel" ? (
             <Button
@@ -206,9 +221,17 @@ export function ExamPaperImportDialog({
           <Box sx={{ mt: 2 }}>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1 }}>
               <Chip size="small" label={`${result.sections.length} phần`} />
-              <Chip size="small" variant="outlined" label={`${result.totalQuestions} câu`} />
+              <Chip
+                size="small"
+                variant="outlined"
+                label={`${result.totalQuestions} câu`}
+              />
               {result.examTitle ? (
-                <Chip size="small" variant="outlined" label={`Đề: ${result.examTitle}`} />
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={`Đề: ${result.examTitle}`}
+                />
               ) : null}
             </Box>
             <List
@@ -221,15 +244,28 @@ export function ExamPaperImportDialog({
               }}
             >
               {result.sections.map((section, index) => (
-                <ListItem key={section.importKey} divider={index < result.sections.length - 1}>
+                <ListItem
+                  key={section.importKey}
+                  divider={index < result.sections.length - 1}
+                >
                   <ListItemText
                     primary={
                       <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
-                        {index + 1}. {section.title?.trim() || section.instruction?.trim()?.slice(0, 48) || "Phần mới"}
+                        {index + 1}.{" "}
+                        {section.title?.trim() ||
+                          section.instruction?.trim()?.slice(0, 48) ||
+                          "Phần mới"}
                       </Typography>
                     }
                     secondary={
-                      <Box sx={{ mt: 0.5, display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                      <Box
+                        sx={{
+                          mt: 0.5,
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                        }}
+                      >
                         <Chip
                           size="small"
                           label={sectionTypeLabel(section.questionType)}
@@ -242,7 +278,13 @@ export function ExamPaperImportDialog({
                           sx={{ height: 20, fontSize: 10 }}
                         />
                         {section.instruction?.trim() ? (
-                          <Typography sx={{ fontSize: 11, color: "#64748b", fontStyle: "italic" }}>
+                          <Typography
+                            sx={{
+                              fontSize: 11,
+                              color: "#64748b",
+                              fontStyle: "italic",
+                            }}
+                          >
                             {section.instruction.trim().length > 80
                               ? `${section.instruction.trim().slice(0, 80)}…`
                               : section.instruction.trim()}
@@ -259,14 +301,20 @@ export function ExamPaperImportDialog({
 
         {result?.ok ? (
           <Box sx={{ mt: 2 }}>
-            <Typography sx={{ fontSize: 12, fontWeight: 600, mb: 0.5 }}>Cách import</Typography>
-            <RadioGroup value={mode} onChange={(e) => setMode(e.target.value as ExamPaperImportMode)}>
+            <Typography sx={{ fontSize: 12, fontWeight: 600, mb: 0.5 }}>
+              Cách import
+            </Typography>
+            <RadioGroup
+              value={mode}
+              onChange={(e) => setMode(e.target.value as ExamPaperImportMode)}
+            >
               <FormControlLabel
                 value="replace_all"
                 control={<Radio size="small" />}
                 label={
                   <Typography fontSize={12}>
-                    Thay toàn bộ các phần hiện có ({currentSections.length} → {result.sections.length})
+                    Thay toàn bộ các phần hiện có ({currentSections.length} →{" "}
+                    {result.sections.length})
                   </Typography>
                 }
               />
@@ -275,12 +323,13 @@ export function ExamPaperImportDialog({
                 control={<Radio size="small" />}
                 label={
                   <Typography fontSize={12}>
-                    Merge theo section_key / instruction — khớp thì ghi đè câu, không khớp thì thêm phần
+                    Merge theo section_key / instruction — khớp thì ghi đè câu,
+                    không khớp thì thêm phần
                   </Typography>
                 }
               />
             </RadioGroup>
-            {(result.examTitle || result.paperInstruction) ? (
+            {result.examTitle || result.paperInstruction ? (
               <FormControlLabel
                 sx={{ mt: 0.5 }}
                 control={
@@ -304,8 +353,13 @@ export function ExamPaperImportDialog({
         <Button sx={muFooterBtnOutlined} onClick={handleClose}>
           Hủy
         </Button>
-        <Button sx={muFooterBtnPrimary} disabled={!result?.ok} onClick={handleConfirm}>
-          Import {result?.sections.length ?? 0} phần ({result?.totalQuestions ?? 0} câu)
+        <Button
+          sx={muFooterBtnPrimary}
+          disabled={!result?.ok}
+          onClick={handleConfirm}
+        >
+          Import {result?.sections.length ?? 0} phần (
+          {result?.totalQuestions ?? 0} câu)
         </Button>
       </DialogActions>
     </Dialog>

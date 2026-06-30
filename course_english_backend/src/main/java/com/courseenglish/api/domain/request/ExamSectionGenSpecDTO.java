@@ -49,4 +49,13 @@ public class ExamSectionGenSpecDTO {
 
   /** When true, generation ignores slice and uses full document. */
   private Boolean useFullDocument;
+
+  /** Redacted section content for SIMILAR generation (answers stripped). */
+  @Size(max = 32000)
+  private String referenceExcerpt;
+
+  /** Per-section sub-question count for READING when questionCount = passage count. */
+  @Min(2)
+  @Max(12)
+  private Integer readingSubQuestionCount;
 }

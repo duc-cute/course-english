@@ -40,4 +40,11 @@ public class ReqCreateExamPaperGenTaskDTO {
   private String promptLang = "en";
 
   private UUID conversationId;
+
+  /** DOCUMENT (default) = from uploaded file; SIMILAR = from existing exam paper reference. */
+  @Size(max = 16)
+  private String generationMode;
+
+  /** Source exam when generationMode = SIMILAR. */
+  private UUID sourceExamPaperId;
 }

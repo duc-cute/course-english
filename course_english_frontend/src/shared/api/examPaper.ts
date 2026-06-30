@@ -165,3 +165,22 @@ export async function apiGenerateReadingSection(
   const body = unwrapResponse(response);
   return (body.data ?? body) as ParseReadingBlockResult;
 }
+
+export type CreateSimilarExamPaperGenTaskPayload = {
+  newExamTitle?: string;
+  newPaperInstruction?: string;
+  difficulty?: number;
+  promptLang?: string;
+};
+
+export async function apiCreateSimilarExamPaperGenTask(
+  sourceExamPaperId: string,
+  payload: CreateSimilarExamPaperGenTaskPayload,
+) {
+  const response = (await api.post(
+    `/exam-papers/${sourceExamPaperId}/ai/similar-generation`,
+    payload,
+  )) as ApiResponse<{ taskId: string; status: string }>;
+  const body = unwrapResponse(response);
+  return (body.data ?? body.result ?? body) as { taskId: string; status?: string };
+}

@@ -35,9 +35,9 @@ import {
   muTextFieldSx,
 } from "../../../pages/admin/manageUserUiStyles";
 import {
-  AI_GEN_PROCESSING_TIP,
+  AI_EXAM_PAPER_POLL_MAX_MS,
+  AI_EXAM_PAPER_PROCESSING_HINT,
   AI_TASK_POLL_INTERVAL_MS,
-  AI_TASK_POLL_MAX_MS,
 } from "../../../shared/ai/questionGen/aiTaskPolling";
 import { draftsToExerciseQuestions } from "../../../shared/ai/questionGen/draftToExercise";
 import {
@@ -314,9 +314,9 @@ export function ExamPaperAiFromDocDialog({
     const poll = async () => {
       if (cancelled) return;
       const elapsed = Date.now() - pollStartedRef.current;
-      if (elapsed > AI_TASK_POLL_MAX_MS) {
+      if (elapsed > AI_EXAM_PAPER_POLL_MAX_MS) {
         setProcessing(false);
-        setError("Xử lý quá lâu — thử lại sau hoặc giảm số câu.");
+        setError("Xử lý quá lâu (tối đa ~10 phút) — thử lại sau hoặc giảm số phần/câu.");
         void apiReportAiTaskPollTimeout(taskId).catch(() => undefined);
         setStep(1);
         return;
@@ -785,7 +785,7 @@ export function ExamPaperAiFromDocDialog({
             </Button>
           )}
           {step === 2 && !isMobile ? (
-            <Typography sx={{ fontSize: 11, color: "#64748b" }}>✨ {AI_GEN_PROCESSING_TIP}</Typography>
+            <Typography sx={{ fontSize: 11, color: "#64748b" }}>✨ {AI_EXAM_PAPER_PROCESSING_HINT}</Typography>
           ) : null}
         </Box>
         <Box>

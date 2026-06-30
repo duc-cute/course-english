@@ -18,6 +18,7 @@ import {
   type ExamPaperImportApplied,
 } from "../../admin/components/exam/ExamPaperImportDialog";
 import { ExamPaperAiFromDocDialog } from "../../admin/components/exam/ExamPaperAiFromDocDialog";
+import { ExamPaperSimilarAiDialog } from "../../admin/components/exam/ExamPaperSimilarAiDialog";
 import { ExamPaperSettings, type ExamPaperSettingsValues } from "../../admin/components/exam/ExamPaperSettings";
 import {
   ExamSectionImportDialog,
@@ -129,11 +130,13 @@ export function ExamPaperEditorPage() {
   const [sectionImportFormat, setSectionImportFormat] = useState<ExamSectionImportFormat>("excel");
   const [readingParseOpen, setReadingParseOpen] = useState(false);
   const [aiFromDocOpen, setAiFromDocOpen] = useState(false);
+  const [aiSimilarOpen, setAiSimilarOpen] = useState(false);
   const [wordExporting, setWordExporting] = useState(false);
   const { flags } = useFeatureFlags();
 
   const activeSection = sections[activeIndex] ?? null;
   const totalQuestions = useMemo(() => countTotalQuestions(sections), [sections]);
+  const canSimilarGen = sections.length > 0 && totalQuestions > 0 && Boolean(examPaperId);
 
   const loadPaper = useCallback(async () => {
     if (!examPaperId) return;
@@ -404,6 +407,16 @@ export function ExamPaperEditorPage() {
         </div>
 
         <div className="exam-editor-header-actions">
+          {canSimilarGen ? (
+            <button
+              type="button"
+              className="exam-editor-btn exam-editor-btn--ai"
+              onClick={() => setAiSimilarOpen(true)}
+            >
+              <AutoAwesomeOutlinedIcon />
+              Tạo đề tương tự
+            </button>
+          ) : null}
           <button
             type="button"
             className="exam-editor-btn exam-editor-btn--outlined"
@@ -632,6 +645,18 @@ export function ExamPaperEditorPage() {
         onClose={() => setAiFromDocOpen(false)}
         onApplied={handlePaperImportApplied}
       />
+
+      {examPaperId ? (
+        <ExamPaperSimilarAiDialog
+          open={aiSimilarOpen}
+          sourceExamPaperId={examPaperId}
+          sourceTitle={settings.title || "Đề thi"}
+          sourceInstruction={settings.instruction}
+          sectionCount={sections.length}
+          totalQuestions={totalQuestions}
+          onClose={() => setAiSimilarOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

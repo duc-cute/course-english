@@ -135,7 +135,8 @@ Dùng `<button type="button" className="exam-editor-btn exam-editor-btn--*">` �
 | ----- | -------- |
 | `exam-editor-btn--primary` | Lưu, hành động chính |
 | `exam-editor-btn--outlined` | Word, import phụ, toolbar section |
-| `exam-editor-btn--accent` | Thêm section, CTA phụ nổi bật |
+| `exam-editor-btn--accent` | Thêm section, CTA phụ nổi bật (nền xanh nhạt) |
+| `exam-editor-btn--ai` | **Sinh / tạo bằng AI** (gradient tím–xanh) — xem `admin-ai-gen-ui` |
 | `exam-editor-btn--ghost-dashed` | Empty state, hành động thứ cấp |
 
 Icon MUI: `fontSize: 16` trong nút. Primary có thể dùng `CircularProgress size={14}` khi loading.
@@ -167,10 +168,12 @@ Icon MUI: `fontSize: 16` trong nút. Primary có thể dùng `CircularProgress s
 **Suffix unit** (phút, %):
 
 ```tsx
-<div className="exam-editor-field exam-editor-field-suffix">
+<div className="exam-editor-field">
   <label className="exam-editor-label">Thời gian làm bài</label>
-  <TextField hiddenLabel type="number" ... />
-  <span className="exam-editor-field-suffix__unit">phút</span>
+  <div className="exam-editor-field-suffix__control">
+    <TextField hiddenLabel type="number" ... />
+    <span className="exam-editor-field-suffix__unit">phút</span>
+  </div>
 </div>
 ```
 
@@ -289,6 +292,7 @@ Bo 12px, message 13px.
 
 ## Related
 
+- **AI gradient button + dialog processing:** `.cursor/skills/admin-ai-gen-ui/SKILL.md`
 - List/catalog pages: `.cursor/skills/admin-catalog-soft-ui/SKILL.md`
 - EMR compact forms: `.cursor/skills/emr-disclosure-ui-style/SKILL.md`
 - Mockup HTML: `promt.md`

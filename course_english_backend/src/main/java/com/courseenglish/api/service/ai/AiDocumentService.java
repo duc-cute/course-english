@@ -276,6 +276,64 @@ public class AiDocumentService {
     return entity;
   }
 
+  @Transactional
+  public AiDocument createSimilarExamStubDocument(
+      UUID userId,
+      UUID sourceExamPaperId,
+      String sourceTitle,
+      int sectionCount,
+      int totalQuestions)
+      throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+
+    String safeTitle = sourceTitle != null ? sourceTitle.trim() : "Exam";
+    String text =
+        """
+            SIMILAR EXAM PAPER GENERATION
+            Source exam ID: %s
+            Source title: %s
+            Sections: %d
+            Total reference items: %d
+            Per-section reference excerpts are stored in the generation task (answers redacted).
+            """
+            .formatted(sourceExamPaperId, safeTitle, sectionCount, totalQuestions);
+
+    String fileName = "Similar: " + (safeTitle.length() > 50 ? safeTitle.substring(0, 50) + "…" : safeTitle);
+    String storageKey = "similar-" + UUID.randomUUID() + ".txt";
+
+    AiDocument entity = new AiDocument();
+    entity.setUserId(userId);
+    entity.setFileName(fileName);
+    entity.setMimeType("text/plain");
+    entity.setStorageFolder(AiDocument.STORAGE_FOLDER);
+    entity.setStorageFileName(storageKey);
+    entity.setFileSizeBytes((long) text.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+    entity.setPageCount(1);
+    entity.setExtractedText(text);
+    entity.setStatus(AiDocumentStatusEnum.READY);
+    entity.setErrorMessage(null);
+
+    aiDocumentRepository.save(entity);
+
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_DOC_READY,
+                "Similar exam stub document for source " + sourceExamPaperId)
+            .userId(userId)
+            .ref("AI_DOCUMENT", entity.getId())
+            .put("documentId", entity.getId())
+            .put("step", "similar_exam_stub")
+            .put("sourceExamPaperId", sourceExamPaperId)
+            .put("sectionCount", sectionCount)
+            .put("totalQuestions", totalQuestions)
+            .put("fileName", fileName));
+
+    return entity;
+  }
+
   public static String buildTopicBriefText(
       String topic,
       Integer grade,

@@ -1,5 +1,6 @@
 package com.courseenglish.api.controller;
 
+import com.courseenglish.api.domain.request.ReqCreateSimilarExamPaperGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqExamPaperDTO;
 import com.courseenglish.api.domain.request.ReqExamPaperOutlineDTO;
 import com.courseenglish.api.domain.request.ReqExamSectionSlicesDTO;
@@ -7,6 +8,7 @@ import com.courseenglish.api.domain.request.ReqGenerateReadingSectionDTO;
 import com.courseenglish.api.domain.request.ReqParseReadingBlockDTO;
 import com.courseenglish.api.domain.request.ReqReorderExamSectionsDTO;
 import com.courseenglish.api.domain.request.ReqSearchExamPaperDTO;
+import com.courseenglish.api.domain.response.ResCreateAiTaskDTO;
 import com.courseenglish.api.domain.response.ResExamPaperDTO;
 import com.courseenglish.api.domain.response.ResExamPaperOutlineDTO;
 import com.courseenglish.api.domain.response.ResExamSectionSlicesDTO;
@@ -15,6 +17,7 @@ import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.service.ExamPaperService;
 import com.courseenglish.api.service.ai.AiExamPaperOutlineService;
 import com.courseenglish.api.service.ai.AiReadingImportService;
+import com.courseenglish.api.service.ai.ExamPaperSimilarGenService;
 import com.courseenglish.api.service.ai.ExamSectionSlicesFacade;
 import com.courseenglish.api.util.annotation.ApiMessage;
 import com.courseenglish.api.util.error.IdInvalidException;
@@ -33,16 +36,19 @@ public class ExamPaperController {
     private final AiExamPaperOutlineService aiExamPaperOutlineService;
     private final AiReadingImportService aiReadingImportService;
     private final ExamSectionSlicesFacade examSectionSlicesFacade;
+    private final ExamPaperSimilarGenService examPaperSimilarGenService;
 
     public ExamPaperController(
             ExamPaperService examPaperService,
             AiExamPaperOutlineService aiExamPaperOutlineService,
             AiReadingImportService aiReadingImportService,
-            ExamSectionSlicesFacade examSectionSlicesFacade) {
+            ExamSectionSlicesFacade examSectionSlicesFacade,
+            ExamPaperSimilarGenService examPaperSimilarGenService) {
         this.examPaperService = examPaperService;
         this.aiExamPaperOutlineService = aiExamPaperOutlineService;
         this.aiReadingImportService = aiReadingImportService;
         this.examSectionSlicesFacade = examSectionSlicesFacade;
+        this.examPaperSimilarGenService = examPaperSimilarGenService;
     }
 
     @PostMapping("/search")
@@ -99,6 +105,15 @@ public class ExamPaperController {
     public ResponseEntity<ResExamSectionSlicesDTO> recalcSectionSlices(
             @Valid @RequestBody ReqExamSectionSlicesDTO request) throws IdInvalidException {
         return ResponseEntity.ok(examSectionSlicesFacade.recalculate(request));
+    }
+
+    @PostMapping("/{id}/ai/similar-generation")
+    @ApiMessage("Create AI task to generate a similar exam paper from an existing one")
+    public ResponseEntity<ResCreateAiTaskDTO> createSimilarGenerationTask(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReqCreateSimilarExamPaperGenTaskDTO request) throws IdInvalidException {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(examPaperSimilarGenService.createSimilarGenerationTask(id, request));
     }
 
     @PostMapping("/ai/reading-parse")
