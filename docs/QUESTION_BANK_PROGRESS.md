@@ -4,31 +4,7 @@ Mục tiêu: nâng cấp `Question Bank` từ CRUD MCQ thành **trung tâm tái 
 
 Tài liệu tham chiếu: `promt.md`, FE page hiện tại: `course_english_frontend/src/pages/admin/ManageQuestionsPage.tsx`.
 
----
-
-## Update nhanh (2026-06-30) — Exam AI Similar
-
-Phần này đã triển khai ở luồng `ExamPaperEditor` để tái sử dụng nội dung đề nguồn và sinh đề mới cùng cấu trúc.
-
-### Đã xong
-- [x] API tạo task đề tương tự: `POST /api/v1/exam-papers/{id}/ai/similar-generation`
-- [x] DTO request mới: `ReqCreateSimilarExamPaperGenTaskDTO` (`newExamTitle`, `newPaperInstruction`, `difficulty`, `promptLang`)
-- [x] Service mới `ExamPaperSimilarGenService`: đọc đề nguồn, suy ra `sectionSpecs`, tạo AI task chế độ `SIMILAR`
-- [x] Redact đáp án trước khi gửi AI: `ExamPaperReferenceExcerptBuilder` loại các field đúng/sai (`correctChoiceId`, `correctAnswer`, ...)
-- [x] FE dialog mới `ExamPaperSimilarAiDialog` + nút `Tạo đề tương tự` trong `ExamPaperEditorPage`
-- [x] Polling/progress cho luồng exam dùng ngưỡng riêng `AI_EXAM_PAPER_POLL_MAX_MS` và hint riêng cho processing
-- [x] Khi AI DONE: tự map envelope -> tạo `ExamPaper` mới và điều hướng sang editor đề mới
-
-### Cập nhật kỹ thuật liên quan
-- [x] Mở rộng `ReqCreateExamPaperGenTaskDTO`: `generationMode`, `sourceExamPaperId`
-- [x] Mở rộng `ExamSectionGenSpecDTO`: `referenceExcerpt`, `readingSubQuestionCount`
-- [x] `AiExamPaperGenerationService`: hỗ trợ mode `SIMILAR`, timeout toàn task (`app.ai.exam-paper-max-task-sec`), và xử lý count tốt hơn cho Reading/Gap-fill
-- [x] Unit test: `ExamPaperReferenceExcerptBuilderTest`
-
-### Còn lại
-- [ ] Manual E2E: tạo đề tương tự cho nhiều loại section (MCQ/READING/GAP_FILL), xác nhận không lộ đáp án nguồn
-- [ ] QA timeout path (task dài > giới hạn), verify message + activity log
-- [ ] Cân nhắc tích hợp lại sang `Question Bank` (Phase 3 AI actions) sau khi ổn định ở Exam Editor
+> **Lưu ý:** Tài liệu này chỉ là **kế hoạch** (chưa triển khai). Tiến độ ExamPaper / AI sinh đề: xem `docs/EXAM_PAPER_PLAN.md`.
 
 ---
 

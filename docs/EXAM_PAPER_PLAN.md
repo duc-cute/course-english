@@ -2,9 +2,9 @@
 
 
 
-> Cập nhật: 2026-06-29  
+> Cập nhật: 2026-06-30  
 
-> Trạng thái tổng thể: **Phase 1–3 done** — **Phase 6 core done** (outline + gen + slice + GAP_FILL_MCQ); còn 6.4–6.6 và polish UX
+> Trạng thái tổng thể: **Phase 1–3 done** — **Phase 6 core done** (outline + gen + slice + GAP_FILL_MCQ + **similar exam**); còn 6.4–6.6 và polish UX
 
 
 
@@ -368,6 +368,8 @@ ExamSectionGenSpec {
 
 | `POST /api/v1/ai/tasks/exam-paper-generation` | Async — documentId + sectionSpecs[] → task |
 
+| `POST /api/v1/exam-papers/{id}/ai/similar-generation` | Async — đề nguồn → sinh đề mới cùng cấu trúc (mode `SIMILAR`, đáp án redacted) |
+
 | `POST /api/v1/exam-papers/ai/section-slices` | Sync — documentId + sectionSpecs[] → excerpt preview per section (slice mode, confidence) |
 
 | `GET /api/v1/ai/tasks/{id}` | Poll — `outputJson` dạng `AiExamPaperGenEnvelope` + `progressPercent` |
@@ -450,6 +452,8 @@ FE convert `questions[]` → `payloadJson` qua `buildExerciseSetPayloadJson`, r�
 
 | 6.10 | **Progress UI bước sinh** — thanh % tăng dần phía client (`resolveAiGenDisplayPercent` + tick 150ms) | ✅ |
 
+| 6.12 | **Sinh đề tương tự** từ đề đã có (redact đáp án, `ExamPaperSimilarAiDialog`) | ✅ code — chờ E2E |
+
 
 
 **Cấu hình BE (khi thêm loại câu AI):** `AI_SUPPORTED_GEN_TYPES` trong `.env` phải gồm `GAP_FILL_MCQ` (mặc định trong `application.properties` đã có; restart backend sau khi sửa `.env`).
@@ -467,6 +471,62 @@ FE convert `questions[]` → `payloadJson` qua `buildExerciseSetPayloadJson`, r�
 - `AiReadingImportService` cho section Reading (phase 6.11)
 
 - Instruction-based slice (file không có `PART I/II`)
+
+- Manual E2E **6.12** similar exam (MCQ / Reading / Gap-fill, timeout path)
+
+
+
+### Phase 6.12 — Sinh đề tương tự từ đề nguồn (đã triển khai)
+
+
+
+**Mục tiêu:** Từ đề đã soạn trong editor → AI sinh **đề mới cùng cấu trúc** (số section, loại câu, số câu/blank) nhưng nội dung khác; **không** gửi đáp án nguồn cho LLM.
+
+
+
+**Luồng:**
+
+```
+
+ExamPaper (nguồn) → ExamPaperSimilarGenService
+
+  → per-section referenceExcerpt (redacted)
+
+  → stub AiDocument + EXAM_PAPER_GENERATION (generationMode=SIMILAR)
+
+  → poll task → tạo ExamPaper mới → mở editor
+
+```
+
+
+
+**Đã xong:**
+
+- [x] `POST /api/v1/exam-papers/{id}/ai/similar-generation` + `ReqCreateSimilarExamPaperGenTaskDTO`
+- [x] `ExamPaperReferenceExcerptBuilder` — loại `correctChoiceId`, `correctAnswer`, `explanation`, …
+- [x] `ExamPaperSimilarGenService` — map section nguồn → `sectionSpecs` + `readingSubQuestionCount`
+- [x] `AiExamPaperGenerationService` — mode `SIMILAR`, timeout toàn task (`app.ai.exam-paper-max-task-sec`)
+- [x] FE `ExamPaperSimilarAiDialog` + nút **Tạo đề tương tự** (`exam-editor-btn--ai`) trong `ExamPaperEditorPage`
+- [x] Poll exam: `AI_EXAM_PAPER_POLL_MAX_MS` (~11 phút), hint riêng `AI_EXAM_PAPER_PROCESSING_HINT`
+- [x] Unit test: `ExamPaperReferenceExcerptBuilderTest`
+
+
+
+**File chính:**
+
+| Layer | File |
+|-------|------|
+| BE | `ExamPaperSimilarGenService`, `ExamPaperReferenceExcerptBuilder`, `AiDocumentService.createSimilarExamStubDocument` |
+| BE DTO | `ReqCreateSimilarExamPaperGenTaskDTO`, mở rộng `ReqCreateExamPaperGenTaskDTO` (`generationMode`, `sourceExamPaperId`), `ExamSectionGenSpecDTO.referenceExcerpt` |
+| FE | `ExamPaperSimilarAiDialog.tsx`, `examPaper.ts` (`apiCreateSimilarExamPaperGenTask`) |
+| UI skill | `.cursor/skills/admin-ai-gen-ui/SKILL.md` |
+
+
+
+**Còn lại:**
+
+- [ ] Manual E2E: đề nhiều section (Synonyms + Reading + GAP_FILL_MCQ), xác nhận không lộ đáp án
+- [ ] QA timeout khi task vượt `exam-paper-max-task-sec` (message + activity log)
 
 
 
@@ -743,6 +803,8 @@ Tuần 7–8   Phase 5
 
 
 - `docs/LESSON_AUTHORING_PROGRESS.md` — Lesson / EXERCISE_SET (luyện tập)
+
+- `docs/QUESTION_BANK_PROGRESS.md` — Kế hoạch Question Bank (chưa triển khai)
 
 - `course_english_frontend/docs/AI_QUESTION_GEN_TECHNICAL.md` — AI batch theo loại câu
 
