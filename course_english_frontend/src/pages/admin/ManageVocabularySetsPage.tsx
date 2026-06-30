@@ -1,36 +1,32 @@
-import CollectionsBookmarkOutlinedIcon from "@mui/icons-material/CollectionsBookmarkOutlined";
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import AddIcon from "@mui/icons-material/Add";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
-import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
-import KeyboardOutlinedIcon from "@mui/icons-material/KeyboardOutlined";
-import SpellcheckOutlinedIcon from "@mui/icons-material/SpellcheckOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import CloseIcon from "@mui/icons-material/Close";
+import CollectionsBookmarkOutlinedIcon from "@mui/icons-material/CollectionsBookmarkOutlined";
 import {
   Alert,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   Skeleton,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { AdminCatalogPageHeader, AdminCatalogToolbar, ConfirmDialog } from "../../admin/components";
+import {
+  VocabularySetCard,
+  VocabularySetCreateCard,
+} from "../../admin/components/vocabulary/VocabularySetCard";
 import { VocabGenerateListenDialog } from "../../admin/components/vocabulary/VocabGenerateListenDialog";
 import { VocabGenerateListenTypeDialog } from "../../admin/components/vocabulary/VocabGenerateListenTypeDialog";
 import { VocabGenerateMcqDialog } from "../../admin/components/vocabulary/VocabGenerateMcqDialog";
 import { VocabGenerateSpellingDialog } from "../../admin/components/vocabulary/VocabGenerateSpellingDialog";
-import {
-  VocabularyImportDialog,
-} from "../../admin/components/vocabulary/VocabularyImportDialog";
+import { VocabularyAiGenDialog } from "../../admin/components/vocabulary/VocabularyAiGenDialog";
 import { VocabularyWordPicker } from "../../admin/components/vocabulary/VocabularyWordPicker";
 import {
   VocabularySetForm,
@@ -40,7 +36,6 @@ import {
 import {
   muBtnSmOutlined,
   muDialogFooter,
-  muDialogPaper,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
   muTextFieldSx,
@@ -55,30 +50,23 @@ import {
   apiSearchVocabularySets,
   apiUpdateVocabularySet,
   type VocabularySetRecord,
-  type VocabularySetStatus,
   type VocabularySetsPaginationResult,
 } from "../../shared/api/vocabularySet";
 import type { ApiResponse } from "../../shared/api/types";
-
-function statusChip(status?: VocabularySetStatus) {
-  if (status === "PUBLISHED") {
-    return <Chip size="small" label="Published" color="success" variant="outlined" />;
-  }
-  if (status === "ARCHIVED") {
-    return <Chip size="small" label="Lưu trữ" variant="outlined" />;
-  }
-  return <Chip size="small" label="Nháp" variant="outlined" />;
-}
+import { paths } from "../../shared/constants/paths";
 
 function toPayload(form: VocabularySetFormState) {
   return {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
+    coverImageUrl: form.coverImageUrl?.trim() || undefined,
     status: form.status,
     items: form.items.map((item, index) => ({
       wordEn: item.wordEn.trim(),
       meaningVi: item.meaningVi.trim(),
       phonetic: item.phonetic?.trim() || undefined,
+      partOfSpeech: item.partOfSpeech?.trim() || undefined,
+      exampleSentence: item.exampleSentence?.trim() || undefined,
       displayOrder: index,
     })),
   };
@@ -88,6 +76,7 @@ function recordToForm(record: VocabularySetRecord): VocabularySetFormState {
   return {
     title: record.title ?? "",
     description: record.description ?? "",
+    coverImageUrl: record.coverImageUrl,
     status: record.status ?? "DRAFT",
     items: record.items?.length
       ? record.items.map((item) => ({
@@ -98,6 +87,7 @@ function recordToForm(record: VocabularySetRecord): VocabularySetFormState {
           audioUkUrl: item.audioUkUrl,
           audioUsUrl: item.audioUsUrl,
           partOfSpeech: item.partOfSpeech,
+          exampleSentence: item.exampleSentence,
         }))
       : [{ wordEn: "", meaningVi: "" }],
   };
@@ -106,7 +96,7 @@ function recordToForm(record: VocabularySetRecord): VocabularySetFormState {
 export function ManageVocabularySetsPage() {
   const [rows, setRows] = useState<VocabularySetRecord[]>([]);
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(11);
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState("");
   const [searchText, setSearchText] = useState("");
@@ -120,7 +110,7 @@ export function ManageVocabularySetsPage() {
   const [formError, setFormError] = useState("");
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState<VocabularySetRecord | null>(null);
-  const [openImport, setOpenImport] = useState(false);
+  const [openAiGen, setOpenAiGen] = useState(false);
   const [openPicker, setOpenPicker] = useState(false);
   const [generateTarget, setGenerateTarget] = useState<VocabularySetRecord | null>(null);
   const [listenGenerateTarget, setListenGenerateTarget] = useState<VocabularySetRecord | null>(null);
@@ -163,6 +153,24 @@ export function ManageVocabularySetsPage() {
 
   const openCreate = () => {
     resetForm();
+    setOpenForm(true);
+  };
+
+  const handleAiGenerated = (payload: {
+    title: string;
+    description: string;
+    coverImageUrl?: string;
+    items: VocabularySetFormState["items"];
+  }) => {
+    setEditing(null);
+    setForm({
+      title: payload.title,
+      description: payload.description,
+      coverImageUrl: payload.coverImageUrl,
+      status: "DRAFT",
+      items: payload.items.length ? payload.items : [{ wordEn: "", meaningVi: "" }],
+    });
+    setFormError("");
     setOpenForm(true);
   };
 
@@ -270,20 +278,43 @@ export function ManageVocabularySetsPage() {
   };
 
   return (
-    <Box className="admin-catalog-page">
+    <Box className="admin-catalog-page admin-catalog-page--vocab-sets">
       <AdminCatalogPageHeader
-        title="Bộ từ vựng"
+        title="Thư viện Bộ từ vựng"
         subtitle={
           <>
-            Nhập bộ từ (Word | Meaning) → sinh MCQ → bấm <strong>Gắn vào bài học</strong> (không cần copy JSON).
+            Quản lý các danh sách từ vựng. Hệ thống AI sẽ tự động sinh bài tập trắc nghiệm, luyện nghe và gõ từ
+            dựa trên bộ từ này. Từ gốc lưu tại{" "}
+            <Link to={`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_WORDS}`}>Thư viện từ vựng</Link>.
           </>
         }
         icon={<CollectionsBookmarkOutlinedIcon />}
+        action={
+          <Box className="admin-catalog-page__header-actions">
+            <Button
+              size="small"
+              className="header-action-btn header-action-btn--ai"
+              startIcon={<AutoAwesomeOutlinedIcon />}
+              onClick={() => setOpenAiGen(true)}
+            >
+              Sinh bằng AI
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              className="header-action-btn header-action-btn--add"
+              startIcon={<AddIcon />}
+              onClick={openCreate}
+            >
+              Thêm bộ từ
+            </Button>
+          </Box>
+        }
       />
 
       <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
         <AdminCatalogToolbar
-          searchPlaceholder="Tìm theo tiêu đề bộ từ..."
+          searchPlaceholder="Tìm kiếm bộ từ vựng..."
           searchInput={searchInput}
           onSearchInputChange={setSearchInput}
           onSearch={() => {
@@ -296,27 +327,33 @@ export function ManageVocabularySetsPage() {
             setFilterStatus("");
             setPage(0);
           }}
-          addLabel="Thêm bộ từ"
-          onAdd={openCreate}
           toolbarVariant="soft"
           extraFilters={
             <TextField
               select
               size="small"
-              label="Trạng thái"
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value);
                 setPage(0);
               }}
-              SelectProps={muSelectAllowEmpty}
+              SelectProps={{
+                ...muSelectAllowEmpty,
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (!selected) {
+                    return <span style={{ color: "#64748b", fontWeight: 500 }}>Trạng thái: Tất cả</span>;
+                  }
+                  return selected === "PUBLISHED" ? "Đã xuất bản" : selected === "ARCHIVED" ? "Lưu trữ" : "Bản nháp";
+                }
+              }}
               InputLabelProps={muSelectFilterInputLabelProps}
               className="admin-catalog-soft-filter__field"
-              sx={{ ...muTextFieldSx, minWidth: 148 }}
+              sx={{ ...muTextFieldSx, minWidth: 160 }}
             >
-              <MenuItem value="">Mọi trạng thái</MenuItem>
-              <MenuItem value="DRAFT">Nháp</MenuItem>
-              <MenuItem value="PUBLISHED">Published</MenuItem>
+              <MenuItem value="">Trạng thái: Tất cả</MenuItem>
+              <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
+              <MenuItem value="DRAFT">Bản nháp</MenuItem>
               <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
             </TextField>
           }
@@ -330,90 +367,39 @@ export function ManageVocabularySetsPage() {
       ) : null}
 
       <Box className="admin-catalog-page__table-card">
-        <Box
-          className="catalog-table-head"
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 208px",
-            columnGap: 1,
-          }}
-        >
-          <Box>#</Box>
-          <Box>Tiêu đề</Box>
-          <Box>Số từ</Box>
-          <Box>Trạng thái</Box>
-          <Box sx={{ textAlign: "center" }}>Thao tác</Box>
-        </Box>
-
-        {loading ? (
-          <Box sx={{ p: 2 }}>
-            <Skeleton height={36} />
-            <Skeleton height={36} />
-          </Box>
-        ) : rows.length === 0 ? (
-          <Box className="admin-catalog-page__empty">Chưa có bộ từ vựng. Bấm &quot;Thêm bộ từ&quot; hoặc import CSV.</Box>
-        ) : (
-          rows.map((row, index) => (
-            <Box
-              key={row.id}
-              className="catalog-table-row"
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "48px minmax(180px, 2fr) 80px 100px 208px",
-                columnGap: 1,
-              }}
-            >
-              <Box className="catalog-table-muted">{page * size + index + 1}</Box>
-              <Box>
-                <Box sx={{ fontWeight: 500 }}>{row.title}</Box>
-                {row.description ? (
-                  <Box className="catalog-table-muted" sx={{ fontSize: 11, mt: 0.25 }}>{row.description}</Box>
-                ) : null}
-              </Box>
-              <Box className="catalog-table-muted">{row.itemCount ?? 0}</Box>
-              <Box>{statusChip(row.status)}</Box>
-              <Box className="catalog-table-actions">
-                <Tooltip title="Sinh MCQ">
-                  <IconButton size="small" color="secondary" onClick={() => void openGenerate(row)}>
-                    <AutoFixHighOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Sinh bài nghe">
-                  <IconButton size="small" color="secondary" onClick={() => void openGenerateListen(row)}>
-                    <HeadphonesOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Sinh gõ chính tả">
-                  <IconButton size="small" color="secondary" onClick={() => void openGenerateSpelling(row)}>
-                    <SpellcheckOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Sinh nghe-gõ">
-                  <IconButton size="small" color="secondary" onClick={() => void openGenerateListenType(row)}>
-                    <KeyboardOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Sửa">
-                  <IconButton size="small" color="primary" onClick={() => void openEdit(row)}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Xóa">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => {
-                      setDeleting(row);
-                      setOpenDelete(true);
-                    }}
-                  >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Box>
-          ))
-        )}
+        <div className={`vocab-sets-grid${loading ? " vocab-sets-grid--loading" : ""}`}>
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} variant="rounded" className="vocab-set-card--skeleton" />
+            ))
+          ) : rows.length === 0 ? (
+            <>
+              <div className="vocab-sets-empty">
+                Chưa có bộ từ vựng nào. Bấm &quot;Tạo bộ từ mới&quot; hoặc import từ file CSV trong form chỉnh sửa.
+              </div>
+              <VocabularySetCreateCard onClick={openCreate} />
+            </>
+          ) : (
+            <>
+              {rows.map((row) => (
+                <VocabularySetCard
+                  key={row.id}
+                  set={row}
+                  onEdit={(r) => void openEdit(r)}
+                  onDelete={(r) => {
+                    setDeleting(r);
+                    setOpenDelete(true);
+                  }}
+                  onGenerateMcq={(r) => void openGenerate(r)}
+                  onGenerateListen={(r) => void openGenerateListen(r)}
+                  onGenerateSpelling={(r) => void openGenerateSpelling(r)}
+                  onGenerateListenType={(r) => void openGenerateListenType(r)}
+                />
+              ))}
+              <VocabularySetCreateCard onClick={openCreate} />
+            </>
+          )}
+        </div>
 
         <Box className="admin-catalog-page__table-footer">
           <Typography variant="body2" className="admin-catalog-page__table-footer-total">
@@ -446,23 +432,38 @@ export function ManageVocabularySetsPage() {
           setOpenForm(false);
           resetForm();
         }}
-        maxWidth="md"
+        maxWidth={false}
         fullWidth
-        PaperProps={{ sx: muDialogPaper }}
+        PaperProps={{ className: "vocab-set-editor-dialog" }}
       >
-        <DialogTitle sx={{ fontWeight: 700, fontSize: 18 }}>
-          {editing ? "Sửa bộ từ vựng" : "Thêm bộ từ vựng"}
-        </DialogTitle>
-        <DialogContent>
+        <div className="vocab-set-editor-dialog__header">
+          <h2 className="vocab-set-editor-dialog__title">
+            <span className="vocab-set-editor-dialog__title-icon" aria-hidden>
+              ✨
+            </span>
+            {editing ? "Sửa bộ từ vựng" : "Thêm bộ từ vựng"}
+          </h2>
+          <IconButton
+            className="vocab-set-editor-dialog__close"
+            aria-label="Đóng"
+            onClick={() => {
+              setOpenForm(false);
+              resetForm();
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </div>
+        <DialogContent className="vocab-set-editor-dialog__body">
           <VocabularySetForm
             form={form}
             error={formError}
             onChange={setForm}
-            onImportClick={() => setOpenImport(true)}
+            onAiGenClick={() => setOpenAiGen(true)}
             onPickFromLibrary={() => setOpenPicker(true)}
           />
         </DialogContent>
-        <DialogActions sx={muDialogFooter}>
+        <DialogActions className="vocab-set-editor-dialog__footer">
           {editing?.id ? (
             <Button
               startIcon={<AutoAwesomeOutlinedIcon />}
@@ -488,10 +489,10 @@ export function ManageVocabularySetsPage() {
         </DialogActions>
       </Dialog>
 
-      <VocabularyImportDialog
-        open={openImport}
-        onClose={() => setOpenImport(false)}
-        onImported={(items) => setForm((prev) => ({ ...prev, items }))}
+      <VocabularyAiGenDialog
+        open={openAiGen}
+        onClose={() => setOpenAiGen(false)}
+        onGenerated={handleAiGenerated}
       />
 
       <VocabularyWordPicker
@@ -545,10 +546,11 @@ export function ManageVocabularySetsPage() {
       <ConfirmDialog
         open={openDelete}
         title="Xóa bộ từ vựng?"
-        message={`Xóa "${deleting?.title ?? ""}"? Hành động không thể hoàn tác.`}
-        confirmLabel="Xóa"
+        content={`Xóa "${deleting?.title ?? ""}"? Hành động không thể hoàn tác.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
         onConfirm={() => void deleteRow()}
-        onCancel={() => {
+        onClose={() => {
           setOpenDelete(false);
           setDeleting(null);
         }}

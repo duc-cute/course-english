@@ -16,6 +16,7 @@ public class ReqVocabularySetDTO {
     private String title;
 
     private String description;
+    private String coverImageUrl;
     private UUID subjectId;
     private VocabularySetStatusEnum status;
 

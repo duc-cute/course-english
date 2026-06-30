@@ -222,4 +222,89 @@ public class AiQuestionPromptAssembler {
     }
     return sb.toString().trim();
   }
+
+  /**
+   * Similar-exam section — reference structure only (answers redacted). Must produce NEW content.
+   */
+  public String buildSimilarExamSectionUserPrompt(
+      String referenceExcerpt,
+      int questionCount,
+      QuestionTypeEnum questionType,
+      int difficulty,
+      String promptLang,
+      int readingSubQuestionCount,
+      String sectionTitle,
+      String sectionInstruction) {
+    String typeName = questionType.name();
+    String readingNote = "";
+    String gapFillNote = "";
+    if (questionType == QuestionTypeEnum.READING_COMPREHENSION) {
+      int subs = Math.max(2, Math.min(12, readingSubQuestionCount));
+      if (questionCount > 1) {
+        readingNote =
+            """
+
+            READING_COMPREHENSION (similar exam):
+            - Generate exactly %d separate READING_COMPREHENSION items (passages).
+            - Each passage must be ENTIRELY NEW text — do NOT reuse sentences from the reference.
+            - Each item = one unique passage + exactly %d sub-questions.
+            - Match difficulty and style of the reference, not the wording.
+            """
+                .formatted(questionCount, subs);
+      } else {
+        readingNote =
+            """
+
+            READING_COMPREHENSION (similar exam):
+            - Generate exactly 1 NEW passage (different topic/text from reference) + %d sub-questions.
+            - Do NOT copy or paraphrase the reference passage verbatim.
+            """
+                .formatted(subs);
+      }
+    }
+    if (questionType == QuestionTypeEnum.GAP_FILL_MCQ) {
+      int blanks = Math.max(MIN_GAP_BLANKS, Math.min(MAX_GAP_BLANKS, readingSubQuestionCount));
+      gapFillNote =
+          """
+
+          GAP_FILL_MCQ (similar exam):
+          - Generate exactly 1 NEW cloze passage with %d blanks — different content from reference.
+          - Same blank count and MCQ-per-blank format as reference; new vocabulary/context.
+          """
+              .formatted(blanks);
+    }
+    StringBuilder sb =
+        new StringBuilder(
+            """
+            SIMILAR EXAM GENERATION — create a NEW section inspired by the reference below.
+
+            CRITICAL rules:
+            - Do NOT copy stems, passages, choices, or answers from the reference.
+            - Keep the SAME question type, item count, difficulty, and student-facing instruction style.
+            - For MCQ blocks (synonyms/antonyms/etc.), follow the section instruction strictly.
+            - Reference shows structure only — correct answers were removed.
+
+            Reference section (structure only):
+            ---
+            """
+                + referenceExcerpt
+                + """
+            ---
+
+            Generate exactly %d items of type %s.
+            Difficulty (1-5): %d
+            promptLang for stems: %s
+            %s%s
+            Return the full JSON envelope only.
+            """
+                    .formatted(questionCount, typeName, difficulty, promptLang, readingNote, gapFillNote));
+    if (sectionTitle != null && !sectionTitle.isBlank()) {
+      sb.append("\n\nExam section title: ").append(sectionTitle.trim());
+    }
+    if (sectionInstruction != null && !sectionInstruction.isBlank()) {
+      sb.append("\n\nSection instruction (show to students verbatim — follow strictly):\n");
+      sb.append(sectionInstruction.trim());
+    }
+    return sb.toString().trim();
+  }
 }

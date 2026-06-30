@@ -22,6 +22,7 @@ import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -179,6 +180,7 @@ public class VocabularySetServiceImpl implements VocabularySetService {
     private void applyFields(ReqVocabularySetDTO request, VocabularySet target) throws IdInvalidException {
         target.setTitle(request.getTitle().trim());
         target.setDescription(trimOrNull(request.getDescription()));
+        target.setCoverImageUrl(trimOrNull(request.getCoverImageUrl()));
         target.setStatus(request.getStatus() != null ? request.getStatus() : VocabularySetStatusEnum.DRAFT);
         target.setSubject(resolveSubject(request.getSubjectId()));
     }
@@ -225,7 +227,12 @@ public class VocabularySetServiceImpl implements VocabularySetService {
         }
         int order = 0;
         for (ReqVocabularyItemDTO item : items) {
-            VocabularyWord word = vocabularyWordService.findOrCreate(item.getWordEn(), item.getMeaningVi());
+            VocabularyWord word =
+                    vocabularyWordService.findOrCreateForSetItem(
+                            item.getWordEn(),
+                            item.getMeaningVi(),
+                            item.getPartOfSpeech(),
+                            item.getExampleSentence());
             VocabularySetMember member = new VocabularySetMember();
             member.setVocabularySet(set);
             member.setVocabularyWord(word);
@@ -258,6 +265,7 @@ public class VocabularySetServiceImpl implements VocabularySetService {
         dto.setId(set.getId());
         dto.setTitle(set.getTitle());
         dto.setDescription(set.getDescription());
+        dto.setCoverImageUrl(set.getCoverImageUrl());
         dto.setStatus(set.getStatus());
         dto.setCreatedAt(set.getCreatedAt());
         dto.setUpdatedAt(set.getUpdatedAt());
@@ -271,6 +279,9 @@ public class VocabularySetServiceImpl implements VocabularySetService {
         if (includeItems) {
             List<VocabularySetMember> members = memberRepository.findResolvedBySetId(set.getId());
             dto.setItems(members.stream().map(this::toItemDtoFromMember).collect(Collectors.toList()));
+        } else {
+            dto.setPreviewWords(memberRepository.findPreviewWordEnsBySetId(
+                    set.getId(), PageRequest.of(0, 3)));
         }
 
         return dto;
@@ -286,6 +297,7 @@ public class VocabularySetServiceImpl implements VocabularySetService {
         dto.setAudioUkUrl(word.getAudioUkUrl());
         dto.setAudioUsUrl(word.getAudioUsUrl());
         dto.setPartOfSpeech(word.getPartOfSpeech());
+        dto.setExampleSentence(word.getExampleSentence());
         dto.setImageAssetId(word.getImageAssetId());
         dto.setAudioAssetId(word.getAudioAssetId());
         dto.setDisplayOrder(member.getDisplayOrder());
@@ -312,6 +324,9 @@ public class VocabularySetServiceImpl implements VocabularySetService {
             if (word.getPartOfSpeech() != null && !word.getPartOfSpeech().isBlank()) {
                 row.put("partOfSpeech", word.getPartOfSpeech());
             }
+            if (word.getExampleSentence() != null && !word.getExampleSentence().isBlank()) {
+                row.put("exampleSentence", word.getExampleSentence());
+            }
             row.put("displayOrder", member.getDisplayOrder());
             resolved.add(row);
         }
@@ -333,4 +348,4 @@ public class VocabularySetServiceImpl implements VocabularySetService {
         return value.trim();
     }
 }
-
+

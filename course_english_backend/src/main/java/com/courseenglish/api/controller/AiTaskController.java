@@ -2,6 +2,7 @@ package com.courseenglish.api.controller;
 
 import com.courseenglish.api.domain.request.ReqCreateExamPaperGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
+import com.courseenglish.api.domain.request.ReqCreateVocabularySetGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqUpdateAiTaskDraftDTO;
 import com.courseenglish.api.domain.response.ResAiQuestionGenPromptPreviewDTO;
 import com.courseenglish.api.domain.response.ResAiTaskDTO;
@@ -46,6 +47,13 @@ public class AiTaskController {
   public ResponseEntity<ResCreateAiTaskDTO> createExamPaperGeneration(
       @Valid @RequestBody ReqCreateExamPaperGenTaskDTO request) throws IdInvalidException {
     return ResponseEntity.status(HttpStatus.ACCEPTED).body(aiTaskService.createExamPaperGenerationTask(request));
+  }
+
+  @PostMapping("/vocabulary-set-generation")
+  @ApiMessage("Create AI vocabulary set generation task")
+  public ResponseEntity<ResCreateAiTaskDTO> createVocabularySetGeneration(
+      @Valid @RequestBody ReqCreateVocabularySetGenTaskDTO request) throws IdInvalidException {
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(aiTaskService.createVocabularySetGenerationTask(request));
   }
 
   @PostMapping("/question-generation/prompt-preview")

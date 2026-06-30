@@ -14,10 +14,13 @@ public class ResVocabularySetDTO {
     private UUID id;
     private String title;
     private String description;
+    private String coverImageUrl;
     private UUID subjectId;
     private String subjectName;
     private VocabularySetStatusEnum status;
     private long itemCount;
+    /** First few word_en values for list/card preview (search only). */
+    private List<String> previewWords;
     private List<ResVocabularyItemDTO> items;
     private Instant createdAt;
     private Instant updatedAt;

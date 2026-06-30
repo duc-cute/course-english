@@ -24,6 +24,25 @@ public interface AiTaskRepository extends JpaRepository<AiTask, UUID> {
   long countByUserIdAndVoidedFalseAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
       UUID userId, Instant startInclusive, Instant endExclusive);
 
+  @Query(
+      value =
+          """
+      SELECT COUNT(*)
+      FROM ai_tasks t
+      WHERE t.task_type = :taskType
+        AND t.status = :status
+        AND t.voided = false
+        AND t.created_at >= :startInclusive
+        AND t.created_at < :endExclusive
+        AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(t.output_json, '$.coverImageUrl')), '') <> ''
+      """,
+      nativeQuery = true)
+  long countDoneTasksWithCoverImageByTypeAndCreatedAtBetween(
+      @Param("taskType") String taskType,
+      @Param("status") String status,
+      @Param("startInclusive") Instant startInclusive,
+      @Param("endExclusive") Instant endExclusive);
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       """

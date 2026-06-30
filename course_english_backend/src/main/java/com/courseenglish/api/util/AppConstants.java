@@ -19,4 +19,13 @@ public final class AppConstants {
     public static String wordExportLogoUrl = "";
     /** Watermark text trên file đề Word (có thể rỗng) */
     public static String wordExportWatermarkText = "";
+
+    // --- AI: Vocabulary set generation / cover image (loaded from system_configs) ---
+    public static String aiVocabSetGenModel = "openrouter/owl-alpha";
+    public static long aiVocabSetGenTimeoutSec = 120;
+
+    public static boolean aiVocabSetCoverImageEnabled = true;
+    public static String aiVocabSetCoverImageModel = "black-forest-labs/flux.2-max";
+    public static long aiVocabSetCoverImageTimeoutSec = 90;
+    public static long aiVocabSetCoverImageDailyLimit = 15;
 }

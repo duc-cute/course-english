@@ -19,7 +19,7 @@ export type AiTaskRecord = {
   id: string;
   status: AiTaskStatus;
   taskType?: string;
-  outputJson?: AiQuestionGenEnvelope | AiExamPaperGenEnvelope | null;
+  outputJson?: AiQuestionGenEnvelope | AiExamPaperGenEnvelope | AiVocabularySetGenEnvelope | null;
   errorMessage?: string;
   model?: string;
   progressMessage?: string | null;
@@ -88,6 +88,32 @@ export type CreateExamPaperGenTaskPayload = {
   readingSubQuestionCount?: number;
   difficulty?: number;
   promptLang?: string;
+};
+
+export type AiVocabularySetGenItem = {
+  wordEn: string;
+  meaningVi: string;
+  partOfSpeech?: string;
+  exampleSentence?: string;
+};
+
+export type AiVocabularySetGenEnvelope = {
+  schemaVersion?: number;
+  title: string;
+  description?: string;
+  coverImagePrompt?: string;
+  coverImageUrl?: string;
+  items: AiVocabularySetGenItem[];
+  meta?: { model?: string; summaryMessage?: string; itemCount?: number };
+};
+
+export type CreateVocabularySetGenTaskPayload = {
+  topicPrompt: string;
+  languageLevel?: string;
+  wordCount: number;
+  titleHint?: string;
+  additionalInstructions?: string;
+  generateCover?: boolean;
 };
 
 export type PromptBatchPreview = {
@@ -193,6 +219,14 @@ export async function apiCreateQuestionGenTask(payload: CreateQuestionGenTaskPay
 
 export async function apiCreateExamPaperGenTask(payload: CreateExamPaperGenTaskPayload) {
   const response = (await api.post("/ai/tasks/exam-paper-generation", payload)) as ApiResponse<{
+    taskId: string;
+    status: AiTaskStatus;
+  }>;
+  return unwrapEntity(response);
+}
+
+export async function apiCreateVocabularySetGenTask(payload: CreateVocabularySetGenTaskPayload) {
+  const response = (await api.post("/ai/tasks/vocabulary-set-generation", payload)) as ApiResponse<{
     taskId: string;
     status: AiTaskStatus;
   }>;

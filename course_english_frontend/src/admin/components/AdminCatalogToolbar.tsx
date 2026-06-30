@@ -19,8 +19,8 @@ type AdminCatalogToolbarProps = {
   onSearchInputChange: (value: string) => void;
   onSearch: () => void;
   onReset: () => void;
-  addLabel: string;
-  onAdd: () => void;
+  addLabel?: string;
+  onAdd?: () => void;
   importType?: CatalogImportType;
   onImported?: () => void;
   importAppearance?: "default" | "ghost";
@@ -91,17 +91,21 @@ export function AdminCatalogToolbar({
             <CatalogImportActions type={importType} inline appearance={importAppearance ?? (isSoft ? "ghost" : "default")} onImported={onImported} />
           </>
         ) : null}
-        <Box className="admin-catalog-toolbar__divider admin-catalog-toolbar__divider--before-add" sx={isSoft ? undefined : muToolbarDivider} />
-        <Button
-          variant="contained"
-          size="small"
-          className={isSoft ? "admin-catalog-toolbar__btn admin-catalog-toolbar__btn--add" : undefined}
-          sx={isSoft ? undefined : muBtnSmPrimary}
-          startIcon={<AddIcon sx={{ fontSize: 15 }} />}
-          onClick={onAdd}
-        >
-          {addLabel}
-        </Button>
+        {onAdd && addLabel ? (
+          <>
+            <Box className="admin-catalog-toolbar__divider admin-catalog-toolbar__divider--before-add" sx={isSoft ? undefined : muToolbarDivider} />
+            <Button
+              variant="contained"
+              size="small"
+              className={isSoft ? "admin-catalog-toolbar__btn admin-catalog-toolbar__btn--add" : undefined}
+              sx={isSoft ? undefined : muBtnSmPrimary}
+              startIcon={<AddIcon sx={{ fontSize: 15 }} />}
+              onClick={onAdd}
+            >
+              {addLabel}
+            </Button>
+          </>
+        ) : null}
       </Box>
     </Box>
   );

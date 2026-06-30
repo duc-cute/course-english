@@ -27,17 +27,14 @@ public class AiTaskProgressReporter {
     this.requiresNewTx.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
   }
 
+  /** Throttled progress (stream chunks, batch hints). Never lowers percent or overwrites a higher milestone. */
   public void report(UUID taskId, String message, Integer percent) {
-    if (taskId == null || message == null || message.isBlank()) {
-      return;
-    }
-    long now = System.currentTimeMillis();
-    Long last = lastWriteMs.get(taskId);
-    if (last != null && now - last < MIN_INTERVAL_MS) {
-      return;
-    }
-    lastWriteMs.put(taskId, now);
-    persist(taskId, message, percent);
+    reportInternal(taskId, message, percent, false);
+  }
+
+  /** Section boundaries and other milestones — always persisted, bypasses throttle. */
+  public void reportMilestone(UUID taskId, String message, Integer percent) {
+    reportInternal(taskId, message, percent, true);
   }
 
   /** Rough output size for a medium batch — used to scale stream % instead of jumping to cap. */
@@ -59,19 +56,74 @@ public class AiTaskProgressReporter {
       return;
     }
     lastWriteMs.remove(taskId);
-    persist(taskId, null, null);
+    requiresNewTx.executeWithoutResult(
+        status -> {
+          AiTask task = aiTaskRepository.findById(taskId).orElse(null);
+          if (task == null) {
+            return;
+          }
+          task.setProgressMessage(null);
+          task.setProgressPercent(null);
+          aiTaskRepository.save(task);
+        });
   }
 
-  private void persist(UUID taskId, String message, Integer percent) {
-    requiresNewTx.executeWithoutResult(status -> {
-      AiTask task = aiTaskRepository.findById(taskId).orElse(null);
-      if (task == null || task.getStatus() != AiTaskStatusEnum.PROCESSING) {
+  private void reportInternal(UUID taskId, String message, Integer percent, boolean milestone) {
+    if (taskId == null || message == null || message.isBlank()) {
+      return;
+    }
+    if (!milestone) {
+      long now = System.currentTimeMillis();
+      Long last = lastWriteMs.get(taskId);
+      if (last != null && now - last < MIN_INTERVAL_MS) {
         return;
       }
-      task.setProgressMessage(message);
-      task.setProgressPercent(percent);
-      aiTaskRepository.save(task);
-    });
+      lastWriteMs.put(taskId, now);
+    } else {
+      lastWriteMs.put(taskId, System.currentTimeMillis());
+    }
+    persistProgress(taskId, message, percent, milestone);
+  }
+
+  private void persistProgress(UUID taskId, String message, Integer percent, boolean milestone) {
+    requiresNewTx.executeWithoutResult(
+        status -> {
+          AiTask task = aiTaskRepository.findById(taskId).orElse(null);
+          if (task == null || task.getStatus() != AiTaskStatusEnum.PROCESSING) {
+            return;
+          }
+          int current = task.getProgressPercent() != null ? task.getProgressPercent() : 0;
+          int next = percent != null ? clampPercent(percent) : current;
+
+          if (!milestone && next < current) {
+            return;
+          }
+          next = Math.max(current, next);
+
+          task.setProgressMessage(message);
+          task.setProgressPercent(next);
+          aiTaskRepository.save(task);
+        });
+  }
+
+  static int clampPercent(int percent) {
+    return Math.min(100, Math.max(0, percent));
+  }
+
+  /**
+   * Resolves stored percent for tests and persist logic.
+   *
+   * @return -1 when a non-milestone update should be skipped (would regress)
+   */
+  static int resolveNextPercent(int current, Integer proposed, boolean milestone) {
+    if (proposed == null) {
+      return current;
+    }
+    int next = clampPercent(proposed);
+    if (!milestone && next < current) {
+      return -1;
+    }
+    return Math.max(current, next);
   }
 
   private static String formatThousands(int value) {

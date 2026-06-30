@@ -29,6 +29,12 @@ public interface VocabularyWordService {
 
     VocabularyWord findOrCreate(String wordEn, String meaningVi) throws IdInvalidException;
 
+    VocabularyWord findOrCreateForSetItem(
+            String wordEn,
+            String meaningVi,
+            String partOfSpeech,
+            String exampleSentence) throws IdInvalidException;
+
     int enrichBatch(List<UUID> wordIds, boolean force);
 
     ResVocabularyWordDTO toDto(VocabularyWord word);

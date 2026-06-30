@@ -5,6 +5,7 @@ import com.courseenglish.api.domain.AiTask;
 import com.courseenglish.api.domain.request.ExamSectionGenSpecDTO;
 import com.courseenglish.api.domain.request.ReqCreateExamPaperGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
+import com.courseenglish.api.domain.request.ReqCreateVocabularySetGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqUpdateAiTaskDraftDTO;
 import com.courseenglish.api.domain.response.ResAiTaskHistoryItemDTO;
 import com.courseenglish.api.domain.response.ResAiTaskDTO;
@@ -62,6 +63,9 @@ public class AiTaskCommandService {
 
   @Value("${app.ai.max-questions-per-task:50}")
   private int maxQuestionsPerTask;
+
+  @Value("${app.ai.max-words-per-vocab-gen-task:50}")
+  private int maxWordsPerVocabGenTask;
 
   @Value("${app.ai.daily-gen-task-limit:5}")
   private int dailyGenTaskLimit;
@@ -237,13 +241,15 @@ public class AiTaskCommandService {
                 ActivityLogSeverityEnum.INFO,
                 ActivityLogModuleEnum.AI,
                 ActivityLogActionEnum.AI_GEN_TASK_CREATED,
-                "Đã tạo tác vụ sinh đề thi AI")
+                similarTaskMessage(request))
             .userId(userId)
             .ref("AI_TASK", task.getId())
             .put("taskId", task.getId())
             .put("documentId", document.getId())
             .put("sectionCount", specs.size())
-            .put("totalQuestions", totalQuestions));
+            .put("totalQuestions", totalQuestions)
+            .put("generationMode", request.getGenerationMode())
+            .put("sourceExamPaperId", request.getSourceExamPaperId()));
 
     scheduleProcessAfterCommit(task.getId());
 
@@ -253,12 +259,83 @@ public class AiTaskCommandService {
     return dto;
   }
 
+  @Transactional
+  public ResCreateAiTaskDTO createVocabularySetGenerationTask(ReqCreateVocabularySetGenTaskDTO request)
+      throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+    UUID userId = aiAccessSupport.currentUserId();
+
+    enforceDailyGenQuota(userId);
+
+    if (request.getTopicPrompt() == null || request.getTopicPrompt().isBlank()) {
+      throw new IdInvalidException("Chủ đề / mô tả bộ từ không được để trống");
+    }
+
+    int wordCount = request.getWordCount();
+    if (wordCount < 5 || wordCount > maxWordsPerVocabGenTask) {
+      throw new IdInvalidException("Số từ từ 5 đến " + maxWordsPerVocabGenTask);
+    }
+
+    AiDocument document =
+        aiDocumentService.createTopicBriefDocument(
+            userId,
+            request.getTopicPrompt().trim(),
+            null,
+            request.getLanguageLevel(),
+            request.getAdditionalInstructions());
+
+    AiTask task = new AiTask();
+    task.setUserId(userId);
+    task.setDocumentId(document.getId());
+    task.setTaskType(AiTaskTypeEnum.VOCABULARY_SET_GENERATION);
+    task.setStatus(AiTaskStatusEnum.PENDING);
+    task.setInputJson(serializeVocabularySetInput(request));
+    aiTaskRepository.save(task);
+
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_GEN_TASK_CREATED,
+                "Đã tạo tác vụ sinh bộ từ vựng AI")
+            .userId(userId)
+            .ref("AI_TASK", task.getId())
+            .put("taskId", task.getId())
+            .put("documentId", document.getId())
+            .put("wordCount", wordCount)
+            .put("languageLevel", request.getLanguageLevel()));
+
+    scheduleProcessAfterCommit(task.getId());
+
+    ResCreateAiTaskDTO dto = new ResCreateAiTaskDTO();
+    dto.setTaskId(task.getId());
+    dto.setStatus(task.getStatus());
+    return dto;
+  }
+
+  private String serializeVocabularySetInput(ReqCreateVocabularySetGenTaskDTO request)
+      throws IdInvalidException {
+    try {
+      return objectMapper.writeValueAsString(request);
+    } catch (JsonProcessingException e) {
+      throw new IdInvalidException("Không lưu được cấu hình tác vụ");
+    }
+  }
+
   private String serializeExamPaperInput(ReqCreateExamPaperGenTaskDTO request) throws IdInvalidException {
     try {
       return objectMapper.writeValueAsString(request);
     } catch (JsonProcessingException e) {
       throw new IdInvalidException("Không lưu được cấu hình tác vụ");
     }
+  }
+
+  private static String similarTaskMessage(ReqCreateExamPaperGenTaskDTO request) {
+    if (ExamPaperSimilarGenService.GENERATION_MODE_SIMILAR.equalsIgnoreCase(request.getGenerationMode())) {
+      return "Đã tạo tác vụ sinh đề tương tự (AI)";
+    }
+    return "Đã tạo tác vụ sinh đề thi AI";
   }
 
   private record ResolvedGenConfig(

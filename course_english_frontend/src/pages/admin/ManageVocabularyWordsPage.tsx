@@ -1,29 +1,25 @@
 import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import {
   Alert,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
+  Skeleton,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  AdminCatalogGridTable,
-  AdminCatalogPageHeader,
-  AdminCatalogToolbar,
-  type CatalogGridColumn,
-} from "../../admin/components";
+import { AdminCatalogPageHeader, AdminCatalogToolbar } from "../../admin/components";
 import { VocabularyAudioPreview } from "../../admin/components/vocabulary/VocabularyAudioPreview";
+import {
+  VocabularyWordCard,
+  VocabularyWordCreateCard,
+} from "../../admin/components/vocabulary/VocabularyWordCard";
 import {
   muBtnSmOutlined,
   muDialogFooter,
@@ -44,14 +40,10 @@ import {
 import type { ApiResponse } from "../../shared/api/types";
 import { paths } from "../../shared/constants/paths";
 
-function hasAudio(row: VocabularyWordRecord) {
-  return Boolean(row.audioUkUrl?.trim() || row.audioUsUrl?.trim());
-}
-
 export function ManageVocabularyWordsPage() {
   const [rows, setRows] = useState<VocabularyWordRecord[]>([]);
   const [page, setPage] = useState(0);
-  const [size] = useState(20);
+  const [size] = useState(23);
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState("");
   const [searchText, setSearchText] = useState("");
@@ -182,77 +174,15 @@ export function ManageVocabularyWordsPage() {
     }
   };
 
-  const vocabularyColumns = useMemo<CatalogGridColumn<VocabularyWordRecord>[]>(
-    () => [
-      {
-        key: "stt",
-        header: "#",
-        width: "48px",
-        mobileRole: "hidden",
-        className: "catalog-table-muted",
-        render: (_row, index) => page * size + index + 1,
-      },
-      {
-        key: "wordEn",
-        header: "Từ (EN)",
-        width: "minmax(120px, 1fr)",
-        mobileRole: "title",
-        render: (row) => row.wordEn,
-      },
-      {
-        key: "meaningVi",
-        header: "Nghĩa (VI)",
-        width: "minmax(140px, 1.2fr)",
-        mobileRole: "meta",
-        className: "catalog-table-muted",
-        render: (row) => row.meaningVi ?? "—",
-      },
-      {
-        key: "phonetic",
-        header: "IPA",
-        width: "120px",
-        mobileRole: "meta",
-        className: "catalog-table-muted",
-        render: (row) => row.phonetic ?? "—",
-      },
-      {
-        key: "audio",
-        header: "Audio",
-        width: "72px",
-        mobileRole: "inline",
-        render: (row) =>
-          hasAudio(row) ? (
-            <VocabularyAudioPreview audioUkUrl={row.audioUkUrl} audioUsUrl={row.audioUsUrl} compact />
-          ) : (
-            <Chip size="small" label="—" variant="outlined" sx={{ height: 20, fontSize: 10 }} />
-          ),
-      },
-      {
-        key: "actions",
-        header: "Thao tác",
-        width: "56px",
-        align: "center",
-        mobileRole: "actions",
-        render: (row) => (
-          <Tooltip title="Chi tiết / Enrich">
-            <IconButton size="small" color="primary" onClick={() => void openDetail(row)}>
-              <EditOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        ),
-      },
-    ],
-    [page, size],
-  );
-
   return (
-    <Box className="admin-catalog-page">
+    <Box className="admin-catalog-page admin-catalog-page--vocab-words">
       <AdminCatalogPageHeader
         title="Thư viện từ vựng"
         subtitle={
           <>
-            Mỗi từ chỉ lưu một lần (IPA + audio UK/US). Dùng trong{" "}
-            <Link to={`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_SETS}`}>Bộ từ vựng</Link> qua &quot;Chọn từ thư viện&quot;.
+            Mỗi từ chỉ lưu một lần — hệ thống tự enrich IPA và audio UK/US. Dùng trong{" "}
+            <Link to={`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_SETS}`}>Bộ từ vựng</Link> qua &quot;Chọn từ thư
+            viện&quot;.
           </>
         }
         icon={<MenuBookOutlinedIcon />}
@@ -260,7 +190,7 @@ export function ManageVocabularyWordsPage() {
 
       <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
         <AdminCatalogToolbar
-          searchPlaceholder="Tìm word_en, nghĩa..."
+          searchPlaceholder="Tìm từ tiếng Anh, nghĩa tiếng Việt..."
           searchInput={searchInput}
           onSearchInputChange={setSearchInput}
           onSearch={() => {
@@ -285,13 +215,32 @@ export function ManageVocabularyWordsPage() {
       ) : null}
 
       <Box className="admin-catalog-page__table-card">
-        <AdminCatalogGridTable
-          columns={vocabularyColumns}
-          rows={rows}
-          loading={loading}
-          emptyText="Chưa có từ trong thư viện. Thêm từ hoặc lưu bộ từ vựng để tự enrich."
-          getRowKey={(row) => row.id ?? row.wordEn}
-        />
+        <div className={`vocab-words-grid${loading ? " vocab-words-grid--loading" : ""}`}>
+          {loading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} variant="rounded" className="vocab-word-card--skeleton" />
+            ))
+          ) : rows.length === 0 ? (
+            <>
+              <div className="vocab-words-empty">
+                Chưa có từ trong thư viện. Bấm &quot;Thêm từ mới&quot; hoặc lưu bộ từ vựng để hệ thống tự enrich.
+              </div>
+              <VocabularyWordCreateCard onClick={openCreate} />
+            </>
+          ) : (
+            <>
+              {rows.map((row) => (
+                <VocabularyWordCard
+                  key={row.id ?? row.wordEn}
+                  word={row}
+                  onOpen={(w) => void openDetail(w)}
+                />
+              ))}
+              <VocabularyWordCreateCard onClick={openCreate} />
+            </>
+          )}
+        </div>
+
         <Box className="admin-catalog-page__table-footer">
           <Typography variant="body2" className="admin-catalog-page__table-footer-total">
             Tổng {total} từ

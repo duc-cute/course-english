@@ -2,6 +2,7 @@ package com.courseenglish.api.service;
 
 import com.courseenglish.api.domain.request.ReqCreateExamPaperGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
+import com.courseenglish.api.domain.request.ReqCreateVocabularySetGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqUpdateAiTaskDraftDTO;
 import com.courseenglish.api.domain.response.ResAiQuestionGenPromptPreviewDTO;
 import com.courseenglish.api.domain.response.ResAiTaskDTO;
@@ -35,6 +36,11 @@ public class AiTaskService {
   public ResCreateAiTaskDTO createExamPaperGenerationTask(ReqCreateExamPaperGenTaskDTO request)
       throws IdInvalidException {
     return aiTaskCommandService.createExamPaperGenerationTask(request);
+  }
+
+  public ResCreateAiTaskDTO createVocabularySetGenerationTask(ReqCreateVocabularySetGenTaskDTO request)
+      throws IdInvalidException {
+    return aiTaskCommandService.createVocabularySetGenerationTask(request);
   }
 
   public ResAiQuestionGenPromptPreviewDTO previewQuestionGenPrompt(ReqCreateQuestionGenTaskDTO request)

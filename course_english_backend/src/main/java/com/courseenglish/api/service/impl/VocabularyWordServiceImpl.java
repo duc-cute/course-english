@@ -108,20 +108,47 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
     @Override
     @Transactional
     public VocabularyWord findOrCreate(String wordEn, String meaningVi) throws IdInvalidException {
+        return findOrCreateForSetItem(wordEn, meaningVi, null, null);
+    }
+
+    @Override
+    @Transactional
+    public VocabularyWord findOrCreateForSetItem(
+            String wordEn,
+            String meaningVi,
+            String partOfSpeech,
+            String exampleSentence) throws IdInvalidException {
         validateWordInput(wordEn, meaningVi);
 
         String wordKey = VocabularyWordKeyUtil.toWordKey(wordEn);
         Optional<VocabularyWord> existing = wordRepository.findByWordKeyAndVoidedFalse(wordKey);
         if (existing.isPresent()) {
-            return existing.get();
+            VocabularyWord word = existing.get();
+            applyNullableWordExtras(word, partOfSpeech, exampleSentence);
+            return wordRepository.save(word);
         }
 
         VocabularyWord word = new VocabularyWord();
         word.setWordKey(wordKey);
         word.setWordEn(VocabularyWordKeyUtil.normalizeWordEn(wordEn));
         word.setMeaningVi(meaningVi.trim());
+        applyNullableWordExtras(word, partOfSpeech, exampleSentence);
         VocabularyWord saved = wordRepository.save(word);
         return enrichWord(saved, false);
+    }
+
+    private void applyNullableWordExtras(
+            VocabularyWord word, String partOfSpeech, String exampleSentence) {
+        if (isBlank(word.getPartOfSpeech()) && !isBlank(partOfSpeech)) {
+            word.setPartOfSpeech(partOfSpeech.trim());
+        }
+        if (isBlank(word.getExampleSentence()) && !isBlank(exampleSentence)) {
+            word.setExampleSentence(exampleSentence.trim());
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     @Override
@@ -190,7 +217,8 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
         if (data.getAudioUsUrl() != null && !data.getAudioUsUrl().isBlank()) {
             word.setAudioUsUrl(data.getAudioUsUrl().trim());
         }
-        if (data.getPartOfSpeech() != null && !data.getPartOfSpeech().isBlank()) {
+        if (data.getPartOfSpeech() != null && !data.getPartOfSpeech().isBlank()
+            && isBlank(word.getPartOfSpeech())) {
             word.setPartOfSpeech(data.getPartOfSpeech().trim());
         }
         if (data.getEnrichSource() != null && !data.getEnrichSource().isBlank()) {

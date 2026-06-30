@@ -408,6 +408,141 @@ public class OpenRouterClient {
         void onComplete(ChatResult result) throws IOException;
     }
 
+    /**
+     * Image generation via OpenRouter unified Image API (POST /api/v1/images).
+     * Returns a temporary URL or base64 payload from the provider.
+     */
+    public ImageGenResult generateImage(String model, String prompt, long timeoutSec) throws IdInvalidException {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IdInvalidException("AI chưa được cấu hình OPENROUTER_API_KEY");
+        }
+        if (prompt == null || prompt.isBlank()) {
+            throw new IdInvalidException("Thiếu prompt ảnh");
+        }
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("model", model);
+        payload.put("prompt", prompt.trim());
+        payload.put("n", 1);
+        payload.put("aspect_ratio", "1:1");
+        payload.put("output_format", "png");
+
+        String requestBody;
+        try {
+            requestBody = objectMapper.writeValueAsString(payload);
+        } catch (IOException e) {
+            throw new IdInvalidException("Không thể tạo request sinh ảnh");
+        }
+
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(URI.create(baseUrl + "/images"))
+                        .timeout(Duration.ofSeconds(timeoutSec))
+                        .header("Authorization", "Bearer " + apiKey)
+                        .header("HTTP-Referer", httpReferer)
+                        .header("X-Title", xTitle)
+                        .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                        .build();
+
+        if (logRequests) {
+            log.info(
+                    "[OpenRouter][Image] >>> model={} timeoutSec={} promptLength={} endpoint={}/images",
+                    model,
+                    timeoutSec,
+                    prompt.trim().length(),
+                    baseUrl);
+            log.debug("[OpenRouter][Image] >>> prompt={}", prompt);
+            log.debug("[OpenRouter][Image] >>> requestBody={}", requestBody);
+        }
+
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IdInvalidException("Kết nối sinh ảnh bị gián đoạn");
+        } catch (IOException e) {
+            throw new IdInvalidException("Không gọi được OpenRouter sinh ảnh");
+        }
+
+        if (response.statusCode() >= 400) {
+            String body = response.body();
+            if (logRequests) {
+                log.error(
+                        "[OpenRouter][Image] HTTP {} model={} responseBody={}",
+                        response.statusCode(),
+                        model,
+                        body);
+            }
+            throw new IdInvalidException(
+                    "OpenRouter sinh ảnh lỗi: HTTP "
+                            + response.statusCode()
+                            + " - "
+                            + compactForError(body));
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode data0 = root.path("data").path(0);
+            String url = data0.path("url").asText(null);
+            String b64 = data0.path("b64_json").asText(null);
+            if ((url == null || url.isBlank()) && (b64 == null || b64.isBlank())) {
+                throw new IdInvalidException("AI không trả ảnh hợp lệ");
+            }
+            ImageGenResult result = new ImageGenResult();
+            result.setUrl(url);
+            result.setB64Json(b64);
+            if (logRequests) {
+                log.info(
+                        "[OpenRouter][Image] <<< model={} hasUrl={} hasB64={}",
+                        model,
+                        url != null && !url.isBlank(),
+                        b64 != null && !b64.isBlank());
+            }
+            return result;
+        } catch (IdInvalidException e) {
+            throw e;
+        } catch (Exception e) {
+            if (logRequests) {
+                log.error("[OpenRouter][Image] parse response failed model={} body={}", model, response.body(), e);
+            }
+            throw new IdInvalidException("Không parse được phản hồi sinh ảnh");
+        }
+    }
+
+    private String compactForError(String text) {
+        if (text == null || text.isBlank()) {
+            return "empty error body";
+        }
+        String oneLine = text.replace('\n', ' ').replace('\r', ' ').trim();
+        if (oneLine.length() <= 240) {
+            return oneLine;
+        }
+        return oneLine.substring(0, 240) + "...";
+    }
+
+    public static class ImageGenResult {
+        private String url;
+        private String b64Json;
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getB64Json() {
+            return b64Json;
+        }
+
+        public void setB64Json(String b64Json) {
+            this.b64Json = b64Json;
+        }
+    }
+
     private void logOpenRouterRequest(String model, List<Map<String, String>> messages, String requestBody) {
         log.info("[OpenRouter] >>> REQUEST model={} messageCount={}", model, messages.size());
         for (int i = 0; i < messages.size(); i++) {

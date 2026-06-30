@@ -17,6 +17,9 @@ export function VocabWordList({ items }: VocabWordListProps) {
         <li key={item.id ?? `${item.wordEn}-${index}`} className="vq-vocab-word-list__item">
           <div className="vq-vocab-word-list__head">
             <span className="vq-vocab-word-list__en">{item.wordEn}</span>
+            {item.partOfSpeech ? (
+              <span className="vq-vocab-word-list__pos">{item.partOfSpeech}</span>
+            ) : null}
             {item.phonetic ? <span className="vq-vocab-word-list__phonetic">{item.phonetic}</span> : null}
             {audioEnabled ? (
               <VocabularyAudioButtons
@@ -27,6 +30,9 @@ export function VocabWordList({ items }: VocabWordListProps) {
             ) : null}
           </div>
           <p className="vq-vocab-word-list__vi">{item.meaningVi}</p>
+          {item.exampleSentence?.trim() ? (
+            <p className="vq-vocab-word-list__example">{item.exampleSentence}</p>
+          ) : null}
         </li>
       ))}
     </ul>

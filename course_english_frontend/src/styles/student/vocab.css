@@ -49,6 +49,21 @@
   color: var(--vq-primary);
 }
 
+.vq-vocab-card__cover {
+  width: 52px;
+  height: 52px;
+  border-radius: calc(var(--vq-radius) - 6px);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.vq-vocab-card__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .vq-vocab-card__title {
   margin: 0;
   font-family: var(--vq-font-display);
@@ -271,10 +286,27 @@
   color: var(--vq-on-surface-variant);
 }
 
+.vq-vocab-word-list__pos {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: lowercase;
+  color: var(--vq-primary);
+  background: rgba(45, 75, 215, 0.1);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
 .vq-vocab-word-list__vi {
   margin: 6px 0 0;
   font-size: 0.9375rem;
   color: var(--vq-on-surface);
+}
+
+.vq-vocab-word-list__example {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--vq-on-surface-variant);
 }
 
 @media (max-width: 640px) {

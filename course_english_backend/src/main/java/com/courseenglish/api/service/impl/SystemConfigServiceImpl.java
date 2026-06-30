@@ -182,6 +182,25 @@ public class SystemConfigServiceImpl implements SystemConfigService {
                 findValue(all, SystemConfigKeyEnum.WORD_EXPORT_LOGO_URL.getKey()));
         AppConstants.wordExportWatermarkText = trimToEmpty(
                 findValue(all, SystemConfigKeyEnum.WORD_EXPORT_WATERMARK_TEXT.getKey()));
+
+        // --- AI vocab set ---
+        AppConstants.aiVocabSetGenModel = trimToEmpty(
+                findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_GEN_MODEL.getKey()));
+        AppConstants.aiVocabSetGenTimeoutSec = readLong(
+                findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_GEN_TIMEOUT_SEC.getKey()),
+                120);
+
+        AppConstants.aiVocabSetCoverImageEnabled = readBoolean(
+                findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_ENABLED.getKey()),
+                true);
+        AppConstants.aiVocabSetCoverImageModel = trimToEmpty(
+                findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_MODEL.getKey()));
+        AppConstants.aiVocabSetCoverImageTimeoutSec = readLong(
+                findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_TIMEOUT_SEC.getKey()),
+                90);
+        AppConstants.aiVocabSetCoverImageDailyLimit = readLong(
+                findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_DAILY_LIMIT.getKey()),
+                15);
     }
 
     private String findValue(List<SystemConfig> all, String key) {
@@ -202,6 +221,17 @@ public class SystemConfigServiceImpl implements SystemConfigService {
 
     private static String trimToEmpty(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private static long readLong(String value, long defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 
     private ResSystemConfigDTO toDto(SystemConfig entity) {

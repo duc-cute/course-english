@@ -19,6 +19,7 @@ export type ResolvedVocabularyItem = {
   audioUkUrl?: string;
   audioUsUrl?: string;
   partOfSpeech?: string;
+  exampleSentence?: string;
   displayOrder?: number;
 };
 
@@ -83,6 +84,7 @@ export function parseResolvedVocabularyItems(json?: string): ResolvedVocabularyI
         audioUkUrl: typeof row.audioUkUrl === "string" ? row.audioUkUrl : undefined,
         audioUsUrl: typeof row.audioUsUrl === "string" ? row.audioUsUrl : undefined,
         partOfSpeech: typeof row.partOfSpeech === "string" ? row.partOfSpeech : undefined,
+        exampleSentence: typeof row.exampleSentence === "string" ? row.exampleSentence : undefined,
         displayOrder: typeof row.displayOrder === "number" ? row.displayOrder : undefined,
       }))
       .filter((item) => item.wordEn && item.meaningVi);

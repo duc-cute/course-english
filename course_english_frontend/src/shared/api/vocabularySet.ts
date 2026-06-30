@@ -11,6 +11,7 @@ export type VocabularyItemRecord = {
   audioUkUrl?: string;
   audioUsUrl?: string;
   partOfSpeech?: string;
+  exampleSentence?: string;
   imageAssetId?: string;
   audioAssetId?: string;
   displayOrder?: number;
@@ -20,10 +21,13 @@ export type VocabularySetRecord = {
   id: string;
   title: string;
   description?: string;
+  coverImageUrl?: string;
   subjectId?: string;
   subjectName?: string;
   status: VocabularySetStatus;
   itemCount?: number;
+  /** First few words for card preview (search list). */
+  previewWords?: string[];
   items?: VocabularyItemRecord[];
   createdAt?: string;
   updatedAt?: string;
@@ -42,12 +46,15 @@ export type VocabularySetsPaginationResult = {
 export type VocabularySetFormPayload = {
   title: string;
   description?: string;
+  coverImageUrl?: string;
   subjectId?: string;
   status?: VocabularySetStatus;
   items: Array<{
     wordEn: string;
     meaningVi: string;
     phonetic?: string;
+    partOfSpeech?: string;
+    exampleSentence?: string;
     displayOrder?: number;
   }>;
 };

@@ -203,17 +203,54 @@ public class AiQuestionGenerationService {
       String sectionInstruction,
       ExamSectionLogInfo sectionLog)
       throws IdInvalidException {
-    String system = promptAssembler.buildSystemPromptForType(type, false);
+    return generateExamSection(
+        documentExcerpt,
+        type,
+        questionCount,
+        difficulty,
+        promptLang,
+        trace,
+        readingSubQuestionCount,
+        sectionTitle,
+        sectionInstruction,
+        sectionLog,
+        false);
+  }
+
+  public GenerationResult generateExamSection(
+      String documentExcerpt,
+      QuestionTypeEnum type,
+      int questionCount,
+      int difficulty,
+      String promptLang,
+      AiGenTraceContext trace,
+      int readingSubQuestionCount,
+      String sectionTitle,
+      String sectionInstruction,
+      ExamSectionLogInfo sectionLog,
+      boolean similarFromReference)
+      throws IdInvalidException {
+    String system = promptAssembler.buildSystemPromptForType(type, similarFromReference);
     String user =
-        promptAssembler.buildExamSectionUserPrompt(
-            documentExcerpt,
-            questionCount,
-            type,
-            difficulty,
-            promptLang,
-            readingSubQuestionCount,
-            sectionTitle,
-            sectionInstruction);
+        similarFromReference
+            ? promptAssembler.buildSimilarExamSectionUserPrompt(
+                documentExcerpt,
+                questionCount,
+                type,
+                difficulty,
+                promptLang,
+                readingSubQuestionCount,
+                sectionTitle,
+                sectionInstruction)
+            : promptAssembler.buildExamSectionUserPrompt(
+                documentExcerpt,
+                questionCount,
+                type,
+                difficulty,
+                promptLang,
+                readingSubQuestionCount,
+                sectionTitle,
+                sectionInstruction);
 
     List<Map<String, String>> messages =
         List.of(
@@ -221,9 +258,22 @@ public class AiQuestionGenerationService {
             Map.of("role", "user", "content", user));
 
     if (sectionLog != null) {
-      logExamSectionPrompt(trace, sectionLog, system, user, documentExcerpt.length());
+      logExamSectionPrompt(
+          trace,
+          sectionLog,
+          system,
+          user,
+          documentExcerpt.length(),
+          similarFromReference ? "exam_section_similar" : "exam_section");
     } else {
-      logPromptAssembled(trace, documentExcerpt, system, user, questionCount, List.of(type), "exam_section");
+      logPromptAssembled(
+          trace,
+          documentExcerpt,
+          system,
+          user,
+          questionCount,
+          List.of(type),
+          similarFromReference ? "exam_section_similar" : "exam_section");
     }
 
     OpenRouterClient.ChatResult chatResult = callWithJsonRetry(messages, trace, streamEnabled);
@@ -806,7 +856,8 @@ public class AiQuestionGenerationService {
       ExamSectionLogInfo section,
       String system,
       String user,
-      int documentChars) {
+      int documentChars,
+      String generationMode) {
     if (trace == null) {
       return;
     }
@@ -842,7 +893,7 @@ public class AiQuestionGenerationService {
             .put("documentId", trace.getDocumentId())
             .put("documentSource", trace.getDocumentSource())
             .put("step", "exam_section_prompt")
-            .put("generationMode", "exam_section")
+            .put("generationMode", generationMode != null ? generationMode : "exam_section")
             .put("sectionIndex", section.sectionIndex())
             .put("sectionTotal", section.sectionTotal())
             .put("sectionTitle", section.sectionTitle())

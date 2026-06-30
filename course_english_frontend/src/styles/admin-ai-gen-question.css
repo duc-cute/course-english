@@ -54,8 +54,9 @@
   box-sizing: border-box;
 }
 
-/* Exam paper AI dialog — full-bleed processing + fun facts with mascot */
-.ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper {
+/* Exam paper AI + similar exam — full-bleed processing + fun facts with mascot */
+.ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper,
+.ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar {
   margin-left: -20px;
   margin-right: -20px;
   width: calc(100% + 40px);
@@ -63,7 +64,8 @@
   box-sizing: border-box;
 }
 
-.ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper .ai-gen-funfacts {
+.ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper .ai-gen-funfacts,
+.ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar .ai-gen-funfacts {
   margin-left: -120px;
   margin-right: -120px;
   width: calc(100% + 240px);
@@ -973,7 +975,8 @@
     padding-right: 10px;
   }
 
-  .ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper {
+  .ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper,
+  .ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar {
     margin-left: -12px;
     margin-right: -12px;
     width: calc(100% + 24px);
@@ -981,7 +984,8 @@
     padding: 12px 4px 8px;
   }
 
-  .ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper .ai-gen-funfacts {
+  .ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper .ai-gen-funfacts,
+  .ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar .ai-gen-funfacts {
     margin-left: 0;
     margin-right: 0;
     width: 100%;

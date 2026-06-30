@@ -25,6 +25,9 @@ public class VocabularySet extends BaseObject {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "cover_image_url", length = 1024)
+    private String coverImageUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")
     private Subject subject;

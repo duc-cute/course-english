@@ -1,0 +1,291 @@
+/* Admin — vocabulary words library card grid */
+
+.admin-catalog-page--vocab-words .admin-catalog-page__filter-card {
+  border-radius: 16px;
+  padding: 8px 12px;
+}
+
+.admin-catalog-page--vocab-words .admin-catalog-page__table-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.admin-catalog-page--vocab-words .admin-catalog-page__table-footer {
+  margin-top: 8px;
+  padding: 12px 4px 0;
+  background: transparent;
+  border: none;
+}
+
+.vocab-words-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (min-width: 520px) {
+  .vocab-words-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .vocab-words-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .vocab-words-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.vocab-words-grid--loading .vocab-word-card--skeleton {
+  min-height: 148px;
+  border-radius: 14px;
+}
+
+.vocab-words-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 24px;
+  background: var(--ac-surface-container-lowest, #fff);
+  border: 1px dashed var(--ac-outline-variant, #c3c6d7);
+  border-radius: 16px;
+  color: var(--ac-on-surface-variant, #434655);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Word card */
+.vocab-word-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--ac-surface-container-lowest, #fff);
+  border: 1px solid rgba(195, 198, 215, 0.8);
+  border-radius: 14px;
+  box-shadow: 0 2px 4px rgba(0, 74, 198, 0.04);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.vocab-word-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 74, 198, 0.1);
+  border-color: rgba(0, 74, 198, 0.22);
+  transform: translateY(-1px);
+}
+
+.vocab-word-card__main {
+  flex: 1;
+  width: 100%;
+  padding: 14px 14px 10px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.vocab-word-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.vocab-word-card__en {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--ac-on-surface, #0b1c30);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.vocab-word-card:hover .vocab-word-card__en {
+  color: var(--ac-primary, #004ac6);
+}
+
+.vocab-word-card__edit {
+  flex-shrink: 0;
+  color: #94a3b8 !important;
+  border-radius: 8px !important;
+  margin: -4px -4px 0 0;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.vocab-word-card:hover .vocab-word-card__edit {
+  opacity: 1;
+}
+
+.vocab-word-card__edit:hover {
+  color: var(--ac-primary, #004ac6) !important;
+  background: var(--ac-surface-container-low, #eff4ff) !important;
+}
+
+.vocab-word-card__vi {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  color: var(--ac-on-surface-variant, #434655);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vocab-word-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  margin-top: 2px;
+}
+
+.vocab-word-card__ipa {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #64748b;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vocab-word-card__ipa--empty {
+  color: #cbd5e1;
+  font-style: normal;
+}
+
+.vocab-word-card__pos {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: lowercase;
+  line-height: 1.4;
+}
+
+.vocab-word-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #f8fafc;
+  background: rgba(248, 250, 252, 0.65);
+  min-height: 40px;
+}
+
+.vocab-word-card__audio {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.vocab-word-card__audio-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.vocab-word-card__audio-empty svg {
+  font-size: 14px !important;
+}
+
+.vocab-word-card__badge {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+
+.vocab-word-card__badge--enriched {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.vocab-word-card__badge--pending {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
+}
+
+/* Create card */
+.vocab-word-create-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 148px;
+  padding: 20px 16px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.vocab-word-create-card:hover {
+  border-color: rgba(0, 74, 198, 0.45);
+  background: #f8fafc;
+}
+
+.vocab-word-create-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+  font-size: 1.35rem;
+  font-weight: 300;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.vocab-word-create-card:hover .vocab-word-create-card__icon {
+  color: var(--ac-primary, #004ac6);
+  border-color: rgba(0, 74, 198, 0.3);
+}
+
+.vocab-word-create-card__label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #475569;
+  transition: color 0.2s ease;
+}
+
+.vocab-word-create-card:hover .vocab-word-create-card__label {
+  color: var(--ac-primary, #004ac6);
+}
+
+.vocab-word-create-card__hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+}

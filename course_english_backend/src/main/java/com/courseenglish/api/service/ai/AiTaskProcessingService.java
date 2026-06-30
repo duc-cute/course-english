@@ -4,8 +4,10 @@ import com.courseenglish.api.domain.AiDocument;
 import com.courseenglish.api.domain.AiTask;
 import com.courseenglish.api.domain.request.ReqCreateExamPaperGenTaskDTO;
 import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
+import com.courseenglish.api.domain.request.ReqCreateVocabularySetGenTaskDTO;
 import com.courseenglish.api.repository.AiDocumentRepository;
 import com.courseenglish.api.repository.AiTaskRepository;
+import com.courseenglish.api.service.ai.vocabulary.AiVocabularySetGenerationService;
 import com.courseenglish.api.service.ActivityLogService;
 import com.courseenglish.api.service.activitylog.ActivityLogWriteContext;
 import com.courseenglish.api.util.constant.ActivityLogActionEnum;
@@ -35,6 +37,7 @@ public class AiTaskProcessingService {
   private final AiDocumentRepository aiDocumentRepository;
   private final AiQuestionGenerationService aiQuestionGenerationService;
   private final AiExamPaperGenerationService aiExamPaperGenerationService;
+  private final AiVocabularySetGenerationService aiVocabularySetGenerationService;
   private final ActivityLogService activityLogService;
   private final AiTaskProgressReporter progressReporter;
   private final AiTaskLifecycleService taskLifecycleService;
@@ -45,6 +48,7 @@ public class AiTaskProcessingService {
       AiDocumentRepository aiDocumentRepository,
       AiQuestionGenerationService aiQuestionGenerationService,
       AiExamPaperGenerationService aiExamPaperGenerationService,
+      AiVocabularySetGenerationService aiVocabularySetGenerationService,
       ActivityLogService activityLogService,
       AiTaskProgressReporter progressReporter,
       AiTaskLifecycleService taskLifecycleService,
@@ -53,6 +57,7 @@ public class AiTaskProcessingService {
     this.aiDocumentRepository = aiDocumentRepository;
     this.aiQuestionGenerationService = aiQuestionGenerationService;
     this.aiExamPaperGenerationService = aiExamPaperGenerationService;
+    this.aiVocabularySetGenerationService = aiVocabularySetGenerationService;
     this.activityLogService = activityLogService;
     this.progressReporter = progressReporter;
     this.taskLifecycleService = taskLifecycleService;
@@ -95,6 +100,11 @@ public class AiTaskProcessingService {
     long taskWallStartMs = System.currentTimeMillis();
 
     try {
+      if (task.getTaskType() == AiTaskTypeEnum.VOCABULARY_SET_GENERATION) {
+        processVocabularySetGeneration(task, workerStartedAt, taskWallStartMs);
+        return;
+      }
+
       AiDocument document = aiDocumentRepository.findById(task.getDocumentId()).orElse(null);
       if (document == null || document.getExtractedText() == null || document.getExtractedText().isBlank()) {
         throw new IllegalStateException("Tài liệu không có nội dung");
@@ -212,6 +222,35 @@ public class AiTaskProcessingService {
     }
   }
 
+  private void processVocabularySetGeneration(
+      AiTask task, Instant workerStartedAt, long taskWallStartMs) throws Exception {
+    ReqCreateVocabularySetGenTaskDTO input =
+        objectMapper.readValue(task.getInputJson(), ReqCreateVocabularySetGenTaskDTO.class);
+
+    progressReporter.report(task.getId(), "Đang sinh bộ từ vựng…", 10);
+
+    var envelope = aiVocabularySetGenerationService.generate(input, task.getId());
+
+    String outputJson = objectMapper.writeValueAsString(envelope);
+    String model = envelope.getMeta() != null ? envelope.getMeta().getModel() : null;
+    taskLifecycleService.markDone(task.getId(), outputJson, model, null, null);
+
+    long totalTaskMs = System.currentTimeMillis() - taskWallStartMs;
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_GEN_RESPONSE,
+                "Hoàn thành sinh bộ từ vựng — " + totalTaskMs + "ms")
+            .userId(task.getUserId())
+            .ref("AI_TASK", task.getId())
+            .put("taskId", task.getId())
+            .put("documentId", task.getDocumentId())
+            .put("step", "vocabulary_set_done")
+            .put("itemCount", envelope.getItems() != null ? envelope.getItems().size() : 0)
+            .put("totalTaskMs", totalTaskMs));
+  }
+
   private void processExamPaperGeneration(
       AiTask task, AiDocument document, Instant workerStartedAt, long taskWallStartMs)
       throws Exception {
@@ -224,10 +263,11 @@ public class AiTaskProcessingService {
     AiGenTraceContext trace =
         new AiGenTraceContext(task.getId(), task.getUserId(), task.getDocumentId(), documentSource);
 
-    progressReporter.report(task.getId(), "Đang sinh từng phần đề…", 10);
+    progressReporter.reportMilestone(task.getId(), "Đang sinh từng phần đề…", 10);
 
     var envelope =
-        aiExamPaperGenerationService.generate(document.getExtractedText(), input, trace);
+        aiExamPaperGenerationService.generate(
+            document.getExtractedText(), input, trace, taskWallStartMs);
 
     String outputJson = objectMapper.writeValueAsString(envelope);
     String model = envelope.getMeta() != null ? envelope.getMeta().getModel() : null;

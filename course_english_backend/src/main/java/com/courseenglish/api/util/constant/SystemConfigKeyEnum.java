@@ -32,7 +32,36 @@ public enum SystemConfigKeyEnum {
     WORD_EXPORT_WATERMARK_TEXT(
             "WORD_EXPORT_WATERMARK_TEXT",
             "",
-            "Chữ watermark in chìm trên file đề Word (vd: Ms Mitra). Để trống = không watermark");
+            "Chữ watermark in chìm trên file đề Word (vd: Ms Mitra). Để trống = không watermark"),
+
+    // --- AI: Vocabulary set generation / cover image (ops knobs) ---
+    // Note: API keys / secrets MUST remain in .env, not SystemConfig.
+    // These values are safe to edit in admin config UI.
+    // Models are NOT automatically changed by code — changes should be deliberate.
+    AI_VOCAB_SET_GEN_MODEL(
+            "AI_VOCAB_SET_GEN_MODEL",
+            "openrouter/owl-alpha",
+            "Model sinh bộ từ vựng (text). Ví dụ: openrouter/owl-alpha, anthropic/claude-3.5-sonnet"),
+    AI_VOCAB_SET_GEN_TIMEOUT_SEC(
+            "AI_VOCAB_SET_GEN_TIMEOUT_SEC",
+            "120",
+            "Timeout (giây) cho AI sinh bộ từ (text)"),
+    AI_VOCAB_SET_COVER_IMAGE_ENABLED(
+            "AI_VOCAB_SET_COVER_IMAGE_ENABLED",
+            "true",
+            "Bật sinh ảnh cover bộ từ khi generateCover=true (true/1=bật, false/0=tắt)"),
+    AI_VOCAB_SET_COVER_IMAGE_MODEL(
+            "AI_VOCAB_SET_COVER_IMAGE_MODEL",
+            "black-forest-labs/flux.2-max",
+            "Model sinh ảnh cover (image). Ví dụ: black-forest-labs/flux.2-max, black-forest-labs/flux.2-pro"),
+    AI_VOCAB_SET_COVER_IMAGE_TIMEOUT_SEC(
+            "AI_VOCAB_SET_COVER_IMAGE_TIMEOUT_SEC",
+            "90",
+            "Timeout (giây) cho image-gen cover"),
+    AI_VOCAB_SET_COVER_IMAGE_DAILY_LIMIT(
+            "AI_VOCAB_SET_COVER_IMAGE_DAILY_LIMIT",
+            "15",
+            "Giới hạn số ảnh cover/ngày (toàn hệ thống). 0 hoặc <0 = không giới hạn");
 
     private final String key;
     private final String defaultValue;
