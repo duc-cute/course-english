@@ -5,7 +5,7 @@ export type CatalogGridMobileRole = "hidden" | "title" | "subtitle" | "meta" | "
 
 export type CatalogGridColumn<T> = {
   key: string;
-  header: string;
+  header: ReactNode;
   width: string;
   align?: "left" | "center" | "right";
   /** Desktop grid + mobile card layout slot. Defaults: actions → actions, else meta */

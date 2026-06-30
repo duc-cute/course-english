@@ -3,12 +3,18 @@ package com.courseenglish.api.service.impl;
 import com.courseenglish.api.domain.Question;
 import com.courseenglish.api.domain.QuestionCategory;
 import com.courseenglish.api.domain.QuestionChoice;
+import com.courseenglish.api.domain.request.ReqExportQuestionsDTO;
+import com.courseenglish.api.domain.request.ReqBulkQuestionDTO;
 import com.courseenglish.api.domain.request.ReqQuestionChoiceDTO;
 import com.courseenglish.api.domain.request.ReqQuestionDTO;
 import com.courseenglish.api.domain.request.ReqSearchQuestionDTO;
+import com.courseenglish.api.domain.request.ReqExportQuestionsDTO;
+import com.courseenglish.api.domain.response.ResBulkQuestionResultDTO;
+import com.courseenglish.api.domain.response.ResQuestionExportDTO;
 import com.courseenglish.api.domain.response.ResQuestionCategoryDTO;
 import com.courseenglish.api.domain.response.ResQuestionChoiceDTO;
 import com.courseenglish.api.domain.response.ResQuestionDTO;
+import com.courseenglish.api.domain.response.ResQuestionStatsDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.repository.QuestionCategoryRepository;
 import com.courseenglish.api.repository.QuestionChoiceRepository;
@@ -16,11 +22,14 @@ import com.courseenglish.api.repository.QuestionRepository;
 import com.courseenglish.api.service.QuestionService;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
+import com.courseenglish.api.util.constant.BulkQuestionOperationEnum;
+import com.courseenglish.api.util.constant.QuestionSourceEnum;
 import com.courseenglish.api.util.constant.QuestionStatusEnum;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +37,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,10 +47,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class QuestionServiceImpl implements QuestionService {
+
+    private static final Pattern FILL_BLANK_RUN_RE = Pattern.compile("_{3,}");
+
+    private static final int BULK_MAX_IDS = 100;
 
     private final QuestionRepository questionRepository;
     private final QuestionCategoryRepository categoryRepository;
@@ -107,7 +123,7 @@ public class QuestionServiceImpl implements QuestionService {
         Question entity = new Question();
         applyFields(request, entity);
         Question saved = questionRepository.save(entity);
-        saveChoices(saved, request.getChoices());
+        persistChoices(saved, request.getQuestionType(), request.getChoices());
         return toDto(saved, true);
     }
 
@@ -119,7 +135,7 @@ public class QuestionServiceImpl implements QuestionService {
         validateRequest(request);
         applyFields(request, entity);
         Question saved = questionRepository.save(entity);
-        replaceChoices(saved, request.getChoices());
+        persistChoices(saved, request.getQuestionType(), request.getChoices());
         return toDto(saved, true);
     }
 
@@ -134,13 +150,207 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Transactional
+    public ResBulkQuestionResultDTO bulk(ReqBulkQuestionDTO request) throws IdInvalidException {
+        if (request == null || request.getIds() == null || request.getIds().isEmpty()) {
+            throw new IdInvalidException("Danh sách id không được rỗng");
+        }
+        if (request.getIds().size() > BULK_MAX_IDS) {
+            throw new IdInvalidException("Tối đa " + BULK_MAX_IDS + " câu mỗi lần");
+        }
+        if (request.getOperation() == null) {
+            throw new IdInvalidException("Thiếu operation");
+        }
+
+        List<UUID> uniqueIds = request.getIds().stream().distinct().toList();
+        List<Question> found = questionRepository.findByIdInAndVoidedFalse(uniqueIds);
+        Set<UUID> foundIds = found.stream().map(Question::getId).collect(Collectors.toSet());
+
+        List<UUID> notFoundIds = uniqueIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .toList();
+
+        BulkQuestionOperationEnum op = request.getOperation();
+        List<UUID> createdIds = new ArrayList<>();
+
+        if (op == BulkQuestionOperationEnum.DELETE) {
+            for (Question entity : found) {
+                entity.setVoided(true);
+                voidExistingChoices(entity.getId());
+            }
+            questionRepository.saveAll(found);
+        } else if (op == BulkQuestionOperationEnum.DUPLICATE) {
+            Map<UUID, Question> byId =
+                    found.stream().collect(Collectors.toMap(Question::getId, Function.identity()));
+            for (UUID id : uniqueIds) {
+                Question source = byId.get(id);
+                if (source == null) {
+                    continue;
+                }
+                createdIds.add(duplicateQuestion(source).getId());
+            }
+        } else {
+            QuestionStatusEnum status = mapBulkOperationToStatus(op);
+            for (Question entity : found) {
+                entity.setStatus(status);
+            }
+            questionRepository.saveAll(found);
+        }
+
+        ResBulkQuestionResultDTO result = new ResBulkQuestionResultDTO();
+        result.setRequested(uniqueIds.size());
+        result.setAffected(op == BulkQuestionOperationEnum.DUPLICATE ? createdIds.size() : found.size());
+        result.setNotFoundIds(new ArrayList<>(notFoundIds));
+        result.setCreatedIds(createdIds);
+        return result;
+    }
+
+    @Override
+    public ResQuestionExportDTO export(ReqExportQuestionsDTO request) throws IdInvalidException {
+        if (request == null || request.getIds() == null || request.getIds().isEmpty()) {
+            throw new IdInvalidException("Danh sách id không được rỗng");
+        }
+        if (request.getIds().size() > BULK_MAX_IDS) {
+            throw new IdInvalidException("Tối đa " + BULK_MAX_IDS + " câu mỗi lần");
+        }
+
+        List<UUID> uniqueIds = request.getIds().stream().distinct().toList();
+        List<Question> found = questionRepository.findByIdInAndVoidedFalse(uniqueIds);
+        Map<UUID, Question> byId =
+                found.stream().collect(Collectors.toMap(Question::getId, Function.identity()));
+
+        List<UUID> notFoundIds = uniqueIds.stream()
+                .filter(id -> !byId.containsKey(id))
+                .toList();
+
+        List<ResQuestionDTO> questions = new ArrayList<>();
+        for (UUID id : uniqueIds) {
+            Question q = byId.get(id);
+            if (q != null) {
+                questions.add(toDto(q, true));
+            }
+        }
+
+        ResQuestionExportDTO dto = new ResQuestionExportDTO();
+        dto.setExportedAt(Instant.now());
+        dto.setRequested(uniqueIds.size());
+        dto.setExported(questions.size());
+        dto.setNotFoundIds(new ArrayList<>(notFoundIds));
+        dto.setQuestions(questions);
+        return dto;
+    }
+
+    private Question duplicateQuestion(Question source) {
+        Question copy = new Question();
+        copy.setCategory(source.getCategory());
+        copy.setQuestionType(source.getQuestionType());
+        copy.setStatus(QuestionStatusEnum.DRAFT);
+        copy.setTitle(duplicateTitle(source.getTitle(), source.getPromptText()));
+        copy.setPromptText(source.getPromptText());
+        copy.setPromptLang(source.getPromptLang());
+        copy.setExplanation(source.getExplanation());
+        copy.setContentJson(source.getContentJson());
+        copy.setDifficulty(source.getDifficulty());
+        copy.setCefrLevel(source.getCefrLevel());
+        copy.setSkill(source.getSkill());
+        copy.setTopic(source.getTopic());
+        copy.setSource(QuestionSourceEnum.MANUAL);
+        copy.setAiGenerated(false);
+        copy.setTagsJson(appendDuplicateSourceTag(source.getTagsJson(), source.getId()));
+
+        Question saved = questionRepository.save(copy);
+
+        List<QuestionChoice> choices =
+                choiceRepository.findByQuestion_IdAndVoidedFalseOrderByDisplayOrderAsc(source.getId());
+        if (!choices.isEmpty()) {
+            int order = 0;
+            for (QuestionChoice c : choices) {
+                QuestionChoice nc = new QuestionChoice();
+                nc.setQuestion(saved);
+                nc.setChoiceKey(c.getChoiceKey());
+                nc.setChoiceText(c.getChoiceText());
+                nc.setCorrect(c.isCorrect());
+                nc.setDisplayOrder(order);
+                choiceRepository.save(nc);
+                order++;
+            }
+        }
+        return saved;
+    }
+
+    private static String duplicateTitle(String title, String promptText) {
+        String base;
+        if (title != null && !title.isBlank()) {
+            base = title.trim();
+        } else if (promptText != null && !promptText.isBlank()) {
+            base = promptText.trim();
+            if (base.length() > 80) {
+                base = base.substring(0, 80) + "…";
+            }
+        } else {
+            base = "Question";
+        }
+        String suffix = " (copy)";
+        int maxLen = 255;
+        if (base.length() + suffix.length() > maxLen) {
+            return base.substring(0, maxLen - suffix.length()) + suffix;
+        }
+        return base + suffix;
+    }
+
+    private String appendDuplicateSourceTag(String tagsJson, UUID sourceId) {
+        List<String> tags = new ArrayList<>(deserializeTags(tagsJson));
+        String tag = "dup-from:" + sourceId;
+        if (!tags.contains(tag)) {
+            tags.add(tag);
+        }
+        return serializeTags(tags);
+    }
+
+    private static QuestionStatusEnum mapBulkOperationToStatus(BulkQuestionOperationEnum op)
+            throws IdInvalidException {
+        return switch (op) {
+            case PUBLISH -> QuestionStatusEnum.PUBLISHED;
+            case ARCHIVE -> QuestionStatusEnum.ARCHIVED;
+            case DRAFT -> QuestionStatusEnum.DRAFT;
+            case DELETE, DUPLICATE -> throw new IdInvalidException("Operation không map status");
+        };
+    }
+
+    @Override
     public List<ResQuestionCategoryDTO> listCategories() {
         return categoryRepository.findByVoidedFalseOrderByDisplayOrderAsc().stream()
                 .map(this::toCategoryDto)
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public ResQuestionStatsDTO getStats() {
+        ResQuestionStatsDTO dto = new ResQuestionStatsDTO();
+        dto.setTotal(questionRepository.countByVoidedFalse());
+        dto.setAiGeneratedCount(questionRepository.countByVoidedFalseAndAiGeneratedTrue());
+
+        Map<String, Long> byStatus = new LinkedHashMap<>();
+        for (Object[] row : questionRepository.countGroupByStatus()) {
+            if (row[0] != null && row[1] != null) {
+                byStatus.put(row[0].toString(), ((Number) row[1]).longValue());
+            }
+        }
+        dto.setByStatus(byStatus);
+
+        Map<String, Long> byType = new LinkedHashMap<>();
+        for (Object[] row : questionRepository.countGroupByQuestionType()) {
+            if (row[0] != null && row[1] != null) {
+                byType.put(row[0].toString(), ((Number) row[1]).longValue());
+            }
+        }
+        dto.setByType(byType);
+
+        return dto;
+    }
+
     private void applyFields(ReqQuestionDTO request, Question target) throws IdInvalidException {
+        target.setTitle(trimOrNull(request.getTitle()));
         target.setPromptText(request.getPromptText().trim());
         target.setPromptLang(request.getPromptLang() == null || request.getPromptLang().isBlank()
                 ? "en"
@@ -148,6 +358,9 @@ public class QuestionServiceImpl implements QuestionService {
         target.setExplanation(trimOrNull(request.getExplanation()));
         target.setContentJson(trimOrNull(request.getContentJson()));
         target.setDifficulty(request.getDifficulty());
+        target.setCefrLevel(upperOrNull(request.getCefrLevel()));
+        target.setSkill(upperOrNull(request.getSkill()));
+        target.setTopic(trimOrNull(request.getTopic()));
 
         QuestionTypeEnum type = request.getQuestionType() != null
                 ? request.getQuestionType()
@@ -159,8 +372,29 @@ public class QuestionServiceImpl implements QuestionService {
                 : QuestionStatusEnum.DRAFT;
         target.setStatus(status);
 
+        if (request.getSource() != null) {
+            target.setSource(request.getSource());
+        } else if (target.getSource() == null) {
+            target.setSource(QuestionSourceEnum.MANUAL);
+        }
+        if (request.getAiGenerated() != null) {
+            target.setAiGenerated(request.getAiGenerated());
+        }
+
         target.setTagsJson(serializeTags(request.getTags()));
         target.setCategory(resolveCategory(request.getCategoryId()));
+    }
+
+    private void persistChoices(
+            Question question,
+            QuestionTypeEnum type,
+            List<ReqQuestionChoiceDTO> choices) {
+        QuestionTypeEnum resolved = type != null ? type : QuestionTypeEnum.MULTIPLE_CHOICE;
+        if (resolved == QuestionTypeEnum.MULTIPLE_CHOICE) {
+            replaceChoices(question, choices);
+        } else {
+            voidExistingChoices(question.getId());
+        }
     }
 
     private QuestionCategory resolveCategory(UUID categoryId) throws IdInvalidException {
@@ -218,7 +452,73 @@ public class QuestionServiceImpl implements QuestionService {
 
         if (type == QuestionTypeEnum.MULTIPLE_CHOICE) {
             validateMcqChoices(request.getChoices());
+        } else if (type == QuestionTypeEnum.TRUE_FALSE) {
+            validateTrueFalseContent(request.getContentJson());
+        } else if (type == QuestionTypeEnum.FILL_BLANK) {
+            validateFillBlankContent(request.getPromptText(), request.getContentJson());
         }
+    }
+
+    private void validateTrueFalseContent(String contentJson) throws IdInvalidException {
+        JsonNode node = parseContentJson(contentJson);
+        if (node == null || !node.has("correctAnswer") || !node.get("correctAnswer").isBoolean()) {
+            throw new IdInvalidException("Câu Đúng/Sai cần contentJson.correctAnswer (boolean)");
+        }
+    }
+
+    private void validateFillBlankContent(String promptText, String contentJson) throws IdInvalidException {
+        int blankCount = countBlankPlaceholders(promptText);
+        if (blankCount < 1) {
+            throw new IdInvalidException("Câu điền từ cần ít nhất một chỗ trống (___)");
+        }
+        JsonNode node = parseContentJson(contentJson);
+        if (node == null || !node.has("blanks") || !node.get("blanks").isArray()) {
+            throw new IdInvalidException("Câu điền từ cần contentJson.blanks");
+        }
+        JsonNode blanks = node.get("blanks");
+        if (blanks.size() != blankCount) {
+            throw new IdInvalidException("Số blanks phải khớp số chỗ trống (___) trong câu");
+        }
+        for (int i = 0; i < blanks.size(); i++) {
+            JsonNode blank = blanks.get(i);
+            if (!blank.has("acceptedAnswers") || !blank.get("acceptedAnswers").isArray()
+                    || blank.get("acceptedAnswers").isEmpty()) {
+                throw new IdInvalidException("Blank thứ " + (i + 1) + ": thiếu acceptedAnswers");
+            }
+            boolean hasAnswer = false;
+            for (JsonNode ans : blank.get("acceptedAnswers")) {
+                if (ans != null && !ans.asText("").isBlank()) {
+                    hasAnswer = true;
+                    break;
+                }
+            }
+            if (!hasAnswer) {
+                throw new IdInvalidException("Blank thứ " + (i + 1) + ": cần ít nhất một đáp án");
+            }
+        }
+    }
+
+    private JsonNode parseContentJson(String contentJson) {
+        if (contentJson == null || contentJson.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(contentJson);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    private int countBlankPlaceholders(String promptText) {
+        if (promptText == null || promptText.isBlank()) {
+            return 0;
+        }
+        Matcher matcher = FILL_BLANK_RUN_RE.matcher(promptText);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
     }
 
     private void validateMcqChoices(List<ReqQuestionChoiceDTO> choices) throws IdInvalidException {
@@ -254,6 +554,7 @@ public class QuestionServiceImpl implements QuestionService {
     private ResQuestionDTO toDto(Question question, boolean includeChoices) {
         ResQuestionDTO dto = new ResQuestionDTO();
         dto.setId(question.getId());
+        dto.setTitle(question.getTitle());
         dto.setQuestionType(question.getQuestionType());
         dto.setStatus(question.getStatus());
         dto.setPromptText(question.getPromptText());
@@ -261,7 +562,14 @@ public class QuestionServiceImpl implements QuestionService {
         dto.setExplanation(question.getExplanation());
         dto.setContentJson(question.getContentJson());
         dto.setDifficulty(question.getDifficulty());
+        dto.setCefrLevel(question.getCefrLevel());
+        dto.setSkill(question.getSkill());
+        dto.setTopic(question.getTopic());
+        dto.setSource(question.getSource());
+        dto.setAiGenerated(question.isAiGenerated());
         dto.setTags(deserializeTags(question.getTagsJson()));
+        dto.setCreatedBy(question.getCreatedBy());
+        dto.setUpdatedBy(question.getUpdatedBy());
         dto.setCreatedAt(question.getCreatedAt());
         dto.setUpdatedAt(question.getUpdatedAt());
 
@@ -331,6 +639,11 @@ public class QuestionServiceImpl implements QuestionService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    private String upperOrNull(String value) {
+        String trimmed = trimOrNull(value);
+        return trimmed == null ? null : trimmed.toUpperCase();
+    }
+
     @Override
     public List<ResQuestionDTO> findByIdsOrdered(List<UUID> ids, boolean publishedOnly) {
         if (ids == null || ids.isEmpty()) {
@@ -365,22 +678,24 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     private Map<String, Object> toExerciseQuestionMap(ResQuestionDTO question) {
-        if (question.getQuestionType() != QuestionTypeEnum.MULTIPLE_CHOICE) {
+        if (question.getQuestionType() == null) {
             return Map.of();
         }
+        return switch (question.getQuestionType()) {
+            case MULTIPLE_CHOICE -> toMcqExerciseMap(question);
+            case TRUE_FALSE -> toTrueFalseExerciseMap(question);
+            case FILL_BLANK -> toFillBlankExerciseMap(question);
+            default -> Map.of();
+        };
+    }
+
+    private Map<String, Object> toMcqExerciseMap(ResQuestionDTO question) {
         List<ResQuestionChoiceDTO> choices = question.getChoices();
         if (choices == null || choices.isEmpty()) {
             return Map.of();
         }
 
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("id", question.getId().toString());
-        map.put("type", "MULTIPLE_CHOICE");
-
-        Map<String, String> prompt = new LinkedHashMap<>();
-        prompt.put("text", question.getPromptText());
-        prompt.put("lang", question.getPromptLang() != null ? question.getPromptLang() : "en");
-        map.put("prompt", prompt);
+        Map<String, Object> map = baseExerciseMap(question, "MULTIPLE_CHOICE");
 
         List<Map<String, String>> choiceList = new ArrayList<>();
         String correctChoiceId = "";
@@ -399,6 +714,41 @@ public class QuestionServiceImpl implements QuestionService {
             return Map.of();
         }
         map.put("correctChoiceId", correctChoiceId);
+        return map;
+    }
+
+    private Map<String, Object> toTrueFalseExerciseMap(ResQuestionDTO question) {
+        JsonNode node = parseContentJson(question.getContentJson());
+        if (node == null || !node.has("correctAnswer") || !node.get("correctAnswer").isBoolean()) {
+            return Map.of();
+        }
+        Map<String, Object> map = baseExerciseMap(question, "TRUE_FALSE");
+        map.put("correctAnswer", node.get("correctAnswer").asBoolean());
+        return map;
+    }
+
+    private Map<String, Object> toFillBlankExerciseMap(ResQuestionDTO question) {
+        JsonNode node = parseContentJson(question.getContentJson());
+        if (node == null || !node.has("blanks") || !node.get("blanks").isArray()) {
+            return Map.of();
+        }
+        Map<String, Object> map = baseExerciseMap(question, "FILL_BLANK");
+        map.put("blanks", objectMapper.convertValue(node.get("blanks"), List.class));
+        if (node.has("caseSensitive") && node.get("caseSensitive").isBoolean()) {
+            map.put("caseSensitive", node.get("caseSensitive").asBoolean());
+        }
+        return map;
+    }
+
+    private Map<String, Object> baseExerciseMap(ResQuestionDTO question, String type) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", question.getId().toString());
+        map.put("type", type);
+
+        Map<String, String> prompt = new LinkedHashMap<>();
+        prompt.put("text", question.getPromptText());
+        prompt.put("lang", question.getPromptLang() != null ? question.getPromptLang() : "en");
+        map.put("prompt", prompt);
 
         if (question.getExplanation() != null && !question.getExplanation().isBlank()) {
             map.put("explanation", question.getExplanation());

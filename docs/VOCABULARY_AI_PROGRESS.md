@@ -181,6 +181,20 @@ app.ai.vocab-set-cover-image-timeout-sec=60
 
 ---
 
+## Phase 3 — Sinh câu AI vào Question Bank (chưa code)
+
+Liên kết [`QUESTION_BANK_AI_GEN_PLAN.md`](./QUESTION_BANK_AI_GEN_PLAN.md) Phase **AI-3**.
+
+Sau khi `VocabularyAiGenDialog` lưu bộ từ thành công:
+
+- [ ] CTA **「Sinh câu AI vào Question Bank」** (snackbar hoặc nút trong success state)
+- [ ] Mở `QuestionBankAiGenDialog` tab Bộ từ, pre-fill `vocabularySetId` vừa lưu
+- [ ] **Bắt buộc LLM** `question-generation` — không dùng `VocabGenerateMcqDialog` (rule-based)
+
+Pipeline: AI sinh từ → (tuỳ chọn) review bộ → AI sinh câu → preview → lưu bank (`source=AI`, tag `vocab-set:{id}`).
+
+---
+
 ## Troubleshooting
 
 ### `Data truncated for column 'task_type'`

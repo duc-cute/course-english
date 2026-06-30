@@ -1,5 +1,6 @@
 package com.courseenglish.api.domain.request;
 
+import com.courseenglish.api.util.constant.QuestionSourceEnum;
 import com.courseenglish.api.util.constant.QuestionStatusEnum;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import jakarta.validation.Valid;
@@ -17,6 +18,8 @@ public class ReqQuestionDTO {
     private QuestionTypeEnum questionType;
     private QuestionStatusEnum status;
 
+    private String title;
+
     @NotBlank(message = "promptText is required")
     private String promptText;
 
@@ -24,6 +27,11 @@ public class ReqQuestionDTO {
     private String explanation;
     private String contentJson;
     private Integer difficulty;
+    private String cefrLevel;
+    private String skill;
+    private String topic;
+    private QuestionSourceEnum source;
+    private Boolean aiGenerated;
     private List<String> tags;
 
     @Valid

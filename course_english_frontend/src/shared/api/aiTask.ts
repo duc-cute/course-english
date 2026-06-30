@@ -39,6 +39,8 @@ export type CreateQuestionGenTaskPayload = {
   difficulty?: number;
   promptLang?: string;
   customUserPromptByType?: Partial<Record<AiGenQuestionType, string>>;
+  /** AI-3: generate from saved vocabulary set */
+  vocabularySetId?: string;
 };
 
 export type ExamSectionSliceMode = "SLICED" | "FULL";

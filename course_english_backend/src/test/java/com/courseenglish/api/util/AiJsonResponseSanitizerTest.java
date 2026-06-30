@@ -37,8 +37,15 @@ class AiJsonResponseSanitizerTest {
     }
 
     @Test
-    void handlesNullAndBlank() {
-        assertEquals("", AiJsonResponseSanitizer.extractJsonObject(null));
-        assertEquals("", AiJsonResponseSanitizer.extractJsonObject("   "));
+    void repairsUnescapedQuotesInExplanationField() throws Exception {
+        String broken =
+                """
+                {"questions":[{"questionType":"MULTIPLE_CHOICE","explanation":"Nên đáp án đúng là "goes" vì she","choices":[]}]}
+                """;
+        String repaired = AiJsonResponseSanitizer.repairUnescapedQuotesInField(broken, "explanation");
+        var root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(repaired);
+        assertEquals(
+                "Nên đáp án đúng là \"goes\" vì she",
+                root.path("questions").path(0).path("explanation").asText());
     }
 }

@@ -56,7 +56,8 @@
 
 /* Exam paper AI + similar exam — full-bleed processing + fun facts with mascot */
 .ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper,
-.ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar {
+.ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar,
+.ai-gen-dialog--question-bank .ai-gen-processing--question-bank {
   margin-left: -20px;
   margin-right: -20px;
   width: calc(100% + 40px);
@@ -65,7 +66,8 @@
 }
 
 .ai-gen-dialog--exam-paper .ai-gen-processing--exam-paper .ai-gen-funfacts,
-.ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar .ai-gen-funfacts {
+.ai-gen-dialog--exam-similar .ai-gen-processing--exam-similar .ai-gen-funfacts,
+.ai-gen-dialog--question-bank .ai-gen-processing--question-bank .ai-gen-funfacts {
   margin-left: -120px;
   margin-right: -120px;
   width: calc(100% + 240px);

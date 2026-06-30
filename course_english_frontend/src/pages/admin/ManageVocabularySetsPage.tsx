@@ -27,6 +27,7 @@ import { VocabGenerateListenTypeDialog } from "../../admin/components/vocabulary
 import { VocabGenerateMcqDialog } from "../../admin/components/vocabulary/VocabGenerateMcqDialog";
 import { VocabGenerateSpellingDialog } from "../../admin/components/vocabulary/VocabGenerateSpellingDialog";
 import { VocabularyAiGenDialog } from "../../admin/components/vocabulary/VocabularyAiGenDialog";
+import { QuestionBankAiGenDialog } from "../../admin/components/question/QuestionBankAiGenDialog";
 import { VocabularyWordPicker } from "../../admin/components/vocabulary/VocabularyWordPicker";
 import {
   VocabularySetForm,
@@ -53,6 +54,8 @@ import {
   type VocabularySetsPaginationResult,
 } from "../../shared/api/vocabularySet";
 import type { ApiResponse } from "../../shared/api/types";
+import { apiGetQuestionCategories, type QuestionCategoryRecord } from "../../shared/api/question";
+import type { BankImportBatchResult } from "../../shared/lesson/questionBankImport";
 import { paths } from "../../shared/constants/paths";
 
 function toPayload(form: VocabularySetFormState) {
@@ -116,6 +119,11 @@ export function ManageVocabularySetsPage() {
   const [listenGenerateTarget, setListenGenerateTarget] = useState<VocabularySetRecord | null>(null);
   const [spellingGenerateTarget, setSpellingGenerateTarget] = useState<VocabularySetRecord | null>(null);
   const [listenTypeGenerateTarget, setListenTypeGenerateTarget] = useState<VocabularySetRecord | null>(null);
+  const [openBankAiGen, setOpenBankAiGen] = useState(false);
+  const [bankAiGenVocabSetId, setBankAiGenVocabSetId] = useState<string | undefined>();
+  const [bankAiGenOfferSetId, setBankAiGenOfferSetId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<QuestionCategoryRecord[]>([]);
+  const [bankAiSaveMessage, setBankAiSaveMessage] = useState("");
   const [enrichingAll, setEnrichingAll] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -144,6 +152,18 @@ export function ManageVocabularySetsPage() {
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const response = (await apiGetQuestionCategories()) as ApiResponse<QuestionCategoryRecord[]>;
+        const list = response?.result ?? response?.data ?? [];
+        setCategories(Array.isArray(list) ? list : []);
+      } catch {
+        setCategories([]);
+      }
+    })();
+  }, []);
 
   const resetForm = () => {
     setForm(createDefaultVocabularySetForm());
@@ -212,6 +232,12 @@ export function ManageVocabularySetsPage() {
     setListenTypeGenerateTarget(await loadSetDetail(row));
   };
 
+  const openGenerateBankAi = async (row: VocabularySetRecord) => {
+    const detail = await loadSetDetail(row);
+    setBankAiGenVocabSetId(detail.id);
+    setOpenBankAiGen(true);
+  };
+
   const submitForm = async () => {
     if (!form.title.trim()) {
       setFormError("Tiêu đề bộ từ không được để trống.");
@@ -228,7 +254,11 @@ export function ManageVocabularySetsPage() {
       if (editing?.id) {
         await apiUpdateVocabularySet(editing.id, payload);
       } else {
-        await apiCreateVocabularySet(payload);
+        const response = (await apiCreateVocabularySet(payload)) as ApiResponse<VocabularySetRecord>;
+        const created = response?.result ?? response?.data;
+        if (created?.id) {
+          setBankAiGenOfferSetId(created.id);
+        }
       }
       setOpenForm(false);
       resetForm();
@@ -366,6 +396,35 @@ export function ManageVocabularySetsPage() {
         </Alert>
       ) : null}
 
+      {bankAiSaveMessage ? (
+        <Alert severity="success" sx={{ mb: 1 }} onClose={() => setBankAiSaveMessage("")}>
+          {bankAiSaveMessage}
+        </Alert>
+      ) : null}
+
+      {bankAiGenOfferSetId ? (
+        <Alert
+          severity="info"
+          sx={{ mb: 1 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                setBankAiGenVocabSetId(bankAiGenOfferSetId);
+                setOpenBankAiGen(true);
+                setBankAiGenOfferSetId(null);
+              }}
+            >
+              Sinh câu AI → Bank
+            </Button>
+          }
+          onClose={() => setBankAiGenOfferSetId(null)}
+        >
+          Bộ từ đã lưu. Bạn có muốn sinh câu hỏi AI vào Question Bank?
+        </Alert>
+      ) : null}
+
       <Box className="admin-catalog-page__table-card">
         <div className={`vocab-sets-grid${loading ? " vocab-sets-grid--loading" : ""}`}>
           {loading ? (
@@ -394,6 +453,7 @@ export function ManageVocabularySetsPage() {
                   onGenerateListen={(r) => void openGenerateListen(r)}
                   onGenerateSpelling={(r) => void openGenerateSpelling(r)}
                   onGenerateListenType={(r) => void openGenerateListenType(r)}
+                  onGenerateBankAi={(r) => void openGenerateBankAi(r)}
                 />
               ))}
               <VocabularySetCreateCard onClick={openCreate} />
@@ -555,6 +615,21 @@ export function ManageVocabularySetsPage() {
           setDeleting(null);
         }}
         loading={submitting}
+      />
+
+      <QuestionBankAiGenDialog
+        open={openBankAiGen}
+        onClose={() => {
+          setOpenBankAiGen(false);
+          setBankAiGenVocabSetId(undefined);
+        }}
+        categories={categories}
+        initialSourceMode="vocabularySet"
+        initialVocabularySetId={bankAiGenVocabSetId}
+        onSaved={(result: BankImportBatchResult) => {
+          const failPart = result.failed > 0 ? ` (${result.failed} lỗi)` : "";
+          setBankAiSaveMessage(`Đã lưu ${result.imported} câu AI vào Question Bank${failPart}.`);
+        }}
       />
     </Box>
   );

@@ -41,7 +41,7 @@ public class FillBlankQuestionTypeHandler implements AiQuestionTypeHandler {
         {
           "questionType": "FILL_BLANK",
           "promptText": "I ___ (go) to the park yesterday.",
-          "explanation": "Past simple of go.",
+          "explanation": "Hành động đã xảy ra trong quá khứ nên dùng quá khứ đơn của go là «went».",
           "contentJson": {
             "blanks": [{ "acceptedAnswers": ["went"] }],
             "caseSensitive": false

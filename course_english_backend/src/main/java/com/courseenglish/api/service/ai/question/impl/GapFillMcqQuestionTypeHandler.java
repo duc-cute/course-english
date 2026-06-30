@@ -46,7 +46,7 @@ public class GapFillMcqQuestionTypeHandler implements AiQuestionTypeHandler {
         {
           "questionType": "GAP_FILL_MCQ",
           "promptText": "Psychology of Money is ___ (6) popular book. Many readers find it ___ (7) insightful.",
-          "explanation": "Cloze from source passage.",
+          "explanation": "Chọn từ phù hợp ngữ cảnh trong đoạn văn (mạo từ và tính từ trong câu).",
           "contentJson": {
             "blanks": [
               {

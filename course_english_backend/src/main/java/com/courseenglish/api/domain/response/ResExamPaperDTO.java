@@ -11,6 +11,8 @@ import java.util.UUID;
 @Getter
 @Setter
 public class ResExamPaperDTO {
+    private Integer bankQuestionsSynced;
+
     private UUID id;
     private String title;
     private String instruction;

@@ -371,10 +371,13 @@ public class AiTaskProcessingService {
   }
 
   private static String resolveDocumentSource(AiDocument document) {
+    String storageFileName = document.getStorageFileName();
+    if (storageFileName != null && storageFileName.startsWith("vocab-set-")) {
+      return "vocabulary-set";
+    }
     if (document.getMimeType() != null && document.getMimeType().toLowerCase(Locale.ROOT).contains("text/plain")) {
       return "paste";
     }
-    String storageFileName = document.getStorageFileName();
     if (storageFileName != null && storageFileName.startsWith("paste-")) {
       return "paste";
     }

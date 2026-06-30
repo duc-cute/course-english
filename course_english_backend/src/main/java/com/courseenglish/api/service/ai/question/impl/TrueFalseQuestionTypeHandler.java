@@ -32,7 +32,7 @@ public class TrueFalseQuestionTypeHandler implements AiQuestionTypeHandler {
         {
           "questionType": "TRUE_FALSE",
           "promptText": "London is the capital of France.",
-          "explanation": "Paris is the capital of France.",
+          "explanation": "Thủ đô của Pháp là Paris, không phải London, nên câu này sai.",
           "contentJson": { "correctAnswer": false }
         }""";
   }

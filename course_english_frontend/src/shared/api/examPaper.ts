@@ -30,6 +30,7 @@ export type ExamPaperRecord = {
   subjectName?: string;
   sectionCount?: number;
   questionCount?: number;
+  bankQuestionsSynced?: number;
   sections?: ExamSectionRecord[];
   createdAt?: string;
   updatedAt?: string;

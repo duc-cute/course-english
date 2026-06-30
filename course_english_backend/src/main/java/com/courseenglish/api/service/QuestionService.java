@@ -1,9 +1,14 @@
 package com.courseenglish.api.service;
 
+import com.courseenglish.api.domain.request.ReqBulkQuestionDTO;
+import com.courseenglish.api.domain.request.ReqExportQuestionsDTO;
 import com.courseenglish.api.domain.request.ReqQuestionDTO;
 import com.courseenglish.api.domain.request.ReqSearchQuestionDTO;
+import com.courseenglish.api.domain.response.ResBulkQuestionResultDTO;
+import com.courseenglish.api.domain.response.ResQuestionExportDTO;
 import com.courseenglish.api.domain.response.ResQuestionCategoryDTO;
 import com.courseenglish.api.domain.response.ResQuestionDTO;
+import com.courseenglish.api.domain.response.ResQuestionStatsDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.util.error.IdInvalidException;
 
@@ -23,7 +28,13 @@ public interface QuestionService {
 
     void delete(UUID id) throws IdInvalidException;
 
+    ResBulkQuestionResultDTO bulk(ReqBulkQuestionDTO request) throws IdInvalidException;
+
+    ResQuestionExportDTO export(ReqExportQuestionsDTO request) throws IdInvalidException;
+
     List<ResQuestionCategoryDTO> listCategories();
+
+    ResQuestionStatsDTO getStats();
 
     /** Giữ thứ tự refs; bỏ qua câu không tồn tại / không đủ điều kiện */
     List<ResQuestionDTO> findByIdsOrdered(List<UUID> ids, boolean publishedOnly);

@@ -6,6 +6,7 @@ import com.courseenglish.api.domain.response.ResAiQuestionGenPromptPreviewDTO;
 import com.courseenglish.api.domain.response.ResPromptBatchPreviewDTO;
 import com.courseenglish.api.service.ai.question.AiQuestionBatchPlanner;
 import com.courseenglish.api.service.ai.question.AiQuestionBatchPlanner.BatchSpec;
+import com.courseenglish.api.domain.response.ResVocabularySetDTO;
 import com.courseenglish.api.service.ai.question.AiQuestionPromptAssembler;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
@@ -24,16 +25,19 @@ public class AiQuestionGenPromptPreviewService {
   private final AiAccessSupport aiAccessSupport;
   private final AiQuestionBatchPlanner batchPlanner;
   private final AiQuestionPromptAssembler promptAssembler;
+  private final VocabularySetAiContextService vocabularySetAiContextService;
 
   public AiQuestionGenPromptPreviewService(
       AiDocumentService aiDocumentService,
       AiAccessSupport aiAccessSupport,
       AiQuestionBatchPlanner batchPlanner,
-      AiQuestionPromptAssembler promptAssembler) {
+      AiQuestionPromptAssembler promptAssembler,
+      VocabularySetAiContextService vocabularySetAiContextService) {
     this.aiDocumentService = aiDocumentService;
     this.aiAccessSupport = aiAccessSupport;
     this.batchPlanner = batchPlanner;
     this.promptAssembler = promptAssembler;
+    this.vocabularySetAiContextService = vocabularySetAiContextService;
   }
 
   public ResAiQuestionGenPromptPreviewDTO preview(ReqCreateQuestionGenTaskDTO request)
@@ -42,8 +46,22 @@ public class AiQuestionGenPromptPreviewService {
     aiAccessSupport.requireStaffUser();
     UUID userId = aiAccessSupport.currentUserId();
 
-    boolean topicMode = request.getTopic() != null && !request.getTopic().isBlank();
-    String excerpt = resolveExcerpt(request, userId, topicMode);
+    boolean vocabSetMode = request.getVocabularySetId() != null;
+    if (vocabSetMode && request.getDocumentId() != null) {
+      throw new IdInvalidException("Không dùng đồng thời vocabularySetId và documentId");
+    }
+
+    ResVocabularySetDTO vocabSet = null;
+    if (vocabSetMode) {
+      vocabSet = vocabularySetAiContextService.requireSetForAiGen(request.getVocabularySetId());
+      if (request.getTopic() == null || request.getTopic().isBlank()) {
+        request.setTopic(vocabSet.getTitle());
+      }
+    }
+
+    boolean topicMode =
+        vocabSetMode || (request.getTopic() != null && !request.getTopic().isBlank());
+    String excerpt = resolveExcerpt(request, userId, topicMode, vocabSetMode, vocabSet);
 
     Map<QuestionTypeEnum, Integer> quotas = normalizeTypeQuotas(request.getTypeQuotas());
     List<BatchSpec> specs;
@@ -98,8 +116,19 @@ public class AiQuestionGenPromptPreviewService {
     return dto;
   }
 
-  private String resolveExcerpt(ReqCreateQuestionGenTaskDTO request, UUID userId, boolean topicMode)
+  private String resolveExcerpt(
+      ReqCreateQuestionGenTaskDTO request,
+      UUID userId,
+      boolean topicMode,
+      boolean vocabSetMode,
+      ResVocabularySetDTO vocabSet)
       throws IdInvalidException {
+    if (vocabSetMode) {
+      return vocabularySetAiContextService.buildVocabularySetDocumentText(
+          vocabSet,
+          request.getLanguageLevel(),
+          request.getAdditionalInstructions());
+    }
     if (topicMode) {
       return AiDocumentService.buildTopicBriefText(
           request.getTopic().trim(),
@@ -108,7 +137,7 @@ public class AiQuestionGenPromptPreviewService {
           request.getAdditionalInstructions());
     }
     if (request.getDocumentId() == null) {
-      throw new IdInvalidException("Thiếu documentId hoặc topic");
+      throw new IdInvalidException("Thiếu vocabularySetId, topic hoặc documentId");
     }
     AiDocument document = aiDocumentService.requireReadyDocument(request.getDocumentId(), userId);
     return document.getExtractedText();

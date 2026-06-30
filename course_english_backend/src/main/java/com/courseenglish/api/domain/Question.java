@@ -1,5 +1,6 @@
 package com.courseenglish.api.domain;
 
+import com.courseenglish.api.util.constant.QuestionSourceEnum;
 import com.courseenglish.api.util.constant.QuestionStatusEnum;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import jakarta.persistence.*;
@@ -35,6 +36,9 @@ public class Question extends BaseObject {
     @Column(nullable = false, length = 20)
     private QuestionStatusEnum status = QuestionStatusEnum.DRAFT;
 
+    @Column(length = 255)
+    private String title;
+
     @NotBlank(message = "promptText is required")
     @Column(name = "prompt_text", nullable = false, columnDefinition = "TEXT")
     private String promptText;
@@ -50,6 +54,22 @@ public class Question extends BaseObject {
 
     @Column
     private Integer difficulty;
+
+    @Column(name = "cefr_level", length = 8)
+    private String cefrLevel;
+
+    @Column(length = 32)
+    private String skill;
+
+    @Column(length = 128)
+    private String topic;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private QuestionSourceEnum source = QuestionSourceEnum.MANUAL;
+
+    @Column(name = "is_ai_generated", nullable = false)
+    private boolean aiGenerated = false;
 
     @Column(name = "tags_json", columnDefinition = "TEXT")
     private String tagsJson;

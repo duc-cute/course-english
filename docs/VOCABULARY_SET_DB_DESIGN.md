@@ -75,7 +75,7 @@ vocabulary_words (1) ──< vocabulary_set_members (N) >── vocabulary_sets 
 
 - **Tách module** — vocab là nguồn, bank là output tuỳ chọn.
 - Generator MVP: `vocabActivityGenerator.ts` → JSON `EXERCISE_SET` (snapshot).
-- Phase sau: `POST /vocabulary-sets/{id}/generate-questions` bulk vào bank.
+- Phase sau: sinh câu AI vào bank — xem [`QUESTION_BANK_AI_GEN_PLAN.md`](./QUESTION_BANK_AI_GEN_PLAN.md) Phase AI-3 (`vocabularySetId` + `question-generation`).
 
 ## Import CSV
 

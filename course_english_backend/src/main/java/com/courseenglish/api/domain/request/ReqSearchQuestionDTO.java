@@ -12,4 +12,10 @@ public class ReqSearchQuestionDTO extends ReqPagingSearchDTO {
     private UUID categoryId;
     private String questionType;
     private String status;
+    private Integer difficulty;
+    private String cefrLevel;
+    private String skill;
+    private String topic;
+    private String source;
+    private Boolean aiGenerated;
 }

@@ -14,6 +14,7 @@ import com.courseenglish.api.repository.ExamPaperRepository;
 import com.courseenglish.api.repository.ExamSectionRepository;
 import com.courseenglish.api.repository.SubjectRepository;
 import com.courseenglish.api.service.ExamPaperService;
+import com.courseenglish.api.service.ExamPaperQuestionBankSyncService;
 import com.courseenglish.api.service.ExamSectionPayloadValidator;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
@@ -40,16 +41,19 @@ public class ExamPaperServiceImpl implements ExamPaperService {
     private final ExamSectionRepository examSectionRepository;
     private final SubjectRepository subjectRepository;
     private final ExamSectionPayloadValidator payloadValidator;
+    private final ExamPaperQuestionBankSyncService questionBankSyncService;
 
     public ExamPaperServiceImpl(
             ExamPaperRepository examPaperRepository,
             ExamSectionRepository examSectionRepository,
             SubjectRepository subjectRepository,
-            ExamSectionPayloadValidator payloadValidator) {
+            ExamSectionPayloadValidator payloadValidator,
+            ExamPaperQuestionBankSyncService questionBankSyncService) {
         this.examPaperRepository = examPaperRepository;
         this.examSectionRepository = examSectionRepository;
         this.subjectRepository = subjectRepository;
         this.payloadValidator = payloadValidator;
+        this.questionBankSyncService = questionBankSyncService;
     }
 
     @Override
@@ -93,7 +97,10 @@ public class ExamPaperServiceImpl implements ExamPaperService {
         ExamPaper saved = examPaperRepository.save(entity);
         saveSections(saved, request.getSections());
         validatePublished(saved.getId(), saved.getStatus());
-        return toDto(saved, true);
+        int bankSynced = questionBankSyncService.syncExamPaper(saved);
+        ResExamPaperDTO response = toDto(saved, true);
+        response.setBankQuestionsSynced(bankSynced);
+        return response;
     }
 
     @Override
@@ -106,7 +113,10 @@ public class ExamPaperServiceImpl implements ExamPaperService {
         ExamPaper saved = examPaperRepository.save(entity);
         replaceSections(saved, request.getSections());
         validatePublished(saved.getId(), saved.getStatus());
-        return toDto(saved, true);
+        int bankSynced = questionBankSyncService.syncExamPaper(saved);
+        ResExamPaperDTO response = toDto(saved, true);
+        response.setBankQuestionsSynced(bankSynced);
+        return response;
     }
 
     @Override

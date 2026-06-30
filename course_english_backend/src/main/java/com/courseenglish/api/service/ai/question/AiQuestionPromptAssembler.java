@@ -1,5 +1,6 @@
 package com.courseenglish.api.service.ai.question;
 
+import com.courseenglish.api.service.ai.VocabularySetAiContextService;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +48,13 @@ public class AiQuestionPromptAssembler {
         """
             Use choiceText and correct (boolean) for choices — NOT isCorrect.
             Do NOT output tempId, selected, promptLang, difficulty, displayOrder, or choiceKey — the server fills these.
+
+            Explanation language (mandatory for Vietnamese learners):
+            - Every "explanation" field MUST be in Vietnamese (tiếng Việt), 2–4 short clear sentences.
+            - Explain why the correct answer is right; for MCQ briefly note why distractors are wrong if helpful.
+            - Question stems (promptText) stay in the requested promptLang (usually English).
+            - NEVER use the double-quote character (") inside explanation text — use «guillemets» or single quotes for English words.
+            - You may quote short English phrases from the question inside the Vietnamese explanation.
 
             Envelope schema:
             {
@@ -130,7 +138,14 @@ public class AiQuestionPromptAssembler {
           """
               .formatted(blanks, blanks);
     }
-    String sourceLabel = topicMode ? "Topic brief" : "Document excerpt";
+    String sourceLabel;
+    if (VocabularySetAiContextService.isVocabularySetExcerpt(excerpt)) {
+      sourceLabel = "Vocabulary set";
+    } else if (topicMode) {
+      sourceLabel = "Topic brief";
+    } else {
+      sourceLabel = "Document excerpt";
+    }
     return """
         %s:
         ---
@@ -141,6 +156,7 @@ public class AiQuestionPromptAssembler {
         Allowed questionTypes: %s
         Difficulty (1-5): %d
         promptLang for stems: %s
+        explanation language: vi (Vietnamese — required for every explanation field)
         %s%s
         Return the full JSON envelope only.
         """
@@ -294,6 +310,7 @@ public class AiQuestionPromptAssembler {
             Generate exactly %d items of type %s.
             Difficulty (1-5): %d
             promptLang for stems: %s
+            explanation language: vi (Vietnamese — required for every explanation field)
             %s%s
             Return the full JSON envelope only.
             """

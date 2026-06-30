@@ -37,7 +37,7 @@ public class McqQuestionTypeHandler implements AiQuestionTypeHandler {
         {
           "questionType": "MULTIPLE_CHOICE",
           "promptText": "She ___ to school every day.",
-          "explanation": "Present simple, third person.",
+          "explanation": "Chủ ngữ She (ngôi thứ ba số ít) đi với động từ thêm -s/es ở thì hiện tại đơn, nên đáp án đúng là «goes».",
           "choices": [
             { "choiceText": "go", "correct": false },
             { "choiceText": "goes", "correct": true },

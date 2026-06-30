@@ -57,7 +57,13 @@ public final class CatalogSearchSpecs {
                 questionKeywordLike(req.getKeyword()),
                 questionCategoryIdEquals(req.getCategoryId()),
                 questionTypeEquals(req.getQuestionType()),
-                questionStatusEquals(req.getStatus())
+                questionStatusEquals(req.getStatus()),
+                questionDifficultyEquals(req.getDifficulty()),
+                questionCefrLevelEquals(req.getCefrLevel()),
+                questionSkillEquals(req.getSkill()),
+                questionTopicLike(req.getTopic()),
+                questionSourceEquals(req.getSource()),
+                questionAiGeneratedEquals(req.getAiGenerated())
         );
     }
 
@@ -212,6 +218,50 @@ public final class CatalogSearchSpecs {
         }
         String normalized = status.trim().toUpperCase();
         return (root, query, cb) -> cb.equal(cb.upper(root.get("status")), normalized);
+    }
+
+    private static Specification<Question> questionDifficultyEquals(Integer difficulty) {
+        if (difficulty == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("difficulty"), difficulty);
+    }
+
+    private static Specification<Question> questionCefrLevelEquals(String cefrLevel) {
+        if (cefrLevel == null || cefrLevel.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("cefrLevel")), cefrLevel.trim().toUpperCase());
+    }
+
+    private static Specification<Question> questionSkillEquals(String skill) {
+        if (skill == null || skill.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("skill")), skill.trim().toUpperCase());
+    }
+
+    private static Specification<Question> questionTopicLike(String topic) {
+        if (topic == null || topic.isBlank()) {
+            return null;
+        }
+        String pattern = "%" + topic.trim().toLowerCase() + "%";
+        return (root, query, cb) -> cb.like(cb.lower(root.get("topic")), pattern);
+    }
+
+    private static Specification<Question> questionSourceEquals(String source) {
+        if (source == null || source.isBlank()) {
+            return null;
+        }
+        String normalized = source.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("source")), normalized);
+    }
+
+    private static Specification<Question> questionAiGeneratedEquals(Boolean aiGenerated) {
+        if (aiGenerated == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("aiGenerated"), aiGenerated);
     }
 
     private static Specification<Lesson> lessonKeywordLike(String keyword) {

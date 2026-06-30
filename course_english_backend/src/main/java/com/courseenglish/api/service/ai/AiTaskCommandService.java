@@ -10,6 +10,7 @@ import com.courseenglish.api.domain.request.ReqUpdateAiTaskDraftDTO;
 import com.courseenglish.api.domain.response.ResAiTaskHistoryItemDTO;
 import com.courseenglish.api.domain.response.ResAiTaskDTO;
 import com.courseenglish.api.domain.response.ResCreateAiTaskDTO;
+import com.courseenglish.api.domain.response.ResVocabularySetDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.repository.AiTaskRepository;
 import com.courseenglish.api.service.ActivityLogService;
@@ -60,6 +61,7 @@ public class AiTaskCommandService {
   private final AiTaskWorker aiTaskWorker;
   private final ActivityLogService activityLogService;
   private final ObjectMapper objectMapper;
+  private final VocabularySetAiContextService vocabularySetAiContextService;
 
   @Value("${app.ai.max-questions-per-task:50}")
   private int maxQuestionsPerTask;
@@ -90,7 +92,8 @@ public class AiTaskCommandService {
       AiQuestionGenResultValidator resultValidator,
       AiTaskWorker aiTaskWorker,
       ActivityLogService activityLogService,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      VocabularySetAiContextService vocabularySetAiContextService) {
     this.aiTaskRepository = aiTaskRepository;
     this.aiDocumentService = aiDocumentService;
     this.aiAccessSupport = aiAccessSupport;
@@ -99,6 +102,7 @@ public class AiTaskCommandService {
     this.aiTaskWorker = aiTaskWorker;
     this.activityLogService = activityLogService;
     this.objectMapper = objectMapper;
+    this.vocabularySetAiContextService = vocabularySetAiContextService;
   }
 
   @Transactional
@@ -110,11 +114,36 @@ public class AiTaskCommandService {
 
     enforceDailyGenQuota(userId);
 
-    boolean topicMode = request.getTopic() != null && !request.getTopic().isBlank();
+    boolean vocabSetMode = request.getVocabularySetId() != null;
+    if (vocabSetMode && request.getDocumentId() != null) {
+      throw new IdInvalidException("Không dùng đồng thời vocabularySetId và documentId");
+    }
+
+    ResVocabularySetDTO vocabSet = null;
+    if (vocabSetMode) {
+      vocabSet = vocabularySetAiContextService.requireSetForAiGen(request.getVocabularySetId());
+      if (request.getTopic() == null || request.getTopic().isBlank()) {
+        request.setTopic(vocabSet.getTitle());
+      }
+    }
+
+    boolean topicMode =
+        vocabSetMode || (request.getTopic() != null && !request.getTopic().isBlank());
+    if (!vocabSetMode && !topicMode && request.getDocumentId() == null) {
+      throw new IdInvalidException("Thiếu vocabularySetId, topic hoặc documentId");
+    }
+
     ResolvedGenConfig config = resolveGenConfig(request, topicMode);
 
     AiDocument document;
-    if (topicMode) {
+    if (vocabSetMode) {
+      document =
+          vocabularySetAiContextService.createVocabularySetDocument(
+              userId,
+              vocabSet,
+              request.getLanguageLevel(),
+              request.getAdditionalInstructions());
+    } else if (topicMode && request.getDocumentId() == null) {
       document =
           aiDocumentService.createTopicBriefDocument(
               userId,
@@ -124,7 +153,7 @@ public class AiTaskCommandService {
               request.getAdditionalInstructions());
     } else {
       if (request.getDocumentId() == null) {
-        throw new IdInvalidException("Thiếu documentId hoặc topic");
+        throw new IdInvalidException("Thiếu documentId");
       }
       document = aiDocumentService.requireReadyDocument(request.getDocumentId(), userId);
     }
@@ -151,7 +180,7 @@ public class AiTaskCommandService {
 
     request.setQuestionCount(count);
     request.setQuestionTypes(types);
-    if (topicMode) {
+    if (topicMode || vocabSetMode) {
       request.setDocumentId(document.getId());
     }
 
@@ -161,20 +190,27 @@ public class AiTaskCommandService {
     task.setConversationId(request.getConversationId());
     task.setTaskType(AiTaskTypeEnum.QUESTION_GENERATION);
     task.setStatus(AiTaskStatusEnum.PENDING);
-    task.setInputJson(serializeInput(request, topicMode));
+    task.setInputJson(serializeInput(request, topicMode, vocabSetMode));
     aiTaskRepository.save(task);
+
+    String taskLabel =
+        vocabSetMode
+            ? "Đã tạo tác vụ sinh câu hỏi AI (bộ từ)"
+            : (topicMode ? "Đã tạo tác vụ sinh bài tập AI (topic)" : "Đã tạo tác vụ sinh câu hỏi AI");
 
     activityLogService.log(
         ActivityLogWriteContext.of(
                 ActivityLogSeverityEnum.INFO,
                 ActivityLogModuleEnum.AI,
                 ActivityLogActionEnum.AI_GEN_TASK_CREATED,
-                topicMode ? "Đã tạo tác vụ sinh bài tập AI (topic)" : "Đã tạo tác vụ sinh câu hỏi AI")
+                taskLabel)
             .userId(userId)
             .ref("AI_TASK", task.getId())
             .put("taskId", task.getId())
             .put("documentId", document.getId())
             .put("topicMode", topicMode)
+            .put("vocabularySetMode", vocabSetMode)
+            .put("vocabularySetId", request.getVocabularySetId())
             .put("questionCount", count)
             .put("questionTypes", types)
             .put("typeQuotas", config.typeQuotas()));
@@ -526,7 +562,7 @@ public class AiTaskCommandService {
     }
   }
 
-  private String serializeInput(ReqCreateQuestionGenTaskDTO request, boolean topicMode)
+  private String serializeInput(ReqCreateQuestionGenTaskDTO request, boolean topicMode, boolean vocabSetMode)
       throws IdInvalidException {
     try {
       Map<String, Object> map = new HashMap<>();
@@ -543,6 +579,8 @@ public class AiTaskCommandService {
       map.put("difficulty", request.getDifficulty());
       map.put("promptLang", request.getPromptLang());
       map.put("topicMode", topicMode);
+      map.put("vocabularySetMode", vocabSetMode);
+      map.put("vocabularySetId", request.getVocabularySetId());
       map.put("customUserPromptByType", request.getCustomUserPromptByType());
       return objectMapper.writeValueAsString(map);
     } catch (JsonProcessingException e) {

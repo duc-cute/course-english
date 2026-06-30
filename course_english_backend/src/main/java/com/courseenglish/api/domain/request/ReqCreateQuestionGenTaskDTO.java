@@ -58,4 +58,7 @@ public class ReqCreateQuestionGenTaskDTO {
   private Map<QuestionTypeEnum, String> customUserPromptByType;
 
   private UUID conversationId;
+
+  /** Optional — generate questions from a saved vocabulary set (AI-3). */
+  private UUID vocabularySetId;
 }

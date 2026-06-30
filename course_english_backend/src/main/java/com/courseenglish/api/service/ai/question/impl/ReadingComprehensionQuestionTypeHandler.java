@@ -49,6 +49,7 @@ public class ReadingComprehensionQuestionTypeHandler implements AiQuestionTypeHa
           }
         - passage.text: from source material or original writing for the topic brief
         - Each subQuestion needs exactly 4 choices and exactly one correct: true
+        - subQuestions[].explanation: Vietnamese (tiếng Việt) for each sub-question
         - Do NOT output id, choiceKey, displayOrder, promptLang, presentation, or passage.lang
         - Do NOT use choices[] at the top level
         """;
@@ -74,7 +75,7 @@ public class ReadingComprehensionQuestionTypeHandler implements AiQuestionTypeHa
                   { "choiceText": "8 o'clock", "correct": false },
                   { "choiceText": "9 o'clock", "correct": false }
                 ],
-                "explanation": "The passage says six o'clock."
+                "explanation": "Đoạn văn nói Tom thức dậy lúc sáu giờ (six o'clock)."
               },
               {
                 "promptText": "Tom walks to school alone.",
@@ -84,7 +85,7 @@ public class ReadingComprehensionQuestionTypeHandler implements AiQuestionTypeHa
                   { "choiceText": "Not given", "correct": false },
                   { "choiceText": "Not stated", "correct": false }
                 ],
-                "explanation": "He walks with Anna."
+                "explanation": "Đoạn văn ghi Tom đi học cùng bạn Anna, không đi một mình."
               }
             ]
           }

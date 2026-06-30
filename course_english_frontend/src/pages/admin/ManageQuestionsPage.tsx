@@ -1,100 +1,124 @@
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  MenuItem,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AdminCatalogGridTable,
-  AdminCatalogPageHeader,
-  AdminCatalogToolbar,
-  ConfirmDialog,
-  type CatalogGridColumn,
-} from "../../admin/components";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import { AdminCatalogPageHeader, ConfirmDialog } from "../../admin/components";
+import { QuestionBankAiGenDialog } from "../../admin/components/question/QuestionBankAiGenDialog";
+import { QuestionBankFilters, type QuestionBankFilterState } from "../../admin/components/question/QuestionBankFilters";
 import { QuestionBankForm } from "../../admin/components/question/QuestionBankForm";
+import { QuestionBankHeaderActions } from "../../admin/components/question/QuestionBankHeaderActions";
+import { QuestionBankExplainDialog } from "../../admin/components/question/QuestionBankExplainDialog";
+import { QuestionBankPreviewDrawer } from "../../admin/components/question/QuestionBankPreviewDrawer";
+import { QuestionBankStatsRow } from "../../admin/components/question/QuestionBankStatsRow";
+import { QuestionBankBulkToolbar } from "../../admin/components/question/QuestionBankBulkToolbar";
+import { QuestionBankTable } from "../../admin/components/question/QuestionBankTable";
 import {
-  QuestionBankImportDialog,
-  type QuestionBankImportFormat,
-} from "../../admin/components/question/QuestionBankImportDialog";
-import {
-  muBtnSmOutlined,
   muDialogFooter,
   muDialogPaper,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
-  muTextFieldSx,
-  muSelectAllowEmpty,
-  muSelectFilterInputLabelProps,
 } from "./manageUserUiStyles";
 import {
+  apiBulkQuestions,
   apiCreateQuestion,
+  apiExportQuestions,
   apiDeleteQuestion,
   apiGetQuestionById,
   apiGetQuestionCategories,
+  apiGetQuestionStats,
   apiSearchQuestions,
   apiUpdateQuestion,
+  type BulkQuestionOperation,
   type QuestionCategoryRecord,
   type QuestionRecord,
-  type QuestionStatus,
+  type QuestionStatsRecord,
+  type QuestionType,
   type QuestionsPaginationResult,
 } from "../../shared/api/question";
 import type { ApiResponse } from "../../shared/api/types";
-import { createEmptyMcqQuestion } from "../../shared/lesson/exercisePayload";
-import { mcqToQuestionForm, questionToMcq } from "../../shared/lesson/questionBankUtils";
-import type { MultipleChoiceQuestion } from "../../student/lessonPlayer/exercise/types";
+import {
+  QUESTION_BANK_EDITABLE_TYPES,
+  createEmptyQuestionByType,
+  exerciseQuestionToQuestionForm,
+  questionRecordToExerciseQuestion,
+  recordToFormMeta,
+  type QuestionFormMeta,
+} from "../../shared/lesson/questionBankUtils";
+import type { BankImportBatchResult } from "../../shared/lesson/questionBankImport";
+import { downloadQuestionBankJsonExport } from "../../shared/lesson/questionBankExport";
+import type { ExerciseQuestion } from "../../student/lessonPlayer/exercise/types";
 
-function statusChip(status?: QuestionStatus) {
-  if (status === "PUBLISHED") {
-    return <Chip size="small" label="Published" color="success" variant="outlined" />;
-  }
-  if (status === "ARCHIVED") {
-    return <Chip size="small" label="Lưu trữ" variant="outlined" />;
-  }
-  return <Chip size="small" label="Nháp" variant="outlined" />;
-}
+const DEFAULT_FILTERS: QuestionBankFilterState = {
+  searchInput: "",
+  filterCategoryId: "",
+  filterStatus: "",
+  filterQuestionType: "",
+  filterDifficulty: "",
+  filterCefrLevel: "",
+  filterSkill: "",
+  filterTopic: "",
+  filterSource: "",
+  sortBy: "createdAt,desc",
+};
 
 export function ManageQuestionsPage() {
   const [rows, setRows] = useState<QuestionRecord[]>([]);
   const [categories, setCategories] = useState<QuestionCategoryRecord[]>([]);
+  const [stats, setStats] = useState<QuestionStatsRecord | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size] = useState(10);
   const [total, setTotal] = useState(0);
-  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState<QuestionBankFilterState>(DEFAULT_FILTERS);
   const [searchText, setSearchText] = useState("");
-  const [filterCategoryId, setFilterCategoryId] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<QuestionRecord | null>(null);
-  const [mcq, setMcq] = useState<MultipleChoiceQuestion>(createEmptyMcqQuestion());
-  const [categoryId, setCategoryId] = useState("");
-  const [status, setStatus] = useState<QuestionStatus>("DRAFT");
+  const [questionType, setQuestionType] = useState<QuestionType>("MULTIPLE_CHOICE");
+  const [question, setQuestion] = useState<ExerciseQuestion>(createEmptyQuestionByType("MULTIPLE_CHOICE"));
+  const [formMeta, setFormMeta] = useState<QuestionFormMeta>({ status: "DRAFT" });
   const [formError, setFormError] = useState("");
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState<QuestionRecord | null>(null);
-  const [importFormat, setImportFormat] = useState<QuestionBankImportFormat | null>(null);
+  const [openAiGen, setOpenAiGen] = useState(false);
+  const [aiSaveMessage, setAiSaveMessage] = useState("");
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewRefresh, setPreviewRefresh] = useState(0);
+  const [explainId, setExplainId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [openBulkDelete, setOpenBulkDelete] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState("");
+
+  const updateFilter = <K extends keyof QuestionBankFilterState>(key: K, value: QuestionBankFilterState[K]) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setSelectedIds(new Set());
+    if (key !== "searchInput") {
+      setPage(0);
+    }
+  };
+
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const response = (await apiGetQuestionStats()) as ApiResponse<QuestionStatsRecord>;
+      const data = response?.result ?? response?.data ?? null;
+      setStats(data);
+    } catch {
+      setStats(null);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void apiGetQuestionCategories().then((res) => {
       const list = (res as { result?: QuestionCategoryRecord[] }).result ?? res.data ?? [];
       setCategories(Array.isArray(list) ? list : []);
     });
-  }, []);
+    void fetchStats();
+  }, [fetchStats]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -103,13 +127,18 @@ export function ManageQuestionsPage() {
       const params: Record<string, unknown> = {
         page,
         size,
-        sort: "createdAt,desc",
-        questionType: "MULTIPLE_CHOICE",
+        sort: filters.sortBy,
       };
       const trimmed = searchText.trim();
       if (trimmed) params.keyword = trimmed;
-      if (filterCategoryId) params.categoryId = filterCategoryId;
-      if (filterStatus) params.status = filterStatus;
+      if (filters.filterCategoryId) params.categoryId = filters.filterCategoryId;
+      if (filters.filterStatus) params.status = filters.filterStatus;
+      if (filters.filterQuestionType) params.questionType = filters.filterQuestionType;
+      if (filters.filterDifficulty) params.difficulty = Number(filters.filterDifficulty);
+      if (filters.filterCefrLevel) params.cefrLevel = filters.filterCefrLevel;
+      if (filters.filterSkill) params.skill = filters.filterSkill;
+      if (filters.filterTopic.trim()) params.topic = filters.filterTopic.trim();
+      if (filters.filterSource) params.source = filters.filterSource;
 
       const response = (await apiSearchQuestions(params)) as ApiResponse<QuestionsPaginationResult>;
       const items = response?.data?.result ?? response?.result ?? [];
@@ -123,16 +152,16 @@ export function ManageQuestionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, searchText, filterCategoryId, filterStatus]);
+  }, [page, size, searchText, filters]);
 
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
 
   const resetForm = () => {
-    setMcq(createEmptyMcqQuestion());
-    setCategoryId("");
-    setStatus("DRAFT");
+    setQuestionType("MULTIPLE_CHOICE");
+    setQuestion(createEmptyQuestionByType("MULTIPLE_CHOICE"));
+    setFormMeta({ status: "DRAFT" });
     setFormError("");
     setEditing(null);
   };
@@ -142,35 +171,56 @@ export function ManageQuestionsPage() {
     setOpenForm(true);
   };
 
+  const loadRecordIntoForm = (detail: QuestionRecord) => {
+    const type = detail.questionType ?? "MULTIPLE_CHOICE";
+    if (!QUESTION_BANK_EDITABLE_TYPES.includes(type)) {
+      setError(`Loại ${type} chưa hỗ trợ chỉnh sửa trên UI.`);
+      return false;
+    }
+    setQuestionType(type);
+    setQuestion(questionRecordToExerciseQuestion(detail));
+    setFormMeta(recordToFormMeta(detail));
+    return true;
+  };
+
   const openEdit = async (row: QuestionRecord) => {
+    setPreviewId(null);
     setFormError("");
     setEditing(row);
     setOpenForm(true);
     try {
       const response = (await apiGetQuestionById(row.id)) as ApiResponse<QuestionRecord>;
       const detail = response?.result ?? response?.data ?? row;
-      setMcq(questionToMcq(detail));
-      setCategoryId(detail.categoryId ?? "");
-      setStatus(detail.status ?? "DRAFT");
+      if (!loadRecordIntoForm(detail)) {
+        setOpenForm(false);
+        setEditing(null);
+      }
     } catch {
-      setMcq(questionToMcq(row));
-      setCategoryId(row.categoryId ?? "");
-      setStatus(row.status ?? "DRAFT");
+      if (!loadRecordIntoForm(row)) {
+        setOpenForm(false);
+        setEditing(null);
+      }
     }
   };
 
+  const handleQuestionTypeChange = (nextType: QuestionType) => {
+    setQuestionType(nextType);
+    setQuestion(createEmptyQuestionByType(nextType));
+  };
+
   const submitForm = async () => {
-    if (!mcq.prompt.text.trim()) {
+    const promptText =
+      question.type === "MULTIPLE_CHOICE" || question.type === "TRUE_FALSE" || question.type === "FILL_BLANK"
+        ? question.prompt?.text?.trim() ?? ""
+        : "";
+    if (!promptText) {
       setFormError("Nội dung câu hỏi không được để trống.");
       return;
     }
     setSubmitting(true);
     setFormError("");
     try {
-      const payload = mcqToQuestionForm(mcq, {
-        categoryId: categoryId || undefined,
-        status,
-      });
+      const payload = exerciseQuestionToQuestionForm(question, formMeta);
       if (editing?.id) {
         await apiUpdateQuestion(editing.id, payload);
       } else {
@@ -178,7 +228,7 @@ export function ManageQuestionsPage() {
       }
       setOpenForm(false);
       resetForm();
-      await fetchData();
+      await Promise.all([fetchData(), fetchStats()]);
     } catch (err) {
       setFormError((err as { message?: string })?.message || "Không thể lưu câu hỏi.");
     } finally {
@@ -193,7 +243,7 @@ export function ManageQuestionsPage() {
       await apiDeleteQuestion(deleting.id);
       setOpenDelete(false);
       setDeleting(null);
-      await fetchData();
+      await Promise.all([fetchData(), fetchStats()]);
     } catch (err) {
       setError((err as { message?: string })?.message || "Không thể xóa câu hỏi.");
     } finally {
@@ -201,152 +251,119 @@ export function ManageQuestionsPage() {
     }
   };
 
-  const questionColumns = useMemo<CatalogGridColumn<QuestionRecord>[]>(
-    () => [
-      {
-        key: "stt",
-        header: "#",
-        width: "48px",
-        mobileRole: "hidden",
-        className: "catalog-table-muted",
-        render: (_row, index) => page * size + index + 1,
-      },
-      {
-        key: "prompt",
-        header: "Câu hỏi",
-        width: "minmax(200px, 2fr)",
-        mobileRole: "title",
-        render: (row) => row.promptText,
-      },
-      {
-        key: "category",
-        header: "Danh mục",
-        width: "minmax(100px, 1fr)",
-        mobileRole: "meta",
-        className: "catalog-table-muted",
-        render: (row) => row.categoryName ?? "—",
-      },
-      {
-        key: "status",
-        header: "Trạng thái",
-        width: "100px",
-        mobileRole: "inline",
-        render: (row) => statusChip(row.status),
-      },
-      {
-        key: "actions",
-        header: "Thao tác",
-        width: "100px",
-        align: "center",
-        mobileRole: "actions",
-        render: (row) => (
-          <>
-            <Tooltip title="Sửa">
-              <IconButton size="small" color="primary" onClick={() => void openEdit(row)}>
-                <EditOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Xóa">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => {
-                  setDeleting(row);
-                  setOpenDelete(true);
-                }}
-              >
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </>
-        ),
-      },
-    ],
-    [page, size],
-  );
+  const handleSearch = () => {
+    setPage(0);
+    setSearchText(filters.searchInput);
+    setSelectedIds(new Set());
+  };
+
+  const handleResetFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setSearchText("");
+    setPage(0);
+    setSelectedIds(new Set());
+  };
+
+  const runBulk = async (operation: BulkQuestionOperation) => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    setError("");
+    setBulkMessage("");
+    try {
+      const result = await apiBulkQuestions({ ids, operation });
+      const notFound = result.notFoundIds?.length ?? 0;
+      const opLabel =
+        operation === "PUBLISH"
+          ? "xuất bản"
+          : operation === "ARCHIVE"
+            ? "lưu trữ"
+            : operation === "DELETE"
+              ? "xóa"
+              : operation === "DUPLICATE"
+                ? "nhân bản"
+                : "cập nhật";
+      let msg = `Đã ${opLabel} ${result.affected}/${result.requested} câu.`;
+      if (operation === "DUPLICATE" && result.createdIds?.length) {
+        msg += ` (${result.createdIds.length} bản mới, trạng thái Nháp).`;
+      }
+      if (notFound > 0) {
+        msg += ` ${notFound} id không tìm thấy.`;
+      }
+      setBulkMessage(msg);
+      setSelectedIds(new Set());
+      setOpenBulkDelete(false);
+      await Promise.all([fetchData(), fetchStats()]);
+    } catch (err) {
+      setError((err as { message?: string })?.message || "Thao tác hàng loạt thất bại.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleExport = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    setError("");
+    try {
+      const result = await apiExportQuestions(ids);
+      downloadQuestionBankJsonExport({
+        exportedAt: result.exportedAt,
+        requested: result.requested,
+        exported: result.exported,
+        notFoundIds: result.notFoundIds,
+        questions: result.questions,
+      });
+      const notFound = result.notFoundIds?.length ?? 0;
+      let msg = `Đã export ${result.exported}/${result.requested} câu ra file JSON.`;
+      if (notFound > 0) {
+        msg += ` ${notFound} id không tìm thấy.`;
+      }
+      setBulkMessage(msg);
+    } catch (err) {
+      setError((err as { message?: string })?.message || "Export thất bại.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   return (
-    <Box className="admin-catalog-page">
+    <Box className="admin-catalog-page admin-catalog-page--question-bank">
       <AdminCatalogPageHeader
-        title="Thư viện câu hỏi"
-        subtitle="Ngân hàng câu hỏi MCQ"
+        title="Question Bank"
+        subtitle="Ngân hàng câu hỏi tái sử dụng — từ lưu đề thi, sinh AI hoặc tạo thủ công."
         icon={<QuizOutlinedIcon />}
+        action={
+          <QuestionBankHeaderActions
+            onNewQuestion={openCreate}
+            onAiGenerate={() => setOpenAiGen(true)}
+          />
+        }
       />
 
-      <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
-        <AdminCatalogToolbar
-          searchPlaceholder="Tìm theo nội dung câu hỏi..."
-          searchInput={searchInput}
-          onSearchInputChange={setSearchInput}
-          onSearch={() => {
-            setPage(0);
-            setSearchText(searchInput);
-          }}
-          onReset={() => {
-            setSearchInput("");
-            setSearchText("");
-            setFilterCategoryId("");
-            setFilterStatus("");
-            setPage(0);
-          }}
-          addLabel="Thêm câu MCQ"
-          onAdd={openCreate}
-          toolbarVariant="soft"
-          extraFilters={
-            <>
-              <TextField
-                select
-                size="small"
-                label="Danh mục"
-                value={filterCategoryId}
-                onChange={(e) => {
-                  setFilterCategoryId(e.target.value);
-                  setPage(0);
-                }}
-                SelectProps={muSelectAllowEmpty}
-                InputLabelProps={muSelectFilterInputLabelProps}
-                className="admin-catalog-soft-filter__field"
-                sx={{ ...muTextFieldSx, minWidth: 140 }}
-              >
-                <MenuItem value="">Tất cả DM</MenuItem>
-                {categories.map((c) => (
-                  <MenuItem key={c.id} value={c.id}>
-                    {c.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                size="small"
-                label="Trạng thái"
-                value={filterStatus}
-                onChange={(e) => {
-                  setFilterStatus(e.target.value);
-                  setPage(0);
-                }}
-                SelectProps={muSelectAllowEmpty}
-                InputLabelProps={muSelectFilterInputLabelProps}
-                className="admin-catalog-soft-filter__field"
-                sx={{ ...muTextFieldSx, minWidth: 148 }}
-              >
-                <MenuItem value="">Mọi trạng thái</MenuItem>
-                <MenuItem value="DRAFT">Nháp</MenuItem>
-                <MenuItem value="PUBLISHED">Published</MenuItem>
-                <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
-              </TextField>
-            </>
-          }
-        />
-      </Box>
+      <QuestionBankStatsRow stats={stats} loading={statsLoading} />
 
-      <Box sx={{ display: "flex", gap: 1, mb: 1, flexWrap: "wrap" }}>
-        <Button size="small" variant="outlined" sx={muBtnSmOutlined} onClick={() => setImportFormat("excel")}>
-          Import Excel
-        </Button>
-        <Button size="small" variant="outlined" sx={muBtnSmOutlined} onClick={() => setImportFormat("csv")}>
-          Import CSV
-        </Button>
-      </Box>
+      <QuestionBankFilters
+        categories={categories}
+        filters={filters}
+        onSearchInputChange={(value) => updateFilter("searchInput", value)}
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+        onFilterChange={updateFilter}
+      />
+
+      {aiSaveMessage ? (
+        <Alert severity="success" sx={{ mb: 1 }} onClose={() => setAiSaveMessage("")}>
+          {aiSaveMessage}
+        </Alert>
+      ) : null}
+
+      {bulkMessage ? (
+        <Alert severity="success" sx={{ mb: 1 }} onClose={() => setBulkMessage("")}>
+          {bulkMessage}
+        </Alert>
+      ) : null}
 
       {error ? (
         <Alert severity="error" sx={{ mb: 1 }} onClose={() => setError("")}>
@@ -354,34 +371,62 @@ export function ManageQuestionsPage() {
         </Alert>
       ) : null}
 
-      <Box className="admin-catalog-page__table-card">
-        <AdminCatalogGridTable
-          columns={questionColumns}
-          rows={rows}
-          loading={loading}
-          emptyText="Chưa có câu hỏi trong ngân hàng."
-          getRowKey={(row) => row.id}
-        />
-        <Box className="admin-catalog-page__table-footer">
-          <Typography variant="body2" className="admin-catalog-page__table-footer-total">
-            Tổng: {total}
-          </Typography>
-          <Box className="admin-catalog-page__table-footer-controls">
-            <Button variant="outlined" sx={muBtnSmOutlined} size="small" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>
-              Trang trước
-            </Button>
-            <Button
-              variant="outlined"
-              sx={muBtnSmOutlined}
-              size="small"
-              disabled={(page + 1) * size >= total}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Trang sau
-            </Button>
-          </Box>
-        </Box>
-      </Box>
+      <QuestionBankBulkToolbar
+        selectedCount={selectedIds.size}
+        busy={bulkBusy}
+        onPublish={() => void runBulk("PUBLISH")}
+        onArchive={() => void runBulk("ARCHIVE")}
+        onDuplicate={() => void runBulk("DUPLICATE")}
+        onExport={() => void handleExport()}
+        onDelete={() => setOpenBulkDelete(true)}
+        onClear={() => setSelectedIds(new Set())}
+      />
+
+      <QuestionBankTable
+        rows={rows}
+        loading={loading}
+        page={page}
+        size={size}
+        total={total}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        onPagePrev={() => {
+          setPage((p) => p - 1);
+          setSelectedIds(new Set());
+        }}
+        onPageNext={() => {
+          setPage((p) => p + 1);
+          setSelectedIds(new Set());
+        }}
+        onPreview={(row) => setPreviewId(row.id)}
+        onExplain={(row) => setExplainId(row.id)}
+        onEdit={(row) => void openEdit(row)}
+        onDelete={(row) => {
+          setDeleting(row);
+          setOpenDelete(true);
+        }}
+      />
+
+      <QuestionBankPreviewDrawer
+        questionId={previewId}
+        refreshToken={previewRefresh}
+        onClose={() => setPreviewId(null)}
+        onEdit={(record) => {
+          setPreviewId(null);
+          void openEdit(record);
+        }}
+        onExplain={(record) => setExplainId(record.id)}
+      />
+
+      <QuestionBankExplainDialog
+        open={Boolean(explainId)}
+        questionId={explainId}
+        onClose={() => setExplainId(null)}
+        onApplied={() => {
+          void fetchData();
+          setPreviewRefresh((n) => n + 1);
+        }}
+      />
 
       <Dialog
         open={openForm}
@@ -390,20 +435,32 @@ export function ManageQuestionsPage() {
         maxWidth="md"
         PaperProps={{ sx: muDialogPaper }}
       >
-        <DialogTitle>{editing ? "Sửa câu hỏi" : "Thêm câu MCQ"}</DialogTitle>
+        <DialogTitle>{editing ? "Sửa câu hỏi" : "New Question"}</DialogTitle>
         <DialogContent>
-          {formError ? <Alert severity="error" sx={{ mb: 1 }}>{formError}</Alert> : null}
+          {formError ? (
+            <Alert severity="error" sx={{ mb: 1 }}>
+              {formError}
+            </Alert>
+          ) : null}
           <QuestionBankForm
-            mcq={mcq}
-            categoryId={categoryId}
-            status={status}
-            onMcqChange={setMcq}
-            onCategoryChange={setCategoryId}
-            onStatusChange={setStatus}
+            questionType={questionType}
+            question={question}
+            meta={formMeta}
+            isEditing={Boolean(editing)}
+            onQuestionTypeChange={handleQuestionTypeChange}
+            onQuestionChange={setQuestion}
+            onMetaChange={(patch) => setFormMeta((prev) => ({ ...prev, ...patch }))}
           />
         </DialogContent>
         <DialogActions sx={muDialogFooter}>
-          <Button sx={muFooterBtnOutlined} disabled={submitting} onClick={() => { setOpenForm(false); resetForm(); }}>
+          <Button
+            sx={muFooterBtnOutlined}
+            disabled={submitting}
+            onClick={() => {
+              setOpenForm(false);
+              resetForm();
+            }}
+          >
             Hủy
           </Button>
           <Button variant="contained" sx={muFooterBtnPrimary} disabled={submitting} onClick={() => void submitForm()}>
@@ -411,6 +468,17 @@ export function ManageQuestionsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={openBulkDelete}
+        title="Xóa nhiều câu hỏi?"
+        content={`Xóa ${selectedIds.size} câu đã chọn? Lesson đang tham chiếu QUESTION_REF sẽ mất câu tương ứng.`}
+        cancelText="Hủy"
+        confirmText="Xóa"
+        onClose={() => !bulkBusy && setOpenBulkDelete(false)}
+        onConfirm={() => void runBulk("DELETE")}
+        loading={bulkBusy}
+      />
 
       <ConfirmDialog
         open={Boolean(deleting)}
@@ -423,14 +491,20 @@ export function ManageQuestionsPage() {
         loading={submitting}
       />
 
-      {importFormat ? (
-        <QuestionBankImportDialog
-          open
-          format={importFormat}
-          onClose={() => setImportFormat(null)}
-          onImported={() => void fetchData()}
-        />
-      ) : null}
+      <QuestionBankAiGenDialog
+        open={openAiGen}
+        onClose={() => setOpenAiGen(false)}
+        categories={categories}
+        onSaved={(result: BankImportBatchResult) => {
+          void fetchStats();
+          void fetchData();
+          const failPart = result.failed > 0 ? ` (${result.failed} lỗi)` : "";
+          setAiSaveMessage(`Đã lưu ${result.imported} câu AI vào Question Bank${failPart}.`);
+          if (result.failed > 0 && result.errors[0]) {
+            setError(result.errors[0]);
+          }
+        }}
+      />
     </Box>
   );
 }

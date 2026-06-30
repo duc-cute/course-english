@@ -1,10 +1,11 @@
-import AutoFixHighOutlinedIcon from "@mui/icons-material/AutoFixHighOutlined";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import KeyboardOutlinedIcon from "@mui/icons-material/KeyboardOutlined";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import SpellcheckOutlinedIcon from "@mui/icons-material/SpellcheckOutlined";
 import { IconButton, Menu, MenuItem, Tooltip } from "@mui/material";
 import { useState } from "react";
@@ -19,6 +20,7 @@ type VocabularySetCardProps = {
   onGenerateListen: (set: VocabularySetRecord) => void;
   onGenerateSpelling: (set: VocabularySetRecord) => void;
   onGenerateListenType: (set: VocabularySetRecord) => void;
+  onGenerateBankAi?: (set: VocabularySetRecord) => void;
 };
 
 function statusBadge(status?: VocabularySetStatus) {
@@ -62,6 +64,7 @@ export function VocabularySetCard({
   onGenerateListen,
   onGenerateSpelling,
   onGenerateListenType,
+  onGenerateBankAi,
 }: VocabularySetCardProps) {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const wordCount = set.itemCount ?? 0;
@@ -156,8 +159,20 @@ export function VocabularySetCard({
             <span className="vocab-set-card__menu-emoji" aria-hidden>
               📝
             </span>
-            Trắc nghiệm (MCQ)
+            Trắc nghiệm (MCQ) — lesson
           </MenuItem>
+          {onGenerateBankAi ? (
+            <MenuItem
+              className="vocab-set-card__menu-item"
+              onClick={() => {
+                closeMenu();
+                onGenerateBankAi(set);
+              }}
+            >
+              <QuizOutlinedIcon fontSize="small" className="vocab-set-card__menu-icon" />
+              Sinh câu AI → Question Bank
+            </MenuItem>
+          ) : null}
           <MenuItem
             className="vocab-set-card__menu-item"
             onClick={() => {

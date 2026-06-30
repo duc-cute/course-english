@@ -33,6 +33,7 @@ export async function importMcqQuestionsToBank(
     const payload: QuestionFormPayload = mcqToQuestionForm(mcq, {
       categoryId: options.categoryId,
       status: options.status ?? "PUBLISHED",
+      source: "IMPORT",
     });
     try {
       await apiCreateQuestion(payload);

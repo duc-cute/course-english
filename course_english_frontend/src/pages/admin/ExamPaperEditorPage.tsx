@@ -199,15 +199,23 @@ export function ExamPaperEditorPage() {
     setError("");
     setMessage("");
     try {
-      await apiUpdateExamPaper(examPaperId, {
+      const response = (await apiUpdateExamPaper(examPaperId, {
         title: settings.title.trim(),
         instruction: settings.instruction?.trim() || undefined,
         durationMinutes: settings.durationMinutes,
         passScorePercent: settings.passScorePercent,
         status: settings.status,
         sections: buildSectionsPayload(),
-      });
-      setMessage("Đã lưu đề thi.");
+      })) as ApiResponse<ExamPaperRecord>;
+      const bankSynced =
+        response?.result?.bankQuestionsSynced ??
+        response?.data?.bankQuestionsSynced ??
+        0;
+      setMessage(
+        bankSynced > 0
+          ? `Đã lưu đề thi. ${bankSynced} câu đã đồng bộ vào Question Bank.`
+          : "Đã lưu đề thi.",
+      );
       await loadPaper();
     } catch (err) {
       setError((err as { message?: string })?.message || "Không thể lưu đề thi.");

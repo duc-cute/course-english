@@ -14,6 +14,7 @@ import com.courseenglish.api.util.constant.ActivityLogActionEnum;
 import com.courseenglish.api.util.constant.ActivityLogModuleEnum;
 import com.courseenglish.api.util.constant.ActivityLogSeverityEnum;
 import com.courseenglish.api.util.constant.QuestionTypeEnum;
+import com.courseenglish.api.util.AiJsonResponseSanitizer;
 import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1194,8 +1195,9 @@ public class AiQuestionGenerationService {
   }
 
   private AiQuestionGenEnvelopeDTO parseEnvelope(String json) throws IdInvalidException {
+    String repaired = AiJsonResponseSanitizer.repairUnescapedQuotesInField(json, "explanation");
     try {
-      return objectMapper.readValue(json, AiQuestionGenEnvelopeDTO.class);
+      return objectMapper.readValue(repaired, AiQuestionGenEnvelopeDTO.class);
     } catch (JsonProcessingException e) {
       throw new IdInvalidException("AI trả JSON không hợp lệ");
     }

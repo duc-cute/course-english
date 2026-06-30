@@ -15,9 +15,12 @@ import java.util.Map;
 public class AiQuestionGenResultValidator {
 
   private final AiQuestionTypeHandlerRegistry registry;
+  private final AiQuestionExplanationNormalizer explanationNormalizer;
 
-  public AiQuestionGenResultValidator(AiQuestionTypeHandlerRegistry registry) {
+  public AiQuestionGenResultValidator(
+      AiQuestionTypeHandlerRegistry registry, AiQuestionExplanationNormalizer explanationNormalizer) {
     this.registry = registry;
+    this.explanationNormalizer = explanationNormalizer;
   }
 
   public void normalizeAndValidate(AiQuestionGenEnvelopeDTO envelope) throws IdInvalidException {
@@ -42,6 +45,7 @@ public class AiQuestionGenResultValidator {
       }
       AiQuestionTypeHandler handler = registry.require(draft.getQuestionType());
       handler.normalize(draft);
+      explanationNormalizer.normalize(draft);
       List<String> errors = handler.validate(draft);
       draft.setValidationErrors(errors == null ? List.of() : errors);
     }

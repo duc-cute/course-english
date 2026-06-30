@@ -4,11 +4,20 @@ Mục tiêu: nâng cấp `Question Bank` từ CRUD MCQ thành **trung tâm tái 
 
 Tài liệu tham chiếu: `promt.md`, FE page hiện tại: `course_english_frontend/src/pages/admin/ManageQuestionsPage.tsx`.
 
-> **Lưu ý:** Tài liệu này chỉ là **kế hoạch** (chưa triển khai). Tiến độ ExamPaper / AI sinh đề: xem `docs/EXAM_PAPER_PLAN.md`.
+> **Lưu ý:** Tài liệu này chỉ là **kế hoạch** (chưa triển khai).  
+> **Plan chi tiết Phase 1–2:** [`QUESTION_BANK_PHASE_1_2_PLAN.md`](./QUESTION_BANK_PHASE_1_2_PLAN.md)  
+> **Plan AI Generate:** [`QUESTION_BANK_AI_GEN_PLAN.md`](./QUESTION_BANK_AI_GEN_PLAN.md)  
+> **Plan triển khai AI-3:** [`QUESTION_BANK_AI_3_PLAN.md`](./QUESTION_BANK_AI_3_PLAN.md)  
+> **Plan Phase 3:** [`QUESTION_BANK_PHASE_3_PLAN.md`](./QUESTION_BANK_PHASE_3_PLAN.md)  
+> **Plan triển khai AI-1:** [`QUESTION_BANK_AI_1_PLAN.md`](./QUESTION_BANK_AI_1_PLAN.md)  
+> Tiến độ ExamPaper: `docs/EXAM_PAPER_PLAN.md` · Schema DB: `docs/QUESTION_BANK_DB_DESIGN.md`
 
 ---
 
 ## Phase 1 — UI/UX Dashboard + Nền tảng tìm kiếm/lọc (làm trước)
+
+> Chi tiết: [`QUESTION_BANK_PHASE_1_2_PLAN.md`](./QUESTION_BANK_PHASE_1_2_PLAN.md)  
+> **Cập nhật:** 2026-06-30 — Phase 1 code xong, chờ manual test
 
 ### Outcomes
 - Trang “Question Bank” có bố cục dashboard hiện đại (header actions + stats + search/filter).
@@ -16,37 +25,38 @@ Tài liệu tham chiếu: `promt.md`, FE page hiện tại: `course_english_fron
 - Không phá luồng CRUD hiện tại.
 
 ### Frontend (FE)
-- [ ] **Top header**: Title + subtitle + actions
-  - [ ] `New Question`
-  - [ ] `AI Generate` (placeholder button + dialog stub nếu BE chưa có)
-  - [ ] `Import Excel/CSV` (giữ)
-  - [ ] `Import Word/PDF` (UI stub)
-- [ ] **Statistics cards** (4–6 card)
-  - [ ] Total Questions
-  - [ ] Published / Draft / Archived
-  - [ ] By type (ít nhất: MCQ)
-  - [ ] AI Generated (nếu có field)
-- [ ] **Search area**: search box lớn + filter bar gọn
-  - [ ] Filters UI: `questionType`, `status`, `category`, (optional: `difficulty`, `skill`, `topic`, `cefr`)
-  - [ ] Sort UI: `Newest`, `Recently Edited` (tối thiểu)
-- [ ] **Table/Card view** (tối thiểu giữ table)
-  - [ ] Thêm cột `questionType` (hiện tại hardcode MULTIPLE_CHOICE)
-  - [ ] Thêm badge `AI` (nếu có)
-  - [ ] Hành động row: Edit/Delete (giữ)
+- [x] **Top header**: Title + subtitle + actions
+  - [x] `New Question`
+  - [x] `AI Generate` (stub dialog)
+  - [x] ~~Import Excel/CSV/Word~~ — **bỏ** (nguồn chính: lưu đề + AI gen)
+- [x] **Statistics cards** (6 card)
+  - [x] Total Questions
+  - [x] Published / Draft
+  - [x] MCQ / True-False counts
+  - [x] AI Generated (0 tạm — Phase 2)
+- [x] **Search area**: search box lớn + filter bar
+  - [x] Filters: `questionType`, `status`, `category`, `difficulty`
+  - [x] Sort: `Newest`, `Recently Edited`
+- [x] **Table**
+  - [x] Cột `questionType`, `difficulty`, `updatedAt`
+  - [x] Preview disabled (Phase 2)
+  - [x] Edit/Delete giữ
 
 ### Backend (BE)
-- [ ] Endpoint thống kê (gợi ý): `GET /api/questions/stats`
-  - [ ] Return: total, byStatus, byType, aiGeneratedCount (nếu có)
-  - [ ] Nếu chưa có data: trả 0/aggregate cơ bản từ DB.
+- [x] `GET /api/v1/questions/stats`
+- [x] `ReqSearchQuestionDTO.difficulty` + filter spec
+- [x] `ResQuestionDTO.createdBy` / `updatedBy`
+- [ ] Unit test stats
 
 ### Acceptance Criteria
-- [ ] Trang load nhanh, không lỗi; CRUD MCQ vẫn hoạt động.
-- [ ] Search + filter + sort có hiệu lực (ít nhất status/category/sort createdAt).
-- [ ] Stats cards hiển thị đúng theo BE (hoặc fallback hợp lý).
+- [x] Code: CRUD MCQ + import không đổi flow
+- [ ] Manual test: search + filter + sort + stats
 
 ---
 
 ## Phase 2 — Mở rộng Metadata + Preview Drawer + Chuẩn hoá data model (làm trước)
+
+> **Cập nhật:** 2026-06-30 — Phase 2 code xong, cần chạy migration `031_question_bank_metadata.sql` + manual test
 
 ### Outcomes
 - Mỗi question là “educational object”: có metadata rõ ràng.
@@ -54,51 +64,60 @@ Tài liệu tham chiếu: `promt.md`, FE page hiện tại: `course_english_fron
 - Bắt đầu hỗ trợ nhiều question types (tối thiểu 2–4 type đầu).
 
 ### Data Model (BE + FE contract)
-Tối thiểu cần có trong `QuestionRecord`/DTO:
-- [ ] `title` (hoặc derive từ prompt)
-- [ ] `questionType`
-- [ ] `difficulty` (enum/number)
-- [ ] `cefrLevel` (A1–C2)
-- [ ] `skill` (vocab/reading/listening/grammar/...)
-- [ ] `topic`
-- [ ] `tags[]`
-- [ ] `source` (MANUAL/IMPORT/AI/LESSON/EXAM/...)
-- [ ] `createdBy`, `createdAt`, `updatedAt`
-- [ ] `status` (DRAFT/PUBLISHED/ARCHIVED)
-- [ ] (optional) `isAIGenerated`
-- [ ] (optional) `usageCount`, `correctRate`, `avgTime`
+- [x] `title`, `questionType`, `difficulty`, `cefrLevel`, `skill`, `topic`, `tags[]`, `source`, `createdBy`, `status`
+- [x] `isAIGenerated` (column + stats)
+- [ ] `usageCount`, `correctRate`, `avgTime` (Phase 4)
 
 ### Frontend (FE)
-- [ ] **Table row hiển thị metadata**:
-  - [ ] type icon + label
-  - [ ] difficulty/cefr/skill/topic/status
-  - [ ] usageCount/correctRate (nếu có)
-- [ ] **Preview panel (side drawer)**:
-  - [ ] question text + choices + correct answer + explanation
-  - [ ] metadata + statistics
-  - [ ] related questions (placeholder nếu chưa có)
-- [ ] **Question types v1** (gợi ý thứ tự):
-  - [ ] MCQ (đã có)
-  - [ ] True/False
-  - [ ] Fill in the blank
-  - [ ] Matching
-- [ ] **Form editor**:
-  - [ ] Tách editor theo type (component per type)
-  - [ ] Migrate `QuestionBankForm` để hỗ trợ type mới
+- [x] **Table row metadata**: type, difficulty, CEFR, skill, AI badge
+- [x] **Preview drawer** (`QuestionBankPreviewDrawer`)
+- [x] **Question types v1**: MCQ, TRUE_FALSE, FILL_BLANK
+- [x] **Form editor** multi-type (`QuestionBankForm` + canvas per type)
+- [x] Filters: CEFR, skill, topic, source
 
 ### Backend (BE)
-- [ ] Mở rộng schema DB/DTO để lưu metadata (migration nếu cần).
-- [ ] Search API hỗ trợ filter theo metadata: type/status/cefr/skill/topic/tags/source.
-- [ ] Endpoint get-by-id trả đủ detail (choices, answer, explanation, metadata).
+- [x] Migration `031_question_bank_metadata.sql`
+- [x] DTO + search filters metadata
+- [x] Validate TF / FillBlank
+- [x] `toExerciseQuestionMap` TF + FillBlank
+- [x] **Lưu đề → bank** (`ExamPaperQuestionBankSyncService`, `source=EXAM`)
+  - [ ] **AI Generate → bank** — plan: [`QUESTION_BANK_AI_GEN_PLAN.md`](./QUESTION_BANK_AI_GEN_PLAN.md)
+  - [x] AI-1: topic → bank
+  - [x] AI-2: preview invalid + sửa nhanh + title — [`QUESTION_BANK_AI_2_PLAN.md`](./QUESTION_BANK_AI_2_PLAN.md)
+  - [ ] **AI-2b:** GAP_FILL_MCQ + bank editor — làm sau
+  - [x] AI-3: bộ từ vựng → bank — [`QUESTION_BANK_AI_3_PLAN.md`](./QUESTION_BANK_AI_3_PLAN.md)
+  - ~~Upload doc trên bank~~ — bỏ, dùng Exam AI
 
 ### Acceptance Criteria
-- [ ] Có thể tạo/sửa/preview ít nhất 2 types (MCQ + 1 type nữa).
-- [ ] Drawer preview hoạt động, không ảnh hưởng luồng edit.
-- [ ] Filter theo type/status hoạt động ổn định.
+- [x] Code: tạo/sửa/preview MCQ + TF + FillBlank
+- [ ] Manual test E2E + QUESTION_REF lesson resolve
 
 ---
 
-## Phase 3 — AI Actions + Bulk Actions (làm sau)
+## Phase 3 — AI Actions + Bulk Actions (đang làm)
+
+> Chi tiết + quyết định: [`QUESTION_BANK_PHASE_3_PLAN.md`](./QUESTION_BANK_PHASE_3_PLAN.md)
+
+### 3a — Bulk status (✅)
+- [x] `POST /api/v1/questions/bulk` (PUBLISH / ARCHIVE / DRAFT / DELETE)
+- [x] FE checkbox + toolbar Publish / Archive / Delete
+- [ ] Manual test bulk + lesson QUESTION_REF warning
+
+### 3b — Duplicate + Export (✅)
+- [x] `DUPLICATE` trên bulk + tag `dup-from:{id}`
+- [x] `POST /api/v1/questions/export` + tải JSON
+- [ ] Manual test duplicate MCQ/TF/Fill + export file
+
+### 3c — Explain Answer VI (✅)
+- [x] `POST /api/v1/questions/{id}/ai/explain` (sync, prompt tiếng Việt)
+- [x] `QuestionBankExplainDialog` + nút Preview / table
+- [ ] Manual test chất lượng giải thích VI trên MCQ / TF / Fill
+
+### 3d–3f — ⏳ xem plan
+
+---
+
+## Phase 3 (cũ — checklist tổng) — AI Actions + Bulk Actions
 
 ### Outcomes
 - Mỗi question có AI actions (rewrite/simplify/increase difficulty/generate similar…).
@@ -110,7 +129,7 @@ Tối thiểu cần có trong `QuestionRecord`/DTO:
   - [ ] Rewrite
   - [ ] Simplify
   - [ ] Increase Difficulty
-  - [ ] Explain Answer (generate)
+  - [x] Explain Answer (generate) — Phase 3c, mặc định VI
   - [ ] Translate (optional)
 - [ ] Bulk selection + bulk toolbar
   - [ ] Bulk Publish / Archive / Delete / Duplicate / Export
