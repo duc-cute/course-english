@@ -41,4 +41,7 @@ public interface QuestionService {
 
     /** JSON array khớp FE ExerciseQuestion[] */
     String buildResolvedQuestionsJson(List<UUID> ids, boolean publishedOnly);
+
+    /** Duplicate for AI rewrite fork (DRAFT copy + dup-from tag). */
+    ResQuestionDTO duplicateForFork(UUID sourceId) throws IdInvalidException;
 }

@@ -61,4 +61,12 @@ public class ReqCreateQuestionGenTaskDTO {
 
   /** Optional — generate questions from a saved vocabulary set (AI-3). */
   private UUID vocabularySetId;
+
+  /** Phase 3d–3f: bank question AI (similar / rewrite). */
+  private UUID sourceQuestionId;
+
+  /** Fork id for rewrite apply — never mutate source when set. */
+  private UUID targetQuestionId;
+
+  private String bankAiAction;
 }

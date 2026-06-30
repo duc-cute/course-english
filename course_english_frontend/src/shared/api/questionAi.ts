@@ -27,3 +27,44 @@ export async function apiExplainQuestion(id: string): Promise<QuestionAiExplainR
   const response = (await api.post(`/questions/${id}/ai/explain`)) as ApiResponse<QuestionAiExplainResult>;
   return unwrapEntity(response);
 }
+
+export type QuestionBankAiAction = "SIMILAR" | "REWRITE" | "SIMPLIFY" | "INCREASE_DIFFICULTY";
+
+export type QuestionBankAiTaskResult = {
+  taskId: string;
+  status?: string;
+  sourceQuestionId: string;
+  targetQuestionId?: string;
+  action: QuestionBankAiAction;
+};
+
+export type BulkQuestionBankAiResult = {
+  requested: number;
+  taskIds: string[];
+  errors: { questionId: string; message: string }[];
+};
+
+export async function apiQuestionBankSimilar(
+  id: string,
+  body?: { questionCount?: number; additionalInstructions?: string },
+): Promise<QuestionBankAiTaskResult> {
+  const response = (await api.post(`/questions/${id}/ai/similar`, body ?? {})) as ApiResponse<QuestionBankAiTaskResult>;
+  return unwrapEntity(response);
+}
+
+export async function apiQuestionBankRewrite(
+  id: string,
+  body: { mode: Exclude<QuestionBankAiAction, "SIMILAR"> },
+): Promise<QuestionBankAiTaskResult> {
+  const response = (await api.post(`/questions/${id}/ai/rewrite`, body)) as ApiResponse<QuestionBankAiTaskResult>;
+  return unwrapEntity(response);
+}
+
+export async function apiBulkQuestionBankAi(body: {
+  ids: string[];
+  action: QuestionBankAiAction;
+  questionCount?: number;
+}): Promise<BulkQuestionBankAiResult> {
+  const response = (await api.post("/questions/bulk-ai", body)) as ApiResponse<BulkQuestionBankAiResult>;
+  return unwrapEntity(response);
+}

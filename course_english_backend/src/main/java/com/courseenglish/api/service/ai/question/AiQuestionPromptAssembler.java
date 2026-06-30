@@ -324,4 +324,105 @@ public class AiQuestionPromptAssembler {
     }
     return sb.toString().trim();
   }
+
+  /** Generate similar question(s) from bank reference (answers redacted in excerpt). */
+  public String buildSimilarBankQuestionUserPrompt(
+      String referenceExcerpt,
+      int questionCount,
+      QuestionTypeEnum questionType,
+      int difficulty,
+      String promptLang,
+      int readingSubQuestionCount,
+      String additionalInstructions) {
+    String base =
+        buildSimilarExamSectionUserPrompt(
+            referenceExcerpt,
+            questionCount,
+            questionType,
+            difficulty,
+            promptLang,
+            readingSubQuestionCount,
+            null,
+            null);
+    if (additionalInstructions != null && !additionalInstructions.isBlank()) {
+      return base + "\n\nAdditional instructions:\n" + additionalInstructions.trim();
+    }
+    return base;
+  }
+
+  /** Rewrite / simplify / increase difficulty — transform one bank question. */
+  public String buildRewriteBankQuestionUserPrompt(
+      String referenceExcerpt,
+      QuestionTypeEnum questionType,
+      int difficulty,
+      String promptLang,
+      int readingSubQuestionCount,
+      String bankAiAction) {
+    String actionNote =
+        switch (bankAiAction != null ? bankAiAction : "REWRITE") {
+          case "SIMPLIFY" ->
+              """
+              SIMPLIFY mode:
+              - Use simpler vocabulary and shorter sentences.
+              - Keep the same question type and learning objective.
+              - Reduce cognitive load while preserving a valid correct answer.
+              """;
+          case "INCREASE_DIFFICULTY" ->
+              """
+              INCREASE_DIFFICULTY mode:
+              - Use more advanced vocabulary or nuanced distractors.
+              - Keep the same question type and topic.
+              - Target higher difficulty without changing promptLang.
+              """;
+          default ->
+              """
+              REWRITE mode:
+              - Rephrase stem and choices (or passage/blanks) while keeping the same skill and topic.
+              - Produce a fresh version — not a trivial synonym swap of every word.
+              """;
+        };
+
+    String readingNote = "";
+    if (questionType == QuestionTypeEnum.READING_COMPREHENSION) {
+      int subs = Math.max(2, Math.min(12, readingSubQuestionCount));
+      readingNote =
+          """
+
+          READING_COMPREHENSION rewrite:
+          - Output exactly 1 READING_COMPREHENSION item with %d sub-questions.
+          - New passage text; sub-questions must match the new passage.
+          """
+              .formatted(subs);
+    }
+    if (questionType == QuestionTypeEnum.GAP_FILL_MCQ) {
+      int blanks = Math.max(MIN_GAP_BLANKS, Math.min(MAX_GAP_BLANKS, readingSubQuestionCount));
+      readingNote =
+          """
+
+          GAP_FILL_MCQ rewrite:
+          - Output exactly 1 item with %d blanks and MCQ per blank.
+          """
+              .formatted(blanks);
+    }
+
+    return """
+        QUESTION BANK TRANSFORM — apply to a fork copy (full reference with answers).
+
+        %s
+
+        Reference question (includes correct answers):
+        ---
+        %s
+        ---
+
+        Generate exactly 1 item of type %s.
+        Difficulty (1-5): %d
+        promptLang for stems: %s
+        explanation language: vi (Vietnamese — required)
+        %s
+        Return the full JSON envelope with exactly one transformed question.
+        """
+        .formatted(actionNote.trim(), referenceExcerpt, questionType.name(), difficulty, promptLang, readingNote)
+        .trim();
+  }
 }

@@ -1,11 +1,23 @@
 # Question Bank — Kế hoạch Phase 3 (Bulk + AI Actions)
 
-> Cập nhật: **2026-06-30**  
+> **Trạng thái:** ✅ **Hoàn thành code** — 2026-06-30  
 > Tiền đề: Phase 1–2 ✅ · AI-1/2/3 ✅  
-> Tổng quan: [`QUESTION_BANK_PROGRESS.md`](./QUESTION_BANK_PROGRESS.md)
+> Tổng quan + bước tiếp theo: [`QUESTION_BANK_PROGRESS.md`](./QUESTION_BANK_PROGRESS.md)
 
 ---
 
+## Tóm tắt hoàn thành
+
+Phase 3 đạt mục tiêu: **vận hành hàng loạt** + **AI trên câu đã có**, an toàn với `QUESTION_REF` (Fork C cho Rewrite).
+
+| Slice | Trạng thái | Ghi chú |
+|-------|------------|---------|
+| 3a–3e | ✅ Ship | Bulk, duplicate, export, explain, similar, rewrite fork |
+| 3f | ✅ MVP | Bulk **SIMILAR** only; audit qua `AI_GEN_TASK_CREATED` |
+
+**Chưa làm (defer):** bulk rewrite, dashboard theo dõi nhiều task, translate, gợi ý đổi ref lesson.
+
+---
 ## Quyết định đã chốt (product)
 
 | Chủ đề | Quyết định |
@@ -25,9 +37,11 @@ Biến Question Bank từ “thêm/sửa từng câu” sang **vận hành hàng
 | **3a** | Checkbox + bulk Publish / Archive / Delete + `POST /questions/bulk` | ✅ |
 | **3b** | Bulk Duplicate + Export JSON | ✅ |
 | **3c** | AI Explain Answer (chỉ `explanation`, mặc định **tiếng Việt**) | ✅ |
-| **3d** | AI Generate Similar → câu **mới** | ⏳ |
-| **3e** | AI Rewrite / Simplify — luồng **Fork (C)** | ⏳ |
-| **3f** | Bulk AI, audit mở rộng | ⏳ |
+| **3d** | AI Generate Similar → câu **mới** | ✅ |
+| **3e** | AI Rewrite / Simplify — luồng **Fork (C)** | ✅ |
+| **3f** | Bulk AI, audit mở rộng | ✅ MVP (SIMILAR only) |
+
+> **2026-06-30:** Phase 3 code coi là **kết thúc arc**; manual test và AI-2b deferred — xem [`QUESTION_BANK_PROGRESS.md`](./QUESTION_BANK_PROGRESS.md) mục «Tạm dừng».
 
 ---
 
@@ -152,7 +166,34 @@ Response: `explanation`, `previousExplanation`, `explanationLang` (`vi`), `model
 
 ---
 
-## 6. Acceptance Phase 3a
+## 9. Phase 3d–3f — Bank AI (Similar / Rewrite / Bulk)
+
+### APIs
+
+| Endpoint | Mô tả |
+|----------|--------|
+| `POST /questions/{id}/ai/similar` | `{ questionCount?, additionalInstructions? }` → `taskId`, async gen câu mới |
+| `POST /questions/{id}/ai/rewrite` | `{ mode: REWRITE \| SIMPLIFY \| INCREASE_DIFFICULTY }` → `taskId`, `targetQuestionId` (fork) |
+| `POST /questions/bulk-ai` | `{ ids[], action: SIMILAR, questionCount? }` → `taskIds[]`, `errors[]` |
+
+- Dùng chung `AiTask` + `QUESTION_GENERATION` worker; input JSON có `bankAiAction`, `sourceQuestionId`, `targetQuestionId`.
+- Explain (3c) vẫn sync, không quota.
+
+### FE
+
+- `QuestionBankAiActionsMenu` — Similar / Rewrite / Simplify / Tăng độ khó
+- `QuestionBankAiActionDialog` — poll task → preview → Lưu câu mới hoặc Áp dụng lên bản sao
+- Bulk toolbar: **AI tương tự**
+
+### Giới hạn 3f (đã chốt MVP)
+
+- Chỉ `action: SIMILAR`; tối đa **20** id/request.
+- Mỗi câu = 1 `AiTask` = 1 lượt `daily-gen-task-limit`.
+- FE: message tổng hợp; không có màn poll hàng loạt — GV xem từng câu hoặc lịch sử AI task.
+
+---
+
+## 6. Acceptance Phase 3a (manual)
 
 - [ ] Chọn ≥1 câu → Publish → status `PUBLISHED`, 1 request bulk.
 - [ ] Archive / Delete bulk hoạt động; Delete có confirm.

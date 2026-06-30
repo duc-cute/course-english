@@ -7,6 +7,7 @@ import { QuestionBankFilters, type QuestionBankFilterState } from "../../admin/c
 import { QuestionBankForm } from "../../admin/components/question/QuestionBankForm";
 import { QuestionBankHeaderActions } from "../../admin/components/question/QuestionBankHeaderActions";
 import { QuestionBankExplainDialog } from "../../admin/components/question/QuestionBankExplainDialog";
+import { QuestionBankAiActionDialog } from "../../admin/components/question/QuestionBankAiActionDialog";
 import { QuestionBankPreviewDrawer } from "../../admin/components/question/QuestionBankPreviewDrawer";
 import { QuestionBankStatsRow } from "../../admin/components/question/QuestionBankStatsRow";
 import { QuestionBankBulkToolbar } from "../../admin/components/question/QuestionBankBulkToolbar";
@@ -45,6 +46,7 @@ import {
 } from "../../shared/lesson/questionBankUtils";
 import type { BankImportBatchResult } from "../../shared/lesson/questionBankImport";
 import { downloadQuestionBankJsonExport } from "../../shared/lesson/questionBankExport";
+import { apiBulkQuestionBankAi, type QuestionBankAiAction } from "../../shared/api/questionAi";
 import type { ExerciseQuestion } from "../../student/lessonPlayer/exercise/types";
 
 const DEFAULT_FILTERS: QuestionBankFilterState = {
@@ -86,6 +88,10 @@ export function ManageQuestionsPage() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [previewRefresh, setPreviewRefresh] = useState(0);
   const [explainId, setExplainId] = useState<string | null>(null);
+  const [aiActionState, setAiActionState] = useState<{
+    questionId: string;
+    action: QuestionBankAiAction;
+  } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [openBulkDelete, setOpenBulkDelete] = useState(false);
@@ -301,6 +307,33 @@ export function ManageQuestionsPage() {
     }
   };
 
+  const handleBulkSimilar = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    setError("");
+    setBulkMessage("");
+    try {
+      const result = await apiBulkQuestionBankAi({ ids, action: "SIMILAR", questionCount: 1 });
+      const errCount = result.errors?.length ?? 0;
+      let msg = `Đã tạo ${result.taskIds.length}/${result.requested} tác vụ AI tương tự.`;
+      if (errCount > 0) {
+        msg += ` ${errCount} câu lỗi.`;
+      }
+      msg += " Mỗi tác vụ dùng 1 lượt quota hôm nay — xem kết quả trong dialog AI từng câu hoặc lịch sử tác vụ.";
+      setBulkMessage(msg);
+      setSelectedIds(new Set());
+    } catch (err) {
+      setError((err as { message?: string })?.message || "Bulk AI thất bại.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const openAiAction = (record: QuestionRecord, action: QuestionBankAiAction) => {
+    setAiActionState({ questionId: record.id, action });
+  };
+
   const handleExport = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
@@ -378,6 +411,7 @@ export function ManageQuestionsPage() {
         onArchive={() => void runBulk("ARCHIVE")}
         onDuplicate={() => void runBulk("DUPLICATE")}
         onExport={() => void handleExport()}
+        onBulkSimilar={() => void handleBulkSimilar()}
         onDelete={() => setOpenBulkDelete(true)}
         onClear={() => setSelectedIds(new Set())}
       />
@@ -400,6 +434,7 @@ export function ManageQuestionsPage() {
         }}
         onPreview={(row) => setPreviewId(row.id)}
         onExplain={(row) => setExplainId(row.id)}
+        onAiAction={openAiAction}
         onEdit={(row) => void openEdit(row)}
         onDelete={(row) => {
           setDeleting(row);
@@ -416,6 +451,19 @@ export function ManageQuestionsPage() {
           void openEdit(record);
         }}
         onExplain={(record) => setExplainId(record.id)}
+        onAiAction={openAiAction}
+      />
+
+      <QuestionBankAiActionDialog
+        open={Boolean(aiActionState)}
+        questionId={aiActionState?.questionId ?? null}
+        action={aiActionState?.action ?? null}
+        onClose={() => setAiActionState(null)}
+        onSaved={() => {
+          void fetchData();
+          void fetchStats();
+          setPreviewRefresh((n) => n + 1);
+        }}
       />
 
       <QuestionBankExplainDialog

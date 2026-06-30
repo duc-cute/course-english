@@ -12,6 +12,12 @@ import com.courseenglish.api.domain.response.ResQuestionStatsDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.service.QuestionService;
 import com.courseenglish.api.service.ai.question.QuestionAiExplainService;
+import com.courseenglish.api.domain.response.ResBulkQuestionBankAiDTO;
+import com.courseenglish.api.domain.response.ResQuestionBankAiTaskDTO;
+import com.courseenglish.api.service.ai.QuestionBankAiTaskService;
+import com.courseenglish.api.domain.request.ReqBulkQuestionBankAiDTO;
+import com.courseenglish.api.domain.request.ReqQuestionBankAiRewriteDTO;
+import com.courseenglish.api.domain.request.ReqQuestionBankAiSimilarDTO;
 import com.courseenglish.api.domain.response.ResQuestionAiExplainDTO;
 import com.courseenglish.api.util.annotation.ApiMessage;
 import com.courseenglish.api.util.error.IdInvalidException;
@@ -29,11 +35,15 @@ public class QuestionController {
 
     private final QuestionService questionService;
     private final QuestionAiExplainService questionAiExplainService;
+    private final QuestionBankAiTaskService questionBankAiTaskService;
 
     public QuestionController(
-            QuestionService questionService, QuestionAiExplainService questionAiExplainService) {
+            QuestionService questionService,
+            QuestionAiExplainService questionAiExplainService,
+            QuestionBankAiTaskService questionBankAiTaskService) {
         this.questionService = questionService;
         this.questionAiExplainService = questionAiExplainService;
+        this.questionBankAiTaskService = questionBankAiTaskService;
     }
 
     @PostMapping("/search")
@@ -73,6 +83,31 @@ public class QuestionController {
     public ResponseEntity<ResQuestionAiExplainDTO> explainAnswer(@PathVariable UUID id)
             throws IdInvalidException {
         return ResponseEntity.ok(questionAiExplainService.explain(id));
+    }
+
+    @PostMapping("/{id}/ai/similar")
+    @ApiMessage("AI generate similar question(s) from bank item")
+    public ResponseEntity<ResQuestionBankAiTaskDTO> aiSimilar(
+            @PathVariable UUID id,
+            @Valid @RequestBody(required = false) ReqQuestionBankAiSimilarDTO request)
+            throws IdInvalidException {
+        ReqQuestionBankAiSimilarDTO body = request != null ? request : new ReqQuestionBankAiSimilarDTO();
+        return ResponseEntity.ok(questionBankAiTaskService.createSimilarTask(id, body));
+    }
+
+    @PostMapping("/{id}/ai/rewrite")
+    @ApiMessage("AI rewrite fork — duplicate then transform copy")
+    public ResponseEntity<ResQuestionBankAiTaskDTO> aiRewrite(
+            @PathVariable UUID id, @Valid @RequestBody ReqQuestionBankAiRewriteDTO request)
+            throws IdInvalidException {
+        return ResponseEntity.ok(questionBankAiTaskService.createRewriteTask(id, request));
+    }
+
+    @PostMapping("/bulk-ai")
+    @ApiMessage("Bulk AI similar tasks for selected bank questions")
+    public ResponseEntity<ResBulkQuestionBankAiDTO> bulkAi(@Valid @RequestBody ReqBulkQuestionBankAiDTO request)
+            throws IdInvalidException {
+        return ResponseEntity.ok(questionBankAiTaskService.createBulkTasks(request));
     }
 
     @GetMapping("/{id}")

@@ -160,21 +160,32 @@ public class AiTaskProcessingService {
 
       progressReporter.report(task.getId(), "Đang tạo ngân hàng câu hỏi…", 10);
 
-      boolean topicMode = input.getTopic() != null && !input.getTopic().isBlank();
+      boolean bankAiMode = input.getBankAiAction() != null && !input.getBankAiAction().isBlank();
+      boolean topicMode =
+          bankAiMode || (input.getTopic() != null && !input.getTopic().isBlank());
       int readingSubQuestionCount =
           input.getReadingSubQuestionCount() != null ? input.getReadingSubQuestionCount() : 4;
 
-      AiQuestionGenerationService.GenerationResult gen = aiQuestionGenerationService.generate(
-          document.getExtractedText(),
-          input.getQuestionCount(),
-          input.getQuestionTypes(),
-          difficulty,
-          promptLang,
-          trace,
-          input.getTypeQuotas(),
-          topicMode,
-          readingSubQuestionCount,
-          input.getCustomUserPromptByType());
+      AiQuestionGenerationService.GenerationResult gen;
+      if (bankAiMode) {
+        progressReporter.report(task.getId(), "Đang sinh câu AI từ ngân hàng…", 12);
+        gen =
+            aiQuestionGenerationService.generateBankAction(
+                document.getExtractedText(), input, trace);
+      } else {
+        gen =
+            aiQuestionGenerationService.generate(
+                document.getExtractedText(),
+                input.getQuestionCount(),
+                input.getQuestionTypes(),
+                difficulty,
+                promptLang,
+                trace,
+                input.getTypeQuotas(),
+                topicMode,
+                readingSubQuestionCount,
+                input.getCustomUserPromptByType());
+      }
 
       String outputJson = objectMapper.writeValueAsString(gen.getEnvelope());
       taskLifecycleService.markDone(

@@ -15,6 +15,8 @@ import {
 } from "../../../shared/constants/questionBank";
 import { displayQuestionTitle, QUESTION_BANK_EDITABLE_TYPES } from "../../../shared/lesson/questionBankUtils";
 import { muBtnSmOutlined } from "../../../pages/admin/manageUserUiStyles";
+import { QuestionBankAiActionsMenu } from "./QuestionBankAiActionsMenu";
+import type { QuestionBankAiAction } from "../../../shared/api/questionAi";
 
 function statusChip(status?: QuestionStatus) {
   if (status === "PUBLISHED") {
@@ -40,6 +42,7 @@ type QuestionBankTableProps = {
   onDelete: (row: QuestionRecord) => void;
   onPreview: (row: QuestionRecord) => void;
   onExplain?: (row: QuestionRecord) => void;
+  onAiAction?: (row: QuestionRecord, action: QuestionBankAiAction) => void;
 };
 
 export function QuestionBankTable({
@@ -56,6 +59,7 @@ export function QuestionBankTable({
   onDelete,
   onPreview,
   onExplain,
+  onAiAction,
 }: QuestionBankTableProps) {
   const pageIds = rows.map((r) => r.id);
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
@@ -193,7 +197,7 @@ export function QuestionBankTable({
       {
         key: "actions",
         header: "Thao tác",
-        width: "148px",
+        width: "172px",
         align: "center",
         mobileRole: "actions",
         render: (row) => (
@@ -209,6 +213,9 @@ export function QuestionBankTable({
                   <AutoAwesomeOutlinedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
+            ) : null}
+            {onAiAction ? (
+              <QuestionBankAiActionsMenu record={row} onAction={onAiAction} variant="icon" />
             ) : null}
             <Tooltip title="Sửa">
               <IconButton size="small" color="primary" onClick={() => onEdit(row)}>
@@ -234,6 +241,7 @@ export function QuestionBankTable({
       onDelete,
       onPreview,
       onExplain,
+      onAiAction,
     ],
   );
 

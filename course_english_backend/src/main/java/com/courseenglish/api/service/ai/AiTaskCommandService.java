@@ -224,6 +224,84 @@ public class AiTaskCommandService {
   }
 
   @Transactional
+  public ResCreateAiTaskDTO createQuestionBankAiTask(
+      ReqCreateQuestionGenTaskDTO request, String referenceExcerpt, String actionLabel)
+      throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+    UUID userId = aiAccessSupport.currentUserId();
+
+    enforceDailyGenQuota(userId);
+
+    if (request.getBankAiAction() == null || request.getBankAiAction().isBlank()) {
+      throw new IdInvalidException("Thiếu bankAiAction");
+    }
+    if (request.getSourceQuestionId() == null) {
+      throw new IdInvalidException("Thiếu sourceQuestionId");
+    }
+    if (referenceExcerpt == null || referenceExcerpt.isBlank()) {
+      throw new IdInvalidException("Thiếu nội dung tham chiếu");
+    }
+
+    List<QuestionTypeEnum> types = request.getQuestionTypes();
+    if (types == null || types.isEmpty()) {
+      throw new IdInvalidException("Thiếu questionTypes");
+    }
+
+    List<String> allowed = aiAccessSupport.parseSupportedGenTypes(supportedGenTypesCsv);
+    for (QuestionTypeEnum type : types) {
+      if (!allowed.contains(type.name())) {
+        throw new IdInvalidException("Loại câu hỏi không được phép: " + type);
+      }
+      if (!handlerRegistry.supports(type)) {
+        throw new IdInvalidException("Loại câu hỏi chưa có handler: " + type);
+      }
+    }
+
+    int count = request.getQuestionCount();
+    if (count < 1 || count > maxQuestionsPerTask) {
+      throw new IdInvalidException("Số câu hỏi từ 1 đến " + maxQuestionsPerTask);
+    }
+
+    AiDocument document =
+        aiDocumentService.createQuestionBankReferenceDocument(
+            userId, request.getSourceQuestionId(), referenceExcerpt, actionLabel);
+    request.setDocumentId(document.getId());
+
+    AiTask task = new AiTask();
+    task.setUserId(userId);
+    task.setDocumentId(document.getId());
+    task.setConversationId(request.getConversationId());
+    task.setTaskType(AiTaskTypeEnum.QUESTION_GENERATION);
+    task.setStatus(AiTaskStatusEnum.PENDING);
+    task.setInputJson(serializeBankInput(request));
+    aiTaskRepository.save(task);
+
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_GEN_TASK_CREATED,
+                "Bank AI " + actionLabel + " — " + request.getBankAiAction())
+            .userId(userId)
+            .ref("AI_TASK", task.getId())
+            .put("taskId", task.getId())
+            .put("documentId", document.getId())
+            .put("bankAiAction", request.getBankAiAction())
+            .put("sourceQuestionId", request.getSourceQuestionId())
+            .put("targetQuestionId", request.getTargetQuestionId())
+            .put("questionCount", count)
+            .put("questionTypes", types));
+
+    scheduleProcessAfterCommit(task.getId());
+
+    ResCreateAiTaskDTO dto = new ResCreateAiTaskDTO();
+    dto.setTaskId(task.getId());
+    dto.setStatus(task.getStatus());
+    return dto;
+  }
+
+  @Transactional
   public ResCreateAiTaskDTO createExamPaperGenerationTask(ReqCreateExamPaperGenTaskDTO request)
       throws IdInvalidException {
     aiAccessSupport.requireAiEnabled();
@@ -582,6 +660,33 @@ public class AiTaskCommandService {
       map.put("vocabularySetMode", vocabSetMode);
       map.put("vocabularySetId", request.getVocabularySetId());
       map.put("customUserPromptByType", request.getCustomUserPromptByType());
+      map.put("sourceQuestionId", request.getSourceQuestionId());
+      map.put("targetQuestionId", request.getTargetQuestionId());
+      map.put("bankAiAction", request.getBankAiAction());
+      map.put("bankAiMode", request.getBankAiAction() != null && !request.getBankAiAction().isBlank());
+      return objectMapper.writeValueAsString(map);
+    } catch (JsonProcessingException e) {
+      throw new IdInvalidException("Không lưu được cấu hình tác vụ");
+    }
+  }
+
+  private String serializeBankInput(ReqCreateQuestionGenTaskDTO request) throws IdInvalidException {
+    try {
+      Map<String, Object> map = new HashMap<>();
+      map.put("documentId", request.getDocumentId());
+      map.put("categoryId", request.getCategoryId());
+      map.put("questionCount", request.getQuestionCount());
+      map.put("questionTypes", request.getQuestionTypes());
+      map.put("readingSubQuestionCount", request.getReadingSubQuestionCount());
+      map.put("difficulty", request.getDifficulty());
+      map.put("promptLang", request.getPromptLang());
+      map.put("topic", request.getTopic());
+      map.put("additionalInstructions", request.getAdditionalInstructions());
+      map.put("sourceQuestionId", request.getSourceQuestionId());
+      map.put("targetQuestionId", request.getTargetQuestionId());
+      map.put("bankAiAction", request.getBankAiAction());
+      map.put("bankAiMode", true);
+      map.put("topicMode", true);
       return objectMapper.writeValueAsString(map);
     } catch (JsonProcessingException e) {
       throw new IdInvalidException("Không lưu được cấu hình tác vụ");

@@ -148,7 +148,7 @@ flowchart TD
 |-------|----------|-----------|
 | **AI-1** | Topic mode → preview → lưu bank | 3–5 ngày |
 | **AI-2** | Preview: invalid rõ + sửa nhanh + title (optional) | ~1 ngày |
-| **AI-2b** | GAP_FILL_MCQ + bank editor | sau AI-2 |
+| **AI-2b** | GAP_FILL_MCQ + READING bank editor + lesson resolve | sau AI-3 — [`QUESTION_BANK_AI_2B_PLAN.md`](./QUESTION_BANK_AI_2B_PLAN.md) |
 | **AI-3** | **Sinh từ bộ từ vựng** (LLM, tích hợp module Vocab) | 3–5 ngày |
 | **AI-4** | Chất lượng: duplicate, prompt preview, regen 1 câu | 4–7 ngày |
 | **AI-5** | Nâng cao: bulk job, preset, audit | dài hạn |

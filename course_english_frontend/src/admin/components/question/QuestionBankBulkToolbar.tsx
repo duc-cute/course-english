@@ -8,6 +8,7 @@ type QuestionBankBulkToolbarProps = {
   onArchive: () => void;
   onDuplicate: () => void;
   onExport: () => void;
+  onBulkSimilar?: () => void;
   onDelete: () => void;
   onClear: () => void;
 };
@@ -19,6 +20,7 @@ export function QuestionBankBulkToolbar({
   onArchive,
   onDuplicate,
   onExport,
+  onBulkSimilar,
   onDelete,
   onClear,
 }: QuestionBankBulkToolbarProps) {
@@ -55,6 +57,11 @@ export function QuestionBankBulkToolbar({
       <Button size="small" variant="outlined" disabled={busy} onClick={onDuplicate}>
         Nhân bản
       </Button>
+      {onBulkSimilar ? (
+        <Button size="small" variant="outlined" color="secondary" disabled={busy} onClick={onBulkSimilar}>
+          AI tương tự
+        </Button>
+      ) : null}
       <Button size="small" variant="outlined" disabled={busy} onClick={onExport}>
         Export JSON
       </Button>

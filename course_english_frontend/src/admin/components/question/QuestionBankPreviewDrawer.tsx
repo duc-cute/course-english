@@ -30,6 +30,8 @@ import {
 } from "../../../shared/lesson/questionBankUtils";
 import type { ExerciseQuestion } from "../../../student/lessonPlayer/exercise/types";
 import { muBtnSmOutlined, muBtnSmPrimary } from "../../../pages/admin/manageUserUiStyles";
+import { QuestionBankAiActionsMenu } from "./QuestionBankAiActionsMenu";
+import type { QuestionBankAiAction } from "../../../shared/api/questionAi";
 
 type QuestionBankPreviewDrawerProps = {
   questionId: string | null;
@@ -37,6 +39,7 @@ type QuestionBankPreviewDrawerProps = {
   onClose: () => void;
   onEdit: (record: QuestionRecord) => void;
   onExplain?: (record: QuestionRecord) => void;
+  onAiAction?: (record: QuestionRecord, action: QuestionBankAiAction) => void;
 };
 
 function PreviewAnswerSection({ question }: { question: ExerciseQuestion }) {
@@ -104,6 +107,7 @@ export function QuestionBankPreviewDrawer({
   onClose,
   onEdit,
   onExplain,
+  onAiAction,
 }: QuestionBankPreviewDrawerProps) {
   const [loading, setLoading] = useState(false);
   const [record, setRecord] = useState<QuestionRecord | null>(null);
@@ -264,6 +268,14 @@ export function QuestionBankPreviewDrawer({
             >
               AI giải thích (VI)
             </Button>
+          ) : null}
+          {onAiAction ? (
+            <QuestionBankAiActionsMenu
+              record={record}
+              onAction={onAiAction}
+              variant="button"
+              fullWidth
+            />
           ) : null}
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button sx={muBtnSmOutlined} fullWidth onClick={onClose}>

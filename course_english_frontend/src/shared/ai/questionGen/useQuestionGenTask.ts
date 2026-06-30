@@ -150,6 +150,53 @@ export function useQuestionGenTask({ scope, pollMaxMs = AI_TASK_POLL_MAX_MS }: U
     [applyTaskProgress, pollMaxMs, scope],
   );
 
+  const pollTask = useCallback(
+    async (id: string) => {
+      cancelledRef.current = false;
+      setError("");
+      setDrafts([]);
+      setSummaryMessage("");
+      setProgressMessage("Đang xử lý tác vụ AI…");
+      setProgressPercent(null);
+      setTaskId(id);
+      setStatus("polling");
+      pollStartedRef.current = Date.now();
+
+      try {
+        while (!cancelledRef.current && Date.now() - pollStartedRef.current < pollMaxMs) {
+          const task = await apiGetAiTask(id);
+          applyTaskProgress(task);
+
+          if (task.status === "DONE") {
+            const envelope = task.outputJson as AiQuestionGenEnvelope | undefined;
+            const questions = normalizeDrafts(envelope?.questions ?? []);
+            setDrafts(questions);
+            setSummaryMessage(envelope?.meta?.summaryMessage ?? "");
+            setStatus("done");
+            return { taskId: id, questions, meta: envelope?.meta };
+          }
+
+          if (task.status === "FAILED") {
+            throw new Error(task.errorMessage ?? "Sinh câu hỏi thất bại.");
+          }
+
+          await new Promise((r) => window.setTimeout(r, AI_TASK_POLL_INTERVAL_MS));
+        }
+
+        if (cancelledRef.current) return null;
+
+        void apiReportAiTaskPollTimeout(id).catch(() => undefined);
+        throw new Error("Xử lý quá lâu. Thử lại sau.");
+      } catch (err) {
+        const message = (err as { message?: string })?.message ?? "Sinh câu hỏi thất bại.";
+        setError(message);
+        setStatus("failed");
+        return null;
+      }
+    },
+    [applyTaskProgress, pollMaxMs],
+  );
+
   useEffect(() => {
     if (status !== "polling") return undefined;
     const startedAt = pollStartedRef.current || Date.now();
@@ -175,5 +222,6 @@ export function useQuestionGenTask({ scope, pollMaxMs = AI_TASK_POLL_MAX_MS }: U
     pollElapsedSec,
     reset,
     runTask,
+    pollTask,
   };
 }

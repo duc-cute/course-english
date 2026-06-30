@@ -334,6 +334,50 @@ public class AiDocumentService {
     return entity;
   }
 
+  @Transactional
+  public AiDocument createQuestionBankReferenceDocument(
+      UUID userId, UUID sourceQuestionId, String excerpt, String actionLabel)
+      throws IdInvalidException {
+    aiAccessSupport.requireAiEnabled();
+    aiAccessSupport.requireStaffUser();
+
+    String safeLabel = actionLabel != null && !actionLabel.isBlank() ? actionLabel.trim() : "Bank AI";
+    String fileName =
+        "Bank " + safeLabel + ": " + sourceQuestionId.toString().substring(0, 8) + "…";
+    String storageKey = "bank-ai-" + UUID.randomUUID() + ".txt";
+
+    AiDocument entity = new AiDocument();
+    entity.setUserId(userId);
+    entity.setFileName(fileName);
+    entity.setMimeType("text/plain");
+    entity.setStorageFolder(AiDocument.STORAGE_FOLDER);
+    entity.setStorageFileName(storageKey);
+    entity.setFileSizeBytes((long) excerpt.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+    entity.setPageCount(1);
+    entity.setExtractedText(excerpt);
+    entity.setStatus(AiDocumentStatusEnum.READY);
+    entity.setErrorMessage(null);
+
+    aiDocumentRepository.save(entity);
+
+    activityLogService.log(
+        ActivityLogWriteContext.of(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogModuleEnum.AI,
+                ActivityLogActionEnum.AI_DOC_READY,
+                "Question bank reference: " + safeLabel)
+            .userId(userId)
+            .ref("AI_DOCUMENT", entity.getId())
+            .put("documentId", entity.getId())
+            .put("step", "question_bank_reference")
+            .put("sourceQuestionId", sourceQuestionId)
+            .put("action", actionLabel)
+            .put("textChars", excerpt.length())
+            .put("fileName", fileName));
+
+    return entity;
+  }
+
   public static String buildTopicBriefText(
       String topic,
       Integer grade,

@@ -240,6 +240,16 @@ public class QuestionServiceImpl implements QuestionService {
         return dto;
     }
 
+    @Override
+    @Transactional
+    public ResQuestionDTO duplicateForFork(UUID sourceId) throws IdInvalidException {
+        Question source =
+                questionRepository
+                        .findByIdAndVoidedFalse(sourceId)
+                        .orElseThrow(() -> new IdInvalidException("Câu hỏi không tồn tại"));
+        return toDto(duplicateQuestion(source), true);
+    }
+
     private Question duplicateQuestion(Question source) {
         Question copy = new Question();
         copy.setCategory(source.getCategory());

@@ -1,5 +1,6 @@
 package com.courseenglish.api.service.ai;
 
+import com.courseenglish.api.domain.request.ReqCreateQuestionGenTaskDTO;
 import com.courseenglish.api.service.ai.question.AiQuestionBatchPlanner;
 import com.courseenglish.api.service.ai.question.AiQuestionBatchPlanner.BatchSpec;
 import com.courseenglish.api.service.ai.question.AiQuestionGenResultValidator;
@@ -285,6 +286,59 @@ public class AiQuestionGenerationService {
 
     return buildGenerationResult(
         chatResult, List.of(type), questionCount, difficulty, promptLang, "exam_section", null);
+  }
+
+  /** Bank question AI: similar (new questions) or rewrite fork (one transformed question). */
+  public GenerationResult generateBankAction(
+      String referenceExcerpt,
+      ReqCreateQuestionGenTaskDTO input,
+      AiGenTraceContext trace) throws IdInvalidException {
+    if (input.getBankAiAction() == null || input.getBankAiAction().isBlank()) {
+      throw new IdInvalidException("Thiếu bankAiAction");
+    }
+    if (input.getQuestionTypes() == null || input.getQuestionTypes().isEmpty()) {
+      throw new IdInvalidException("Thiếu questionTypes");
+    }
+
+    QuestionTypeEnum type = input.getQuestionTypes().get(0);
+    int questionCount = input.getQuestionCount();
+    int difficulty = input.getDifficulty() != null ? input.getDifficulty() : 2;
+    String promptLang = input.getPromptLang() != null ? input.getPromptLang() : "en";
+    int readingSub =
+        input.getReadingSubQuestionCount() != null ? input.getReadingSubQuestionCount() : 4;
+    String action = input.getBankAiAction();
+
+    String system = promptAssembler.buildSystemPromptForType(type, true);
+    String user;
+    String stepLabel;
+    if ("SIMILAR".equals(action)) {
+      user =
+          promptAssembler.buildSimilarBankQuestionUserPrompt(
+              referenceExcerpt,
+              questionCount,
+              type,
+              difficulty,
+              promptLang,
+              readingSub,
+              input.getAdditionalInstructions());
+      stepLabel = "bank_similar";
+    } else {
+      user =
+          promptAssembler.buildRewriteBankQuestionUserPrompt(
+              referenceExcerpt, type, difficulty, promptLang, readingSub, action);
+      stepLabel = "bank_" + action.toLowerCase(Locale.ROOT);
+    }
+
+    List<Map<String, String>> messages =
+        List.of(
+            Map.of("role", "system", "content", system),
+            Map.of("role", "user", "content", user));
+
+    logPromptAssembled(trace, referenceExcerpt, system, user, questionCount, List.of(type), stepLabel);
+
+    OpenRouterClient.ChatResult chatResult = callWithJsonRetry(messages, trace, streamEnabled);
+    return buildGenerationResult(
+        chatResult, List.of(type), questionCount, difficulty, promptLang, stepLabel, null);
   }
 
   private boolean shouldUseParallelBatch(int questionCount, List<QuestionTypeEnum> questionTypes) {
