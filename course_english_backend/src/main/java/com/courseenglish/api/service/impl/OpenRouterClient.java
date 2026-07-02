@@ -413,6 +413,11 @@ public class OpenRouterClient {
      * Returns a temporary URL or base64 payload from the provider.
      */
     public ImageGenResult generateImage(String model, String prompt, long timeoutSec) throws IdInvalidException {
+        return generateImage(model, prompt, timeoutSec, "1:1");
+    }
+
+    public ImageGenResult generateImage(String model, String prompt, long timeoutSec, String aspectRatio)
+            throws IdInvalidException {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IdInvalidException("AI chưa được cấu hình OPENROUTER_API_KEY");
         }
@@ -420,11 +425,13 @@ public class OpenRouterClient {
             throw new IdInvalidException("Thiếu prompt ảnh");
         }
 
+        String ratio = aspectRatio == null || aspectRatio.isBlank() ? "1:1" : aspectRatio.trim();
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", model);
         payload.put("prompt", prompt.trim());
         payload.put("n", 1);
-        payload.put("aspect_ratio", "1:1");
+        payload.put("aspect_ratio", ratio);
         payload.put("output_format", "png");
 
         String requestBody;
@@ -447,8 +454,9 @@ public class OpenRouterClient {
 
         if (logRequests) {
             log.info(
-                    "[OpenRouter][Image] >>> model={} timeoutSec={} promptLength={} endpoint={}/images",
+                    "[OpenRouter][Image] >>> model={} aspectRatio={} timeoutSec={} promptLength={} endpoint={}/images",
                     model,
+                    ratio,
                     timeoutSec,
                     prompt.trim().length(),
                     baseUrl);

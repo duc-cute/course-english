@@ -1,4 +1,4 @@
-import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
@@ -52,6 +52,15 @@ export const studentNavItems: StudentNavItem[] = [
     showInBottomNav: true,
   },
   {
+    id: "stories",
+    label: "Đọc truyện",
+    bottomNavLabel: "Truyện",
+    to: studentRoutePaths.stories,
+    icon: AutoStoriesOutlinedIcon,
+    showInSidebar: true,
+    showInBottomNav: false,
+  },
+  {
     id: "vocab",
     label: "Từ vựng",
     bottomNavLabel: "Luyện tập",
@@ -92,7 +101,7 @@ export function isStudentNavActive(pathname: string, to: string): boolean {
   if (to === studentRoutePaths.home) {
     return pathname === studentRoutePaths.home;
   }
-  if (to === studentRoutePaths.vocab) {
+  if (to === studentRoutePaths.vocab || to === studentRoutePaths.stories) {
     return pathname === to || pathname.startsWith(`${to}/`);
   }
   return pathname === to || pathname.startsWith(`${to}/`);

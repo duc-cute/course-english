@@ -16,6 +16,7 @@ import { ManageQuestionsPage } from "../pages/admin/ManageQuestionsPage";
 import { ManageExamPapersPage } from "../pages/admin/ManageExamPapersPage";
 import { ExamPaperEditorPage } from "../pages/admin/ExamPaperEditorPage";
 import { ManageVocabularySetsPage } from "../pages/admin/ManageVocabularySetsPage";
+import { ManageStoriesPage } from "../pages/admin/ManageStoriesPage";
 import { ManageVocabularyWordsPage } from "../pages/admin/ManageVocabularyWordsPage";
 import { ManageSystemConfigPage } from "../pages/admin/ManageSystemConfigPage";
 import { LoginPage } from "../pages/auth/LoginPage";
@@ -31,6 +32,9 @@ import { StudentVocabPage } from "../pages/student/StudentVocabPage";
 import { StudentVocabSetPage } from "../pages/student/StudentVocabSetPage";
 import { StudentProfilePage } from "../pages/student/StudentProfilePage";
 import { StudentLeaderboardPage } from "../pages/student/StudentLeaderboardPage";
+import { StudentStoryListPage } from "../pages/student/StudentStoryListPage";
+import { StudentNotebookPage } from "../pages/student/StudentNotebookPage";
+import { StoryReaderPage } from "../pages/student/StoryReaderPage";
 import { TeacherUsageGuidePage } from "../pages/admin/TeacherUsageGuidePage";
 import { TeacherSchedulePage } from "../pages/admin/TeacherSchedulePage";
 import { TeacherStudentSupportPage } from "../pages/admin/TeacherStudentSupportPage";
@@ -96,6 +100,10 @@ export const appRouter = createBrowserRouter([
     ),
     children: [
       {
+        path: paths.STUDENT_STORY_READ,
+        element: <StoryReaderPage />,
+      },
+      {
         element: <LazyStudentAppLayout />,
         children: [
           {
@@ -117,6 +125,14 @@ export const appRouter = createBrowserRouter([
           {
             path: `${paths.STUDENT_VOCAB}/:setId`,
             element: <StudentVocabSetPage />,
+          },
+          {
+            path: paths.STUDENT_STORIES,
+            element: <StudentStoryListPage />,
+          },
+          {
+            path: `${paths.STUDENT_STORIES}/notebook`,
+            element: <StudentNotebookPage />,
           },
           {
             path: paths.STUDENT_PROFILE,
@@ -206,6 +222,10 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.MANAGE_VOCABULARY_SETS,
         element: <ManageVocabularySetsPage />,
+      },
+      {
+        path: paths.MANAGE_STORIES,
+        element: <ManageStoriesPage />,
       },
       {
         path: paths.MANAGE_SYSTEM_CONFIG,

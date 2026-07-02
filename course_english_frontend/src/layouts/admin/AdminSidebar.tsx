@@ -7,6 +7,7 @@ import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AbcOutlinedIcon from "@mui/icons-material/AbcOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
@@ -116,6 +117,11 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
         label: "Bộ từ vựng",
         icon: <LibraryBooksOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_SETS}`,
+      },
+      {
+        label: "AI Reading Studio",
+        icon: <AutoStoriesOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.MANAGE_STORIES}`,
       },
       {
         label: "Quản lý phân lớp",

@@ -75,6 +75,15 @@ public final class CatalogSearchSpecs {
         );
     }
 
+    public static Specification<Story> storySearch(ReqSearchStoryDTO req) {
+        return and(
+                storyKeywordLike(req.getKeyword()),
+                storyStatusEquals(req.getStatus()),
+                storyLevelEquals(req.getLevel()),
+                storyPublishedOnly(req.getPublishedOnly())
+        );
+    }
+
     public static Specification<ExamPaper> examPaperSearch(ReqSearchExamPaperDTO req) {
         return and(
                 examPaperKeywordLike(req.getKeyword()),
@@ -152,6 +161,32 @@ public final class CatalogSearchSpecs {
             Join<VocabularySet, Subject> subjectJoin = root.join("subject", JoinType.INNER);
             return cb.equal(subjectJoin.get("id"), subjectId);
         };
+    }
+
+    private static Specification<Story> storyKeywordLike(String keyword) {
+        return keywordLike(keyword, "title", "content");
+    }
+
+    private static Specification<Story> storyStatusEquals(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        String normalized = status.trim().toUpperCase();
+        return (root, query, cb) -> cb.equal(root.get("status"), com.courseenglish.api.util.constant.StoryStatusEnum.valueOf(normalized));
+    }
+
+    private static Specification<Story> storyLevelEquals(String level) {
+        if (level == null || level.isBlank()) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("level")), level.trim().toUpperCase());
+    }
+
+    private static Specification<Story> storyPublishedOnly(Boolean publishedOnly) {
+        if (!Boolean.TRUE.equals(publishedOnly)) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("status"), com.courseenglish.api.util.constant.StoryStatusEnum.PUBLISHED);
     }
 
     private static Specification<ExamPaper> examPaperKeywordLike(String keyword) {
