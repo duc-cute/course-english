@@ -27,6 +27,8 @@ export type FeatureFlags = {
   vocabularyAudioEnabled: boolean;
   vocabularyAudioAccent: VocabularyAudioAccent;
   studentSelfRegistrationEnabled: boolean;
+  vocabularyPracticeMaxQuestions: number;
+  vocabularyPracticePassScore: number;
   wordExportLogoUrl?: string;
   wordExportWatermarkText?: string;
 };

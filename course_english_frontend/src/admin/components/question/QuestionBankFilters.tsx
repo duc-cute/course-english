@@ -1,37 +1,24 @@
-import { Box, MenuItem, TextField } from "@mui/material";
-import { AdminCatalogToolbar } from "../AdminCatalogToolbar";
-import type { QuestionCategoryRecord } from "../../../shared/api/question";
+import SearchIcon from "@mui/icons-material/Search";
+import { Box, Button, InputAdornment, MenuItem, TextField } from "@mui/material";
+import type { ReactNode } from "react";
 import {
   QUESTION_CEFR_OPTIONS,
   QUESTION_DIFFICULTY_OPTIONS,
   QUESTION_SKILLS,
-  QUESTION_SOURCE_OPTIONS,
-  QUESTION_SORT_OPTIONS,
   QUESTION_STATUS_OPTIONS,
   QUESTION_TYPE_FILTER_OPTIONS,
-  type QuestionSortOption,
 } from "../../../shared/constants/questionBank";
-import {
-  muSelectAllowEmpty,
-  muSelectFilterInputLabelProps,
-  muTextFieldSx,
-} from "../../../pages/admin/manageUserUiStyles";
 
 export type QuestionBankFilterState = {
   searchInput: string;
-  filterCategoryId: string;
   filterStatus: string;
   filterQuestionType: string;
   filterDifficulty: string;
   filterCefrLevel: string;
   filterSkill: string;
-  filterTopic: string;
-  filterSource: string;
-  sortBy: QuestionSortOption;
 };
 
 type QuestionBankFiltersProps = {
-  categories: QuestionCategoryRecord[];
   filters: QuestionBankFilterState;
   onSearchInputChange: (value: string) => void;
   onSearch: () => void;
@@ -39,8 +26,22 @@ type QuestionBankFiltersProps = {
   onFilterChange: <K extends keyof QuestionBankFilterState>(key: K, value: QuestionBankFilterState[K]) => void;
 };
 
+type FilterFieldProps = {
+  label: string;
+  children: ReactNode;
+  className?: string;
+};
+
+function FilterField({ label, children, className }: FilterFieldProps) {
+  return (
+    <Box className={`qb-filters__field ${className ?? ""}`.trim()}>
+      <span className="qb-filters__label">{label}</span>
+      {children}
+    </Box>
+  );
+}
+
 export function QuestionBankFilters({
-  categories,
   filters,
   onSearchInputChange,
   onSearch,
@@ -48,164 +49,123 @@ export function QuestionBankFilters({
   onFilterChange,
 }: QuestionBankFiltersProps) {
   return (
-    <Box className="admin-catalog-page__filter-card admin-catalog-page__toolbar-wrap">
-      <AdminCatalogToolbar
-        searchPlaceholder="Tìm: environment B1, grammar passive voice, animals vocabulary…"
-        searchInput={filters.searchInput}
-        onSearchInputChange={onSearchInputChange}
-        onSearch={onSearch}
-        onReset={onReset}
-        toolbarVariant="soft"
-        extraFilters={
-          <>
-            <TextField
-              select
-              size="small"
-              label="Loại câu"
-              value={filters.filterQuestionType}
-              onChange={(e) => onFilterChange("filterQuestionType", e.target.value)}
-              SelectProps={muSelectAllowEmpty}
-              InputLabelProps={muSelectFilterInputLabelProps}
-              className="admin-catalog-soft-filter__field"
-              sx={{ ...muTextFieldSx, minWidth: 148 }}
-            >
-              {QUESTION_TYPE_FILTER_OPTIONS.map((o) => (
-                <MenuItem key={o.value || "all"} value={o.value}>
-                  {o.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              size="small"
-              label="Danh mục"
-              value={filters.filterCategoryId}
-              onChange={(e) => onFilterChange("filterCategoryId", e.target.value)}
-              SelectProps={muSelectAllowEmpty}
-              InputLabelProps={muSelectFilterInputLabelProps}
-              className="admin-catalog-soft-filter__field"
-              sx={{ ...muTextFieldSx, minWidth: 140 }}
-            >
-              <MenuItem value="">Tất cả DM</MenuItem>
-              {categories.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.name}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              size="small"
-              label="Trạng thái"
-              value={filters.filterStatus}
-              onChange={(e) => onFilterChange("filterStatus", e.target.value)}
-              SelectProps={muSelectAllowEmpty}
-              InputLabelProps={muSelectFilterInputLabelProps}
-              className="admin-catalog-soft-filter__field"
-              sx={{ ...muTextFieldSx, minWidth: 132 }}
-            >
-              <MenuItem value="">Mọi trạng thái</MenuItem>
-              {QUESTION_STATUS_OPTIONS.map((o) => (
-                <MenuItem key={o.value} value={o.value}>
-                  {o.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              size="small"
-              label="Độ khó"
-              value={filters.filterDifficulty}
-              onChange={(e) => onFilterChange("filterDifficulty", e.target.value)}
-              SelectProps={muSelectAllowEmpty}
-              InputLabelProps={muSelectFilterInputLabelProps}
-              className="admin-catalog-soft-filter__field"
-              sx={{ ...muTextFieldSx, minWidth: 148 }}
-            >
-              {QUESTION_DIFFICULTY_OPTIONS.map((o) => (
-                <MenuItem key={o.value || "all"} value={o.value}>
-                  {o.label}
-                </MenuItem>
-              ))}
-            </TextField>
-              <TextField
-                select
-                size="small"
-                label="Sắp xếp"
-                value={filters.sortBy}
-                onChange={(e) => onFilterChange("sortBy", e.target.value as QuestionSortOption)}
-                InputLabelProps={muSelectFilterInputLabelProps}
-                className="admin-catalog-soft-filter__field"
-                sx={{ ...muTextFieldSx, minWidth: 148 }}
-              >
-                {QUESTION_SORT_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                size="small"
-                label="CEFR"
-                value={filters.filterCefrLevel}
-                onChange={(e) => onFilterChange("filterCefrLevel", e.target.value)}
-                SelectProps={muSelectAllowEmpty}
-                InputLabelProps={muSelectFilterInputLabelProps}
-                className="admin-catalog-soft-filter__field"
-                sx={{ ...muTextFieldSx, minWidth: 100 }}
-              >
-                {QUESTION_CEFR_OPTIONS.map((o) => (
-                  <MenuItem key={o.value || "all"} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                size="small"
-                label="Kỹ năng"
-                value={filters.filterSkill}
-                onChange={(e) => onFilterChange("filterSkill", e.target.value)}
-                SelectProps={muSelectAllowEmpty}
-                InputLabelProps={muSelectFilterInputLabelProps}
-                className="admin-catalog-soft-filter__field"
-                sx={{ ...muTextFieldSx, minWidth: 120 }}
-              >
-                {QUESTION_SKILLS.map((o) => (
-                  <MenuItem key={o.value || "all"} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                size="small"
-                label="Chủ đề"
-                value={filters.filterTopic}
-                onChange={(e) => onFilterChange("filterTopic", e.target.value)}
-                className="admin-catalog-soft-filter__field"
-                sx={{ ...muTextFieldSx, minWidth: 120 }}
-              />
-              <TextField
-                select
-                size="small"
-                label="Nguồn"
-                value={filters.filterSource}
-                onChange={(e) => onFilterChange("filterSource", e.target.value)}
-                SelectProps={muSelectAllowEmpty}
-                InputLabelProps={muSelectFilterInputLabelProps}
-                className="admin-catalog-soft-filter__field"
-                sx={{ ...muTextFieldSx, minWidth: 120 }}
-              >
-                {QUESTION_SOURCE_OPTIONS.map((o) => (
-                  <MenuItem key={o.value || "all"} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </>
-          }
+    <Box className="admin-catalog-page__filter-card qb-filters-card">
+      <Box className="qb-filters">
+        <Box className="qb-filters__search-row">
+        <TextField
+          size="small"
+          className="qb-filters__search"
+          placeholder="Tìm: environment B1, grammar passive voice, animals vocabulary…"
+          value={filters.searchInput}
+          onChange={(e) => onSearchInputChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onSearch();
+          }}
+          fullWidth
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ fontSize: 18, color: "#94a3b8" }} />
+              </InputAdornment>
+            ),
+          }}
         />
+        <Button variant="contained" size="small" className="qb-filters__btn qb-filters__btn--primary" onClick={onSearch}>
+          Tìm
+        </Button>
+        <Button variant="outlined" size="small" className="qb-filters__btn qb-filters__btn--outlined" onClick={onReset}>
+          Làm mới
+        </Button>
+        </Box>
+
+        <Box className="qb-filters__grid">
+        <FilterField label="Loại câu">
+          <TextField
+            select
+            size="small"
+            fullWidth
+            value={filters.filterQuestionType}
+            onChange={(e) => onFilterChange("filterQuestionType", e.target.value)}
+            className="qb-filters__select"
+          >
+            {QUESTION_TYPE_FILTER_OPTIONS.map((o) => (
+              <MenuItem key={o.value || "all"} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </FilterField>
+
+        <FilterField label="Trạng thái">
+          <TextField
+            select
+            size="small"
+            fullWidth
+            value={filters.filterStatus}
+            onChange={(e) => onFilterChange("filterStatus", e.target.value)}
+            className="qb-filters__select"
+          >
+            <MenuItem value="">Mọi trạng thái</MenuItem>
+            {QUESTION_STATUS_OPTIONS.map((o) => (
+              <MenuItem key={o.value} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </FilterField>
+
+        <FilterField label="Độ khó">
+          <TextField
+            select
+            size="small"
+            fullWidth
+            value={filters.filterDifficulty}
+            onChange={(e) => onFilterChange("filterDifficulty", e.target.value)}
+            className="qb-filters__select"
+          >
+            {QUESTION_DIFFICULTY_OPTIONS.map((o) => (
+              <MenuItem key={o.value || "all"} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </FilterField>
+
+        <FilterField label="CEFR">
+          <TextField
+            select
+            size="small"
+            fullWidth
+            value={filters.filterCefrLevel}
+            onChange={(e) => onFilterChange("filterCefrLevel", e.target.value)}
+            className="qb-filters__select"
+          >
+            {QUESTION_CEFR_OPTIONS.map((o) => (
+              <MenuItem key={o.value || "all"} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </FilterField>
+
+        <FilterField label="Kỹ năng">
+          <TextField
+            select
+            size="small"
+            fullWidth
+            value={filters.filterSkill}
+            onChange={(e) => onFilterChange("filterSkill", e.target.value)}
+            className="qb-filters__select"
+          >
+            {QUESTION_SKILLS.map((o) => (
+              <MenuItem key={o.value || "all"} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </FilterField>
+      </Box>
+      </Box>
     </Box>
   );
 }

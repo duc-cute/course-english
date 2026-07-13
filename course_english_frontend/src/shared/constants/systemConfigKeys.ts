@@ -48,6 +48,20 @@ export const SYSTEM_CONFIG_KEY_OPTIONS: SystemConfigKeyMeta[] = [
     options: VOCABULARY_AUDIO_ACCENT_OPTIONS,
   },
   {
+    key: "VOCABULARY_PRACTICE_MAX_QUESTIONS",
+    label: "Số câu luyện từ vựng (tối đa)",
+    type: "text",
+    defaultValue: "16",
+    defaultNote: "Số câu tối đa mỗi session luyện từ vựng (1–40, mặc định 16)",
+  },
+  {
+    key: "VOCABULARY_PRACTICE_PASS_SCORE",
+    label: "Ngưỡng đạt luyện từ vựng (%)",
+    type: "text",
+    defaultValue: "80",
+    defaultNote: "Ngưỡng đạt (%) luyện từ vựng (1–100, mặc định 80)",
+  },
+  {
     key: "STUDENT_SELF_REGISTRATION_ENABLED",
     label: "Tự đăng ký học sinh",
     type: "boolean",

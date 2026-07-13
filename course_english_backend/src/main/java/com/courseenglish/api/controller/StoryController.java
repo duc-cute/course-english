@@ -5,6 +5,7 @@ import com.courseenglish.api.domain.request.ReqStoryAiPreviewDTO;
 import com.courseenglish.api.domain.request.ReqStoryCoverPreviewDTO;
 import com.courseenglish.api.domain.request.ReqStoryDTO;
 import com.courseenglish.api.domain.request.ReqStoryWordEnrichDTO;
+import com.courseenglish.api.domain.response.ResElevenLabsVoiceListDTO;
 import com.courseenglish.api.domain.response.ResStoryAiPreviewDTO;
 import com.courseenglish.api.domain.response.ResStoryAudioDTO;
 import com.courseenglish.api.domain.response.ResStoryCoverPreviewDTO;
@@ -14,6 +15,7 @@ import com.courseenglish.api.domain.response.ResTtsVoiceCatalogDTO;
 import com.courseenglish.api.domain.response.ResStoryWordEnrichDTO;
 import com.courseenglish.api.domain.response.ResStoryWordLookupDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
+import com.courseenglish.api.service.story.ElevenLabsVoiceDiscoveryService;
 import com.courseenglish.api.service.story.AiStoryPreviewService;
 import com.courseenglish.api.service.story.StoryCoverImageService;
 import com.courseenglish.api.service.story.StoryAudioService;
@@ -40,6 +42,7 @@ public class StoryController {
     private final StoryCoverImageService storyCoverImageService;
     private final StoryWordAiEnrichService storyWordAiEnrichService;
     private final StoryVoiceCatalogService storyVoiceCatalogService;
+    private final ElevenLabsVoiceDiscoveryService elevenLabsVoiceDiscoveryService;
 
     public StoryController(
             StoryService storyService,
@@ -47,13 +50,15 @@ public class StoryController {
             StoryAudioService storyAudioService,
             StoryCoverImageService storyCoverImageService,
             StoryWordAiEnrichService storyWordAiEnrichService,
-            StoryVoiceCatalogService storyVoiceCatalogService) {
+            StoryVoiceCatalogService storyVoiceCatalogService,
+            ElevenLabsVoiceDiscoveryService elevenLabsVoiceDiscoveryService) {
         this.storyService = storyService;
         this.aiStoryPreviewService = aiStoryPreviewService;
         this.storyAudioService = storyAudioService;
         this.storyCoverImageService = storyCoverImageService;
         this.storyWordAiEnrichService = storyWordAiEnrichService;
         this.storyVoiceCatalogService = storyVoiceCatalogService;
+        this.elevenLabsVoiceDiscoveryService = elevenLabsVoiceDiscoveryService;
     }
 
     @PostMapping("/search")
@@ -93,6 +98,14 @@ public class StoryController {
     public ResponseEntity<List<ResTtsVoiceCatalogDTO>> listVoiceCatalog(
             @RequestParam(required = false) String profileKey) {
         return ResponseEntity.ok(storyVoiceCatalogService.listActiveVoices(profileKey));
+    }
+
+    @GetMapping("/elevenlabs-voices")
+    @ApiMessage("List ElevenLabs voices from API v2 (for rebuilding voice catalog)")
+    public ResponseEntity<ResElevenLabsVoiceListDTO> listElevenLabsVoices(
+            @RequestParam(defaultValue = "true") boolean freeOnly,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(elevenLabsVoiceDiscoveryService.listVoices(freeOnly, search));
     }
 
     @PostMapping("/lookup-word/enrich")

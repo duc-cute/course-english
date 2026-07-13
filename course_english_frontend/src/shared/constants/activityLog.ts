@@ -8,6 +8,7 @@ export const ACTIVITY_LOG_SEVERITY_OPTIONS = [
 export const ACTIVITY_LOG_MODULE_OPTIONS = [
   { value: "", name: "Tất cả module" },
   { value: "AI", name: "AI" },
+  { value: "STORY", name: "Story / đọc sách" },
   { value: "API", name: "API" },
   { value: "SYSTEM", name: "Hệ thống" },
 ] as const;
@@ -28,6 +29,11 @@ export const ACTIVITY_LOG_ACTION_OPTIONS = [
   { value: "AI_OR_TIMEOUT", name: "OpenRouter timeout" },
   { value: "AI_JSON_INVALID", name: "JSON AI không hợp lệ" },
   { value: "API_ERROR", name: "API lỗi" },
+  { value: "STORY_AUDIO_QUEUE", name: "Story — xếp hàng sinh audio" },
+  { value: "STORY_AUDIO_START", name: "Story — worker bắt đầu TTS" },
+  { value: "STORY_AUDIO_READY", name: "Story — audio sẵn sàng" },
+  { value: "STORY_AUDIO_FAIL", name: "Story — sinh audio thất bại" },
+  { value: "STORY_AUDIO_CACHE", name: "Story — audio cache hit" },
 ] as const;
 
 export function activityLogActionLabel(action?: string): string {

@@ -62,4 +62,27 @@ public class StudentEnrollmentAccessService {
                 .distinct()
                 .collect(Collectors.toList());
     }
+
+    /** Lớp HS đã ghi danh ACTIVE. classroomId=null → tất cả; nếu truyền thì phải thuộc danh sách. */
+    public List<UUID> resolveEnrolledClassroomIds(UUID classroomId) throws IdInvalidException {
+        UUID studentId = currentStudentId()
+                .orElseThrow(() -> new IdInvalidException("Cần đăng nhập để xem nội dung theo lớp."));
+
+        List<UUID> classroomIds = enrollmentRepository
+                .findByStudent_IdAndStatusIgnoreCaseAndVoidedFalse(studentId, ACTIVE_STATUS)
+                .stream()
+                .map(Enrollment::getClassroom)
+                .filter(c -> c != null && c.getId() != null)
+                .map(c -> c.getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (classroomId != null) {
+            if (!classroomIds.contains(classroomId)) {
+                throw new IdInvalidException("Bạn chưa ghi danh lớp này.");
+            }
+            return List.of(classroomId);
+        }
+        return classroomIds;
+    }
 }

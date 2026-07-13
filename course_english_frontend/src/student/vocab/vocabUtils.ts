@@ -11,6 +11,7 @@ export function toResolvedVocabularyItems(items: VocabularyItemRecord[]): Resolv
       audioUkUrl: item.audioUkUrl,
       audioUsUrl: item.audioUsUrl,
       partOfSpeech: item.partOfSpeech,
+      exampleSentence: item.exampleSentence,
       displayOrder: item.displayOrder,
     }))
     .filter((item) => item.wordEn && item.meaningVi)

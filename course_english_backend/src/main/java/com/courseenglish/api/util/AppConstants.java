@@ -13,6 +13,10 @@ public final class AppConstants {
     public static boolean dictionaryEnrichEnabled = true;
     public static boolean vocabularyAudioEnabled = true;
     public static VocabularyAudioAccentEnum vocabularyAudioAccent = VocabularyAudioAccentEnum.UK;
+    /** Max questions per vocab practice session (feature flag). */
+    public static int vocabularyPracticeMaxQuestions = 16;
+    /** Pass threshold percent for vocab practice. */
+    public static int vocabularyPracticePassScore = 80;
     public static boolean studentSelfRegistrationEnabled = true;
     public static boolean notificationEmailEnabled = false;
     /** Public URL — logo header xuất Word bài tập */

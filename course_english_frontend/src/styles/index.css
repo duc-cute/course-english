@@ -8,11 +8,14 @@
 @import "./brand-logo.css";
 @import "./admin-catalog-soft.css";
 @import "./admin-vocabulary-sets.css";
+@import "./admin-vocabulary-journeys.css";
 @import "./admin-vocabulary-words.css";
 @import "./admin-question-bank.css";
 @import "./admin-exam-paper-editor.css";
 @import "./manage-user.css";
 @import "./admin-manage-enrollment.css";
+@import "./admin-manage-stories.css";
+@import "./admin-rabbitmq-lab.css";
 
 :root {
   --ac-primary: #004ac6;

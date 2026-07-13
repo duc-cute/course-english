@@ -21,7 +21,7 @@ export type StudentNavItem = {
   showInBottomNav: boolean;
 };
 
-export const STUDENT_APP_TITLE = "Course English";
+export const STUDENT_APP_TITLE = "Nova English";
 
 export const studentNavItems: StudentNavItem[] = [
   {

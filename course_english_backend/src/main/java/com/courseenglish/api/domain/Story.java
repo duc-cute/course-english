@@ -66,6 +66,9 @@ public class Story extends BaseObject {
     @Column(name = "voice_profile_json", columnDefinition = "TEXT")
     private String voiceProfileJson;
 
+    @Column(name = "audio_last_error", columnDefinition = "TEXT")
+    private String audioLastError;
+
     @Column(name = "is_ai_generated", nullable = false)
     private boolean aiGenerated;
 }

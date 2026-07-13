@@ -1,42 +1,76 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type { StorySentence, StoryToken } from "../../shared/api/story";
 import { isWordInSentence } from "./storyKaraoke";
+import {
+  getStoryScrollContainer,
+  scrollIntoComfortZone,
+  useLeavingWordIndex,
+} from "./useKaraokeHighlight";
 
 type StoryReaderContentProps = {
   tokens: StoryToken[];
   sentences?: StorySentence[];
   activeWordIndex: number | null;
   activeSentenceIndex: number | null;
+  highlightOn?: boolean;
   onWordClick: (token: StoryToken, event: React.MouseEvent<HTMLSpanElement>) => void;
   clickedWordIndex?: number | null;
-  translateOn?: boolean;
   onTextSelect?: (selectedText: string) => void;
+  autoScrollOn?: boolean;
 };
 
-function renderToken(
-  token: StoryToken,
-  index: number,
-  activeWordIndex: number | null,
-  activeSentenceIndex: number | null,
-  clickedWordIndex: number | null | undefined,
-  sentences: StorySentence[] | undefined,
-  onWordClick: (token: StoryToken, event: React.MouseEvent<HTMLSpanElement>) => void,
-  handleClick: (token: StoryToken) => (event: React.MouseEvent<HTMLSpanElement>) => void,
-  handleDoubleClick: (event: React.MouseEvent<HTMLSpanElement>) => void,
-  activeWordRef?: React.RefObject<HTMLSpanElement | null>,
-) {
-  if (token.type === "text") {
-    return <span key={`t-${index}`}>{token.value}</span>;
-  }
+type StoryWordTokenProps = {
+  token: StoryToken;
+  isActiveWord: boolean;
+  isLeavingWord: boolean;
+  isClickedWord: boolean;
+  isReadWord: boolean;
+  inActiveSentence: boolean;
+  onWordClick: (token: StoryToken, event: React.MouseEvent<HTMLSpanElement>) => void;
+  innerRef?: React.Ref<HTMLSpanElement>;
+};
 
-  const isActiveWord = token.wordIndex != null && token.wordIndex === activeWordIndex;
-  const isClickedWord = token.wordIndex != null && token.wordIndex === clickedWordIndex;
-  const inActiveSentence = isWordInSentence(token.wordIndex, activeSentenceIndex, sentences);
+function wordTokenPropsEqual(prev: StoryWordTokenProps, next: StoryWordTokenProps): boolean {
+  return (
+    prev.token.wordIndex === next.token.wordIndex &&
+    prev.token.text === next.token.text &&
+    prev.isActiveWord === next.isActiveWord &&
+    prev.isLeavingWord === next.isLeavingWord &&
+    prev.isReadWord === next.isReadWord &&
+    prev.isClickedWord === next.isClickedWord &&
+    prev.inActiveSentence === next.inActiveSentence
+  );
+}
+
+const StoryWordToken = memo(function StoryWordToken({
+  token,
+  isActiveWord,
+  isLeavingWord,
+  isClickedWord,
+  isReadWord,
+  inActiveSentence,
+  onWordClick,
+  innerRef,
+}: StoryWordTokenProps) {
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLSpanElement>) => {
+      event.stopPropagation();
+      onWordClick(token, event);
+    },
+    [token, onWordClick],
+  );
+
+  const handleDoubleClick = useCallback((event: React.MouseEvent<HTMLSpanElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
 
   const classes = [
     "story-reader__word",
     token.isVocab ? "story-reader__word--vocab" : "story-reader__word--plain",
     inActiveSentence ? "story-reader__word--sentence-active" : "",
+    isReadWord ? "story-reader__word--read" : "",
+    isLeavingWord ? "story-reader__word--leaving" : "",
     isActiveWord ? "story-reader__word--active" : "",
     isClickedWord ? "story-reader__word--clicked" : "",
   ]
@@ -45,12 +79,11 @@ function renderToken(
 
   return (
     <span
-      key={`w-${token.wordIndex ?? index}`}
-      ref={isActiveWord ? activeWordRef : undefined}
+      ref={innerRef}
       className={classes}
       data-word-index={token.wordIndex}
       data-vocabulary-id={token.vocabularyId ?? ""}
-      onClick={handleClick(token)}
+      onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       role="button"
       tabIndex={0}
@@ -64,6 +97,32 @@ function renderToken(
       {token.text}
     </span>
   );
+}, wordTokenPropsEqual);
+
+type WordRenderFlags = {
+  isActiveWord: boolean;
+  isLeavingWord: boolean;
+  isClickedWord: boolean;
+  isReadWord: boolean;
+  inActiveSentence: boolean;
+};
+
+function getWordRenderFlags(
+  wordIndex: number | undefined,
+  effectiveActive: number | null,
+  leavingWordIndex: number | null,
+  clickedWordIndex: number | null | undefined,
+  activeSentenceIndex: number | null,
+  sentences: StorySentence[] | undefined,
+): WordRenderFlags {
+  const wi = wordIndex ?? -1;
+  return {
+    isActiveWord: wi >= 0 && effectiveActive !== null && wi === effectiveActive,
+    isLeavingWord: wi >= 0 && leavingWordIndex !== null && wi === leavingWordIndex,
+    isClickedWord: wi >= 0 && clickedWordIndex != null && wi === clickedWordIndex,
+    isReadWord: wi >= 0 && effectiveActive !== null && wi < effectiveActive,
+    inActiveSentence: wi >= 0 && isWordInSentence(wi, activeSentenceIndex, sentences),
+  };
 }
 
 export const StoryReaderContent = memo(function StoryReaderContent({
@@ -71,32 +130,34 @@ export const StoryReaderContent = memo(function StoryReaderContent({
   sentences,
   activeWordIndex,
   activeSentenceIndex,
+  highlightOn = true,
   onWordClick,
   clickedWordIndex,
-  translateOn = false,
   onTextSelect,
+  autoScrollOn = true,
 }: StoryReaderContentProps) {
   const activeWordRef = useRef<HTMLSpanElement | null>(null);
+  const activeSentenceRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
+  const effectiveActive = highlightOn ? activeWordIndex : null;
+  const effectiveSentence = highlightOn ? activeSentenceIndex : null;
+  const leavingWordIndex = useLeavingWordIndex(effectiveActive, highlightOn);
+
   useEffect(() => {
+    if (!autoScrollOn || !highlightOn) return;
+    const container = getStoryScrollContainer(contentRef.current);
+    if (!container) return;
+
     if (activeWordRef.current) {
-      activeWordRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      scrollIntoComfortZone(activeWordRef.current, container);
+      return;
     }
-  }, [activeWordIndex]);
 
-  const handleClick = useCallback(
-    (token: StoryToken) => (event: React.MouseEvent<HTMLSpanElement>) => {
-      event.stopPropagation();
-      onWordClick(token, event);
-    },
-    [onWordClick],
-  );
-
-  const handleDoubleClick = useCallback((event: React.MouseEvent<HTMLSpanElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-  }, []);
+    if (activeSentenceRef.current) {
+      scrollIntoComfortZone(activeSentenceRef.current, container);
+    }
+  }, [effectiveSentence, effectiveActive, autoScrollOn, highlightOn, sentences]);
 
   const handleMouseUp = useCallback(() => {
     if (!onTextSelect) return;
@@ -106,6 +167,36 @@ export const StoryReaderContent = memo(function StoryReaderContent({
       onTextSelect(text);
     }
   }, [onTextSelect]);
+
+  const renderWordToken = useCallback(
+    (token: StoryToken, index: number) => {
+      const flags = getWordRenderFlags(
+        token.wordIndex,
+        effectiveActive,
+        leavingWordIndex,
+        clickedWordIndex,
+        effectiveSentence,
+        sentences,
+      );
+      return (
+        <StoryWordToken
+          key={`w-${token.wordIndex ?? index}`}
+          innerRef={flags.isActiveWord ? activeWordRef : undefined}
+          token={token}
+          {...flags}
+          onWordClick={onWordClick}
+        />
+      );
+    },
+    [
+      effectiveActive,
+      leavingWordIndex,
+      clickedWordIndex,
+      effectiveSentence,
+      sentences,
+      onWordClick,
+    ],
+  );
 
   const sentenceBlocks = useMemo(() => {
     if (!sentences?.length) {
@@ -120,7 +211,6 @@ export const StoryReaderContent = memo(function StoryReaderContent({
             slice.push({ token, index });
           }
         } else {
-          // punctuation/space: include if between words of this sentence
           const prevWord = tokens
             .slice(0, index)
             .reverse()
@@ -143,50 +233,32 @@ export const StoryReaderContent = memo(function StoryReaderContent({
   }, [sentences, tokens]);
 
   return (
-    <div
-      ref={contentRef}
-      className="story-reader__content"
-      onMouseUp={handleMouseUp}
-    >
-      {sentenceBlocks && (translateOn || sentences?.some((s) => s.textVi)) ? (
-        sentenceBlocks.map(({ sentence, slice }) => (
-          <p key={`s-${sentence.sentenceIndex}`} className="story-reader__sentence-block">
-            <span className="story-reader__sentence-en">
-              {slice.map(({ token, index }) =>
-                renderToken(
-                  token,
-                  index,
-                  activeWordIndex,
-                  activeSentenceIndex,
-                  clickedWordIndex,
-                  sentences,
-                  onWordClick,
-                  handleClick,
-                  handleDoubleClick,
-                  activeWordRef,
-                ),
-              )}
+    <div ref={contentRef} className="story-reader__content" onMouseUp={handleMouseUp}>
+      {sentenceBlocks ? (
+        sentenceBlocks.map(({ sentence, slice }) => {
+          const isSentenceActive = sentence.sentenceIndex === effectiveSentence;
+          return (
+            <span
+              key={`s-${sentence.sentenceIndex}`}
+              ref={isSentenceActive ? (activeSentenceRef as React.RefObject<HTMLSpanElement | null>) : undefined}
+              className={`story-reader__sentence-inline ${isSentenceActive ? "story-reader__sentence-inline--active" : ""}`}
+            >
+              {slice.map(({ token, index }) => {
+                if (token.type === "text") {
+                  return <span key={`t-${index}`}>{token.value}</span>;
+                }
+                return renderWordToken(token, index);
+              })}
             </span>
-            {translateOn && sentence.textVi ? (
-              <span className="story-reader__sentence-vi">{sentence.textVi}</span>
-            ) : null}
-          </p>
-        ))
+          );
+        })
       ) : (
-        tokens.map((token, index) =>
-          renderToken(
-            token,
-            index,
-            activeWordIndex,
-            activeSentenceIndex,
-            clickedWordIndex,
-            sentences,
-            onWordClick,
-            handleClick,
-            handleDoubleClick,
-            activeWordRef,
-          ),
-        )
+        tokens.map((token, index) => {
+          if (token.type === "text") {
+            return <span key={`t-${index}`}>{token.value}</span>;
+          }
+          return renderWordToken(token, index);
+        })
       )}
     </div>
   );

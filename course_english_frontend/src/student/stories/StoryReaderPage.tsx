@@ -1,6 +1,4 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
-import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import TextIncreaseOutlinedIcon from "@mui/icons-material/TextIncreaseOutlined";
 import TextDecreaseOutlinedIcon from "@mui/icons-material/TextDecreaseOutlined";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
@@ -12,9 +10,10 @@ import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
-import { Alert, Button, Chip, CircularProgress, IconButton, Box, Slider, TextField } from "@mui/material";
+import TranslateIcon from "@mui/icons-material/Translate";
+import { Alert, Button, CircularProgress, IconButton, Box, TextField } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   apiGetStoryReaderPayloadBySlug,
   apiEnrichStoryWord,
@@ -34,6 +33,10 @@ import { StoryAudioPlayer } from "./StoryAudioPlayer";
 import { StoryWordPopup } from "./StoryWordPopup";
 import { findActiveSentenceIndex, findActiveWordIndex } from "./storyKaraoke";
 import { buildGlossaryMap, findSentenceBySelection, resolveWordLookupFromPayload } from "./storyReaderLookup";
+import StarsIcon from "@mui/icons-material/Stars";
+import { ThemeEngine } from "./theme/ThemeEngine";
+import { ProgressSky } from "./ProgressSky";
+import { ProgressMilestonesPanel } from "./ProgressMilestonesPanel";
 import "../../styles/student/story-reader.css";
 
 function findSentenceForWord(payload: StoryReaderPayload, wordIndex?: number): string {
@@ -46,18 +49,20 @@ function findSentenceForWord(payload: StoryReaderPayload, wordIndex?: number): s
   return sentence?.text ?? "";
 }
 
+/** Tạm ẩn toolbar Highlight / Auto Scroll / Line Focus / Translate — bật lại khi cần. */
+const SHOW_READER_OPTIONS_TOOLBAR = false;
+
 export function StoryReaderPage() {
   const { storySlug } = useParams<{ storySlug: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState<StoryReaderPayload | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
   const [fontScale, setFontScale] = useState(1);
 
   const [otherStories, setOtherStories] = useState<StoryRecord[]>([]);
   const [storyVocabs, setStoryVocabs] = useState<any[]>([]);
-  const [rightTab, setRightTab] = useState<"vocab" | "notes">("vocab");
+  const [rightTab, setRightTab] = useState<"vocab" | "notes" | "milestones">("vocab");
   const [notesText, setNotesText] = useState("");
 
   const [highlightOn, setHighlightOn] = useState(true);
@@ -85,14 +90,108 @@ export function StoryReaderPage() {
     setActiveToken(null);
   }, []);
 
+  const [selectedTheme, setSelectedTheme] = useState<string>("ocean");
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [audioTime, setAudioTime] = useState(0);
+
+  // Sync theme when payload loads if it contains theme metadata
+  useEffect(() => {
+    if ((payload as any)?.theme) {
+      setSelectedTheme((payload as any).theme);
+    }
+  }, [payload]);
+
+  useEffect(() => {
+    document.documentElement.classList.add("story-reader-immersive");
+    return () => document.documentElement.classList.remove("story-reader-immersive");
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight > target.clientHeight) {
+      const pct = target.scrollTop / (target.scrollHeight - target.clientHeight);
+      setScrollProgress(Math.min(1, Math.max(0, pct)));
+    }
+  };
+
+  const finalProgress = useMemo(() => {
+    const audioProgress = payload?.duration ? Math.min(1, audioTime / payload.duration) : 0;
+    return audioProgress > 0 ? audioProgress : scrollProgress;
+  }, [payload, audioTime, scrollProgress]);
+
+  const paragraphInfo = useMemo(() => {
+    if (!payload?.tokens) return { current: 1, total: 1 };
+    
+    let totalParagraphs = 1;
+    let activeWordParagraph = 1;
+    let wordCounter = 0;
+    
+    payload.tokens.forEach((t) => {
+      if (t.type === "text" && t.value?.includes("\n")) {
+        totalParagraphs += (t.value.match(/\n/g) || []).length;
+      } else if (t.type === "word") {
+        if (activeWordIndex !== null && wordCounter === activeWordIndex) {
+          activeWordParagraph = totalParagraphs;
+        }
+        wordCounter++;
+      }
+    });
+    
+    let currentParagraph = activeWordIndex !== null ? activeWordParagraph : Math.ceil(scrollProgress * totalParagraphs);
+    currentParagraph = Math.min(totalParagraphs, Math.max(1, currentParagraph));
+    
+    return {
+      current: currentParagraph,
+      total: Math.max(1, totalParagraphs)
+    };
+  }, [payload, activeWordIndex, scrollProgress]);
+
+  const pendingAudioTimeRef = useRef<number | null>(null);
+  const audioRafRef = useRef<number | null>(null);
+
+  const flushAudioTimeUpdate = useCallback(() => {
+    audioRafRef.current = null;
+    const time = pendingAudioTimeRef.current;
+    if (time == null || !payload) return;
+    setAudioTime(time);
+    if (highlightOn) {
+      setActiveWordIndex(findActiveWordIndex(time, payload.wordTimeline));
+      setActiveSentenceIndex(findActiveSentenceIndex(time, payload.sentenceTimeline));
+    }
+  }, [payload, highlightOn]);
+
   const handleAudioTimeUpdate = useCallback(
     (time: number) => {
       if (!payload) return;
+      pendingAudioTimeRef.current = time;
+      if (audioRafRef.current == null) {
+        audioRafRef.current = requestAnimationFrame(flushAudioTimeUpdate);
+      }
+    },
+    [payload, flushAudioTimeUpdate],
+  );
+
+  const wasHighlightOnRef = useRef(highlightOn);
+
+  useEffect(() => {
+    if (!highlightOn) {
+      setActiveWordIndex(null);
+      setActiveSentenceIndex(null);
+      wasHighlightOnRef.current = false;
+      return;
+    }
+    if (!wasHighlightOnRef.current && payload) {
+      const time = pendingAudioTimeRef.current ?? audioTime;
       setActiveWordIndex(findActiveWordIndex(time, payload.wordTimeline));
       setActiveSentenceIndex(findActiveSentenceIndex(time, payload.sentenceTimeline));
-    },
-    [payload],
-  );
+    }
+    wasHighlightOnRef.current = true;
+    return () => {
+      if (audioRafRef.current != null) {
+        cancelAnimationFrame(audioRafRef.current);
+      }
+    };
+  }, [highlightOn, payload, audioTime]);
 
   useEffect(() => {
     if (!storySlug) return;
@@ -176,6 +275,15 @@ export function StoryReaderPage() {
 
   const glossaryMap = useMemo(() => buildGlossaryMap(payload?.glossary), [payload?.glossary]);
   const hasBilingualPack = Boolean(payload?.glossary?.length || payload?.sentences?.some((s) => s.textVi));
+  const hasSentenceTranslations = Boolean(payload?.sentences?.some((s) => s.textVi?.trim()));
+
+  const translationViLines = useMemo(() => {
+    return (
+      payload?.sentences
+        ?.map((s) => s.textVi?.trim())
+        .filter((vi): vi is string => Boolean(vi)) ?? []
+    );
+  }, [payload?.sentences]);
 
   const handleTextSelect = useCallback(
     (selectedText: string) => {
@@ -328,274 +436,361 @@ export function StoryReaderPage() {
     );
   }
 
+  const themes = ["ocean", "forest", "night", "snow", "autumn", "fantasy", "space"];
+
   return (
-    <Box className={`story-reader__layout-wrapper${darkMode ? " story-reader--dark" : ""}`}>
-      {/* Left Sidebar */}
-      <Box className="story-reader__sidebar-left">
-        <Box className="brand-logo-area">
-          <AutoStoriesOutlinedIcon className="brand-logo-icon" />
-          <Box className="brand-logo-texts">
-            <span className="brand-logo-title">Course English</span>
-            <span className="brand-logo-sub">Learning made easy</span>
+    <ThemeEngine theme={selectedTheme}>
+      <Box className="story-reader__layout-wrapper">
+        {/* Left Sidebar */}
+        <Box className="story-reader__sidebar-left">
+          <Box className="brand-logo-area">
+            <img
+              src="/images/brand-logo.png?v=3"
+              alt="Nova English"
+              style={{ width: "32px", height: "32px", objectFit: "cover", borderRadius: "8px" }}
+            />
+            <Box className="brand-logo-texts">
+              <span className="brand-logo-title">Nova English</span>
+              <span className="brand-logo-sub">Learning made easy</span>
+            </Box>
           </Box>
-        </Box>
 
-        <Box className="sidebar-section">
-          <h4 className="sidebar-section__title">STORIES</h4>
-          <Box className="sidebar-stories-list">
-            {otherStories.map((s) => {
-              const isActive = s.slug === storySlug;
-              return (
-                <Box
-                  key={s.id}
-                  className={`sidebar-story-item ${isActive ? "sidebar-story-item--active" : ""}`}
-                  onClick={() => {
-                    if (!isActive) navigate(`/student/stories/${s.slug}`);
-                  }}
-                >
-                  <Box className="sidebar-story-cover">
-                    {s.coverImageUrl ? (
-                      <img src={resolveStorageAssetUrl(s.coverImageUrl)} alt="" />
-                    ) : (
-                      <ImageOutlinedIcon sx={{ color: "#94a3b8" }} />
-                    )}
+          <Box className="sidebar-section">
+            <h4 className="sidebar-section__title">STORIES</h4>
+            <Box className="sidebar-stories-list">
+              {otherStories.map((s) => {
+                const isActive = s.slug === storySlug;
+                return (
+                  <Box
+                    key={s.id}
+                    className={`sidebar-story-item ${isActive ? "sidebar-story-item--active" : ""}`}
+                    onClick={() => {
+                      if (!isActive) navigate(`/student/stories/${s.slug}`);
+                    }}
+                  >
+                    <Box className="sidebar-story-cover">
+                      {s.coverImageUrl ? (
+                        <img src={resolveStorageAssetUrl(s.coverImageUrl)} alt="" />
+                      ) : (
+                        <ImageOutlinedIcon sx={{ color: "#94a3b8" }} />
+                      )}
+                    </Box>
+                    <Box className="sidebar-story-info">
+                      <span className="sidebar-story-title">{s.title}</span>
+                      <span className="sidebar-story-sub">{s.readingTimeMinutes ?? 5} min</span>
+                    </Box>
                   </Box>
-                  <Box className="sidebar-story-info">
-                    <span className="sidebar-story-title">{s.title}</span>
-                    <span className="sidebar-story-sub">{s.readingTimeMinutes ?? 5} min</span>
-                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+
+          <Box className="sidebar-section" style={{ marginTop: "auto" }}>
+            <h4 className="sidebar-section__title">SETTINGS</h4>
+            <Box className="sidebar-settings-list">
+              <Box className="sidebar-setting-item sidebar-font-controls">
+                <Box className="setting-label">
+                  <TextDecreaseOutlinedIcon fontSize="small" />
+                  <span>Cỡ chữ</span>
                 </Box>
-              );
-            })}
-          </Box>
-        </Box>
-
-        <Box className="sidebar-section" style={{ marginTop: "auto" }}>
-          <h4 className="sidebar-section__title">SETTINGS</h4>
-          <Box className="sidebar-settings-list">
-            <Box
-              className="sidebar-setting-item sidebar-setting-item--clickable"
-              onClick={() => setDarkMode((prev) => !prev)}
-            >
-              <Box className="setting-label">
-                {darkMode ? <DarkModeOutlinedIcon fontSize="small" /> : <LightModeOutlinedIcon fontSize="small" />}
-                <span>Dark Mode</span>
+                <Box className="sidebar-font-controls__actions">
+                  <IconButton
+                    size="small"
+                    aria-label="Giảm cỡ chữ"
+                    onClick={() => setFontScale((s) => Math.max(0.85, +(s - 0.1).toFixed(2)))}
+                  >
+                    <TextDecreaseOutlinedIcon fontSize="small" />
+                  </IconButton>
+                  <span className="sidebar-font-controls__value">{Math.round(fontScale * 100)}%</span>
+                  <IconButton
+                    size="small"
+                    aria-label="Tăng cỡ chữ"
+                    onClick={() => setFontScale((s) => Math.min(1.4, +(s + 0.1).toFixed(2)))}
+                  >
+                    <TextIncreaseOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Box>
               </Box>
             </Box>
           </Box>
         </Box>
-      </Box>
 
-      {/* Center Reading Panel */}
-      <Box className="story-reader__center-panel">
-        <h1 className="story-reader__title">{payload.title}</h1>
-        <Box className="story-reader__meta">
-          {payload.level ? (
-            <Chip
-              size="small"
-              label={payload.level}
-              sx={{ background: "#faf5ff", color: "#6b21a8", fontWeight: 700 }}
-            />
-          ) : null}
-          {payload.readingTimeMinutes ? (
-            <Chip
-              size="small"
-              label={`${payload.readingTimeMinutes} phút đọc`}
-              sx={{ background: "#f1f5f9", color: "#475569", fontWeight: 600 }}
-            />
-          ) : null}
-          {payload.processingStatus === "AUDIO_READY" ? (
-            <Chip
-              size="small"
-              label="Có audio"
-              sx={{ background: "#dcfce7", color: "#166534", fontWeight: 600 }}
-            />
-          ) : (
-            <Chip
-              size="small"
-              label="Chưa có audio"
-              sx={{ background: "#fef3c7", color: "#b45309", fontWeight: 600 }}
-            />
-          )}
-        </Box>
+        {/* Center Reading Panel */}
+        <Box className="story-reader__center-panel" onScroll={handleScroll}>
+          <Box className="story-reader__journey-header">
+            <Box className="theme-selector-bar">
+              {themes.map((t) => (
+                <Button
+                  key={t}
+                  className={`theme-tab-btn ${selectedTheme === t ? "theme-tab-btn--active" : ""}`}
+                  onClick={() => setSelectedTheme(t)}
+                >
+                  {t}
+                </Button>
+              ))}
+            </Box>
 
-        {payload.audioUrl ? (
-          <Box className="story-reader__player-premium">
-            <StoryAudioPlayer
-              audioUrl={payload.audioUrl}
-              duration={payload.duration}
-              onTimeUpdate={handleAudioTimeUpdate}
+            <ProgressSky
+              progress={finalProgress}
+              theme={selectedTheme}
+              chapterTitle={payload.title}
+              currentParagraph={paragraphInfo.current}
+              totalParagraphs={paragraphInfo.total}
+              readingTimeMinutes={payload.readingTimeMinutes ?? 5}
             />
           </Box>
-        ) : (
-          <Alert severity="info">
-            Story chưa có audio. Admin cần bấm &quot;Sinh audio&quot; trước khi nghe karaoke.
-          </Alert>
-        )}
 
-        <Box style={contentStyle}>
-          <StoryReaderContent
-            tokens={payload.tokens ?? []}
-            sentences={payload.sentences}
-            activeWordIndex={activeWordIndex}
-            activeSentenceIndex={activeSentenceIndex}
-            onWordClick={handleWordClick}
-            clickedWordIndex={activeToken?.wordIndex}
-            translateOn={translateOn}
-            onTextSelect={handleTextSelect}
-          />
-        </Box>
+          <Box className="story-reader__center-body">
+          <Box className="story-reader__glass-card story-reader__story-header-card">
+            <h1 className="story-reader__title">{payload.title}</h1>
+            <Box className="story-reader__meta">
+              {payload.level ? (
+                <span className="story-reader__chip story-reader__chip--level">{payload.level}</span>
+              ) : null}
+              {payload.readingTimeMinutes ? (
+                <span className="story-reader__chip story-reader__chip--time">
+                  {payload.readingTimeMinutes} phút đọc
+                </span>
+              ) : null}
+              {payload.processingStatus === "AUDIO_READY" ? (
+                <span className="story-reader__chip story-reader__chip--audio">Có audio</span>
+              ) : (
+                <span className="story-reader__chip story-reader__chip--no-audio">Chưa có audio</span>
+              )}
+            </Box>
 
-        {/* Bottom Options Toolbar */}
-        <Box className="story-reader__options-toolbar">
-          <Button
-            size="small"
-            className={`option-toggle-btn ${highlightOn ? "option-toggle-btn--active" : ""}`}
-            onClick={() => setHighlightOn((v) => !v)}
-          >
-            Highlight {highlightOn ? "ON" : "OFF"}
-          </Button>
-          <Button
-            size="small"
-            className={`option-toggle-btn ${autoScrollOn ? "option-toggle-btn--active" : ""}`}
-            onClick={() => setAutoScrollOn((v) => !v)}
-          >
-            Auto Scroll {autoScrollOn ? "ON" : "OFF"}
-          </Button>
-          <Button
-            size="small"
-            className={`option-toggle-btn ${lineFocusOn ? "option-toggle-btn--active" : ""}`}
-            onClick={() => setLineFocusOn((v) => !v)}
-          >
-            Line Focus {lineFocusOn ? "ON" : "OFF"}
-          </Button>
-          <Button
-            size="small"
-            className={`option-toggle-btn ${translateOn ? "option-toggle-btn--active" : ""}`}
-            onClick={() => setTranslateOn((v) => !v)}
-          >
-            Translate {translateOn ? "ON" : "OFF"}
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Right Sidebar Quick Panel */}
-      <Box className="story-reader__sidebar-right">
-        <Box className="quick-actions-row">
-          <button className="quick-action-btn" onClick={() => setRightTab("notes")}>
-            <EditIcon fontSize="small" />
-            <span>Notes</span>
-          </button>
-          <button className="quick-action-btn" onClick={() => setRightTab("vocab")}>
-            <MenuBookIcon fontSize="small" />
-            <span>Dictionary</span>
-          </button>
-          <button className="quick-action-btn" onClick={() => navigate(studentRoutePaths.stories)}>
-            <ArrowBackIcon fontSize="small" />
-            <span>Back</span>
-          </button>
-        </Box>
-
-        <Box className="right-sidebar-tabs">
-          <span
-            className={`right-sidebar-tab ${rightTab === "vocab" ? "right-sidebar-tab--active" : ""}`}
-            onClick={() => setRightTab("vocab")}
-          >
-            Vocabulary
-          </span>
-          <span
-            className={`right-sidebar-tab ${rightTab === "notes" ? "right-sidebar-tab--active" : ""}`}
-            onClick={() => setRightTab("notes")}
-          >
-            Notes
-          </span>
-        </Box>
-
-        <Box className="right-sidebar-content-area">
-          {rightTab === "vocab" ? (
-            storyVocabs.length > 0 ? (
-              <>
-                {storyVocabs.map((v) => (
-                  <Box key={v.id} className="vocab-card">
-                    <IconButton
-                      size="small"
-                      className="vocab-card__play"
-                      onClick={() => handlePlayVocabAudio(v)}
-                    >
-                      <VolumeUpIcon fontSize="small" />
-                    </IconButton>
-                    <Box className="vocab-card__texts">
-                      <span className="vocab-card__word">
-                        {v.wordEn} <span className="vocab-card__pos">({v.partOfSpeech || "n"})</span>
-                      </span>
-                      <span className="vocab-card__meaning">
-                        {v.meaningVi}
-                      </span>
-                    </Box>
-                    <Box className="vocab-card__img">
-                      {v.imageUrl ? (
-                        <img src={resolveStorageAssetUrl(v.imageUrl)} alt={v.wordEn} />
-                      ) : (
-                        <ImageOutlinedIcon sx={{ color: "#cbd5e1", fontSize: "20px" }} />
-                      )}
-                    </Box>
-                  </Box>
-                ))}
-                <Box style={{ marginTop: "auto" }}>
-                  <a href="#" className="view-all-vocab-link">
-                    View all vocabulary ({storyVocabs.length}) &gt;
-                  </a>
-                </Box>
-              </>
-            ) : (
-              <Box style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
-                Không có từ vựng CEFR nào được đánh dấu trong truyện này.
+            {payload.audioUrl ? (
+              <Box className="story-reader__player-premium">
+                <StoryAudioPlayer
+                  audioUrl={payload.audioUrl}
+                  duration={payload.duration}
+                  onTimeUpdate={handleAudioTimeUpdate}
+                />
               </Box>
-            )
-          ) : (
-            <TextField
-              multiline
-              minRows={14}
-              placeholder="Ghi chú từ vựng hoặc ý kiến của bạn về câu chuyện tại đây..."
-              fullWidth
-              value={notesText}
-              onChange={(e) => handleNotesTextChange(e.target.value)}
-            />
-          )}
-        </Box>
-      </Box>
+            ) : (
+              <Alert severity="info" className="story-reader__audio-alert">
+                Story chưa có audio. Admin cần bấm &quot;Sinh audio&quot; trước khi nghe karaoke.
+              </Alert>
+            )}
+          </Box>
 
-      {sentencePopup ? (
-        <Box className="story-sentence-popup">
-          <Box className="story-sentence-popup__inner">
+          <Box className="story-reader__glass-card story-reader__story-body-card" style={contentStyle}>
+            {hasSentenceTranslations ? (
+              <Box className="story-reader__body-toolbar">
+                <Button
+                  size="small"
+                  startIcon={<TranslateIcon fontSize="small" />}
+                  className={`story-reader__translate-btn ${translateOn ? "story-reader__translate-btn--active" : ""}`}
+                  onClick={() => setTranslateOn((v) => !v)}
+                >
+                  Bản dịch {translateOn ? "Ẩn" : "Hiện"}
+                </Button>
+                {translateOn ? (
+                  <span className="story-reader__translate-hint">
+                    Bản dịch tiếng Việt đầy đủ hiển thị bên dưới nội dung tiếng Anh
+                  </span>
+                ) : null}
+              </Box>
+            ) : null}
+            <StoryReaderContent
+              tokens={payload.tokens ?? []}
+              sentences={payload.sentences}
+              activeWordIndex={activeWordIndex}
+              activeSentenceIndex={activeSentenceIndex}
+              highlightOn={highlightOn}
+              onWordClick={handleWordClick}
+              clickedWordIndex={activeToken?.wordIndex}
+              onTextSelect={handleTextSelect}
+              autoScrollOn={autoScrollOn}
+            />
+            {translateOn && translationViLines.length > 0 ? (
+              <Box className="story-reader__full-translation">
+                <p className="story-reader__full-translation-label">Bản dịch tiếng Việt</p>
+                <Box className="story-reader__full-translation-body">
+                  {translationViLines.map((line, index) => (
+                    <p key={`vi-${index}`} className="story-reader__full-translation-para">
+                      {line}
+                    </p>
+                  ))}
+                </Box>
+              </Box>
+            ) : null}
+          </Box>
+
+          {SHOW_READER_OPTIONS_TOOLBAR ? (
+          <Box className="story-reader__options-toolbar">
             <Button
               size="small"
-              onClick={() => setSentencePopup(null)}
-              sx={{ position: "absolute", top: 8, right: 8, minWidth: 0 }}
+              className={`option-toggle-btn ${highlightOn ? "option-toggle-btn--active" : ""}`}
+              onClick={() => setHighlightOn((v) => !v)}
             >
-              ✕
+              Highlight {highlightOn ? "ON" : "OFF"}
             </Button>
-            <p className="story-sentence-popup__en">{sentencePopup.text}</p>
-            <p className="story-sentence-popup__vi">{sentencePopup.textVi}</p>
+            <Button
+              size="small"
+              className={`option-toggle-btn ${autoScrollOn ? "option-toggle-btn--active" : ""}`}
+              onClick={() => setAutoScrollOn((v) => !v)}
+            >
+              Auto Scroll {autoScrollOn ? "ON" : "OFF"}
+            </Button>
+            <Button
+              size="small"
+              className={`option-toggle-btn ${lineFocusOn ? "option-toggle-btn--active" : ""}`}
+              onClick={() => setLineFocusOn((v) => !v)}
+            >
+              Line Focus {lineFocusOn ? "ON" : "OFF"}
+            </Button>
+            <Button
+              size="small"
+              className={`option-toggle-btn ${translateOn ? "option-toggle-btn--active" : ""}`}
+              onClick={() => setTranslateOn((v) => !v)}
+            >
+              Translate {translateOn ? "ON" : "OFF"}
+            </Button>
+          </Box>
+          ) : null}
           </Box>
         </Box>
-      ) : null}
 
-      {/* Floating Word Lookup Dialog Popup */}
-      <StoryWordPopup
-        open={popupOpen}
-        anchorX={popupPos.x}
-        anchorY={popupPos.y}
-        loading={lookupLoading}
-        enriching={enriching}
-        lookup={lookup}
-        error={lookupError}
-        canSave={Boolean((lookup?.vocabularyId ?? activeToken?.vocabularyId) && payload.id)}
-        saving={saving}
-        saved={saved}
-        onClose={handleClosePopup}
-        onSave={handleSaveNotebook}
-      />
-    </Box>
+        {/* Right Sidebar Quick Panel */}
+        <Box className="story-reader__sidebar-right">
+          <Box className="quick-actions-row">
+            <button className="quick-action-btn" onClick={() => setRightTab("milestones")}>
+              <StarsIcon fontSize="small" />
+              <span>Journey</span>
+            </button>
+            <button className="quick-action-btn" onClick={() => setRightTab("notes")}>
+              <EditIcon fontSize="small" />
+              <span>Notes</span>
+            </button>
+            <button className="quick-action-btn" onClick={() => setRightTab("vocab")}>
+              <MenuBookIcon fontSize="small" />
+              <span>Dictionary</span>
+            </button>
+            <button className="quick-action-btn" onClick={() => navigate(studentRoutePaths.stories)}>
+              <ArrowBackIcon fontSize="small" />
+              <span>Back</span>
+            </button>
+          </Box>
+
+          <Box className="right-sidebar-tabs">
+            <span
+              className={`right-sidebar-tab ${rightTab === "milestones" ? "right-sidebar-tab--active" : ""}`}
+              onClick={() => setRightTab("milestones")}
+            >
+              Hành trình
+            </span>
+            <span
+              className={`right-sidebar-tab ${rightTab === "vocab" ? "right-sidebar-tab--active" : ""}`}
+              onClick={() => setRightTab("vocab")}
+            >
+              Vocabulary
+            </span>
+            <span
+              className={`right-sidebar-tab ${rightTab === "notes" ? "right-sidebar-tab--active" : ""}`}
+              onClick={() => setRightTab("notes")}
+            >
+              Notes
+            </span>
+          </Box>
+
+          <Box className="right-sidebar-content-area">
+            {rightTab === "milestones" ? (
+              <ProgressMilestonesPanel progress={finalProgress} theme={selectedTheme} />
+            ) : rightTab === "vocab" ? (
+              storyVocabs.length > 0 ? (
+                <>
+                  {storyVocabs.map((v) => (
+                    <Box key={v.id} className="vocab-card">
+                      <IconButton
+                        size="small"
+                        className="vocab-card__play"
+                        onClick={() => handlePlayVocabAudio(v)}
+                      >
+                        <VolumeUpIcon fontSize="small" />
+                      </IconButton>
+                      <Box className="vocab-card__texts">
+                        <span className="vocab-card__word">
+                          {v.wordEn} <span className="vocab-card__pos">({v.partOfSpeech || "n"})</span>
+                        </span>
+                        <span className="vocab-card__meaning">
+                          {v.meaningVi}
+                        </span>
+                      </Box>
+                      <Box className="vocab-card__img">
+                        {v.imageUrl ? (
+                          <img src={resolveStorageAssetUrl(v.imageUrl)} alt={v.wordEn} />
+                        ) : (
+                          <ImageOutlinedIcon sx={{ color: "#cbd5e1", fontSize: "20px" }} />
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                  <Box style={{ marginTop: "auto" }}>
+                    {payload.vocabularySetId ? (
+                      <Link
+                        to={studentRoutePaths.vocabSet(payload.vocabularySetId)}
+                        className="view-all-vocab-link"
+                      >
+                        Xem bộ từ vựng ({storyVocabs.length}) &gt;
+                      </Link>
+                    ) : (
+                      <Link to={studentRoutePaths.vocab} className="view-all-vocab-link">
+                        Khám phá từ vựng ({storyVocabs.length}) &gt;
+                      </Link>
+                    )}
+                  </Box>
+                </>
+              ) : (
+                <Box style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "0.85rem" }}>
+                  Không có từ vựng CEFR nào được đánh dấu trong truyện này.
+                </Box>
+              )
+            ) : (
+              <TextField
+                multiline
+                minRows={14}
+                placeholder="Ghi chú từ vựng hoặc ý kiến của bạn về câu chuyện tại đây..."
+                fullWidth
+                value={notesText}
+                onChange={(e) => handleNotesTextChange(e.target.value)}
+              />
+            )}
+          </Box>
+        </Box>
+
+        {sentencePopup ? (
+          <Box className="story-sentence-popup">
+            <Box className="story-sentence-popup__inner">
+              <Button
+                size="small"
+                onClick={() => setSentencePopup(null)}
+                sx={{ position: "absolute", top: 8, right: 8, minWidth: 0 }}
+              >
+                ✕
+              </Button>
+              <p className="story-sentence-popup__en">{sentencePopup.text}</p>
+              <p className="story-sentence-popup__vi">{sentencePopup.textVi}</p>
+            </Box>
+          </Box>
+        ) : null}
+
+        {/* Floating Word Lookup Dialog Popup */}
+        <StoryWordPopup
+          open={popupOpen}
+          anchorX={popupPos.x}
+          anchorY={popupPos.y}
+          loading={lookupLoading}
+          enriching={enriching}
+          lookup={lookup}
+          error={lookupError}
+          canSave={Boolean((lookup?.vocabularyId ?? activeToken?.vocabularyId) && payload.id)}
+          saving={saving}
+          saved={saved}
+          onClose={handleClosePopup}
+          onSave={handleSaveNotebook}
+        />
+      </Box>
+    </ThemeEngine>
   );
 }

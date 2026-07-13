@@ -1,12 +1,18 @@
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import {
-  isPracticePassed,
-  type LessonPracticeAttemptBrief,
-} from "../../../shared/api/lessonPracticeAttempt";
+import { isPracticePassed } from "../../../shared/api/lessonPracticeAttempt";
+
+type PracticeAttemptBannerLatest = {
+  correctCount: number;
+  totalCount: number;
+  scorePercent: number;
+  passed: boolean;
+  passScorePercent: number;
+  completedAt?: string;
+};
 
 type PracticeAttemptBannerProps = {
-  latest?: LessonPracticeAttemptBrief | null;
+  latest?: PracticeAttemptBannerLatest | null;
   onReview?: () => void;
   compact?: boolean;
 };

@@ -10,6 +10,8 @@ import com.courseenglish.api.integration.dictionary.service.DictionaryLookupServ
 import com.courseenglish.api.repository.VocabularyWordRepository;
 import com.courseenglish.api.util.StoryWordKeyUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,6 +24,8 @@ import java.util.UUID;
 
 @Service
 public class StoryTranslationMergeService {
+
+    private static final Logger log = LoggerFactory.getLogger(StoryTranslationMergeService.class);
 
     private final VocabularyWordRepository vocabularyWordRepository;
     private final DictionaryLookupService dictionaryLookupService;
@@ -84,6 +88,13 @@ public class StoryTranslationMergeService {
         if (sentences == null || sentences.isEmpty() || sentenceTranslations == null || sentenceTranslations.isEmpty()) {
             return;
         }
+        if (sentences.size() != sentenceTranslations.size()) {
+            log.warn(
+                    "Sentence translation count mismatch: tokenizer={} translations={}. "
+                            + "VI text may align to wrong EN sentences until story is re-saved.",
+                    sentences.size(),
+                    sentenceTranslations.size());
+        }
         int limit = Math.min(sentences.size(), sentenceTranslations.size());
         for (int i = 0; i < limit; i++) {
             String vi = sentenceTranslations.get(i);
@@ -95,6 +106,11 @@ public class StoryTranslationMergeService {
 
     public List<StoryGlossaryEntryDTO> buildReaderGlossary(
             List<StoryTokenDTO> tokens, StoryTranslationsPayloadDTO translations) {
+        return buildReaderGlossary(tokens, translations, false);
+    }
+
+    public List<StoryGlossaryEntryDTO> buildReaderGlossary(
+            List<StoryTokenDTO> tokens, StoryTranslationsPayloadDTO translations, boolean enrichFromDictionary) {
         Map<String, StoryGlossaryEntryDTO> merged = new LinkedHashMap<>();
 
         if (translations != null && translations.getGlossary() != null) {
@@ -112,19 +128,10 @@ public class StoryTranslationMergeService {
                     continue;
                 }
                 String wordKey = StoryWordKeyUtil.toWordKey(token.getText());
-                if (wordKey.isBlank()) {
+                if (wordKey.isBlank() || token.getVocabularyId() == null) {
                     continue;
                 }
-                if (token.getVocabularyId() != null) {
-                    tokenVocabIds.put(wordKey, token.getVocabularyId());
-                }
-                merged.computeIfAbsent(wordKey, key -> {
-                    StoryGlossaryEntryDTO entry = new StoryGlossaryEntryDTO();
-                    entry.setWordKey(key);
-                    entry.setWordEn(token.getText().trim());
-                    entry.setMeaningSource("story");
-                    return entry;
-                });
+                tokenVocabIds.put(wordKey, token.getVocabularyId());
             }
         }
 
@@ -140,9 +147,11 @@ public class StoryTranslationMergeService {
             });
         }
 
-        for (StoryGlossaryEntryDTO entry : merged.values()) {
-            if (entry.getPhonetic() == null || entry.getPhonetic().isBlank()) {
-                enrichPhoneticFromDictionary(entry);
+        if (enrichFromDictionary) {
+            for (StoryGlossaryEntryDTO entry : merged.values()) {
+                if (entry.getPhonetic() == null || entry.getPhonetic().isBlank()) {
+                    enrichPhoneticFromDictionary(entry);
+                }
             }
         }
 
@@ -169,22 +178,26 @@ public class StoryTranslationMergeService {
         if (entry.getWordEn() == null || entry.getWordEn().isBlank()) {
             return;
         }
-        Optional<VocabularyEnrichmentData> enrichment = dictionaryLookupService.lookup(entry.getWordEn());
-        if (enrichment.isEmpty()) {
-            return;
-        }
-        VocabularyEnrichmentData data = enrichment.get();
-        if (entry.getPhonetic() == null || entry.getPhonetic().isBlank()) {
-            entry.setPhonetic(data.getPhonetic());
-        }
-        if (entry.getAudioUkUrl() == null || entry.getAudioUkUrl().isBlank()) {
-            entry.setAudioUkUrl(data.getAudioUkUrl());
-        }
-        if (entry.getAudioUsUrl() == null || entry.getAudioUsUrl().isBlank()) {
-            entry.setAudioUsUrl(data.getAudioUsUrl());
-        }
-        if (entry.getPartOfSpeech() == null || entry.getPartOfSpeech().isBlank()) {
-            entry.setPartOfSpeech(data.getPartOfSpeech());
+        try {
+            Optional<VocabularyEnrichmentData> enrichment = dictionaryLookupService.lookup(entry.getWordEn());
+            if (enrichment.isEmpty()) {
+                return;
+            }
+            VocabularyEnrichmentData data = enrichment.get();
+            if (entry.getPhonetic() == null || entry.getPhonetic().isBlank()) {
+                entry.setPhonetic(data.getPhonetic());
+            }
+            if (entry.getAudioUkUrl() == null || entry.getAudioUkUrl().isBlank()) {
+                entry.setAudioUkUrl(data.getAudioUkUrl());
+            }
+            if (entry.getAudioUsUrl() == null || entry.getAudioUsUrl().isBlank()) {
+                entry.setAudioUsUrl(data.getAudioUsUrl());
+            }
+            if (entry.getPartOfSpeech() == null || entry.getPartOfSpeech().isBlank()) {
+                entry.setPartOfSpeech(data.getPartOfSpeech());
+            }
+        } catch (Exception ex) {
+            log.warn("Dictionary enrich skipped for word '{}': {}", entry.getWordEn(), ex.getMessage());
         }
     }
 

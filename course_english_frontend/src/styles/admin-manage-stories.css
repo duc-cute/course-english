@@ -682,9 +682,30 @@
   border: 1px solid #e2e8f0;
   overflow: hidden;
   background: #eff6ff;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
+.story-editor__cover-card--has-image {
+  display: block;
+}
+
+.story-editor__cover-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+}
+
+.story-editor__cover-empty-icon {
+  font-size: 48px !important;
+  color: #94a3b8;
 }
 
 .story-editor__cover-card img {
@@ -694,10 +715,6 @@
 }
 
 .story-editor__cover-change-btn {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
   z-index: 5;
   background: #ffffff !important;
   color: #334155 !important;
@@ -712,7 +729,22 @@
   white-space: nowrap;
 }
 
-.story-editor__cover-change-btn:hover {
+.story-editor__cover-change-btn--center {
+  position: static;
+}
+
+.story-editor__cover-change-btn--bottom {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.story-editor__cover-change-btn--center:hover {
+  transform: scale(1.05) !important;
+}
+
+.story-editor__cover-change-btn--bottom:hover {
   background: #f8fafc !important;
   transform: translateX(-50%) scale(1.05) !important;
 }
@@ -1114,4 +1146,92 @@
   .story-editor__right {
     padding: 16px !important;
   }
+}
+
+/* ElevenLabs voice browser (API v2) */
+.el-voice-panel {
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.el-voice-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.el-voice-panel__title {
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  color: #0f172a !important;
+  margin-bottom: 4px !important;
+}
+
+.el-voice-panel__subtitle {
+  font-size: 0.8rem !important;
+  color: #64748b !important;
+  line-height: 1.45 !important;
+}
+
+.el-voice-panel__subtitle code {
+  font-size: 0.75rem;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.el-voice-panel__toggle {
+  text-transform: none !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  white-space: nowrap;
+}
+
+.el-voice-panel__body {
+  padding: 16px 20px 20px;
+}
+
+.el-voice-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.el-voice-panel__search {
+  min-width: 200px;
+  flex: 1;
+  max-width: 280px;
+}
+
+.el-voice-panel__search .MuiOutlinedInput-root {
+  background: #fff;
+  border-radius: 8px;
+}
+
+.el-voice-panel__loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+}
+
+.el-voice-panel__table-wrap {
+  max-height: 360px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.el-voice-panel__code {
+  word-break: break-all;
+  font-family: ui-monospace, monospace;
 }

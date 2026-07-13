@@ -17,6 +17,14 @@ public enum SystemConfigKeyEnum {
             "VOCABULARY_AUDIO_ACCENT",
             "UK",
             "Giọng phát âm hiển thị cho học sinh: UK | US | BOTH (mặc định UK)"),
+    VOCABULARY_PRACTICE_MAX_QUESTIONS(
+            "VOCABULARY_PRACTICE_MAX_QUESTIONS",
+            "16",
+            "Số câu tối đa mỗi session luyện từ vựng (1–40, mặc định 16)"),
+    VOCABULARY_PRACTICE_PASS_SCORE(
+            "VOCABULARY_PRACTICE_PASS_SCORE",
+            "80",
+            "Ngưỡng đạt (%) luyện từ vựng (1–100, mặc định 80)"),
     STUDENT_SELF_REGISTRATION_ENABLED(
             "STUDENT_SELF_REGISTRATION_ENABLED",
             "true",

@@ -17,4 +17,6 @@ public class ResStoryAudioDTO {
     private BigDecimal duration;
     private boolean cached;
     private String message;
+    /** Set when processingStatus is AUDIO_FAILED. */
+    private String errorMessage;
 }

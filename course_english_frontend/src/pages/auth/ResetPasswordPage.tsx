@@ -74,7 +74,14 @@ export function ResetPasswordPage() {
     <div className="rp-layout-container">
       <nav className="rp-navbar">
         <div className="rp-navbar-container">
-          <div className="rp-navbar-brand">Lumina English</div>
+          <div className="rp-navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img
+              src="/images/brand-logo.png?v=3"
+              alt="Nova English"
+              style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '6px' }}
+            />
+            <span>Nova English</span>
+          </div>
           <a className="rp-navbar-link" href="#" onClick={(e) => e.preventDefault()}>Hỗ trợ</a>
         </div>
       </nav>

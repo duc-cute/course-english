@@ -2,7 +2,7 @@ import api from "./axios";
 import type { ApiResponse } from "./types";
 
 export type StoryStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-export type StoryProcessingStatus = "PENDING" | "TOKENIZED" | "AUDIO_READY";
+export type StoryProcessingStatus = "PENDING" | "TOKENIZED" | "AUDIO_READY" | "AUDIO_FAILED";
 
 export type StoryToken = {
   type: "text" | "word";
@@ -95,6 +95,7 @@ export type StoryAudioStatus = {
   duration?: number;
   cached?: boolean;
   message?: string;
+  errorMessage?: string;
 };
 
 export type StoryWordLookup = {
@@ -277,6 +278,49 @@ export async function apiGenerateStoryAudio(storyId: string) {
 
 export async function apiGetStoryAudioStatus(storyId: string) {
   return api.get(`/stories/${storyId}/audio`) as Promise<ApiResponse<StoryAudioStatus>>;
+}
+
+export type ElevenLabsVoiceItem = {
+  voiceId: string;
+  name: string;
+  category?: string;
+  gender?: string;
+  accent?: string;
+  age?: string;
+  description?: string;
+  previewUrl?: string;
+  freeApiHint: boolean;
+  availableForTiers?: string[];
+};
+
+export type ElevenLabsVoiceListResult = {
+  provider: string;
+  source: string;
+  totalCount: number;
+  freeApiHintCount: number;
+  voices: ElevenLabsVoiceItem[];
+};
+
+export async function apiGetElevenLabsVoices(params?: { freeOnly?: boolean; search?: string }) {
+  return api.get("/stories/elevenlabs-voices", {
+    params: {
+      freeOnly: params?.freeOnly ?? true,
+      search: params?.search?.trim() || undefined,
+    },
+  }) as Promise<ApiResponse<ElevenLabsVoiceListResult>>;
+}
+
+/** Unwrap Spring RestResponse: voices live in `data` or `result`, not `data.result`. */
+export function unwrapElevenLabsVoiceList(response: unknown): ElevenLabsVoiceListResult {
+  const r = response as ApiResponse<ElevenLabsVoiceListResult>;
+  const payload = r?.result ?? r?.data;
+  return {
+    provider: payload?.provider ?? "elevenlabs",
+    source: payload?.source ?? "v2",
+    totalCount: payload?.totalCount ?? 0,
+    freeApiHintCount: payload?.freeApiHintCount ?? 0,
+    voices: Array.isArray(payload?.voices) ? payload.voices : [],
+  };
 }
 
 export async function apiGetStoryVoiceCatalog(profileKey?: string) {

@@ -1,5 +1,6 @@
 package com.courseenglish.api.service.story;
 
+import com.courseenglish.api.domain.dto.story.StorySentenceDTO;
 import com.courseenglish.api.domain.dto.story.StoryTokenDTO;
 import com.courseenglish.api.domain.dto.story.StoryTokensPayloadDTO;
 import com.courseenglish.api.repository.VocabularySetMemberRepository;
@@ -73,6 +74,23 @@ class StoryTokenizerServiceTest {
         StoryTokensPayloadDTO payload = tokenizerService.tokenize("", null);
         assertTrue(payload.getTokens().isEmpty());
         assertTrue(payload.getSentences().isEmpty());
+    }
+
+    @Test
+    void tokenizeSplitsDialogueEndingWithQuoteAfterPunctuation() {
+        String content =
+                "Smoke came out of the top. \"We must be inside a volcano!\" Emma said. "
+                        + "\"Let's observe\" Max said. He picked up a black stone.";
+
+        StoryTokensPayloadDTO payload = tokenizerService.tokenize(content, null);
+        List<StorySentenceDTO> sentences = payload.getSentences();
+
+        assertEquals(5, sentences.size());
+        assertEquals("Smoke came out of the top.", sentences.get(0).getText());
+        assertEquals("\"We must be inside a volcano!\"", sentences.get(1).getText());
+        assertEquals("Emma said.", sentences.get(2).getText());
+        assertEquals("\"Let's observe\" Max said.", sentences.get(3).getText());
+        assertEquals("He picked up a black stone.", sentences.get(4).getText());
     }
 
     @Test

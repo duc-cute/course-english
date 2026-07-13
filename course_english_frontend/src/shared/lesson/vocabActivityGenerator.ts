@@ -15,6 +15,9 @@ export type VocabItemInput = {
   meaningVi: string;
   audioUkUrl?: string;
   audioUsUrl?: string;
+  partOfSpeech?: string;
+  phonetic?: string;
+  coverImageUrl?: string;
 };
 
 export type McqGenerationOptions = {
@@ -148,6 +151,12 @@ function createMcqForItem(item: VocabItemInput, allItems: VocabItemInput[], inde
     choices,
     correctChoiceId: CHOICE_IDS[correctIdx],
     explanation: `${item.wordEn.trim()} = ${item.meaningVi.trim()}.`,
+    wordEn: item.wordEn,
+    partOfSpeech: item.partOfSpeech,
+    phonetic: item.phonetic,
+    coverImageUrl: item.coverImageUrl,
+    audioUkUrl: item.audioUkUrl,
+    audioUsUrl: item.audioUsUrl,
   };
 }
 

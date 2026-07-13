@@ -2,6 +2,8 @@ package com.courseenglish.api.integration.dictionary.freedictionary;
 
 import com.courseenglish.api.integration.common.ExternalApiException;
 import com.courseenglish.api.integration.dictionary.freedictionary.dto.FreeDictionaryEntryDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -24,6 +26,8 @@ import java.util.List;
         matchIfMissing = true
 )
 public class FreeDictionaryClient {
+
+    private static final Logger log = LoggerFactory.getLogger(FreeDictionaryClient.class);
 
     public static final String PROVIDER_ID = "freedictionaryapi.dev";
 
@@ -61,6 +65,9 @@ public class FreeDictionaryClient {
             }
             return body;
         } catch (HttpClientErrorException.NotFound e) {
+            return Collections.emptyList();
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.warn("Dictionary API rate limited (429) for word: {}", word);
             return Collections.emptyList();
         } catch (HttpClientErrorException e) {
             throw new ExternalApiException(

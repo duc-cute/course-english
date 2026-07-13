@@ -150,12 +150,19 @@ export function LoginPage() {
 
           {/* Desktop Branding Title */}
           <div className="auth-brand-logo-container">
-            <div className="auth-brand-logo-icon">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden>
-                auto_stories
-              </span>
+            <div className="auth-brand-logo-icon" style={{ background: 'transparent' }}>
+              <img
+                src="/images/brand-logo.png?v=3"
+                alt="Nova English"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: 'inherit',
+                }}
+              />
             </div>
-            <span className="auth-brand-logo-text">Lumina English</span>
+            <span className="auth-brand-logo-text">Nova English</span>
           </div>
 
           {/* Card Frame */}

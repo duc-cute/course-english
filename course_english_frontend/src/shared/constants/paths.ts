@@ -26,12 +26,14 @@ export const paths = {
   EXAM_PAPER_EDITOR: "exam-papers/:examPaperId/edit",
   MANAGE_VOCABULARY_WORDS: "vocabulary-words",
   MANAGE_VOCABULARY_SETS: "vocabulary-sets",
+  MANAGE_VOCABULARY_JOURNEYS: "vocabulary-journeys",
   MANAGE_STORIES: "stories",
   MANAGE_SYSTEM_CONFIG: "system-config",
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",
   AI_ASSISTANT: "ai-assistant",
   ACTIVITY_LOGS: "activity-logs",
+  RABBITMQ_LAB: "rabbitmq-lab",
   USAGE_GUIDE: "huong-dan",
 } as const;
 
@@ -43,6 +45,10 @@ export const studentRoutePaths = {
   path: `/${paths.STUDENT}/${paths.STUDENT_PATH}`,
   vocab: `/${paths.STUDENT}/${paths.STUDENT_VOCAB}`,
   vocabSet: (setId: string) => `/${paths.STUDENT}/${paths.STUDENT_VOCAB}/${setId}`,
+  vocabJourney: (journeyId: string) =>
+    `/${paths.STUDENT}/${paths.STUDENT_VOCAB}/journeys/${journeyId}`,
+  vocabTopic: (topicId: string) =>
+    `/${paths.STUDENT}/${paths.STUDENT_VOCAB}/topics/${topicId}`,
   stories: `/${paths.STUDENT}/${paths.STUDENT_STORIES}`,
   storyNotebook: `/${paths.STUDENT}/${paths.STUDENT_STORIES}/notebook`,
   storyRead: (storySlug: string) => `/${paths.STUDENT}/${paths.STUDENT_STORIES}/${storySlug}`,

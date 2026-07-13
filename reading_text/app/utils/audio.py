@@ -1,10 +1,36 @@
 import asyncio
 import shutil
+import subprocess
 from pathlib import Path
 
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def _probe_audio_duration_sync(path: Path) -> float | None:
+    """Sync ffprobe call — safe on Windows SelectorEventLoop (no asyncio subprocess)."""
+    proc = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            str(path),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return None
+    try:
+        return float(proc.stdout.strip())
+    except ValueError:
+        return None
 
 
 async def probe_audio_duration(path: Path) -> float | None:
@@ -16,23 +42,4 @@ async def probe_audio_duration(path: Path) -> float | None:
         logger.debug("ffprobe not found — duration omitted for %s", path)
         return None
 
-    proc = await asyncio.create_subprocess_exec(
-        "ffprobe",
-        "-v",
-        "error",
-        "-show_entries",
-        "format=duration",
-        "-of",
-        "default=noprint_wrappers=1:nokey=1",
-        str(path),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, _stderr = await proc.communicate()
-    if proc.returncode != 0:
-        return None
-
-    try:
-        return float(stdout.decode().strip())
-    except ValueError:
-        return None
+    return await asyncio.to_thread(_probe_audio_duration_sync, path)

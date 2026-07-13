@@ -15,10 +15,16 @@ import com.courseenglish.api.integration.speech.model.WordTimelineData;
 import com.courseenglish.api.integration.speech.service.SpeechGenerationService;
 import com.courseenglish.api.repository.StoryAudioRepository;
 import com.courseenglish.api.repository.StoryRepository;
+import com.courseenglish.api.service.ActivityLogService;
+import com.courseenglish.api.service.activitylog.ActivityLogWriteContext;
 import com.courseenglish.api.service.story.StoryAudioService;
 import com.courseenglish.api.service.story.StoryAudioWorker;
 import com.courseenglish.api.service.story.StorySpeechRequestAssembler;
 import com.courseenglish.api.service.story.StoryTokenizerService;
+import com.courseenglish.api.util.SercurityUtil;
+import com.courseenglish.api.util.constant.ActivityLogActionEnum;
+import com.courseenglish.api.util.constant.ActivityLogModuleEnum;
+import com.courseenglish.api.util.constant.ActivityLogSeverityEnum;
 import com.courseenglish.api.util.constant.StoryProcessingStatusEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,6 +52,7 @@ public class StoryAudioServiceImpl implements StoryAudioService {
     private final SpeechGenerationService speechGenerationService;
     private final StoryAudioWorker storyAudioWorker;
     private final ObjectMapper objectMapper;
+    private final ActivityLogService activityLogService;
 
     public StoryAudioServiceImpl(
             StoryRepository storyRepository,
@@ -54,7 +61,8 @@ public class StoryAudioServiceImpl implements StoryAudioService {
             StorySpeechRequestAssembler speechRequestAssembler,
             SpeechGenerationService speechGenerationService,
             @Lazy StoryAudioWorker storyAudioWorker,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            ActivityLogService activityLogService) {
         this.storyRepository = storyRepository;
         this.storyAudioRepository = storyAudioRepository;
         this.storyTokenizerService = storyTokenizerService;
@@ -62,29 +70,69 @@ public class StoryAudioServiceImpl implements StoryAudioService {
         this.speechGenerationService = speechGenerationService;
         this.storyAudioWorker = storyAudioWorker;
         this.objectMapper = objectMapper;
+        this.activityLogService = activityLogService;
     }
 
     @Override
     @Transactional
     public ResStoryAudioDTO queueGeneration(UUID storyId) throws IdInvalidException {
         Story story = requireStory(storyId);
+        log.info(
+                "[StoryAudio] Queue requested storyId={} title={} status={} speechEnabled={}",
+                storyId,
+                story.getTitle(),
+                story.getProcessingStatus(),
+                speechGenerationService.isEnabled());
+
         if (!speechGenerationService.isEnabled()) {
+            log.warn("[StoryAudio] Rejected — speech platform disabled storyId={}", storyId);
+            UUID userId = SercurityUtil.getCurrentUserId().orElse(null);
+            writeActivityLog(
+                    ActivityLogSeverityEnum.ERROR,
+                    ActivityLogActionEnum.STORY_AUDIO_FAIL,
+                    "Speech platform chưa bật (integration.speech.platform.enabled)",
+                    story,
+                    userId,
+                    null,
+                    null);
             throw new SpeechNotAvailableException(
                     "Speech platform chưa bật. Cấu hình integration.speech.platform.enabled=true");
         }
 
         ensureTokenized(story);
         String contentHash = speechRequestAssembler.contentHash(story);
+        UUID userId = SercurityUtil.getCurrentUserId().orElse(null);
 
         if (storyAudioRepository
                 .findFirstByStoryIdAndContentHashAndVoidedFalseOrderByCreatedAtDesc(story.getId(), contentHash)
                 .isPresent()) {
+            log.info("[StoryAudio] Cache hit — skip generation storyId={} contentHash={}", storyId, contentHash);
             story.setProcessingStatus(StoryProcessingStatusEnum.AUDIO_READY);
+            story.setAudioLastError(null);
             storyRepository.save(story);
+            writeActivityLog(
+                    ActivityLogSeverityEnum.INFO,
+                    ActivityLogActionEnum.STORY_AUDIO_CACHE,
+                    "Audio cache hit — \"" + story.getTitle() + "\"",
+                    story,
+                    userId,
+                    contentHash,
+                    null);
             return buildStatusDto(story, true, "Audio đã sẵn sàng (cache)");
         }
 
-        storyAudioWorker.generateAsync(story.getId());
+        story.setAudioLastError(null);
+        storyRepository.save(story);
+        storyAudioWorker.generateAsync(story.getId(), userId);
+        log.info("[StoryAudio] Queued async generation storyId={} contentHash={}", storyId, contentHash);
+        writeActivityLog(
+                ActivityLogSeverityEnum.INFO,
+                ActivityLogActionEnum.STORY_AUDIO_QUEUE,
+                "Đã xếp hàng sinh audio — \"" + story.getTitle() + "\"",
+                story,
+                userId,
+                contentHash,
+                null);
         ResStoryAudioDTO dto = buildStatusDto(story, false, "Đang sinh audio...");
         dto.setProcessingStatus(StoryProcessingStatusEnum.TOKENIZED.name());
         return dto;
@@ -98,7 +146,7 @@ public class StoryAudioServiceImpl implements StoryAudioService {
 
     @Override
     @Transactional
-    public void generateAndPersist(UUID storyId) {
+    public void generateAndPersist(UUID storyId, UUID triggeredByUserId) {
         Story story;
         try {
             story = requireStory(storyId);
@@ -108,6 +156,14 @@ public class StoryAudioServiceImpl implements StoryAudioService {
         }
         if (!speechGenerationService.isEnabled()) {
             log.warn("Speech platform disabled — skip story audio {}", storyId);
+            writeActivityLog(
+                    ActivityLogSeverityEnum.ERROR,
+                    ActivityLogActionEnum.STORY_AUDIO_FAIL,
+                    "Worker bỏ qua — speech platform disabled",
+                    story,
+                    triggeredByUserId,
+                    null,
+                    "integration.speech.platform.enabled=false");
             return;
         }
 
@@ -119,8 +175,18 @@ public class StoryAudioServiceImpl implements StoryAudioService {
                     .findFirstByStoryIdAndContentHashAndVoidedFalseOrderByCreatedAtDesc(
                             story.getId(), contentHash);
             if (cached.isPresent()) {
+                log.info("[StoryAudio] Cache hit in worker — storyId={} contentHash={}", storyId, contentHash);
                 story.setProcessingStatus(StoryProcessingStatusEnum.AUDIO_READY);
+                story.setAudioLastError(null);
                 storyRepository.save(story);
+                writeActivityLog(
+                        ActivityLogSeverityEnum.INFO,
+                        ActivityLogActionEnum.STORY_AUDIO_CACHE,
+                        "Worker cache hit — \"" + story.getTitle() + "\"",
+                        story,
+                        triggeredByUserId,
+                        contentHash,
+                        null);
                 return;
             }
 
@@ -133,7 +199,28 @@ public class StoryAudioServiceImpl implements StoryAudioService {
                     primaryRequest.getVoice(),
                     primaryRequest.getText() == null ? 0 : primaryRequest.getText().length());
 
-            SpeechResult result = generateWithEdgeFallback(story, tokensPayload, primaryRequest);
+            writeActivityLog(
+                    ActivityLogSeverityEnum.INFO,
+                    ActivityLogActionEnum.STORY_AUDIO_START,
+                    "Worker TTS — "
+                            + primaryRequest.getTtsProvider()
+                            + " / "
+                            + primaryRequest.getVoice()
+                            + " | \""
+                            + story.getTitle()
+                            + "\"",
+                    story,
+                    triggeredByUserId,
+                    contentHash,
+                    null,
+                    "primaryProvider",
+                    primaryRequest.getTtsProvider(),
+                    "primaryVoice",
+                    primaryRequest.getVoice(),
+                    "contentLength",
+                    primaryRequest.getText() == null ? 0 : primaryRequest.getText().length());
+
+            SpeechResult result = generateWithEdgeFallback(story, tokensPayload, primaryRequest, triggeredByUserId);
 
             voidPreviousAudio(story.getId());
 
@@ -150,6 +237,7 @@ public class StoryAudioServiceImpl implements StoryAudioService {
             storyAudioRepository.save(entity);
 
             story.setProcessingStatus(StoryProcessingStatusEnum.AUDIO_READY);
+            story.setAudioLastError(null);
             storyRepository.save(story);
             log.info(
                     "[StoryAudio] Ready storyId={} provider={} voice={} duration={} audioUrl={}",
@@ -158,9 +246,51 @@ public class StoryAudioServiceImpl implements StoryAudioService {
                     result.getVoice(),
                     result.getDuration(),
                     result.getAudioUrl());
+            writeActivityLog(
+                    ActivityLogSeverityEnum.INFO,
+                    ActivityLogActionEnum.STORY_AUDIO_READY,
+                    "Audio sẵn sàng — "
+                            + result.getProvider()
+                            + " / "
+                            + result.getVoice()
+                            + " | "
+                            + result.getDuration()
+                            + "s",
+                    story,
+                    triggeredByUserId,
+                    contentHash,
+                    result.getAudioUrl(),
+                    "provider",
+                    result.getProvider(),
+                    "voice",
+                    result.getVoice(),
+                    "duration",
+                    result.getDuration(),
+                    "audioUrl",
+                    result.getAudioUrl());
         } catch (Exception ex) {
             log.error("[StoryAudio] Generation failed storyId={} reason={}", storyId, ex.getMessage(), ex);
+            markAudioFailed(story, ex, triggeredByUserId);
         }
+    }
+
+    private void markAudioFailed(Story story, Exception ex, UUID triggeredByUserId) {
+        String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+        if (detail.length() > 2000) {
+            detail = detail.substring(0, 2000);
+        }
+        story.setProcessingStatus(StoryProcessingStatusEnum.AUDIO_FAILED);
+        story.setAudioLastError(detail);
+        storyRepository.save(story);
+        log.warn("[StoryAudio] Marked AUDIO_FAILED storyId={} error={}", story.getId(), detail);
+        writeActivityLog(
+                ActivityLogSeverityEnum.ERROR,
+                ActivityLogActionEnum.STORY_AUDIO_FAIL,
+                "Sinh audio thất bại — \"" + story.getTitle() + "\"",
+                story,
+                triggeredByUserId,
+                null,
+                detail);
     }
 
     @Override
@@ -243,7 +373,8 @@ public class StoryAudioServiceImpl implements StoryAudioService {
     private SpeechResult generateWithEdgeFallback(
             Story story,
             StoryTokensPayloadDTO tokensPayload,
-            SpeechGenerationRequest primaryRequest) {
+            SpeechGenerationRequest primaryRequest,
+            UUID triggeredByUserId) {
         UUID storyId = story.getId();
         try {
             SpeechResult result = speechGenerationService.generate(primaryRequest);
@@ -261,6 +392,22 @@ public class StoryAudioServiceImpl implements StoryAudioService {
                     primaryRequest.getVoice(),
                     primaryEx.getMessage());
 
+            writeActivityLog(
+                    ActivityLogSeverityEnum.WARN,
+                    ActivityLogActionEnum.STORY_AUDIO_START,
+                    "Primary TTS lỗi — fallback Edge | "
+                            + primaryRequest.getTtsProvider()
+                            + ": "
+                            + primaryEx.getMessage(),
+                    story,
+                    triggeredByUserId,
+                    null,
+                    primaryEx.getMessage(),
+                    "primaryProvider",
+                    primaryRequest.getTtsProvider(),
+                    "step",
+                    "fallback_edge");
+
             SpeechGenerationRequest fallbackRequest =
                     speechRequestAssembler.assembleEdgeFallback(story, tokensPayload);
             log.info(
@@ -269,13 +416,24 @@ public class StoryAudioServiceImpl implements StoryAudioService {
                     fallbackRequest.getTtsProvider(),
                     fallbackRequest.getVoice());
 
-            SpeechResult fallbackResult = speechGenerationService.generate(fallbackRequest);
-            log.info(
-                    "[StoryAudio] Fallback provider succeeded storyId={} provider={} voice={}",
-                    storyId,
-                    fallbackResult.getProvider(),
-                    fallbackResult.getVoice());
-            return fallbackResult;
+            try {
+                SpeechResult fallbackResult = speechGenerationService.generate(fallbackRequest);
+                log.info(
+                        "[StoryAudio] Fallback provider succeeded storyId={} provider={} voice={}",
+                        storyId,
+                        fallbackResult.getProvider(),
+                        fallbackResult.getVoice());
+                return fallbackResult;
+            } catch (Exception fallbackEx) {
+                log.error(
+                        "[StoryAudio] Fallback provider failed storyId={} provider={} voice={} reason={}",
+                        storyId,
+                        fallbackRequest.getTtsProvider(),
+                        fallbackRequest.getVoice(),
+                        fallbackEx.getMessage(),
+                        fallbackEx);
+                throw fallbackEx;
+            }
         }
     }
 
@@ -290,6 +448,14 @@ public class StoryAudioServiceImpl implements StoryAudioService {
         dto.setProcessingStatus(story.getProcessingStatus().name());
         dto.setCached(cached);
         dto.setMessage(message);
+
+        if (story.getProcessingStatus() == StoryProcessingStatusEnum.AUDIO_FAILED) {
+            String err = story.getAudioLastError();
+            dto.setErrorMessage(err);
+            if (message == null || message.isBlank()) {
+                dto.setMessage(err != null ? "Sinh audio thất bại: " + err : "Sinh audio thất bại.");
+            }
+        }
 
         storyAudioRepository.findFirstByStoryIdAndVoidedFalseOrderByCreatedAtDesc(story.getId())
                 .ifPresent(audio -> {
@@ -325,5 +491,39 @@ public class StoryAudioServiceImpl implements StoryAudioService {
             dto.setEnd(item.getEnd());
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    private void writeActivityLog(
+            ActivityLogSeverityEnum severity,
+            ActivityLogActionEnum action,
+            String message,
+            Story story,
+            UUID userId,
+            String contentHash,
+            String detail,
+            Object... contextPairs) {
+        ActivityLogWriteContext ctx =
+                ActivityLogWriteContext.of(severity, ActivityLogModuleEnum.STORY, action, message)
+                        .ref("STORY", story.getId())
+                        .put("storyId", story.getId())
+                        .put("storyTitle", story.getTitle())
+                        .put("storySlug", story.getSlug());
+        if (userId != null) {
+            ctx.userId(userId);
+        }
+        if (contentHash != null && !contentHash.isBlank()) {
+            ctx.put("contentHash", contentHash);
+        }
+        if (detail != null && !detail.isBlank()) {
+            ctx.detail(detail);
+        }
+        for (int i = 0; i + 1 < contextPairs.length; i += 2) {
+            Object key = contextPairs[i];
+            Object value = contextPairs[i + 1];
+            if (key instanceof String keyStr) {
+                ctx.put(keyStr, value);
+            }
+        }
+        activityLogService.log(ctx);
     }
 }

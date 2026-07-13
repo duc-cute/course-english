@@ -23,6 +23,7 @@ import {
   isStudentNavActive,
   studentNavItems,
 } from "./studentNavItems";
+import { BrandLogo } from "../../shared/ui/BrandLogo";
 
 type StudentSidebarProps = {
   mobileOpen: boolean;
@@ -72,9 +73,7 @@ export function StudentSidebar({ mobileOpen, onClose }: StudentSidebarProps) {
   const renderDrawerContent = () => (
     <Box className="admin-sidebar-inner">
       <Stack direction="row" alignItems="center" spacing={1.5} className="admin-sidebar-brand">
-        <Box className="admin-sidebar-brand-icon" aria-hidden>
-          E
-        </Box>
+        <BrandLogo size="sm" />
         <Box sx={{ minWidth: 0 }}>
           <Typography className="admin-sidebar-brand-title" noWrap>
             {STUDENT_APP_TITLE}

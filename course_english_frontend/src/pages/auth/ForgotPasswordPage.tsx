@@ -59,11 +59,13 @@ export function ForgotPasswordPage() {
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="fp-brand-overlay">
-          <span className="material-symbols-outlined fp-brand-icon-white" style={{ fontVariationSettings: "'FILL' 1" }}>
-            school
-          </span>
-          <span className="fp-brand-text-white">Lumina English</span>
+        <div className="fp-brand-overlay" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img
+            src="/images/brand-logo.png?v=3"
+            alt="Nova English"
+            style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '8px' }}
+          />
+          <span className="fp-brand-text-white">Nova English</span>
         </div>
         
         {/* Decorative blur blobs */}
@@ -104,11 +106,13 @@ export function ForgotPasswordPage() {
       <section className="fp-form-section">
         <div className="fp-card">
           {/* Mobile Logo inside card (Hidden on desktop) */}
-          <div className="fp-mobile-logo">
-            <span className="material-symbols-outlined fp-logo-icon" style={{ fontVariationSettings: "'FILL' 1" }}>
-              school
-            </span>
-            <span className="fp-logo-text">Lumina English</span>
+          <div className="fp-mobile-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+            <img
+              src="/images/brand-logo.png?v=3"
+              alt="Nova English"
+              style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '8px' }}
+            />
+            <span className="fp-logo-text">Nova English</span>
           </div>
 
           {nextStep === null ? (
@@ -222,7 +226,7 @@ export function ForgotPasswordPage() {
         {/* Global Footer */}
         <footer className="fp-footer">
           <p className="fp-footer-text">
-            © 2026 Lumina English. Bảo lưu mọi quyền.
+            © 2026 Nova English. Bảo lưu mọi quyền.
           </p>
           <div className="fp-footer-links">
             <a className="fp-footer-link" href="#" onClick={(e) => e.preventDefault()}>Chính sách bảo mật</a>

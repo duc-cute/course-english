@@ -1,0 +1,441 @@
+/* Admin — Học RabbitMQ (lab + mô phỏng) */
+
+.rmq-lab {
+  max-width: 960px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.rmq-lab__hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.rmq-lab__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #ff6b35;
+}
+
+.rmq-lab__title {
+  margin: 0 0 8px;
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ac-on-surface, #0b1c30);
+}
+
+.rmq-lab__subtitle {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ac-on-surface-variant, #434655);
+}
+
+.rmq-lab__hero-actions {
+  text-align: right;
+}
+
+.rmq-lab__progress-strip {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--ac-surface-container-low, #eff4ff);
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.rmq-lab__progress-bar {
+  margin-top: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 74, 198, 0.12);
+  overflow: hidden;
+}
+
+.rmq-lab__progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #004ac6, #2563eb);
+  transition: width 0.35s ease;
+}
+
+.rmq-lab__tabs {
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.rmq-lab__panel-intro {
+  margin: 0 0 18px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ac-on-surface-variant, #434655);
+}
+
+.rmq-lab__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rmq-lab__card {
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(11, 28, 48, 0.04);
+}
+
+.rmq-lab__card-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.rmq-lab__card-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.rmq-lab__card-num {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+}
+
+.rmq-lab__card h2 {
+  margin: 2px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.rmq-lab__essence {
+  margin: 0 0 10px;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.rmq-lab__analogy {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff8f0;
+  border-left: 3px solid #ff6b35;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.rmq-lab__in-app {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--ac-on-surface-variant, #434655);
+}
+
+.rmq-lab__quiz {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--ac-surface-container-low, #eff4ff);
+}
+
+.rmq-lab__checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rmq-lab__checklist li {
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.rmq-lab__tip {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.rmq-lab__lab-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rmq-lab__lab-step {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+}
+
+.rmq-lab__lab-step-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ac-primary, #004ac6);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.rmq-lab__lab-step h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.rmq-lab__lab-step p {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.rmq-lab__cmd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #1e293b;
+}
+
+.rmq-lab__cmd code {
+  flex: 1;
+  min-width: 200px;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  word-break: break-all;
+}
+
+.rmq-lab__compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 700px) {
+  .rmq-lab__compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rmq-lab__compare-col {
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+  background: #fff;
+}
+
+.rmq-lab__compare-col--mq {
+  border-color: #ff6b35;
+  background: #fffaf7;
+}
+
+.rmq-lab__compare-col h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.rmq-lab__compare-col ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.rmq-lab__when {
+  margin: 12px 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ac-primary, #004ac6);
+}
+
+.rmq-lab__ascii {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  overflow-x: auto;
+}
+
+.rmq-lab__three-layers h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.rmq-lab__three-layers table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.rmq-lab__three-layers th,
+.rmq-lab__three-layers td {
+  padding: 8px 10px;
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+  text-align: left;
+}
+
+.rmq-lab__three-layers th {
+  background: var(--ac-surface-container-low, #eff4ff);
+}
+
+/* Flow simulator */
+.rmq-sim__lead {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.rmq-sim__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.rmq-sim__diagram {
+  padding: 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eff4ff 100%);
+  border: 1px solid var(--ac-outline-variant, #c3c6d7);
+  margin-bottom: 14px;
+}
+
+.rmq-sim__node {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  text-align: center;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+
+.rmq-sim__node--active {
+  border-color: #004ac6;
+  box-shadow: 0 0 0 3px rgba(0, 74, 198, 0.2);
+  transform: scale(1.02);
+}
+
+.rmq-sim__node--worker.rmq-sim__node--active {
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+}
+
+.rmq-sim__node-tag {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  margin-bottom: 4px;
+}
+
+.rmq-sim__node-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.rmq-sim__arrow {
+  text-align: center;
+  font-size: 1.25rem;
+  color: #64748b;
+  padding: 6px 0;
+}
+
+.rmq-sim__branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .rmq-sim__branches {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rmq-sim__branch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rmq-sim__arrow-down {
+  text-align: center;
+  color: #64748b;
+}
+
+.rmq-sim__chip {
+  margin-top: 6px !important;
+}
+
+.rmq-sim__payload pre {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  overflow-x: auto;
+}
+
+.rmq-sim__log {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  font-family: ui-monospace, monospace;
+}
+
+.rmq-sim__warn {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.875rem;
+}

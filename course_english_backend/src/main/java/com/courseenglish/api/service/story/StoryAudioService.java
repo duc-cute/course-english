@@ -13,7 +13,7 @@ public interface StoryAudioService {
 
     ResStoryAudioDTO getAudioStatus(UUID storyId) throws IdInvalidException;
 
-    void generateAndPersist(UUID storyId);
+    void generateAndPersist(UUID storyId, UUID triggeredByUserId);
 
     void attachAudioToReaderPayload(ResStoryReaderPayloadDTO dto, UUID storyId);
 

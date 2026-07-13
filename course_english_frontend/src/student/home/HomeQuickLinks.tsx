@@ -27,7 +27,7 @@ const LINKS = [
   {
     to: studentRoutePaths.vocab,
     title: "Từ vựng",
-    desc: "Flashcard và danh sách từ — ôn theo bộ từ đã publish.",
+    desc: "Bộ từ được giao và khám phá — học list từ rồi luyện tập.",
     icon: <MenuBookOutlinedIcon />,
     tone: "default" as const,
     cta: "Ôn từ vựng",

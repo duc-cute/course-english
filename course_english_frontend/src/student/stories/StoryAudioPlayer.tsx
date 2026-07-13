@@ -7,6 +7,7 @@ type StoryAudioPlayerProps = {
   audioUrl: string;
   duration?: number;
   onTimeUpdate: (currentTime: number) => void;
+  onPlayingChange?: (playing: boolean) => void;
 };
 
 function formatTime(seconds: number): string {
@@ -16,7 +17,12 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function StoryAudioPlayer({ audioUrl, duration, onTimeUpdate }: StoryAudioPlayerProps) {
+export function StoryAudioPlayer({
+  audioUrl,
+  duration,
+  onTimeUpdate,
+  onPlayingChange,
+}: StoryAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -29,9 +35,10 @@ export function StoryAudioPlayer({ audioUrl, duration, onTimeUpdate }: StoryAudi
     audio.pause();
     audio.currentTime = 0;
     setPlaying(false);
+    onPlayingChange?.(false);
     setCurrentTime(0);
     setTotalDuration(duration ?? 0);
-  }, [audioUrl, duration]);
+  }, [audioUrl, duration, onPlayingChange]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -55,15 +62,18 @@ export function StoryAudioPlayer({ audioUrl, duration, onTimeUpdate }: StoryAudi
     if (playing) {
       audio.pause();
       setPlaying(false);
+      onPlayingChange?.(false);
       return;
     }
     try {
       await audio.play();
       setPlaying(true);
+      onPlayingChange?.(true);
     } catch {
       setPlaying(false);
+      onPlayingChange?.(false);
     }
-  }, [playing]);
+  }, [playing, onPlayingChange]);
 
   const handleSeek = useCallback(
     (_: Event, value: number | number[]) => {
@@ -92,14 +102,22 @@ export function StoryAudioPlayer({ audioUrl, duration, onTimeUpdate }: StoryAudi
         src={audioUrl}
         preload="metadata"
         onTimeUpdate={handleTimeUpdate}
-        onEnded={() => setPlaying(false)}
+        onEnded={() => {
+          setPlaying(false);
+          onPlayingChange?.(false);
+        }}
         onLoadedMetadata={() => {
           if (audioRef.current?.duration) {
             setTotalDuration(audioRef.current.duration);
           }
         }}
       />
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: "100%" }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1.5}
+        sx={{ width: "100%" }}
+      >
         <IconButton
           color="primary"
           onClick={() => void togglePlay()}

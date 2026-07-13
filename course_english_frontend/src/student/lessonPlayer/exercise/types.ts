@@ -32,6 +32,12 @@ export type MultipleChoiceQuestion = {
   choices: ExerciseChoice[];
   correctChoiceId: string;
   explanation?: string;
+  wordEn?: string;
+  phonetic?: string;
+  partOfSpeech?: string;
+  coverImageUrl?: string;
+  audioUkUrl?: string;
+  audioUsUrl?: string;
 };
 
 export type MatchingPair = {

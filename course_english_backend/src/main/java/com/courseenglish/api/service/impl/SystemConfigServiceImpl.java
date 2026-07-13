@@ -142,6 +142,8 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         dto.setVocabularyAudioEnabled(AppConstants.vocabularyAudioEnabled);
         dto.setVocabularyAudioAccent(AppConstants.vocabularyAudioAccent.getValue());
         dto.setStudentSelfRegistrationEnabled(AppConstants.studentSelfRegistrationEnabled);
+        dto.setVocabularyPracticeMaxQuestions(AppConstants.vocabularyPracticeMaxQuestions);
+        dto.setVocabularyPracticePassScore(AppConstants.vocabularyPracticePassScore);
         dto.setWordExportLogoUrl(
                 AppConstants.wordExportLogoUrl != null ? AppConstants.wordExportLogoUrl : "");
         dto.setWordExportWatermarkText(
@@ -172,6 +174,10 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         AppConstants.vocabularyAudioAccent = VocabularyAudioAccentEnum.fromValue(
                 findValue(all, SystemConfigKeyEnum.VOCABULARY_AUDIO_ACCENT.getKey()),
                 VocabularyAudioAccentEnum.UK);
+        AppConstants.vocabularyPracticeMaxQuestions = (int) Math.min(40, Math.max(1,
+                readLong(findValue(all, SystemConfigKeyEnum.VOCABULARY_PRACTICE_MAX_QUESTIONS.getKey()), 16)));
+        AppConstants.vocabularyPracticePassScore = (int) Math.min(100, Math.max(1,
+                readLong(findValue(all, SystemConfigKeyEnum.VOCABULARY_PRACTICE_PASS_SCORE.getKey()), 80)));
         AppConstants.studentSelfRegistrationEnabled = readBoolean(
                 findValue(all, SystemConfigKeyEnum.STUDENT_SELF_REGISTRATION_ENABLED.getKey()),
                 true);

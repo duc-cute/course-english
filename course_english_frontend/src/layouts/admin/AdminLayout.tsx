@@ -1,10 +1,8 @@
 import { Box } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
-import {
-  AiAssistantDrawerProvider,
-  useAiAssistantDrawer,
-} from "../../shared/ai/AiAssistantDrawerContext";
+import { useAiAssistantDrawer } from "../../shared/ai/AiAssistantDrawerContext";
+import { AiAssistantDrawerProvider } from "../../shared/ai/AiAssistantDrawerProvider";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import "../../styles/admin-layout.css";

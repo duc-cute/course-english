@@ -16,6 +16,8 @@ import { ManageQuestionsPage } from "../pages/admin/ManageQuestionsPage";
 import { ManageExamPapersPage } from "../pages/admin/ManageExamPapersPage";
 import { ExamPaperEditorPage } from "../pages/admin/ExamPaperEditorPage";
 import { ManageVocabularySetsPage } from "../pages/admin/ManageVocabularySetsPage";
+import { ManageVocabularyJourneysPage } from "../pages/admin/ManageVocabularyJourneysPage";
+import { ManageVocabularyJourneyDetailPage } from "../pages/admin/ManageVocabularyJourneyDetailPage";
 import { ManageStoriesPage } from "../pages/admin/ManageStoriesPage";
 import { ManageVocabularyWordsPage } from "../pages/admin/ManageVocabularyWordsPage";
 import { ManageSystemConfigPage } from "../pages/admin/ManageSystemConfigPage";
@@ -30,6 +32,8 @@ import { LessonReaderPage } from "../pages/student/LessonReaderPage";
 import { StudentPathPage } from "../pages/student/StudentPathPage";
 import { StudentVocabPage } from "../pages/student/StudentVocabPage";
 import { StudentVocabSetPage } from "../pages/student/StudentVocabSetPage";
+import { VocabExploreJourneyPage } from "../student/vocab/VocabExploreJourneyPage";
+import { VocabTopicSetsPage } from "../student/vocab/VocabTopicSetsPage";
 import { StudentProfilePage } from "../pages/student/StudentProfilePage";
 import { StudentLeaderboardPage } from "../pages/student/StudentLeaderboardPage";
 import { StudentStoryListPage } from "../pages/student/StudentStoryListPage";
@@ -40,6 +44,7 @@ import { TeacherSchedulePage } from "../pages/admin/TeacherSchedulePage";
 import { TeacherStudentSupportPage } from "../pages/admin/TeacherStudentSupportPage";
 import { AiAssistantPage } from "../pages/admin/AiAssistantPage";
 import { ActivityLogsPage } from "../pages/admin/ActivityLogsPage";
+import { RabbitMqLabPage } from "../pages/admin/RabbitMqLabPage";
 
 const LazyAdminLayout = lazy(async () => {
   const module = await import("../layouts/admin/AdminLayout");
@@ -121,6 +126,14 @@ export const appRouter = createBrowserRouter([
           {
             path: paths.STUDENT_VOCAB,
             element: <StudentVocabPage />,
+          },
+          {
+            path: `${paths.STUDENT_VOCAB}/journeys/:journeyId`,
+            element: <VocabExploreJourneyPage />,
+          },
+          {
+            path: `${paths.STUDENT_VOCAB}/topics/:topicId`,
+            element: <VocabTopicSetsPage />,
           },
           {
             path: `${paths.STUDENT_VOCAB}/:setId`,
@@ -224,6 +237,14 @@ export const appRouter = createBrowserRouter([
         element: <ManageVocabularySetsPage />,
       },
       {
+        path: paths.MANAGE_VOCABULARY_JOURNEYS,
+        element: <ManageVocabularyJourneysPage />,
+      },
+      {
+        path: `${paths.MANAGE_VOCABULARY_JOURNEYS}/:journeyId`,
+        element: <ManageVocabularyJourneyDetailPage />,
+      },
+      {
         path: paths.MANAGE_STORIES,
         element: <ManageStoriesPage />,
       },
@@ -250,6 +271,10 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.USAGE_GUIDE,
         element: <TeacherUsageGuidePage />,
+      },
+      {
+        path: paths.RABBITMQ_LAB,
+        element: <RabbitMqLabPage />,
       },
     ],
   },

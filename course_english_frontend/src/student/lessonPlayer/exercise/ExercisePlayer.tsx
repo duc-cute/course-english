@@ -1,6 +1,11 @@
 import { Alert, Button } from "@mui/material";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useStudentDashboard } from "../../shell/StudentDashboardContext";
+import { getStudentDisplayName } from "../../shared/auth/getStudentDisplayName";
+import { NotificationBell } from "../../notifications/NotificationBell";
+import { StudentUserMenu } from "../../shell/StudentUserMenu";
 import type { LessonBlockRecord } from "../../../shared/api/lesson";
 import {
   clearExerciseSession,
@@ -13,6 +18,11 @@ import {
   apiGetLatestLessonPracticeAttempt,
   type LessonPracticeAttemptRecord,
 } from "../../../shared/api/lessonPracticeAttempt";
+import {
+  apiCreateVocabularyPracticeAttempt,
+  apiGetLatestVocabularyPracticeAttempt,
+  type VocabularyPracticeAttemptRecord,
+} from "../../../shared/api/vocabularyPracticeAttempt";
 import { buildStructuredSnapshot, parseAttemptSnapshot } from "../../../shared/lesson/attemptSnapshot";
 import { ExerciseResultScreen } from "./ExerciseResultScreen";
 import { ExerciseReviewScreen } from "./ExerciseReviewScreen";
@@ -53,8 +63,13 @@ import type {
   TrueFalseQuestion as TrueFalseType,
 } from "./types";
 
+type PracticeAttemptBannerLatest =
+  | LessonPracticeAttemptRecord
+  | VocabularyPracticeAttemptRecord
+  | null;
+
 export type PracticeAttemptBannerContext = {
-  latest: LessonPracticeAttemptRecord | null;
+  latest: PracticeAttemptBannerLatest;
   onReview: () => void;
 };
 
@@ -64,6 +79,11 @@ type ExercisePlayerProps = {
   subjectName?: string;
   practiceBlocks: LessonBlockRecord[];
   nextLessonTitle?: string;
+  /** When false, skip practice-attempt API. Default true. */
+  persistAttempts?: boolean;
+  /** When set, persist to vocabulary practice attempts instead of lesson attempts. */
+  vocabularySetId?: string;
+  assignmentId?: string | null;
   attemptBannerPlacement?: "inline" | "hero";
   onAttemptBanner?: (ctx: PracticeAttemptBannerContext | null) => void;
   onViewChange?: (view: "exercise" | "result" | "review") => void;
@@ -81,6 +101,9 @@ export function ExercisePlayer({
   subjectName,
   practiceBlocks,
   nextLessonTitle,
+  persistAttempts = true,
+  vocabularySetId,
+  assignmentId = null,
   attemptBannerPlacement = "inline",
   onAttemptBanner,
   onViewChange,
@@ -91,7 +114,57 @@ export function ExercisePlayer({
   const blockIdsKey = useMemo(() => practiceBlocks.map((b) => b.id).join(","), [practiceBlocks]);
   const blockIds = useMemo(() => practiceBlocks.map((b) => b.id), [practiceBlocks]);
 
+  const dashboard = useStudentDashboard();
+  const isVocab = Boolean(vocabularySetId);
+  const displayName = getStudentDisplayName();
+  const callName = displayName ? (displayName.trim().split(" ").pop() || "bạn") : "bạn";
+  const streak = dashboard?.weeklyStreakCount ?? 8;
+  const xp = dashboard?.stats?.xp ?? 250;
+
+  const [timerText, setTimerText] = useState("10:00");
   const [sessionSeed, setSessionSeed] = useState(0);
+
+  useEffect(() => {
+    if (!isVocab) return;
+    let sec = 600;
+    const interval = setInterval(() => {
+      sec = Math.max(0, sec - 1);
+      const m = Math.floor(sec / 60).toString().padStart(2, "0");
+      const s = (sec % 60).toString().padStart(2, "0");
+      setTimerText(`${m}:${s}`);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isVocab, sessionSeed]);
+
+  const getChoiceEmoji = (choiceText: string, index: number) => {
+    const text = choiceText.toLowerCase();
+    if (text.includes("bạn") || text.includes("người") || text.includes("tôi") || text.includes("ta")) return "👥";
+    if (text.includes("học") || text.includes("trường") || text.includes("lớp")) return "🏫";
+    if (text.includes("kỳ nghỉ") || text.includes("du lịch") || text.includes("biển") || text.includes("đảo") || text.includes("dã ngoại")) return "🏝️";
+    if (text.includes("lo lắng") || text.includes("buồn") || text.includes("sợ") || text.includes("căng thẳng")) return "😟";
+    if (text.includes("vui") || text.includes("thú vị") || text.includes("sướng")) return "😊";
+    if (text.includes("sách") || text.includes("vở") || text.includes("bút")) return "📚";
+    if (text.includes("nhà") || text.includes("gia đình") || text.includes("bố") || text.includes("mẹ")) return "🏠";
+    const fallbacks = ["🧑‍🤝‍🧑", "🌴", "💭", "🏫"];
+    return fallbacks[index % fallbacks.length];
+  };
+
+  const playWordAudio = () => {
+    const wordObj = currentMcq || currentListen;
+    const audioUrl = (wordObj as any)?.audioUkUrl || (wordObj as any)?.audioUsUrl || (wordObj as any)?.audioUrl;
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.play().catch(() => {});
+    } else {
+      const text = wordObj?.wordEn || (current?.displayQuestion as any)?.prompt?.text;
+      if (text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US";
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  };
+
   const [questionIdsOverride, setQuestionIdsOverride] = useState<string[] | null>(null);
   const [isWrongOnlyRetry, setIsWrongOnlyRetry] = useState(false);
   const initializedRef = useRef(false);
@@ -130,21 +203,26 @@ export function ExercisePlayer({
   const [answers, setAnswers] = useState<Record<string, AnswerRecord>>({});
   const [showExplanation, setShowExplanation] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [serverLatestAttempt, setServerLatestAttempt] = useState<LessonPracticeAttemptRecord | null>(
-    null,
-  );
+  const [serverLatestAttempt, setServerLatestAttempt] = useState<PracticeAttemptBannerLatest>(null);
   const [reviewItems, setReviewItems] = useState<PreparedExerciseItem[] | null>(null);
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, AnswerRecord> | null>(null);
 
   useEffect(() => {
+    if (!persistAttempts) {
+      setServerLatestAttempt(null);
+      return;
+    }
     let cancelled = false;
-    void apiGetLatestLessonPracticeAttempt(lessonId).then((attempt) => {
+    const load = vocabularySetId
+      ? apiGetLatestVocabularyPracticeAttempt(vocabularySetId)
+      : apiGetLatestLessonPracticeAttempt(lessonId);
+    void load.then((attempt) => {
       if (!cancelled) setServerLatestAttempt(attempt);
     });
     return () => {
       cancelled = true;
     };
-  }, [lessonId, sessionSeed]);
+  }, [lessonId, vocabularySetId, sessionSeed, persistAttempts]);
 
   useEffect(() => {
     initializedRef.current = false;
@@ -388,22 +466,45 @@ export function ExercisePlayer({
       const didPass = pct >= passScorePercent;
 
       attemptSubmitLockRef.current = true;
-      try {
-        const attempt = await apiCreateLessonPracticeAttempt({
-          lessonId,
-          correctCount: correctUnits,
-          totalCount: totalUnits,
-          scorePercent: pct,
-          passed: didPass,
-          passScorePercent,
+
+      if (!persistAttempts) {
+        persistSession(index, true, finalAnswers, {
           elapsedMs: elapsed,
-          blockIds,
-          answersSnapshot: buildStructuredSnapshot(
-            finalAnswers,
-            plan.questionIdsOrder,
-            plan.choiceOrders,
-          ),
+          serverAttemptSynced: false,
         });
+        return;
+      }
+
+      try {
+        const answersSnapshot = buildStructuredSnapshot(
+          finalAnswers,
+          plan.questionIdsOrder,
+          plan.choiceOrders,
+        );
+        const attempt = vocabularySetId
+          ? await apiCreateVocabularyPracticeAttempt({
+              vocabularySetId,
+              assignmentId: assignmentId || null,
+              correctCount: correctUnits,
+              totalCount: totalUnits,
+              scorePercent: pct,
+              passed: didPass,
+              passScorePercent,
+              elapsedMs: elapsed,
+              blockIds,
+              answersSnapshot,
+            })
+          : await apiCreateLessonPracticeAttempt({
+              lessonId,
+              correctCount: correctUnits,
+              totalCount: totalUnits,
+              scorePercent: pct,
+              passed: didPass,
+              passScorePercent,
+              elapsedMs: elapsed,
+              blockIds,
+              answersSnapshot,
+            });
         setServerLatestAttempt(attempt);
         persistSession(index, true, finalAnswers, {
           elapsedMs: elapsed,
@@ -415,9 +516,12 @@ export function ExercisePlayer({
     },
     [
       lessonId,
+      vocabularySetId,
+      assignmentId,
       blockIds,
       items,
       passScorePercent,
+      persistAttempts,
       persistSession,
       plan.questionIdsOrder,
       plan.choiceOrders,
@@ -858,6 +962,368 @@ export function ExercisePlayer({
   }
 
   const showFeedback = phase === "feedback";
+
+  if (isVocab) {
+    const wordEn = currentMcq?.wordEn || (current.displayQuestion as any).prompt?.text || "";
+    const pos = currentMcq?.partOfSpeech || "Danh từ";
+    const phonetic = currentMcq?.phonetic || "";
+    
+    const getWordIllustration = (word: string) => {
+      const images = [
+        "/images/journey/journey_forest.png",
+        "/images/journey/journey_ocean.png",
+        "/images/journey/journey_desert.png",
+        "/images/journey/journey_space.png",
+        "/images/journey/journey_academy.png",
+        "/images/journey/journey_castle.png",
+        "/images/journey/journey_beach.png",
+        "/images/journey/journey_garden.png",
+        "/images/journey/journey_jungle.png",
+        "/images/journey/journey_volcano.png",
+        "/images/journey/journey_mountain.png",
+        "/images/journey/journey_city.png"
+      ];
+      let hash = 0;
+      for (let i = 0; i < word.length; i++) {
+        hash = word.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const index = Math.abs(hash) % images.length;
+      return images[index]!;
+    };
+
+    const imageUrl = currentMcq?.coverImageUrl || getWordIllustration(wordEn);
+    const progressPercent = total > 0 ? Math.round(((questionIndex) / total) * 100) : 0;
+
+    const reviewWords = [
+      { word: "birthday", count: 2, level: "orange" },
+      { word: "favorite", count: 3, level: "red" },
+      { word: "toy", count: 2, level: "orange" },
+    ];
+
+    const weekdays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+    const letters = ["A", "B", "C", "D"];
+
+    return (
+      <div className="vq-vocab-practice-dashboard-layout">
+        {/* Custom top bar inside the page */}
+        <div className="vq-vocab-practice-topbar">
+          <div className="vq-vocab-practice-topbar__left">
+            <button type="button" className="vq-vocab-practice-topbar__back-btn" onClick={onBackToLessons}>
+              <ArrowBackIcon sx={{ fontSize: 20 }} />
+            </button>
+            <div className="vq-vocab-practice-topbar__title-block">
+              <span className="vq-vocab-practice-topbar__eyebrow">Luyện tập</span>
+              <h2 className="vq-vocab-practice-topbar__title">{lessonTitle}</h2>
+            </div>
+            <span className="vq-vocab-practice-topbar__badge">
+              Bộ từ {questionIndex + 1} / {total}
+            </span>
+          </div>
+          <div className="vq-vocab-practice-topbar__right">
+            <div className="vq-vocab-practice-stat">
+              <span className="vq-vocab-practice-stat__icon">🔥</span>
+              <span className="vq-vocab-practice-stat__val">{streak} Streak</span>
+            </div>
+            <div className="vq-vocab-practice-stat">
+              <span className="vq-vocab-practice-stat__icon">⭐</span>
+              <span className="vq-vocab-practice-stat__val">{xp} XP</span>
+            </div>
+            <div className="vq-vocab-practice-stat">
+              <span className="vq-vocab-practice-stat__icon">❤️</span>
+              <span className="vq-vocab-practice-stat__val">3 Lives</span>
+            </div>
+            <div className="vq-vocab-practice-topbar__divider" />
+            <NotificationBell />
+            <StudentUserMenu />
+          </div>
+        </div>
+
+        <div className="vq-vocab-practice-cols">
+          {/* Left Main Column */}
+          <div className="vq-vocab-practice-main-col">
+            {/* Progress bar */}
+            <div className="vq-vocab-practice-progress-header">
+              <div className="vq-vocab-practice-progress-title-row">
+                <span className="vq-vocab-practice-progress-label">Tiến độ</span>
+                <span className="vq-vocab-practice-progress-text">Câu {questionIndex + 1} / {total}</span>
+              </div>
+              <div className="vq-vocab-practice-progress-bar-container">
+                <div className="vq-vocab-practice-progress-bar-track">
+                  <div
+                    className="vq-vocab-practice-progress-bar-fill"
+                    style={{ width: `${((questionIndex + (showFeedback ? 1 : 0)) / total) * 100}%` }}
+                  />
+                </div>
+                <div className="vq-vocab-practice-timer-badge">
+                  <span className="vq-vocab-practice-timer-icon">⏱️</span>
+                  <span className="vq-vocab-practice-timer-text">{timerText}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Target Word Card */}
+            <div className="vq-vocab-practice-word-card">
+              <div className="vq-vocab-practice-word-card__left">
+                <img src={imageUrl} alt={wordEn} className="vq-vocab-practice-word-card__img" />
+              </div>
+              <div className="vq-vocab-practice-word-card__right">
+                <h2 className="vq-vocab-practice-word-card__en">{wordEn}</h2>
+                <div className="vq-vocab-practice-word-card__phonetic-row">
+                  <button type="button" className="vq-vocab-practice-word-card__audio-btn" onClick={playWordAudio}>
+                    🔊
+                  </button>
+                  {phonetic ? (
+                    <span className="vq-vocab-practice-word-card__phonetic">{phonetic}</span>
+                  ) : null}
+                </div>
+                <span className="vq-vocab-practice-word-card__pos">{pos}</span>
+              </div>
+            </div>
+
+            {/* Question instruction */}
+            <h3 className="vq-vocab-practice-instruction">Chọn nghĩa đúng của từ vựng trên</h3>
+
+            {/* MCQ Options Grid */}
+            {currentMcq ? (
+              <div className="vq-vocab-practice-mcq-grid">
+                {currentMcq.choices.map((choice, i) => {
+                  const isSelected = selectedChoiceId === choice.id;
+                  const isCorrect = choice.id === currentMcq.correctChoiceId;
+                  const showResult = phase === "feedback";
+
+                  let cardClass = "vq-vocab-practice-mcq-card";
+                  if (isSelected) cardClass += " is-selected";
+                  if (showResult) {
+                    if (isCorrect) cardClass += " is-correct";
+                    else if (isSelected) cardClass += " is-wrong";
+                  }
+
+                  const emoji = getChoiceEmoji(choice.text, i);
+
+                  return (
+                    <button
+                      key={choice.id}
+                      type="button"
+                      disabled={showResult}
+                      className={cardClass}
+                      onClick={() => handleSelectChoice(choice.id)}
+                    >
+                      <span className="vq-vocab-practice-mcq-card__emoji">{emoji}</span>
+                      <div className="vq-vocab-practice-mcq-card__letter">{letters[i]}</div>
+                      <span className="vq-vocab-practice-mcq-card__text">{choice.text}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Fallback to standard question elements for other exercises if any */
+              <div className="vq-vocab-practice-fallback-question">
+                {currentTrueFalse ? (
+                  <TrueFalseQuestion
+                    question={currentTrueFalse}
+                    selectedId={selectedChoiceId}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    onSelect={handleSelectChoice}
+                  />
+                ) : currentSpelling ? (
+                  <SpellingQuestion
+                    question={currentSpelling}
+                    value={typedAnswer}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    isCorrect={typedIsCorrect}
+                    onChange={setTypedAnswer}
+                  />
+                ) : currentListen ? (
+                  <ListenChooseQuestion
+                    question={currentListen}
+                    selectedId={selectedChoiceId}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    onSelect={handleSelectChoice}
+                  />
+                ) : currentListenType ? (
+                  <ListenTypeQuestion
+                    question={currentListenType}
+                    value={typedAnswer}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    isCorrect={typedIsCorrect}
+                    onChange={setTypedAnswer}
+                  />
+                ) : currentFillBlank ? (
+                  <FillBlankQuestion
+                    question={currentFillBlank}
+                    answers={fillBlankAnswers}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    isCorrect={fillBlankIsCorrect}
+                    onChange={(blankId, value) =>
+                      setFillBlankAnswers((prev) => ({ ...prev, [blankId]: value }))
+                    }
+                  />
+                ) : currentGapFillMcq ? (
+                  <GapFillMcqQuestion
+                    question={currentGapFillMcq}
+                    answers={gapFillMcqAnswers}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    isCorrect={gapFillMcqIsCorrect}
+                    onChange={(blankId, choiceId) =>
+                      setGapFillMcqAnswers((prev) => ({ ...prev, [blankId]: choiceId }))
+                    }
+                  />
+                ) : currentReorder ? (
+                  <ReorderSentenceQuestion
+                    question={currentReorder}
+                    selectedOrder={reorderTokenOrder}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    isCorrect={reorderIsCorrect}
+                    onTapPool={handleTapReorderPool}
+                    onTapSentence={handleTapReorderSentence}
+                    onClear={handleClearReorder}
+                  />
+                ) : currentMatching ? (
+                  <MatchingQuestion
+                    question={currentMatching}
+                    selections={matchingSelections}
+                    activeLeft={activeMatchingLeft}
+                    disabled={showFeedback}
+                    showResult={showFeedback}
+                    onSelectLeft={handleSelectMatchingLeft}
+                    onSelectRight={handleSelectMatchingRight}
+                    onReset={handleResetMatching}
+                  />
+                ) : null}
+              </div>
+            )}
+
+            {/* Explanation panel if checked and has explanation */}
+            {showFeedback && showExplanation && currentExplanation?.trim() ? (
+              <QuestionExplanationPanel explanation={currentExplanation} />
+            ) : null}
+
+            {/* Footer buttons */}
+            <div className="vq-vocab-practice-actions">
+              {!showFeedback ? (
+                <>
+                  <button type="button" className="vq-vocab-practice-skip-btn" onClick={handleNext}>
+                    Bỏ qua &gt;&gt;
+                  </button>
+                  <button
+                    type="button"
+                    className="vq-vocab-practice-check-btn"
+                    disabled={!canCheck}
+                    onClick={handleCheck}
+                  >
+                    Kiểm tra &rarr;
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="vq-vocab-practice-explain-btn"
+                    disabled={!currentExplanation?.trim()}
+                    onClick={() => setShowExplanation((v) => !v)}
+                  >
+                    Giải thích
+                  </button>
+                  <button type="button" className="vq-vocab-practice-continue-btn" onClick={handleNext}>
+                    {questionIndex >= total - 1 ? "Xem kết quả &rarr;" : "Làm tiếp &rarr;"}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Audio hint footer */}
+            <div className="vq-vocab-practice-hint-footer">
+              💡 Mẹo: Nghe phát âm và nói theo để ghi nhớ tốt hơn nhé!
+              <button type="button" className="vq-vocab-practice-hint-audio-btn" onClick={playWordAudio}>
+                🔊
+              </button>
+            </div>
+          </div>
+
+          {/* Right Sidebar Column */}
+          <div className="vq-vocab-practice-right-col">
+            {/* Widget 1: Emma */}
+            <div className="vq-vocab-practice-widget is-emma">
+              <h4 className="vq-vocab-practice-widget__title">AI Buddy - Emma</h4>
+              <div className="vq-vocab-practice-emma-content">
+                <div className="vq-vocab-practice-emma-avatar">
+                  🤖
+                </div>
+                <div className="vq-vocab-practice-emma-speech">
+                  <p>Hi, {callName}! 👋 Cùng học thật vui và ghi nhớ thật lâu nhé!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 2: Progress */}
+            <div className="vq-vocab-practice-widget">
+              <h4 className="vq-vocab-practice-widget__title">Tiến trình bộ từ</h4>
+              <div className="vq-vocab-practice-progress-content">
+                <div className="vq-vocab-practice-progress-circle">
+                  <svg width="60" height="60" viewBox="0 0 36 36" className="vq-circular-chart">
+                    <path
+                      className="vq-circle-bg"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="vq-circle"
+                      strokeDasharray={`${progressPercent}, 100`}
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <text x="18" y="20.35" className="vq-percentage">{progressPercent}%</text>
+                  </svg>
+                </div>
+                <div className="vq-vocab-practice-progress-stats">
+                  <p className="vq-stat-line">Đã học: <strong>{questionIndex} / {total}</strong> từ</p>
+                  <p className="vq-stat-line">Đã đúng: <strong>{scoringCorrectUnits}</strong> câu</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Widget 3: Review list */}
+            <div className="vq-vocab-practice-widget">
+              <h4 className="vq-vocab-practice-widget__title">Từ cần ôn tập</h4>
+              <ul className="vq-vocab-practice-review-list">
+                {reviewWords.map((w, i) => (
+                  <li key={i} className="vq-vocab-practice-review-item">
+                    <span className="vq-vocab-practice-review-item__word">{w.word}</span>
+                    <span className={`vq-vocab-practice-review-item__dot is-${w.level}`} />
+                    <span className="vq-vocab-practice-review-item__count">{w.count} lần</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Widget 4: Streak week */}
+            <div className="vq-vocab-practice-widget is-streak">
+              <div className="vq-vocab-practice-streak-header">
+                <h4 className="vq-vocab-practice-widget__title">Giữ vững chuỗi ngày!</h4>
+                <span className="vq-vocab-practice-streak-fire">🔥</span>
+              </div>
+              <p className="vq-vocab-practice-streak-desc">Bạn đang có chuỗi <strong>{streak} ngày</strong>. Cố lên! 🔥</p>
+              <div className="vq-vocab-practice-streak-week">
+                {weekdays.map((day, i) => (
+                  <div key={i} className="vq-vocab-practice-streak-day">
+                    <span className="vq-vocab-practice-streak-day__label">{day}</span>
+                    <div className={`vq-vocab-practice-streak-day__circle${i < (streak % 7) ? " is-checked" : ""}`}>
+                      {i < (streak % 7) ? "✓" : ""}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="exercise-player">

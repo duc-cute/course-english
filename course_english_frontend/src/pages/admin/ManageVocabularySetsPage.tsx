@@ -27,6 +27,7 @@ import { VocabGenerateListenTypeDialog } from "../../admin/components/vocabulary
 import { VocabGenerateMcqDialog } from "../../admin/components/vocabulary/VocabGenerateMcqDialog";
 import { VocabGenerateSpellingDialog } from "../../admin/components/vocabulary/VocabGenerateSpellingDialog";
 import { VocabularyAiGenDialog } from "../../admin/components/vocabulary/VocabularyAiGenDialog";
+import { VocabularySetAssignDialog } from "../../admin/components/vocabulary/VocabularySetAssignDialog";
 import { QuestionBankAiGenDialog } from "../../admin/components/question/QuestionBankAiGenDialog";
 import { VocabularyWordPicker } from "../../admin/components/vocabulary/VocabularyWordPicker";
 import {
@@ -125,6 +126,8 @@ export function ManageVocabularySetsPage() {
   const [categories, setCategories] = useState<QuestionCategoryRecord[]>([]);
   const [bankAiSaveMessage, setBankAiSaveMessage] = useState("");
   const [enrichingAll, setEnrichingAll] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<VocabularySetRecord | null>(null);
+  const [assignMessage, setAssignMessage] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -402,6 +405,12 @@ export function ManageVocabularySetsPage() {
         </Alert>
       ) : null}
 
+      {assignMessage ? (
+        <Alert severity="success" sx={{ mb: 1 }} onClose={() => setAssignMessage("")}>
+          {assignMessage}
+        </Alert>
+      ) : null}
+
       {bankAiGenOfferSetId ? (
         <Alert
           severity="info"
@@ -448,6 +457,10 @@ export function ManageVocabularySetsPage() {
                   onDelete={(r) => {
                     setDeleting(r);
                     setOpenDelete(true);
+                  }}
+                  onAssignClassroom={(r) => {
+                    setAssignMessage("");
+                    setAssignTarget(r);
                   }}
                   onGenerateMcq={(r) => void openGenerate(r)}
                   onGenerateListen={(r) => void openGenerateListen(r)}
@@ -615,6 +628,13 @@ export function ManageVocabularySetsPage() {
           setDeleting(null);
         }}
         loading={submitting}
+      />
+
+      <VocabularySetAssignDialog
+        open={Boolean(assignTarget)}
+        set={assignTarget}
+        onClose={() => setAssignTarget(null)}
+        onSuccess={(message) => setAssignMessage(message)}
       />
 
       <QuestionBankAiGenDialog

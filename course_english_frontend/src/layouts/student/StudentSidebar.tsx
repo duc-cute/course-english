@@ -2,6 +2,7 @@ import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import { BrandLogo } from "../../shared/ui/BrandLogo";
 import {
   Box,
   Divider,
@@ -57,10 +58,10 @@ export function StudentSidebar({ mobileOpen, onToggleSidebar }: StudentSidebarPr
   const drawerContent = (
     <Box className="student-sidebar-inner" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Box className="student-sidebar-brand" sx={{ px: 2, py: 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <MenuBookOutlinedIcon sx={{ color: "var(--eng-teal)" }} />
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <BrandLogo size="sm" />
           <Typography fontWeight={700} fontSize={15} sx={{ color: "var(--eng-on-surface)" }}>
-            Course English
+            Nova English
           </Typography>
         </Stack>
       </Box>

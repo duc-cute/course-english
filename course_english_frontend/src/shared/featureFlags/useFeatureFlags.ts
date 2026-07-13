@@ -9,9 +9,17 @@ const DEFAULT_FLAGS: FeatureFlags = {
   vocabularyAudioEnabled: true,
   vocabularyAudioAccent: "UK",
   studentSelfRegistrationEnabled: true,
+  vocabularyPracticeMaxQuestions: 16,
+  vocabularyPracticePassScore: 80,
   wordExportLogoUrl: "",
   wordExportWatermarkText: "",
 };
+
+function clampInt(value: unknown, fallback: number, min: number, max: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
 
 function normalizeFlags(data: Partial<FeatureFlags>): FeatureFlags {
   return {
@@ -19,6 +27,8 @@ function normalizeFlags(data: Partial<FeatureFlags>): FeatureFlags {
     vocabularyAudioEnabled: data.vocabularyAudioEnabled !== false,
     vocabularyAudioAccent: normalizeVocabularyAudioAccent(data.vocabularyAudioAccent),
     studentSelfRegistrationEnabled: data.studentSelfRegistrationEnabled !== false,
+    vocabularyPracticeMaxQuestions: clampInt(data.vocabularyPracticeMaxQuestions, 16, 1, 40),
+    vocabularyPracticePassScore: clampInt(data.vocabularyPracticePassScore, 80, 1, 100),
     wordExportLogoUrl: (data.wordExportLogoUrl ?? "").trim(),
     wordExportWatermarkText: (data.wordExportWatermarkText ?? "").trim(),
   };

@@ -1,12 +1,10 @@
-import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-
 type BrandLogoSize = "xs" | "sm" | "md" | "lg";
 
-const SIZE_MAP: Record<BrandLogoSize, { box: number; icon: number; radius: number }> = {
-  xs: { box: 28, icon: 16, radius: 6 },
-  sm: { box: 32, icon: 18, radius: 8 },
-  md: { box: 40, icon: 20, radius: 8 },
-  lg: { box: 48, icon: 24, radius: 10 },
+const SIZE_MAP: Record<BrandLogoSize, { box: number; radius: number }> = {
+  xs: { box: 32, radius: 6 },
+  sm: { box: 38, radius: 8 },
+  md: { box: 46, radius: 8 },
+  lg: { box: 56, radius: 10 },
 };
 
 type BrandLogoProps = {
@@ -14,9 +12,9 @@ type BrandLogoProps = {
   className?: string;
 };
 
-/** Logo Course English — ô vuông bo góc + mũ tốt nghiệp (khớp admin sidebar). */
+/** Logo Course English — custom brand logo. */
 export function BrandLogo({ size = "md", className }: BrandLogoProps) {
-  const { box, icon, radius } = SIZE_MAP[size];
+  const { box, radius } = SIZE_MAP[size];
 
   return (
     <span
@@ -25,10 +23,21 @@ export function BrandLogo({ size = "md", className }: BrandLogoProps) {
         width: box,
         height: box,
         borderRadius: radius,
+        background: "transparent",
       }}
       aria-hidden
     >
-      <SchoolOutlinedIcon sx={{ fontSize: icon }} />
+      <img
+        src="/images/brand-logo.png?v=3"
+        alt="Nova English"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          borderRadius: "inherit",
+        }}
+      />
     </span>
   );
 }
+

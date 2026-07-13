@@ -144,6 +144,17 @@ public class StorySpeechRequestAssembler {
             }
         }
 
+        if (PROVIDER_EDGE.equals(normalizedProvider)) {
+            Optional<TtsVoiceCatalog> narrator = ttsVoiceCatalogRepository
+                    .findFirstByProfileKeyAndProviderAndVoidedFalseAndActiveTrueOrderByPriorityAsc(
+                            "NARRATOR", PROVIDER_EDGE);
+            if (narrator.isPresent()) {
+                TtsVoiceCatalog voice = narrator.get();
+                return new VoiceSelection(voice.getProvider(), voice.getVoiceId());
+            }
+            return new VoiceSelection(PROVIDER_EDGE, speechProperties.getDefaultVoice());
+        }
+
         return new VoiceSelection(
                 speechProperties.getDefaultTtsProvider(),
                 speechProperties.getDefaultVoice());

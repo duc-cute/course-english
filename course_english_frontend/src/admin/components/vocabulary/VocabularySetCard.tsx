@@ -1,4 +1,5 @@
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
+import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -16,6 +17,7 @@ type VocabularySetCardProps = {
   set: VocabularySetRecord;
   onEdit: (set: VocabularySetRecord) => void;
   onDelete: (set: VocabularySetRecord) => void;
+  onAssignClassroom?: (set: VocabularySetRecord) => void;
   onGenerateMcq: (set: VocabularySetRecord) => void;
   onGenerateListen: (set: VocabularySetRecord) => void;
   onGenerateSpelling: (set: VocabularySetRecord) => void;
@@ -60,6 +62,7 @@ export function VocabularySetCard({
   set,
   onEdit,
   onDelete,
+  onAssignClassroom,
   onGenerateMcq,
   onGenerateListen,
   onGenerateSpelling,
@@ -77,6 +80,18 @@ export function VocabularySetCard({
     <div className={`vocab-set-card__header ${isOverlay ? "vocab-set-card__header--overlay" : "vocab-set-card__header--inline"}`}>
       {statusBadge(set.status)}
       <div className="vocab-set-card__actions">
+        {onAssignClassroom ? (
+          <Tooltip title="Gán cho lớp">
+            <IconButton
+              size="small"
+              className="vocab-set-card__icon-btn"
+              onClick={() => onAssignClassroom(set)}
+              aria-label="Gán bộ từ cho lớp"
+            >
+              <ClassOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ) : null}
         <Tooltip title="Sửa bộ từ">
           <IconButton
             size="small"

@@ -7,7 +7,6 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { CircularProgress } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { BrandLogo } from "../ui/BrandLogo";
 import { getRolesFromAccessToken } from "../auth/jwtUtils";
 import { isStudentOnlyUser } from "../auth/roleRouting";
 import { getAccessToken } from "../auth/token";
@@ -24,7 +23,12 @@ type AiChatWidgetProps = {
 function WidgetWelcome({ greeting }: { greeting: string }) {
   return (
     <div className="ai-chat-widget-welcome">
-      <BrandLogo size="lg" className="ai-chat-widget-welcome-logo" />
+      <img
+        src="/images/ai-robot-mascot.png"
+        alt="LinguistAI Mascot"
+        className="ai-chat-widget-welcome-logo"
+        style={{ width: 64, height: 64, objectFit: "contain", marginBottom: 12 }}
+      />
       <p className="ai-chat-widget-welcome-title">{greeting}</p>
       <p className="ai-chat-widget-welcome-text">
         I&apos;m your LinguistAI tutor. How can I help you improve your English today?
@@ -95,7 +99,12 @@ export function AiChatWidget({ onClose }: AiChatWidgetProps) {
       <header className="ai-chat-widget-header">
         <div className="ai-chat-widget-header-brand">
           <div className="ai-chat-widget-avatar-wrap">
-            <BrandLogo size="sm" className="ai-chat-widget-avatar" />
+            <img
+              src="/images/ai-robot-helper-mascot.png"
+              alt="LinguistAI"
+              className="ai-chat-widget-avatar"
+              style={{ width: 32, height: 32, objectFit: "cover", borderRadius: "50%" }}
+            />
             <span className="ai-chat-widget-online-dot" aria-hidden />
           </div>
           <div>
@@ -195,9 +204,6 @@ export function AiChatFab({ onClick }: AiChatFabProps) {
       onClick={onClick}
     >
       <ChatRoundedIcon sx={{ fontSize: 28 }} />
-      <span className="ai-chat-fab-brand" aria-hidden>
-        <BrandLogo size="xs" />
-      </span>
     </button>
   );
 }

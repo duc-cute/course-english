@@ -51,15 +51,11 @@ import type { ExerciseQuestion } from "../../student/lessonPlayer/exercise/types
 
 const DEFAULT_FILTERS: QuestionBankFilterState = {
   searchInput: "",
-  filterCategoryId: "",
   filterStatus: "",
   filterQuestionType: "",
   filterDifficulty: "",
   filterCefrLevel: "",
   filterSkill: "",
-  filterTopic: "",
-  filterSource: "",
-  sortBy: "createdAt,desc",
 };
 
 export function ManageQuestionsPage() {
@@ -133,18 +129,15 @@ export function ManageQuestionsPage() {
       const params: Record<string, unknown> = {
         page,
         size,
-        sort: filters.sortBy,
+        sort: "createdAt,desc",
       };
       const trimmed = searchText.trim();
       if (trimmed) params.keyword = trimmed;
-      if (filters.filterCategoryId) params.categoryId = filters.filterCategoryId;
       if (filters.filterStatus) params.status = filters.filterStatus;
       if (filters.filterQuestionType) params.questionType = filters.filterQuestionType;
       if (filters.filterDifficulty) params.difficulty = Number(filters.filterDifficulty);
       if (filters.filterCefrLevel) params.cefrLevel = filters.filterCefrLevel;
       if (filters.filterSkill) params.skill = filters.filterSkill;
-      if (filters.filterTopic.trim()) params.topic = filters.filterTopic.trim();
-      if (filters.filterSource) params.source = filters.filterSource;
 
       const response = (await apiSearchQuestions(params)) as ApiResponse<QuestionsPaginationResult>;
       const items = response?.data?.result ?? response?.result ?? [];
@@ -378,7 +371,6 @@ export function ManageQuestionsPage() {
       <QuestionBankStatsRow stats={stats} loading={statsLoading} />
 
       <QuestionBankFilters
-        categories={categories}
         filters={filters}
         onSearchInputChange={(value) => updateFilter("searchInput", value)}
         onSearch={handleSearch}

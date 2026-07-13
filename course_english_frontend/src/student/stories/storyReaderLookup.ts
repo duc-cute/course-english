@@ -1,4 +1,4 @@
-import type { StoryGlossaryEntry, StoryReaderPayload, StoryToken, StoryWordLookup } from "../shared/api/story";
+import type { StoryGlossaryEntry, StoryReaderPayload, StoryToken, StoryWordLookup } from "../../shared/api/story";
 
 function toWordKey(word: string): string {
   return word.toLowerCase().replace(/[^a-z0-9']/g, "").replace(/'s$/, "");

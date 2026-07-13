@@ -26,14 +26,17 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminCatalogPageHeader, ConfirmDialog } from "../../admin/components";
+import { ElevenLabsVoicePanel } from "../../admin/components/story/ElevenLabsVoicePanel";
 import { StoryAiGenDialog } from "../../admin/components/story/StoryAiGenDialog";
 import { StoryAudioPlayer } from "../../student/stories/StoryAudioPlayer";
 import {
   apiCreateStory,
   apiDeleteStory,
   apiGenerateStoryAudio,
+  apiGetElevenLabsVoices,
+  unwrapElevenLabsVoiceList,
   apiGetStoryById,
   apiGetStoryAudioStatus,
   apiGetStoryVoiceCatalog,
@@ -43,6 +46,7 @@ import {
   type StoryAiPreviewResult,
   type StoryRecord,
   type StoryStatus,
+  type ElevenLabsVoiceItem,
   type TtsVoiceCatalogItem,
 } from "../../shared/api/story";
 import type { ApiResponse } from "../../shared/api/types";
@@ -76,6 +80,33 @@ const VOICE_PROFILE_KEYS = ["NARRATOR", "MALE_ADULT", "FEMALE_ADULT", "BOY_CHILD
 
 function catalogOptionKey(v: TtsVoiceCatalogItem): string {
   return `${v.provider}|${v.voiceId}`;
+}
+
+function mergeVoiceCatalogWithElevenLabs(
+  catalog: TtsVoiceCatalogItem[],
+  elevenLabs: ElevenLabsVoiceItem[],
+): TtsVoiceCatalogItem[] {
+  const map = new Map<string, TtsVoiceCatalogItem>();
+  for (const item of catalog) {
+    map.set(catalogOptionKey(item), item);
+  }
+  for (const voice of elevenLabs) {
+    const key = `elevenlabs|${voice.voiceId}`;
+    if (map.has(key)) continue;
+    map.set(key, {
+      id: `el-api-${voice.voiceId}`,
+      provider: "elevenlabs",
+      voiceId: voice.voiceId,
+      displayName: `${voice.name}${voice.freeApiHint ? " ★" : ""}`,
+      gender: voice.gender,
+      ageGroup: voice.age,
+    });
+  }
+  return Array.from(map.values()).sort((a, b) => {
+    const pa = a.provider.localeCompare(b.provider);
+    if (pa !== 0) return pa;
+    return a.displayName.localeCompare(b.displayName);
+  });
 }
 
 function buildVoiceProfileEntry(
@@ -207,6 +238,7 @@ export function ManageStoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<StoryRecord | null>(null);
   const [vocabSets, setVocabSets] = useState<VocabularySetRecord[]>([]);
   const [voiceCatalog, setVoiceCatalog] = useState<TtsVoiceCatalogItem[]>([]);
+  const [elevenLabsVoices, setElevenLabsVoices] = useState<ElevenLabsVoiceItem[]>([]);
   const [audioGeneratingId, setAudioGeneratingId] = useState<string | null>(null);
   const [audioMessage, setAudioMessage] = useState("");
   const [listenOpen, setListenOpen] = useState(false);
@@ -259,7 +291,26 @@ export function ManageStoriesPage() {
     })();
   }, []);
 
-  const parseVoiceProfileJson = (value?: string) => parseVoiceProfileFormValues(value, voiceCatalog);
+  const mergedVoiceCatalog = useMemo(
+    () => mergeVoiceCatalogWithElevenLabs(voiceCatalog, elevenLabsVoices),
+    [voiceCatalog, elevenLabsVoices],
+  );
+
+  useEffect(() => {
+    if (!formOpen) return;
+    void (async () => {
+      try {
+        const response = await apiGetElevenLabsVoices({ freeOnly: true });
+        const payload = unwrapElevenLabsVoiceList(response);
+        setElevenLabsVoices(payload.voices);
+      } catch {
+        setElevenLabsVoices([]);
+      }
+    })();
+  }, [formOpen]);
+
+  const parseVoiceProfileJson = (value?: string) =>
+    parseVoiceProfileFormValues(value, mergedVoiceCatalog);
 
   const openCreate = () => {
     setEditing(null);
@@ -315,7 +366,7 @@ export function ManageStoriesPage() {
     setSaving(true);
     setError("");
     try {
-      const voiceProfileJson = buildVoiceProfileJson(form, voiceCatalog);
+      const voiceProfileJson = buildVoiceProfileJson(form, mergedVoiceCatalog);
       const payload = {
         title: form.title.trim(),
         content: form.content.trim(),
@@ -354,19 +405,35 @@ export function ManageStoriesPage() {
     }
   };
 
-  const pollAudioReady = async (storyId: string) => {
+  const pollAudioReady = async (storyId: string): Promise<{ ok: boolean; message: string }> => {
     for (let attempt = 0; attempt < 40; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 3000));
       const response = (await apiGetStoryAudioStatus(storyId)) as ApiResponse<{
         processingStatus?: string;
         message?: string;
+        errorMessage?: string;
       }>;
       const data = response?.result ?? response?.data;
+      console.info("[StoryAudio] poll", {
+        attempt: attempt + 1,
+        storyId,
+        status: data?.processingStatus,
+        message: data?.message,
+        error: data?.errorMessage,
+      });
       if (data?.processingStatus === "AUDIO_READY") {
-        return data.message ?? "Audio sẵn sàng.";
+        return { ok: true, message: data.message ?? "Audio sẵn sàng." };
+      }
+      if (data?.processingStatus === "AUDIO_FAILED") {
+        const detail = data.errorMessage ?? data.message ?? "Sinh audio thất bại.";
+        return { ok: false, message: detail };
       }
     }
-    return "Đang xử lý — thử refresh sau vài phút.";
+    return {
+      ok: false,
+      message:
+        "Hết thời gian chờ (2 phút). Kiểm tra log Spring [StoryAudio] và Python [TTS], hoặc GET /stories/{id}/audio.",
+    };
   };
 
   const handleGenerateAudio = async (row: StoryRecord) => {
@@ -375,24 +442,39 @@ export function ManageStoriesPage() {
     setAudioMessage("");
     setError("");
     try {
+      console.info("[StoryAudio] generate requested", { storyId: row.id, title: row.title });
       const response = (await apiGenerateStoryAudio(row.id)) as ApiResponse<{
         cached?: boolean;
         message?: string;
         processingStatus?: string;
+        errorMessage?: string;
       }>;
       const data = response?.result ?? response?.data;
+      console.info("[StoryAudio] queue response", data);
+      if (data?.processingStatus === "AUDIO_FAILED") {
+        setError(data.errorMessage ?? data.message ?? "Sinh audio thất bại.");
+        await loadRows();
+        return;
+      }
       if (data?.processingStatus === "AUDIO_READY" || data?.cached) {
         setAudioMessage(data.message ?? `Audio sẵn sàng cho "${row.title}".`);
         await loadRows();
         return;
       }
-      const message = await pollAudioReady(row.id);
-      setAudioMessage(message);
+      const result = await pollAudioReady(row.id);
+      if (result.ok) {
+        setAudioMessage(result.message);
+      } else {
+        setError(result.message);
+      }
       await loadRows();
-    } catch {
-      setError(
-        "Không sinh được audio. Kiểm tra Python speech platform (:8100) và SPEECH_PLATFORM_ENABLED=true.",
-      );
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Không sinh được audio. Kiểm tra Python speech platform (:8100) và SPEECH_PLATFORM_ENABLED=true.";
+      console.error("[StoryAudio] generate failed", err);
+      setError(msg);
     } finally {
       setAudioGeneratingId(null);
     }
@@ -422,6 +504,8 @@ export function ManageStoriesPage() {
         setListenDuration(undefined);
         if (data?.processingStatus === "PENDING" || data?.processingStatus === "TOKENIZED") {
           setListenError("Story đang xử lý audio. Bấm 'Sinh audio' và thử lại sau.");
+        } else if (data?.processingStatus === "AUDIO_FAILED") {
+          setListenError("Sinh audio thất bại. Bấm 'Sinh audio' để thử lại và xem thông báo lỗi.");
         } else {
           setListenError("Story chưa có audio để phát.");
         }
@@ -610,7 +694,7 @@ export function ManageStoriesPage() {
           <Box className="story-editor__left">
             {/* Cover Card */}
             <Box
-              className="story-editor__cover-card"
+              className={`story-editor__cover-card ${form.coverImageUrl ? "story-editor__cover-card--has-image" : "story-editor__cover-card--empty"}`}
               onClick={() => {
                 if (!coverUploading && !coverGenerating) {
                   coverInputRef.current?.click();
@@ -621,7 +705,21 @@ export function ManageStoriesPage() {
               {form.coverImageUrl ? (
                 <img src={resolveStorageAssetUrl(form.coverImageUrl)} alt="Story cover" />
               ) : (
-                <ImageOutlinedIcon sx={{ fontSize: 48, color: "#94a3b8" }} />
+                <Box className="story-editor__cover-empty">
+                  <ImageOutlinedIcon className="story-editor__cover-empty-icon" />
+                  <Button
+                    size="small"
+                    className="story-editor__cover-change-btn story-editor__cover-change-btn--center"
+                    startIcon={<ImageOutlinedIcon />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      coverInputRef.current?.click();
+                    }}
+                    disabled={coverUploading || coverGenerating}
+                  >
+                    {coverUploading ? "Đang tải lên..." : "Thêm ảnh"}
+                  </Button>
+                </Box>
               )}
               <input
                 ref={coverInputRef}
@@ -633,18 +731,20 @@ export function ManageStoriesPage() {
                   if (file) void handleUploadCover(file);
                 }}
               />
-              <Button
-                size="small"
-                className="story-editor__cover-change-btn"
-                startIcon={<ImageOutlinedIcon />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  coverInputRef.current?.click();
-                }}
-                disabled={coverUploading || coverGenerating}
-              >
-                {coverUploading ? "Đang tải lên..." : "Thay đổi ảnh"}
-              </Button>
+              {form.coverImageUrl ? (
+                <Button
+                  size="small"
+                  className="story-editor__cover-change-btn story-editor__cover-change-btn--bottom"
+                  startIcon={<ImageOutlinedIcon />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    coverInputRef.current?.click();
+                  }}
+                  disabled={coverUploading || coverGenerating}
+                >
+                  {coverUploading ? "Đang tải lên..." : "Thay đổi ảnh"}
+                </Button>
+              ) : null}
             </Box>
 
             {/* Quick Info Card */}
@@ -801,6 +901,9 @@ export function ManageStoriesPage() {
             {/* Voice casting profiles */}
             <Box className="story-editor__field-group">
               <span className="story-editor__field-label">Voice casting profiles</span>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                Dropdown gồm DB catalog + voice ElevenLabs API (★ = gợi ý free). Xem bảng đầy đủ ở màn danh sách story.
+              </Typography>
               <Box className="story-editor__row-3col" sx={{ mb: 1.5 }}>
                 <TextField
                   select
@@ -811,7 +914,7 @@ export function ManageStoriesPage() {
                   label="Narrator"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {voiceCatalog
+                  {mergedVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "NARRATOR")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -828,7 +931,7 @@ export function ManageStoriesPage() {
                   label="Nam"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {voiceCatalog
+                  {mergedVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "MALE_ADULT")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -845,7 +948,7 @@ export function ManageStoriesPage() {
                   label="Nữ"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {voiceCatalog
+                  {mergedVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "FEMALE_ADULT")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -864,7 +967,7 @@ export function ManageStoriesPage() {
                   label="Bé trai"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {voiceCatalog
+                  {mergedVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "BOY_CHILD")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -881,7 +984,7 @@ export function ManageStoriesPage() {
                   label="Bé gái"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {voiceCatalog
+                  {mergedVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "GIRL_CHILD")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -1141,6 +1244,8 @@ export function ManageStoriesPage() {
           TÌM
         </Button>
       </Box>
+
+      <ElevenLabsVoicePanel />
 
       <Box className="story-filter-bar">
         <Box className="story-filter-tabs">

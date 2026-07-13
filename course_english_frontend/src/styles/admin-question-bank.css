@@ -1,8 +1,161 @@
 /* Admin — Question Bank dashboard (Phase 1) */
 
+.admin-catalog-page--question-bank .qb-filters-card {
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  background: #ffffff;
+  border: 1px solid #e8edf4;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
 .admin-catalog-page--question-bank .admin-catalog-page__filter-card {
   border-radius: 16px;
-  padding: 12px 16px;
+  padding: 16px 18px;
+}
+
+/* ── Question Bank filters (premium — no notched labels) ── */
+.qb-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qb-filters__search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.qb-filters__search {
+  flex: 1 1 280px;
+  min-width: 200px;
+}
+
+.qb-filters__search .MuiOutlinedInput-root {
+  background: #ffffff;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  min-height: 38px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qb-filters__search .MuiOutlinedInput-notchedOutline {
+  border-color: #e2e8f0;
+}
+
+.qb-filters__search:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #cbd5e1;
+}
+
+.qb-filters__search .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.qb-filters__btn {
+  text-transform: none !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  border-radius: 10px !important;
+  min-height: 38px !important;
+  padding: 0 18px !important;
+  box-shadow: none !important;
+}
+
+.qb-filters__btn--primary {
+  background: #2563eb !important;
+}
+
+.qb-filters__btn--primary:hover {
+  background: #1d4ed8 !important;
+}
+
+.qb-filters__btn--outlined {
+  border: 1.5px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+.qb-filters__btn--outlined:hover {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+}
+
+.qb-filters__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+@media (max-width: 1200px) {
+  .qb-filters__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .qb-filters__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.qb-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.qb-filters__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  line-height: 1.2;
+  padding-left: 2px;
+}
+
+.qb-filters__select .MuiOutlinedInput-root,
+.qb-filters__input .MuiOutlinedInput-root {
+  background: #ffffff;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #334155;
+  min-height: 36px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qb-filters__select .MuiOutlinedInput-notchedOutline,
+.qb-filters__input .MuiOutlinedInput-notchedOutline {
+  border-color: #e2e8f0;
+}
+
+.qb-filters__select:hover .MuiOutlinedInput-notchedOutline,
+.qb-filters__input:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #cbd5e1;
+}
+
+.qb-filters__select .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
+.qb-filters__input .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #2563eb;
+  border-width: 1px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.qb-filters__select .MuiSelect-select,
+.qb-filters__input .MuiOutlinedInput-input {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.qb-filters__input .MuiOutlinedInput-input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
 }
 
 .qb-stats-row {

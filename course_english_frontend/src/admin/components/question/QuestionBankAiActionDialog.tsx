@@ -39,7 +39,6 @@ import {
 import { saveAiDraftsToBank } from "../../../shared/lesson/questionBankAiGenSave";
 import type { BankImportBatchResult } from "../../../shared/lesson/questionBankImport";
 import { countSelectedValidBankDrafts, QuestionBankAiPreviewStep } from "./QuestionBankAiPreviewStep";
-import "../../../pages/admin/admin-ai-gen-question.css";
 
 const ACTION_LABELS: Record<QuestionBankAiAction, string> = {
   SIMILAR: "Sinh câu tương tự",

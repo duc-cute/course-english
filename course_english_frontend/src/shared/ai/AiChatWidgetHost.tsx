@@ -35,6 +35,8 @@ export function AiChatWidgetHost() {
     if (!authenticated) return false;
     if (AUTH_PATHS.has(location.pathname)) return false;
     if (location.pathname === FULL_PAGE_PATH) return false;
+    // Immersive story reader has its own layout — FAB overlaps the journey panel.
+    if (/^\/student\/stories\/[^/]+$/.test(location.pathname)) return false;
     return true;
   }, [authenticated, location.pathname]);
 

@@ -5,6 +5,7 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
+import RouteOutlinedIcon from "@mui/icons-material/RouteOutlined";
 import AbcOutlinedIcon from "@mui/icons-material/AbcOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
@@ -18,6 +19,7 @@ import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import {
   Avatar,
   Box,
@@ -34,6 +36,7 @@ import { useMemo, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ADMIN_DRAWER_WIDTH } from "../../theme/academicCore";
 import { paths } from "../../shared/constants/paths";
+import { BrandLogo } from "../../shared/ui/BrandLogo";
 
 type AdminSidebarProps = {
   mobileOpen: boolean;
@@ -119,6 +122,11 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
         to: `/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_SETS}`,
       },
       {
+        label: "Learning Journey",
+        icon: <RouteOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_JOURNEYS}`,
+      },
+      {
         label: "AI Reading Studio",
         icon: <AutoStoriesOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.MANAGE_STORIES}`,
@@ -137,6 +145,11 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
         label: "Hướng dẫn sử dụng",
         icon: <HelpOutlineOutlinedIcon />,
         to: `/${paths.ADMIN}/${paths.USAGE_GUIDE}`,
+      },
+      {
+        label: "Học RabbitMQ",
+        icon: <HubOutlinedIcon />,
+        to: `/${paths.ADMIN}/${paths.RABBITMQ_LAB}`,
       },
       {
         label: "Duyệt tài liệu",
@@ -176,12 +189,10 @@ export function AdminSidebar({ mobileOpen, desktopCollapsed, onCloseMobileSideba
   const renderDrawerContent = (collapsed: boolean) => (
     <Box className={`admin-sidebar-inner ${collapsed ? "collapsed" : ""}`}>
       <Stack direction="row" alignItems="center" spacing={1.5} className="admin-sidebar-brand">
-        <Box className="admin-sidebar-brand-icon" aria-hidden>
-          E
-        </Box>
+        <BrandLogo size="sm" />
         <Box sx={{ minWidth: 0 }}>
           <Typography className="admin-sidebar-brand-title" noWrap>
-            Course English
+            Nova English
           </Typography>
           <Typography className="admin-sidebar-brand-sub" noWrap>
             Quản trị

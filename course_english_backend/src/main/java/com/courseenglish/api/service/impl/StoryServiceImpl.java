@@ -221,6 +221,9 @@ public class StoryServiceImpl implements StoryService {
         StoryTranslationsPayloadDTO translations = readTranslations(entity.getTranslationsJson());
         storyTranslationMergeService.applySentenceTranslations(
                 payload.getSentences(), translations.getSentenceTranslations());
+        List<StoryGlossaryEntryDTO> enrichedGlossary = storyTranslationMergeService.buildReaderGlossary(
+                payload.getTokens(), translations, true);
+        translations.setGlossary(enrichedGlossary);
         try {
             entity.setTokensJson(objectMapper.writeValueAsString(payload));
             entity.setTranslationsJson(objectMapper.writeValueAsString(translations));

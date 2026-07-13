@@ -82,16 +82,20 @@ public class StoryTokenizerService {
                 tokens.add(textToken);
 
                 if (endsSentence(piece)) {
+                    String rawSentence = sentenceText.toString();
+                    String text = finalizeSentenceText(rawSentence);
+                    String carry = extractCarryOver(rawSentence, text);
+
                     StorySentenceDTO sentence = new StorySentenceDTO();
                     sentence.setSentenceIndex(sentenceIndex);
                     sentence.setStartWordIndex(sentenceStartWordIndex);
                     sentence.setEndWordIndex(Math.max(sentenceStartWordIndex, wordIndex - 1));
-                    sentence.setText(sentenceText.toString().trim());
+                    sentence.setText(text);
                     sentences.add(sentence);
 
                     sentenceIndex++;
                     sentenceStartWordIndex = wordIndex;
-                    sentenceText = new StringBuilder();
+                    sentenceText = new StringBuilder(carry);
                 }
             }
         }
@@ -101,14 +105,14 @@ public class StoryTokenizerService {
             sentence.setSentenceIndex(sentenceIndex);
             sentence.setStartWordIndex(sentenceStartWordIndex);
             sentence.setEndWordIndex(wordIndex - 1);
-            sentence.setText(sentenceText.toString().trim());
+            sentence.setText(finalizeSentenceText(sentenceText.toString()));
             sentences.add(sentence);
         } else if (!sentenceText.isEmpty() && sentences.isEmpty() && wordIndex == 0) {
             StorySentenceDTO sentence = new StorySentenceDTO();
             sentence.setSentenceIndex(0);
             sentence.setStartWordIndex(0);
             sentence.setEndWordIndex(-1);
-            sentence.setText(sentenceText.toString().trim());
+            sentence.setText(finalizeSentenceText(sentenceText.toString()));
             sentences.add(sentence);
         }
 
@@ -169,7 +173,55 @@ public class StoryTokenizerService {
         if (trimmed.isEmpty()) {
             return false;
         }
+        // Dialogue often ends with !" ?" ." — treat as sentence end (same as AI split rules).
+        while (trimmed.length() > 0) {
+            char last = trimmed.charAt(trimmed.length() - 1);
+            if (last == '"' || last == '\'' || Character.isWhitespace(last)) {
+                trimmed = trimmed.substring(0, trimmed.length() - 1).trim();
+                continue;
+            }
+            break;
+        }
+        if (trimmed.isEmpty()) {
+            return false;
+        }
         char last = trimmed.charAt(trimmed.length() - 1);
         return last == '.' || last == '!' || last == '?';
+    }
+
+    /** Trim sentence text to the last . ! ? (include a closing quote immediately after). */
+    static String finalizeSentenceText(String raw) {
+        String t = raw == null ? "" : raw.trim();
+        if (t.isEmpty()) {
+            return "";
+        }
+        int lastEnd = -1;
+        for (int i = 0; i < t.length(); i++) {
+            char c = t.charAt(i);
+            if (c == '.' || c == '!' || c == '?') {
+                lastEnd = i;
+                if (i + 1 < t.length()) {
+                    char next = t.charAt(i + 1);
+                    if (next == '"' || next == '\'') {
+                        lastEnd = i + 1;
+                    }
+                }
+            }
+        }
+        if (lastEnd >= 0) {
+            return t.substring(0, lastEnd + 1).trim();
+        }
+        return t;
+    }
+
+    /** Leading quote/space after a split delimiter belongs to the next sentence. */
+    static String extractCarryOver(String raw, String finalized) {
+        if (raw == null || finalized == null) {
+            return "";
+        }
+        if (raw.length() <= finalized.length()) {
+            return "";
+        }
+        return raw.substring(finalized.length()).trim();
     }
 }

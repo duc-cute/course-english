@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.security import verify_api_key
 from app.factories.provider_factory import ProviderFactory
+from app.models.elevenlabs_voice import ElevenLabsVoiceListResult
 from app.models.request import TtsGenerateRequest
 from app.models.response import SpeechResult, TaskResponse
 from app.providers.edge.edge_provider import EdgeTTSProvider
@@ -18,6 +19,19 @@ async def generate_tts(
 ) -> SpeechResult:
     """Sync TTS + optional alignment + upload."""
     return await speech_service.generate_speech(body)
+
+
+@router.get("/voices/elevenlabs", response_model=ElevenLabsVoiceListResult, response_model_by_alias=True)
+async def list_elevenlabs_voices_v2(
+    free_only: bool = Query(default=True, description="Chỉ voice gợi ý dùng được trên free API"),
+    search: str | None = Query(default=None),
+    _: None = Depends(verify_api_key),
+) -> dict:
+    """List ElevenLabs voices from GET /v2/voices (for rebuilding tts_voice_catalog)."""
+    from app.providers.elevenlabs.elevenlabs_provider import ElevenLabsTTSProvider
+
+    result = await ElevenLabsTTSProvider.fetch_voices_v2(free_only=free_only, search=search)
+    return result
 
 
 @router.get("/voices")
