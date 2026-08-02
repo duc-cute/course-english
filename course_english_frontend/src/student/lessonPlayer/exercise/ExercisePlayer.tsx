@@ -24,10 +24,12 @@ import {
   type VocabularyPracticeAttemptRecord,
 } from "../../../shared/api/vocabularyPracticeAttempt";
 import { buildStructuredSnapshot, parseAttemptSnapshot } from "../../../shared/lesson/attemptSnapshot";
+import { resolveStorageAssetUrl } from "../../../shared/api/file";
 import { ExerciseResultScreen } from "./ExerciseResultScreen";
 import { ExerciseReviewScreen } from "./ExerciseReviewScreen";
 import { PracticeAttemptBanner } from "./PracticeAttemptBanner";
 import { isMatchingComplete, scoreMatchingAnswer } from "./matchingUtils";
+import { collectSessionReviewWords } from "./sessionReviewWords";
 import { ListenChooseQuestion } from "./ListenChooseQuestion";
 import { ListenTypeQuestion } from "./ListenTypeQuestion";
 import { MatchingQuestion } from "./MatchingQuestion";
@@ -83,6 +85,8 @@ type ExercisePlayerProps = {
   persistAttempts?: boolean;
   /** When set, persist to vocabulary practice attempts instead of lesson attempts. */
   vocabularySetId?: string;
+  /** Cover of the vocabulary set — shown in overview card when present. */
+  coverImageUrl?: string;
   assignmentId?: string | null;
   attemptBannerPlacement?: "inline" | "hero";
   onAttemptBanner?: (ctx: PracticeAttemptBannerContext | null) => void;
@@ -103,6 +107,7 @@ export function ExercisePlayer({
   nextLessonTitle,
   persistAttempts = true,
   vocabularySetId,
+  coverImageUrl,
   assignmentId = null,
   attemptBannerPlacement = "inline",
   onAttemptBanner,
@@ -959,58 +964,63 @@ export function ExercisePlayer({
     const pos = currentMcq?.partOfSpeech || "";
     const phonetic = currentMcq?.phonetic || "";
     const showWordCard = Boolean(currentMcq && wordEn);
-    
-    const getWordIllustration = (word: string) => {
-      const images = [
-        "/images/journey/journey_forest.png",
-        "/images/journey/journey_ocean.png",
-        "/images/journey/journey_desert.png",
-        "/images/journey/journey_space.png",
-        "/images/journey/journey_academy.png",
-        "/images/journey/journey_castle.png",
-        "/images/journey/journey_beach.png",
-        "/images/journey/journey_garden.png",
-        "/images/journey/journey_jungle.png",
-        "/images/journey/journey_volcano.png",
-        "/images/journey/journey_mountain.png",
-        "/images/journey/journey_city.png"
-      ];
-      let hash = 0;
-      for (let i = 0; i < word.length; i++) {
-        hash = word.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const index = Math.abs(hash) % images.length;
-      return images[index]!;
-    };
 
-    const imageUrl = currentMcq?.coverImageUrl || getWordIllustration(wordEn || lessonTitle || "vocab");
     const progressPercent = total > 0 ? Math.round(((questionIndex) / total) * 100) : 0;
+    const setCoverUrl = coverImageUrl?.trim()
+      ? resolveStorageAssetUrl(coverImageUrl.trim())
+      : null;
 
-    const reviewWords = [
-      { word: "birthday", count: 2, level: "orange" },
-      { word: "favorite", count: 3, level: "red" },
-      { word: "toy", count: 2, level: "orange" },
-    ];
+    const reviewWords = collectSessionReviewWords(items, answers);
 
     const weekdays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
     const letters = ["A", "B", "C", "D"];
 
     return (
       <div className="vq-vocab-practice-dashboard-layout">
-        {/* Custom top bar inside the page */}
+        {/* Set overview card — cover when available; timer + progress here */}
         <div className="vq-vocab-practice-topbar">
-          <div className="vq-vocab-practice-topbar__left">
-            <button type="button" className="vq-vocab-practice-topbar__back-btn" onClick={onBackToLessons}>
-              <ArrowBackIcon sx={{ fontSize: 20 }} />
-            </button>
-            <div className="vq-vocab-practice-topbar__title-block">
-              <span className="vq-vocab-practice-topbar__eyebrow">Luyện tập</span>
-              <h2 className="vq-vocab-practice-topbar__title">{lessonTitle}</h2>
+          <div className="vq-vocab-practice-topbar__main">
+            <div className="vq-vocab-practice-topbar__heading">
+              <button type="button" className="vq-vocab-practice-topbar__back-btn" onClick={onBackToLessons}>
+                <ArrowBackIcon sx={{ fontSize: 20 }} />
+              </button>
+              {setCoverUrl ? (
+                <div className="vq-vocab-practice-topbar__cover" aria-hidden>
+                  <img src={setCoverUrl} alt="" />
+                </div>
+              ) : null}
+              <div className="vq-vocab-practice-topbar__title-block">
+                <h2 className="vq-vocab-practice-topbar__title">{lessonTitle}</h2>
+                <p className="vq-vocab-practice-topbar__subtitle">
+                  Câu {questionIndex + 1} / {total} · Ôn từ vựng
+                </p>
+              </div>
             </div>
-            <span className="vq-vocab-practice-topbar__badge">
-              Bộ từ {questionIndex + 1} / {total}
-            </span>
+
+            <div className="vq-vocab-practice-topbar__progress-row">
+              <div className="vq-vocab-practice-topbar__progress-track" aria-hidden>
+                <div
+                  className="vq-vocab-practice-topbar__progress-fill"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <span className="vq-vocab-practice-topbar__progress-pct">{progressPercent}%</span>
+              <div className="vq-vocab-practice-timer-badge">
+                <span className="vq-vocab-practice-timer-icon">⏱️</span>
+                <span className="vq-vocab-practice-timer-text">{timerText}</span>
+              </div>
+            </div>
+
+            <div className="vq-vocab-practice-topbar__chips">
+              <span className="vq-vocab-practice-topbar__badge">
+                Bộ từ {questionIndex + 1} / {total}
+              </span>
+              <span className="vq-vocab-practice-topbar__goal">
+                Mục tiêu: {total} câu
+              </span>
+            </div>
           </div>
+
           <div className="vq-vocab-practice-topbar__right">
             <div className="vq-vocab-practice-stat">
               <span className="vq-vocab-practice-stat__icon">🔥</span>
@@ -1033,44 +1043,19 @@ export function ExercisePlayer({
         <div className="vq-vocab-practice-cols">
           {/* Left Main Column */}
           <div className="vq-vocab-practice-main-col">
-            {/* Progress bar */}
-            <div className="vq-vocab-practice-progress-header">
-              <div className="vq-vocab-practice-progress-title-row">
-                <span className="vq-vocab-practice-progress-label">Tiến độ</span>
-                <span className="vq-vocab-practice-progress-text">Câu {questionIndex + 1} / {total}</span>
-              </div>
-              <div className="vq-vocab-practice-progress-bar-container">
-                <div className="vq-vocab-practice-progress-bar-track">
-                  <div
-                    className="vq-vocab-practice-progress-bar-fill"
-                    style={{ width: `${((questionIndex + (showFeedback ? 1 : 0)) / total) * 100}%` }}
-                  />
-                </div>
-                <div className="vq-vocab-practice-timer-badge">
-                  <span className="vq-vocab-practice-timer-icon">⏱️</span>
-                  <span className="vq-vocab-practice-timer-text">{timerText}</span>
-                </div>
-              </div>
-            </div>
-
             {/* Target Word Card — only for meaning MCQ that has a target word */}
             {showWordCard ? (
               <div className="vq-vocab-practice-word-card">
-                <div className="vq-vocab-practice-word-card__left">
-                  <img src={imageUrl} alt={wordEn} className="vq-vocab-practice-word-card__img" />
+                <h2 className="vq-vocab-practice-word-card__en">{wordEn}</h2>
+                <div className="vq-vocab-practice-word-card__phonetic-row">
+                  <button type="button" className="vq-vocab-practice-word-card__audio-btn" onClick={playWordAudio}>
+                    🔊
+                  </button>
+                  {phonetic ? (
+                    <span className="vq-vocab-practice-word-card__phonetic">{phonetic}</span>
+                  ) : null}
                 </div>
-                <div className="vq-vocab-practice-word-card__right">
-                  <h2 className="vq-vocab-practice-word-card__en">{wordEn}</h2>
-                  <div className="vq-vocab-practice-word-card__phonetic-row">
-                    <button type="button" className="vq-vocab-practice-word-card__audio-btn" onClick={playWordAudio}>
-                      🔊
-                    </button>
-                    {phonetic ? (
-                      <span className="vq-vocab-practice-word-card__phonetic">{phonetic}</span>
-                    ) : null}
-                  </div>
-                  {pos ? <span className="vq-vocab-practice-word-card__pos">{pos}</span> : null}
-                </div>
+                {pos ? <span className="vq-vocab-practice-word-card__pos">{pos}</span> : null}
               </div>
             ) : null}
 
@@ -1205,7 +1190,7 @@ export function ExercisePlayer({
               {!showFeedback ? (
                 <>
                   <button type="button" className="vq-vocab-practice-skip-btn" onClick={handleNext}>
-                    Bỏ qua &gt;&gt;
+                    Bỏ qua ≫
                   </button>
                   <button
                     type="button"
@@ -1213,7 +1198,7 @@ export function ExercisePlayer({
                     disabled={!canCheck}
                     onClick={handleCheck}
                   >
-                    Kiểm tra &rarr;
+                    Kiểm tra →
                   </button>
                 </>
               ) : (
@@ -1227,7 +1212,7 @@ export function ExercisePlayer({
                     Giải thích
                   </button>
                   <button type="button" className="vq-vocab-practice-continue-btn" onClick={handleNext}>
-                    {questionIndex >= total - 1 ? "Xem kết quả &rarr;" : "Làm tiếp &rarr;"}
+                    {questionIndex >= total - 1 ? "Xem kết quả →" : "Làm tiếp →"}
                   </button>
                 </>
               )}
@@ -1257,8 +1242,8 @@ export function ExercisePlayer({
               </div>
             </div>
 
-            {/* Widget 2: Progress */}
-            <div className="vq-vocab-practice-widget">
+            {/* Widget 2: Progress — desktop sidebar only */}
+            <div className="vq-vocab-practice-widget is-set-progress">
               <h4 className="vq-vocab-practice-widget__title">Tiến trình bộ từ</h4>
               <div className="vq-vocab-practice-progress-content">
                 <div className="vq-vocab-practice-progress-circle">
@@ -1282,18 +1267,24 @@ export function ExercisePlayer({
               </div>
             </div>
 
-            {/* Widget 3: Review list */}
+            {/* Widget 3: Review list — wrong words in this session */}
             <div className="vq-vocab-practice-widget">
               <h4 className="vq-vocab-practice-widget__title">Từ cần ôn tập</h4>
-              <ul className="vq-vocab-practice-review-list">
-                {reviewWords.map((w, i) => (
-                  <li key={i} className="vq-vocab-practice-review-item">
-                    <span className="vq-vocab-practice-review-item__word">{w.word}</span>
-                    <span className={`vq-vocab-practice-review-item__dot is-${w.level}`} />
-                    <span className="vq-vocab-practice-review-item__count">{w.count} lần</span>
-                  </li>
-                ))}
-              </ul>
+              {reviewWords.length === 0 ? (
+                <p className="vq-vocab-practice-review-empty">
+                  Chưa có từ sai. Trả lời sai sẽ hiện ở đây để ôn lại.
+                </p>
+              ) : (
+                <ul className="vq-vocab-practice-review-list">
+                  {reviewWords.map((w) => (
+                    <li key={w.word.toLowerCase()} className="vq-vocab-practice-review-item">
+                      <span className="vq-vocab-practice-review-item__word">{w.word}</span>
+                      <span className={`vq-vocab-practice-review-item__dot is-${w.level}`} />
+                      <span className="vq-vocab-practice-review-item__count">{w.count} lần</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* Widget 4: Streak week */}

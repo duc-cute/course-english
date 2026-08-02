@@ -112,6 +112,7 @@ export function VocabSetPracticePage() {
               practiceBlocks={practiceSession.practiceBlocks}
               persistAttempts
               vocabularySetId={set.id}
+              coverImageUrl={set.coverImageUrl}
               assignmentId={assignmentId}
               onBackToLessons={backToLearn}
               onContinueStudy={backToLearn}

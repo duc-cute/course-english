@@ -42,7 +42,7 @@
 
   /* Shell */
   --vq-sidebar-width: 256px;
-  --vq-bottom-nav-height: 72px;
+  --vq-bottom-nav-height: 56px;
   --vq-top-bar-height: 64px;
 
   /* Legacy aliases — old pages keep working during migration */
