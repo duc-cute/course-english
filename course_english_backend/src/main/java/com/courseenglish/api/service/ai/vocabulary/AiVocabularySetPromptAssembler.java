@@ -18,6 +18,7 @@ public class AiVocabularySetPromptAssembler {
           {
             "wordEn": "English word or phrase",
             "meaningVi": "Vietnamese meaning",
+            "phonetic": "/ˈæp.əl/ — IPA with slashes; phrases space-separated",
             "partOfSpeech": "noun|verb|adjective|adverb|phrase|preposition|conjunction",
             "exampleSentence": "One short English example using the word in topic context"
           }
@@ -28,10 +29,11 @@ public class AiVocabularySetPromptAssembler {
       - Each wordEn must be unique (case-insensitive).
       - Prefer practical words/phrases for the given topic and CEFR/level.
       - meaningVi: short, accurate Vietnamese (noun phrase or brief gloss).
+      - phonetic: REQUIRED for every item — British IPA in slashes, e.g. "/ˈsəʊ.lə ˈpaʊə/" for phrases.
       - partOfSpeech: include when confident; omit or null if unsure.
       - exampleSentence: one natural English sentence; must contain wordEn (or inflected form).
       - coverImagePrompt: vivid scene matching the set topic; flat/minimal style; NO text/letters in image.
-      - Do NOT include phonetic or per-word images.
+      - Do NOT include per-word images.
       - title and description must be non-empty.
       """;
 

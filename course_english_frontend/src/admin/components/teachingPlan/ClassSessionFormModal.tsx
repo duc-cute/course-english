@@ -5,17 +5,31 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControl,
   FormControlLabel,
   FormGroup,
   FormLabel,
+  IconButton,
   MenuItem,
   Radio,
   RadioGroup,
   TextField,
   Typography,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import ImportContactsOutlinedIcon from "@mui/icons-material/ImportContactsOutlined";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import LaptopMacOutlinedIcon from "@mui/icons-material/LaptopMacOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
+import EastIcon from "@mui/icons-material/East";
+import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
+import NotesOutlinedIcon from "@mui/icons-material/NotesOutlined";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import VideoCameraFrontOutlinedIcon from "@mui/icons-material/VideoCameraFrontOutlined";
 import { useEffect, useState } from "react";
 import { ClassroomPagingAutocomplete } from "../ClassroomPagingAutocomplete";
 import { LessonPagingAutocomplete } from "../LessonPagingAutocomplete";
@@ -35,7 +49,9 @@ import {
   type RecurringClassSessionPayload,
   type SessionType,
 } from "../../../shared/api/classSession";
-import { AppDateTimePicker, AppTimePicker } from "../../../shared/datetime";
+import { AppTimePicker } from "../../../shared/datetime";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { dayjs } from "../../../shared/datetime/dayjsConfig";
 import {
   addMinutesToDatetimeLocal,
   buildSessionTimes,
@@ -47,24 +63,16 @@ import {
   isoToDatetimeLocal,
   isSessionEndTimeAfterStart,
   mergeDateWithTime,
-  mergeDayWithTimeHHmm,
   recurringRangeEndDate,
   SESSION_DEFAULT_DURATION_MIN,
   SESSION_LONG_DURATION_MIN,
   SESSION_TYPE_OPTIONS,
   sessionDurationMinutes,
-  syncSessionEndOnStartDay,
   WEEKDAY_OPTIONS,
 } from "./teachingPlanUtils";
 import { meetLinkValidationMessage } from "./meetLinkUtils";
 import { formatDaySectionLabel } from "./weekScheduleUtils";
-import {
-  muDialogFooter,
-  muDialogPaper,
-  muFooterBtnOutlined,
-  muFooterBtnPrimary,
-  muTextFieldSx,
-} from "../../../pages/admin/manageUserUiStyles";
+import { muTextFieldSx } from "../../../pages/admin/manageUserUiStyles";
 
 type ClassSessionFormMode = "quick" | "recurring";
 
@@ -121,17 +129,6 @@ const defaultRepeat: RepeatState = {
   weekCount: 4,
 };
 
-function buildDialogTitle(
-  editing: ClassSessionRecord | null,
-  mode: ClassSessionFormMode,
-  initialDay?: string,
-): string {
-  if (editing) return "Sửa ca dạy";
-  if (mode === "recurring") return "Thiết lập lịch cố định";
-  if (initialDay) return `Thêm ca dạy — ${formatDaySectionLabel(initialDay)}`;
-  return "Thêm ca hôm nay";
-}
-
 export function ClassSessionFormModal({
   open,
   editing,
@@ -154,7 +151,6 @@ export function ClassSessionFormModal({
 
   const isRecurringMode = !editing && mode === "recurring";
   const isQuickWithFixedDay = !editing && mode === "quick" && Boolean(initialDay);
-  const fixedDay = initialDay ?? (isQuickWithFixedDay ? extractDateFromDatetimeLocal(form.startLocal) : undefined);
   const isLiveClass = form.sessionType === "LIVE_CLASS";
   const showMeetLinkField = !isLiveClass || form.usePreSavedLink;
   const durationMinutes =
@@ -218,11 +214,26 @@ export function ClassSessionFormModal({
     }
   }, [open, editing, mode, initialDay, initialStartHour, initialStartMinute]);
 
-  const handleQuickStartTimeChange = (startTime: string) => {
-    const day = fixedDay ?? extractDateFromDatetimeLocal(form.startLocal);
-    if (!day || !startTime.trim()) return;
-    const startLocal = mergeDayWithTimeHHmm(day, startTime);
+  const handleDateOnlyChange = (newDateIso: string) => {
+    if (!newDateIso) return;
     setForm((prev) => {
+      const startTime = prev.startLocal ? extractTimeFromDatetimeLocal(prev.startLocal) : "10:00";
+      const endTime = prev.endLocal ? extractTimeFromDatetimeLocal(prev.endLocal) : "12:00";
+      const startLocal = mergeDateWithTime(newDateIso, startTime);
+      const endLocal = mergeDateWithTime(newDateIso, endTime);
+      return { ...prev, startLocal, endLocal };
+    });
+    if (isRecurringMode && form.startLocal) {
+      const rangeEnd = recurringRangeEndDate(newDateIso, repeat.weekCount);
+      setRepeat((prev) => ({ ...prev, rangeEnd }));
+    }
+  };
+
+  const handleStartTimeChange = (newTime: string) => {
+    if (!newTime) return;
+    setForm((prev) => {
+      const date = extractDateFromDatetimeLocal(prev.startLocal) || formatTodayIsoInTz();
+      const startLocal = mergeDateWithTime(date, newTime);
       let endLocal = prev.endLocal;
       if (
         endLocal &&
@@ -234,38 +245,13 @@ export function ClassSessionFormModal({
     });
   };
 
-  const handleQuickEndTimeChange = (endTime: string) => {
-    if (!endTime.trim()) return;
-    setForm((prev) => ({
-      ...prev,
-      endLocal: syncSessionEndOnStartDay(prev.startLocal, endTime),
-    }));
-  };
-
-  const handleStartLocalChange = (startLocal: string) => {
+  const handleEndTimeChange = (newTime: string) => {
+    if (!newTime) return;
     setForm((prev) => {
-      let endLocal = prev.endLocal;
-      if (isRecurringMode) {
-        endLocal = syncSessionEndOnStartDay(startLocal, prev.endLocal);
-      } else if (
-        endLocal &&
-        new Date(datetimeLocalToIso(endLocal)).getTime() <= new Date(datetimeLocalToIso(startLocal)).getTime()
-      ) {
-        endLocal = addMinutesToDatetimeLocal(startLocal, SESSION_DEFAULT_DURATION_MIN);
-      }
-      return { ...prev, startLocal, endLocal };
+      const date = extractDateFromDatetimeLocal(prev.startLocal) || formatTodayIsoInTz();
+      const endLocal = mergeDateWithTime(date, newTime);
+      return { ...prev, endLocal };
     });
-    if (isRecurringMode && startLocal) {
-      const rangeEnd = recurringRangeEndDate(extractDateFromDatetimeLocal(startLocal), repeat.weekCount);
-      setRepeat((prev) => ({ ...prev, rangeEnd }));
-    }
-  };
-
-  const handleSessionEndTimeChange = (endTime: string) => {
-    setForm((prev) => ({
-      ...prev,
-      endLocal: syncSessionEndOnStartDay(prev.startLocal, endTime),
-    }));
   };
 
   const handleWeekCountChange = (weekCount: number) => {
@@ -471,250 +457,503 @@ export function ClassSessionFormModal({
     });
   };
 
+  const typeIcon = (() => {
+    switch (form.sessionType) {
+      case "LIVE_CLASS":
+        return <LaptopMacOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />;
+      case "OFFICE_HOURS":
+        return <AccessTimeOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />;
+      case "EXAM":
+        return <DescriptionOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />;
+      default:
+        return <DescriptionOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />;
+    }
+  })();
+
+  const capitalizeFirstLetter = (val: string) => {
+    if (!val) return "";
+    return val.charAt(0).toUpperCase() + val.slice(1);
+  };
+
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: muDialogPaper }}>
-        <DialogTitle>{buildDialogTitle(editing, mode, initialDay)}</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          {error ? <Alert severity="error">{error}</Alert> : null}
-          {success ? <Alert severity="success">{success}</Alert> : null}
-          {editing?.recurring ? (
-            <Alert severity="info">Ca này thuộc chuỗi lặp tuần. Sửa/hủy sẽ hỏi phạm vi áp dụng.</Alert>
-          ) : null}
-          {isRecurringMode ? (
-            <Alert severity="info">
-              Tạo nhiều ca cùng giờ theo các thứ trong tuần — phù hợp lịch cố định cả tháng/học kỳ.
-            </Alert>
-          ) : null}
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          className: "session-modal-paper",
+          sx: { maxWidth: "1000px !important", width: "100%" },
+        }}
+      >
+        <Box className="session-dialog-header">
+          <Box className="session-header-badge">
+            <CalendarMonthOutlinedIcon />
+          </Box>
+          <Box className="session-header-title-wrap" sx={{ flexGrow: 1 }}>
+            <Typography className="session-header-title">
+              {editing ? "Sửa ca dạy" : mode === "recurring" ? "Thiết lập lịch cố định" : "Thêm ca dạy"}
+            </Typography>
+            <Typography className="session-header-subtitle">
+              {editing
+                ? formatDaySectionLabel(extractDateFromDatetimeLocal(form.startLocal) || "")
+                : initialDay
+                ? formatDaySectionLabel(initialDay)
+                : formatDaySectionLabel(formatTodayIsoInTz())}
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose} size="small" sx={{ color: "#64748b" }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
 
-          <ClassroomPagingAutocomplete
-            value={form.classroom}
-            onChange={(val) => setForm((prev) => ({ ...prev, classroom: val as ClassroomRecord | null }))}
-          />
-          <TextField
-            label="Tiêu đề ca dạy"
-            placeholder="Để trống sẽ dùng tên lớp"
-            value={form.title}
-            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-            fullWidth
-            sx={muTextFieldSx}
-          />
-          <TextField
-            select
-            label="Loại buổi"
-            value={form.sessionType}
-            onChange={(e) => {
-              const sessionType = e.target.value as SessionType;
-              setForm((prev) => ({
-                ...prev,
-                sessionType,
-                usePreSavedLink: sessionType === "LIVE_CLASS" ? prev.usePreSavedLink : false,
-                meetLink: sessionType === "LIVE_CLASS" ? prev.meetLink : prev.meetLink,
-              }));
-            }}
-            fullWidth
-            sx={muTextFieldSx}
-          >
-            {SESSION_TYPE_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </TextField>
+        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column" }}>
+          {(error || success || editing?.recurring || isRecurringMode) && (
+            <Box sx={{ p: 2, pb: 0, display: "flex", flexDirection: "column", gap: 1 }}>
+              {error ? <Alert severity="error">{error}</Alert> : null}
+              {success ? <Alert severity="success">{success}</Alert> : null}
+              {editing?.recurring ? (
+                <Alert severity="info">Ca này thuộc chuỗi lặp tuần. Sửa/hủy sẽ hỏi phạm vi áp dụng.</Alert>
+              ) : null}
+              {isRecurringMode ? (
+                <Alert severity="info">
+                  Tạo nhiều ca cùng giờ theo các thứ trong tuần — phù hợp lịch cố định cả tháng/học kỳ.
+                </Alert>
+              ) : null}
+            </Box>
+          )}
 
-          <LessonPagingAutocomplete
-            value={form.lesson}
-            onChange={(lesson) => setForm((prev) => ({ ...prev, lesson }))}
-            helperText="Gán bài dạy cho buổi học (tuỳ chọn)"
-          />
+          <Box className="session-modal-container">
+            {/* Left Main Form Column */}
+            <Box className="session-modal-main">
+              {/* 1. Lớp học */}
+              <Box className="session-section-card">
+                <Box className="session-section-header">
+                  <Box className="session-section-icon">
+                    <ImportContactsOutlinedIcon fontSize="small" />
+                  </Box>
+                  <Typography className="session-section-title">1. Lớp học</Typography>
+                </Box>
+                <ClassroomPagingAutocomplete
+                  value={form.classroom}
+                  onChange={(val) => setForm((prev) => ({ ...prev, classroom: val as ClassroomRecord | null }))}
+                  startIcon={<ImportContactsOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />}
+                />
+              </Box>
 
-          {isRecurringMode ? (
-            <Box sx={{ p: 2, borderRadius: 2, bgcolor: "var(--ac-surface-container-low)" }}>
-              <FormLabel component="legend" sx={{ mb: 1, fontWeight: 700 }}>
-                Ngày lặp trong tuần
-              </FormLabel>
-              <FormGroup row>
-                {WEEKDAY_OPTIONS.map((day) => (
+              {/* 2. Nội dung buổi học */}
+              <Box className="session-section-card">
+                <Box className="session-section-header">
+                  <Box className="session-section-icon">
+                    <MenuBookOutlinedIcon fontSize="small" />
+                  </Box>
+                  <Typography className="session-section-title">2. Nội dung buổi học</Typography>
+                </Box>
+                
+                <TextField
+                  label="Tiêu đề buổi học"
+                  placeholder="Để trống sẽ dùng tên lớp"
+                  value={form.title}
+                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                  fullWidth
+                  sx={muTextFieldSx}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <BorderColorOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />
+                      ),
+                    },
+                  }}
+                />
+
+                <Box className="session-grid-row">
+                  <TextField
+                    select
+                    label="Loại buổi"
+                    value={form.sessionType}
+                    onChange={(e) => {
+                      const sessionType = e.target.value as SessionType;
+                      setForm((prev) => ({
+                        ...prev,
+                        sessionType,
+                        usePreSavedLink: sessionType === "LIVE_CLASS" ? prev.usePreSavedLink : false,
+                        meetLink: sessionType === "LIVE_CLASS" ? prev.meetLink : prev.meetLink,
+                      }));
+                    }}
+                    fullWidth
+                    sx={muTextFieldSx}
+                    slotProps={{
+                      input: {
+                        startAdornment: typeIcon,
+                      },
+                    }}
+                  >
+                    {SESSION_TYPE_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  <LessonPagingAutocomplete
+                    value={form.lesson}
+                    onChange={(lesson) => setForm((prev) => ({ ...prev, lesson }))}
+                    helperText="Gán bài dạy cho buổi học (tuỳ chọn)"
+                    startIcon={<DescriptionOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />}
+                  />
+                </Box>
+              </Box>
+
+              {/* 3. Thời gian */}
+              <Box className="session-section-card">
+                <Box className="session-section-header">
+                  <Box className="session-section-icon">
+                    <AccessTimeOutlinedIcon fontSize="small" />
+                  </Box>
+                  <Typography className="session-section-title">3. Thời gian</Typography>
+                </Box>
+
+                {isRecurringMode ? (
+                  <Box sx={{ p: 2, borderRadius: 2, bgcolor: "var(--ac-surface-container-low)", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <FormLabel component="legend" sx={{ fontWeight: 700, fontSize: "0.85rem", color: "#1e293b" }}>
+                      Ngày lặp trong tuần
+                    </FormLabel>
+                    <FormGroup row>
+                      {WEEKDAY_OPTIONS.map((day) => (
+                        <FormControlLabel
+                          key={day.value}
+                          control={
+                            <Checkbox
+                              checked={repeat.weekdays.includes(day.value)}
+                              onChange={() => toggleWeekday(day.value)}
+                            />
+                          }
+                          label={day.label}
+                        />
+                      ))}
+                    </FormGroup>
+
+                    <FormControl>
+                      <FormLabel sx={{ fontWeight: 700, fontSize: "0.85rem", color: "#1e293b", mb: 0.5 }}>Lặp đến</FormLabel>
+                      <RadioGroup
+                        row
+                        value={repeat.endMode}
+                        onChange={(e) =>
+                          setRepeat((prev) => ({ ...prev, endMode: e.target.value as "date" | "weeks" }))
+                        }
+                      >
+                        <FormControlLabel value="weeks" control={<Radio />} label="Số tuần" />
+                        <FormControlLabel value="date" control={<Radio />} label="Ngày cụ thể" />
+                      </RadioGroup>
+                    </FormControl>
+
+                    {repeat.endMode === "weeks" ? (
+                      <TextField
+                        label="Số tuần"
+                        type="number"
+                        value={repeat.weekCount}
+                        onChange={(e) => handleWeekCountChange(Number(e.target.value) || 1)}
+                        inputProps={{ min: 1, max: 52 }}
+                        fullWidth
+                        sx={muTextFieldSx}
+                      />
+                    ) : (
+                      <TextField
+                        label="Ngày kết thúc"
+                        type="date"
+                        value={repeat.rangeEnd}
+                        onChange={(e) => setRepeat((prev) => ({ ...prev, rangeEnd: e.target.value }))}
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={{ min: extractDateFromDatetimeLocal(form.startLocal) || formatTodayIsoInTz() }}
+                        sx={muTextFieldSx}
+                      />
+                    )}
+
+                    {form.startLocal ? (
+                      <Typography variant="caption" sx={{ display: "block", color: "var(--ac-on-surface-variant)", fontWeight: 600 }}>
+                        Ngày cuối chuỗi:{" "}
+                        <strong>
+                          {formatIsoDateVi(
+                            repeat.endMode === "date" && repeat.rangeEnd
+                              ? repeat.rangeEnd
+                              : recurringRangeEndDate(
+                                  extractDateFromDatetimeLocal(form.startLocal),
+                                  repeat.weekCount,
+                                ),
+                          )}
+                        </strong>
+                      </Typography>
+                    ) : null}
+                  </Box>
+                ) : null}
+
+                <DatePicker
+                  label={isRecurringMode ? "Bắt đầu từ" : "Ngày dạy"}
+                  value={form.startLocal ? dayjs(form.startLocal) : null}
+                  onChange={(next) => {
+                    if (next && next.isValid()) {
+                      handleDateOnlyChange(next.format("YYYY-MM-DD"));
+                    }
+                  }}
+                  disabled={Boolean(editing)}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      sx: muTextFieldSx,
+                      InputProps: {
+                        startAdornment: (
+                          <CalendarMonthOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />
+                        ),
+                      },
+                    },
+                  }}
+                />
+
+                <Box className="session-grid-row">
+                  <AppTimePicker
+                    label="Giờ bắt đầu"
+                    value={form.startLocal ? extractTimeFromDatetimeLocal(form.startLocal) : ""}
+                    onChange={handleStartTimeChange}
+                    sx={muTextFieldSx}
+                  />
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <EastIcon sx={{ color: "#94a3b8" }} />
+                  </Box>
+                  <AppTimePicker
+                    label="Giờ kết thúc"
+                    value={form.endLocal ? extractTimeFromDatetimeLocal(form.endLocal) : ""}
+                    onChange={handleEndTimeChange}
+                    sx={muTextFieldSx}
+                  />
+                </Box>
+
+                <Box className="session-time-banner">
+                  <Box className="session-time-banner-item">
+                    <AccessTimeOutlinedIcon sx={{ fontSize: 16 }} />
+                    <span>Thời lượng: {durationMinutes} phút</span>
+                  </Box>
+                  {showLongSessionWarning ? (
+                    <Box className="session-time-banner-item">
+                      <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+                      <span>Google Meet miễn phí thường giới hạn ~60 phút/phiên — cân nhắc rút ngắn hoặc chia ca.</span>
+                    </Box>
+                  ) : null}
+                </Box>
+              </Box>
+
+              {/* 4. Hình thức & liên kết */}
+              <Box className="session-section-card">
+                <Box className="session-section-header">
+                  <Box className="session-section-icon">
+                    <LinkOutlinedIcon fontSize="small" />
+                  </Box>
+                  <Typography className="session-section-title">4. Hình thức & liên kết</Typography>
+                </Box>
+
+                {isLiveClass ? (
                   <FormControlLabel
-                    key={day.value}
                     control={
                       <Checkbox
-                        checked={repeat.weekdays.includes(day.value)}
-                        onChange={() => toggleWeekday(day.value)}
+                        checked={form.usePreSavedLink}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            usePreSavedLink: e.target.checked,
+                            meetLink: e.target.checked ? prev.meetLink : "",
+                          }))
+                        }
                       />
                     }
-                    label={day.label}
+                    label="Dùng link có sẵn (Zoom / Meet cố định)"
                   />
-                ))}
-              </FormGroup>
+                ) : null}
 
-              <FormControl sx={{ mt: 2 }}>
-                <FormLabel>Lặp đến</FormLabel>
-                <RadioGroup
-                  row
-                  value={repeat.endMode}
-                  onChange={(e) =>
-                    setRepeat((prev) => ({ ...prev, endMode: e.target.value as "date" | "weeks" }))
-                  }
-                >
-                  <FormControlLabel value="weeks" control={<Radio />} label="Số tuần" />
-                  <FormControlLabel value="date" control={<Radio />} label="Ngày cụ thể" />
-                </RadioGroup>
-              </FormControl>
+                {showMeetLinkField ? (
+                  <TextField
+                    label={isLiveClass ? "Link Meet / Zoom có sẵn" : "Link học trực tuyến (tùy chọn)"}
+                    placeholder="Nhập link Meet hoặc Zoom tại đây..."
+                    value={form.meetLink}
+                    onChange={(e) => setForm((prev) => ({ ...prev, meetLink: e.target.value }))}
+                    fullWidth
+                    sx={muTextFieldSx}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <LinkOutlinedIcon sx={{ color: "#6366f1", mr: 1, fontSize: 18 }} />
+                        ),
+                      },
+                    }}
+                  />
+                ) : isLiveClass ? (
+                  <Alert severity="info" sx={{ py: 0.5, borderRadius: "10px" }}>
+                    Lớp trực tuyến: đến giờ bấm <strong>Bắt đầu lớp online</strong> để tạo phòng Meet và dán link.
+                  </Alert>
+                ) : null}
+              </Box>
 
-              {repeat.endMode === "weeks" ? (
-                <TextField
-                  label="Số tuần"
-                  type="number"
-                  value={repeat.weekCount}
-                  onChange={(e) => handleWeekCountChange(Number(e.target.value) || 1)}
-                  inputProps={{ min: 1, max: 52 }}
-                  fullWidth
-                  sx={{ ...muTextFieldSx, mt: 1 }}
-                />
-              ) : (
-                <TextField
-                  label="Ngày kết thúc"
-                  type="date"
-                  value={repeat.rangeEnd}
-                  onChange={(e) => setRepeat((prev) => ({ ...prev, rangeEnd: e.target.value }))}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ min: extractDateFromDatetimeLocal(form.startLocal) || formatTodayIsoInTz() }}
-                  sx={{ ...muTextFieldSx, mt: 1 }}
-                />
-              )}
-
-              {form.startLocal ? (
-                <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--ac-on-surface-variant)" }}>
-                  Ngày cuối chuỗi:{" "}
-                  <strong>
-                    {formatIsoDateVi(
-                      repeat.endMode === "date" && repeat.rangeEnd
-                        ? repeat.rangeEnd
-                        : recurringRangeEndDate(
-                            extractDateFromDatetimeLocal(form.startLocal),
-                            repeat.weekCount,
-                          ),
-                    )}
-                  </strong>
-                </Typography>
-              ) : null}
-
-              <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "var(--ac-on-surface-variant)" }}>
-                Giờ mỗi buổi: lấy từ ô Bắt đầu và Giờ kết thúc bên dưới (cùng một ngày, không tính ngày cuối chuỗi).
-              </Typography>
+              {/* 5. Ghi chú (tùy chọn) */}
+              <Box className="session-section-card">
+                <Box className="session-section-header">
+                  <Box className="session-section-icon">
+                    <NotesOutlinedIcon fontSize="small" />
+                  </Box>
+                  <Typography className="session-section-title">5. Ghi chú (tùy chọn)</Typography>
+                </Box>
+                <Box sx={{ position: "relative" }}>
+                  <TextField
+                    placeholder="Nhập ghi chú cho buổi học (nếu có)..."
+                    value={form.notes}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 300) {
+                        setForm((prev) => ({ ...prev, notes: e.target.value }));
+                      }
+                    }}
+                    fullWidth
+                    multiline
+                    minRows={3}
+                    sx={muTextFieldSx}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      position: "absolute",
+                      bottom: 8,
+                      right: 12,
+                      color: "#94a3b8",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {form.notes.length}/300
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-          ) : null}
 
-          {isRecurringMode ? (
-            <>
-              <AppDateTimePicker
-                label="Bắt đầu từ (ngày + giờ mẫu)"
-                value={form.startLocal}
-                onChange={handleStartLocalChange}
-                sx={muTextFieldSx}
-              />
-              <AppTimePicker
-                label="Giờ kết thúc mỗi ca"
-                value={extractTimeFromDatetimeLocal(form.endLocal)}
-                onChange={handleSessionEndTimeChange}
-                sx={muTextFieldSx}
-              />
-            </>
-          ) : isQuickWithFixedDay ? (
-            <>
-              <Typography variant="body2" sx={{ color: "var(--ac-on-surface-variant)", fontWeight: 600 }}>
-                Ngày: {formatDaySectionLabel(fixedDay!)}
-              </Typography>
-              <AppTimePicker
-                label="Giờ bắt đầu"
-                value={extractTimeFromDatetimeLocal(form.startLocal)}
-                onChange={handleQuickStartTimeChange}
-                sx={muTextFieldSx}
-              />
-              <AppTimePicker
-                label="Giờ kết thúc"
-                value={extractTimeFromDatetimeLocal(form.endLocal)}
-                onChange={handleQuickEndTimeChange}
-                sx={muTextFieldSx}
-              />
-            </>
-          ) : (
-            <>
-              <AppDateTimePicker
-                label="Bắt đầu"
-                value={form.startLocal}
-                onChange={handleStartLocalChange}
-                sx={muTextFieldSx}
-              />
-              <AppDateTimePicker
-                label="Kết thúc"
-                value={form.endLocal}
-                onChange={(endLocal) => setForm((prev) => ({ ...prev, endLocal }))}
-                minDateTime={form.startLocal}
-                sx={muTextFieldSx}
-              />
-            </>
-          )}
-          {showLongSessionWarning ? (
-            <Alert severity="warning">
-              Buổi học khoảng {durationMinutes} phút. Google Meet miễn phí thường giới hạn ~60 phút/phiên — cân
-              nhắc rút ngắn hoặc chia ca.
-            </Alert>
-          ) : null}
-          {isLiveClass ? (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={form.usePreSavedLink}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      usePreSavedLink: e.target.checked,
-                      meetLink: e.target.checked ? prev.meetLink : "",
-                    }))
-                  }
-                />
-              }
-              label="Dùng link có sẵn (Zoom / Meet cố định)"
-            />
-          ) : null}
-          {showMeetLinkField ? (
-            <TextField
-              label={isLiveClass ? "Link meet có sẵn" : "Link meet (tuỳ chọn)"}
-              placeholder="https://meet.google.com/... hoặc https://zoom.us/j/..."
-              value={form.meetLink}
-              onChange={(e) => setForm((prev) => ({ ...prev, meetLink: e.target.value }))}
-              fullWidth
-              sx={muTextFieldSx}
-            />
-          ) : isLiveClass ? (
-            <Alert severity="info" sx={{ py: 0.5 }}>
-              Lớp trực tuyến: bấm <strong>Bắt đầu lớp online</strong> đúng giờ để tạo phòng Meet và dán link.
-            </Alert>
-          ) : null}
-          {/* Tạm ẩn — nhãn phòng/vị trí chưa dùng rõ trên UI
-          <TextField
-            label="Nhãn phòng / vị trí"
-            placeholder="VD: Zoom Room A"
-            value={form.locationLabel}
-            onChange={(e) => setForm((prev) => ({ ...prev, locationLabel: e.target.value }))}
-            fullWidth
-            sx={muTextFieldSx}
-          />
-          */}
-          <TextField
-            label="Ghi chú"
-            value={form.notes}
-            onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-            fullWidth
-            multiline
-            minRows={2}
-            sx={muTextFieldSx}
-          />
+            {/* Right Sidebar Summary Column */}
+            <Box className="session-modal-sidebar">
+              <Box className="session-sidebar-card">
+                <Typography className="session-sidebar-title">Tóm tắt ca dạy</Typography>
+                
+                <Box className="session-summary-list">
+                  {/* Lớp học */}
+                  <Box className="session-summary-item">
+                    <Box className="session-summary-icon class">
+                      <ImportContactsOutlinedIcon fontSize="small" />
+                    </Box>
+                    <Box className="session-summary-content">
+                      <Typography className="session-summary-label">Lớp học</Typography>
+                      <Typography className="session-summary-value">
+                        {form.classroom?.name || "Chưa chọn"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Tiêu đề */}
+                  <Box className="session-summary-item">
+                    <Box className="session-summary-icon title">
+                      <BorderColorOutlinedIcon fontSize="small" />
+                    </Box>
+                    <Box className="session-summary-content">
+                      <Typography className="session-summary-label">Tiêu đề</Typography>
+                      <Typography className="session-summary-value">
+                        {form.title.trim() || form.classroom?.name || "Chưa nhập"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Loại buổi */}
+                  <Box className="session-summary-item">
+                    <Box className="session-summary-icon type">
+                      <LaptopMacOutlinedIcon fontSize="small" />
+                    </Box>
+                    <Box className="session-summary-content">
+                      <Typography className="session-summary-label">Loại buổi</Typography>
+                      <Typography className="session-summary-value">
+                        {SESSION_TYPE_OPTIONS.find((o) => o.value === form.sessionType)?.label || form.sessionType}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Bài học */}
+                  <Box className="session-summary-item">
+                    <Box className="session-summary-icon lesson">
+                      <DescriptionOutlinedIcon fontSize="small" />
+                    </Box>
+                    <Box className="session-summary-content">
+                      <Typography className="session-summary-label">Bài học</Typography>
+                      <Typography className="session-summary-value">
+                        {form.lesson?.title || "Chưa gán"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Thời gian */}
+                  <Box className="session-summary-item">
+                    <Box className="session-summary-icon time">
+                      <AccessTimeOutlinedIcon fontSize="small" />
+                    </Box>
+                    <Box className="session-summary-content">
+                      <Typography className="session-summary-label">Thời gian</Typography>
+                      <Typography className="session-summary-value" sx={{ color: "#16a34a !important" }}>
+                        {form.startLocal
+                          ? capitalizeFirstLetter(dayjs(form.startLocal).format("dddd, DD/MM/YYYY"))
+                          : "Chưa chọn"}
+                        {form.startLocal && form.endLocal ? (
+                          <>
+                            <br />
+                            {extractTimeFromDatetimeLocal(form.startLocal)} - {extractTimeFromDatetimeLocal(form.endLocal)} ({durationMinutes} phút)
+                          </>
+                        ) : null}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Hình thức */}
+                  <Box className="session-summary-item">
+                    <Box className="session-summary-icon method">
+                      <VideoCameraFrontOutlinedIcon fontSize="small" />
+                    </Box>
+                    <Box className="session-summary-content">
+                      <Typography className="session-summary-label">Hình thức</Typography>
+                      <Typography className="session-summary-value" sx={{ color: "#ea580c !important" }}>
+                        {form.sessionType === "LIVE_CLASS"
+                          ? form.usePreSavedLink
+                            ? "Meet/Zoom có sẵn"
+                            : "Tạo Meet khi bắt đầu lớp"
+                          : "Không dùng Meet"}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Ghi chú */}
+                  <Box className="session-summary-item">
+                    <Box className="session-summary-icon notes">
+                      <NotesOutlinedIcon fontSize="small" />
+                    </Box>
+                    <Box className="session-summary-content">
+                      <Typography className="session-summary-label">Ghi chú</Typography>
+                      <Typography className="session-summary-value">
+                        {form.notes.trim() || "Không có"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ ...muDialogFooter, justifyContent: editing ? "space-between" : "flex-end" }}>
+
+        <DialogActions
+          sx={{
+            p: "16px 24px !important",
+            borderTop: "1px solid #f1f5f9 !important",
+            bgcolor: "#ffffff !important",
+            justifyContent: editing ? "space-between" : "flex-end",
+          }}
+        >
           {editing ? (
             <AppButton
               variant="outlined"
@@ -728,25 +967,31 @@ export function ClassSessionFormModal({
                 }
               }}
               disabled={submitting || cancelling}
-              sx={{ minWidth: 120 }}
+              sx={{ borderRadius: "10px !important", textTransform: "none", fontWeight: 700 }}
             >
-              Hủy ca
+              Hủy ca này
             </AppButton>
           ) : (
             <span />
           )}
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <AppButton variant="outlined" sx={muFooterBtnOutlined} onClick={onClose} disabled={submitting || cancelling}>
-              Đóng
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <AppButton
+              variant="outlined"
+              className="session-footer-cancel"
+              onClick={onClose}
+              disabled={submitting || cancelling}
+            >
+              Hủy
             </AppButton>
             <AppButton
               type="button"
               variant="contained"
-              sx={muFooterBtnPrimary}
+              className="session-footer-save"
+              startIcon={<SaveOutlinedIcon />}
               onClick={() => void submit()}
               disabled={submitting || cancelling}
             >
-              {submitting ? "Đang lưu…" : isRecurringMode ? "Tạo chuỗi lịch" : "Lưu ca"}
+              {submitting ? "Đang lưu…" : isRecurringMode ? "Tạo chuỗi lịch" : "Lưu ca dạy"}
             </AppButton>
           </Box>
         </DialogActions>

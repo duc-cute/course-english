@@ -1,6 +1,5 @@
 package com.courseenglish.api.integration.dictionary.freedictionary;
 
-import com.courseenglish.api.integration.common.ExternalApiException;
 import com.courseenglish.api.integration.dictionary.freedictionary.dto.FreeDictionaryEntryDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,24 +60,23 @@ public class FreeDictionaryClient {
                     .body(new ParameterizedTypeReference<>() {
                     });
             if (body == null || body.isEmpty()) {
+                log.info("[VocabDict] empty body word='{}'", word);
                 return Collections.emptyList();
             }
+            log.info("[VocabDict] ok word='{}' entries={}", word, body.size());
             return body;
         } catch (HttpClientErrorException.NotFound e) {
+            log.info("[VocabDict] 404 word='{}'", word);
             return Collections.emptyList();
         } catch (HttpClientErrorException.TooManyRequests e) {
-            log.warn("Dictionary API rate limited (429) for word: {}", word);
+            log.warn("[VocabDict] 429 rate limited word='{}'", word);
             return Collections.emptyList();
         } catch (HttpClientErrorException e) {
-            throw new ExternalApiException(
-                    PROVIDER_ID,
-                    "Dictionary API error " + e.getStatusCode().value() + " for word: " + word,
-                    e);
+            log.warn("[VocabDict] client error {} word='{}' — skipping", e.getStatusCode().value(), word);
+            return Collections.emptyList();
         } catch (Exception e) {
-            throw new ExternalApiException(
-                    PROVIDER_ID,
-                    "Failed to call dictionary API for word: " + word,
-                    e);
+            log.warn("[VocabDict] failed word='{}' reason={} — skipping", word, e.getMessage());
+            return Collections.emptyList();
         }
     }
 

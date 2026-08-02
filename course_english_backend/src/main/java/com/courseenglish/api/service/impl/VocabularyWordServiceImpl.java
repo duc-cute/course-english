@@ -16,6 +16,8 @@ import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
 import com.courseenglish.api.util.VocabularyWordKeyUtil;
 import com.courseenglish.api.util.error.IdInvalidException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,6 +31,8 @@ import java.util.UUID;
 
 @Service
 public class VocabularyWordServiceImpl implements VocabularyWordService {
+
+    private static final Logger log = LoggerFactory.getLogger(VocabularyWordServiceImpl.class);
 
     private final VocabularyWordRepository wordRepository;
     private final DictionaryLookupService dictionaryLookupService;
@@ -93,8 +97,13 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
         if (request.getWordEn() == null || request.getWordEn().isBlank()) {
             return Optional.empty();
         }
-        return dictionaryLookupService.lookup(request.getWordEn().trim())
-                .map(this::previewFromEnrichment);
+        try {
+            return dictionaryLookupService.lookup(request.getWordEn().trim())
+                    .map(this::previewFromEnrichment);
+        } catch (Exception ex) {
+            log.warn("Dictionary lookup preview skipped for '{}': {}", request.getWordEn(), ex.getMessage());
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -108,7 +117,7 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
     @Override
     @Transactional
     public VocabularyWord findOrCreate(String wordEn, String meaningVi) throws IdInvalidException {
-        return findOrCreateForSetItem(wordEn, meaningVi, null, null);
+        return findOrCreateForSetItem(wordEn, meaningVi, null, null, null);
     }
 
     @Override
@@ -116,6 +125,7 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
     public VocabularyWord findOrCreateForSetItem(
             String wordEn,
             String meaningVi,
+            String phonetic,
             String partOfSpeech,
             String exampleSentence) throws IdInvalidException {
         validateWordInput(wordEn, meaningVi);
@@ -124,7 +134,7 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
         Optional<VocabularyWord> existing = wordRepository.findByWordKeyAndVoidedFalse(wordKey);
         if (existing.isPresent()) {
             VocabularyWord word = existing.get();
-            applyNullableWordExtras(word, partOfSpeech, exampleSentence);
+            applyNullableWordExtras(word, phonetic, partOfSpeech, exampleSentence);
             return wordRepository.save(word);
         }
 
@@ -132,13 +142,16 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
         word.setWordKey(wordKey);
         word.setWordEn(VocabularyWordKeyUtil.normalizeWordEn(wordEn));
         word.setMeaningVi(meaningVi.trim());
-        applyNullableWordExtras(word, partOfSpeech, exampleSentence);
+        applyNullableWordExtras(word, phonetic, partOfSpeech, exampleSentence);
         VocabularyWord saved = wordRepository.save(word);
         return enrichWord(saved, false);
     }
 
     private void applyNullableWordExtras(
-            VocabularyWord word, String partOfSpeech, String exampleSentence) {
+            VocabularyWord word, String phonetic, String partOfSpeech, String exampleSentence) {
+        if (isBlank(word.getPhonetic()) && !isBlank(phonetic)) {
+            word.setPhonetic(phonetic.trim());
+        }
         if (isBlank(word.getPartOfSpeech()) && !isBlank(partOfSpeech)) {
             word.setPartOfSpeech(partOfSpeech.trim());
         }
@@ -192,15 +205,41 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
 
     private VocabularyWord enrichWord(VocabularyWord word, boolean force) {
         if (!AppConstants.dictionaryEnrichEnabled) {
+            log.debug("[VocabDictEnrich] skipped — dictionaryEnrichEnabled=false word='{}'", word.getWordEn());
             return word;
         }
         if (!force && word.getEnrichedAt() != null) {
+            log.debug(
+                    "[VocabDictEnrich] skipped — already enrichedAt={} word='{}'",
+                    word.getEnrichedAt(),
+                    word.getWordEn());
             return word;
         }
 
-        Optional<VocabularyEnrichmentData> enrichment = dictionaryLookupService.lookup(word.getWordEn());
-        if (enrichment.isPresent()) {
-            applyEnrichment(word, enrichment.get());
+        long started = System.currentTimeMillis();
+        try {
+            Optional<VocabularyEnrichmentData> enrichment = dictionaryLookupService.lookup(word.getWordEn());
+            if (enrichment.isPresent()) {
+                applyEnrichment(word, enrichment.get());
+                log.info(
+                        "[VocabDictEnrich] ok word='{}' phonetic={} audioUk={} audioUs={} elapsedMs={}",
+                        word.getWordEn(),
+                        word.getPhonetic(),
+                        word.getAudioUkUrl() != null,
+                        word.getAudioUsUrl() != null,
+                        System.currentTimeMillis() - started);
+            } else {
+                log.warn(
+                        "[VocabDictEnrich] no data word='{}' (404/empty/soft-fail) elapsedMs={}",
+                        word.getWordEn(),
+                        System.currentTimeMillis() - started);
+            }
+        } catch (Exception ex) {
+            log.warn(
+                    "[VocabDictEnrich] failed word='{}' elapsedMs={} reason={}",
+                    word.getWordEn(),
+                    System.currentTimeMillis() - started,
+                    ex.getMessage());
         }
 
         word.setEnrichedAt(Instant.now());
@@ -208,6 +247,7 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
     }
 
     private void applyEnrichment(VocabularyWord word, VocabularyEnrichmentData data) {
+        // Dictionary may overwrite AI IPA when it has a value (force enrich / successful lookup).
         if (data.getPhonetic() != null && !data.getPhonetic().isBlank()) {
             word.setPhonetic(data.getPhonetic().trim());
         }
@@ -217,6 +257,7 @@ public class VocabularyWordServiceImpl implements VocabularyWordService {
         if (data.getAudioUsUrl() != null && !data.getAudioUsUrl().isBlank()) {
             word.setAudioUsUrl(data.getAudioUsUrl().trim());
         }
+        // POS: ưu tiên AI — dictionary chỉ bổ sung khi trống.
         if (data.getPartOfSpeech() != null && !data.getPartOfSpeech().isBlank()
             && isBlank(word.getPartOfSpeech())) {
             word.setPartOfSpeech(data.getPartOfSpeech().trim());

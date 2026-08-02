@@ -21,6 +21,8 @@ import { ManageVocabularyJourneyDetailPage } from "../pages/admin/ManageVocabula
 import { ManageStoriesPage } from "../pages/admin/ManageStoriesPage";
 import { ManageVocabularyWordsPage } from "../pages/admin/ManageVocabularyWordsPage";
 import { ManageSystemConfigPage } from "../pages/admin/ManageSystemConfigPage";
+import { InnovationHubPage } from "../pages/admin/InnovationHubPage";
+import { InnovationIdeaDetailPage } from "../pages/admin/InnovationIdeaDetailPage";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "../pages/auth/ForgotPasswordPage";
@@ -251,6 +253,14 @@ export const appRouter = createBrowserRouter([
       {
         path: paths.MANAGE_SYSTEM_CONFIG,
         element: <ManageSystemConfigPage />,
+      },
+      {
+        path: paths.INNOVATION_HUB,
+        element: <InnovationHubPage />,
+      },
+      {
+        path: paths.INNOVATION_HUB_DETAIL,
+        element: <InnovationIdeaDetailPage />,
       },
       {
         path: "manage-lesson/:lessonId/edit",

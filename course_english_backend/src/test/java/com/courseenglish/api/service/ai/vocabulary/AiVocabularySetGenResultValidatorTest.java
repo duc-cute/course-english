@@ -87,6 +87,7 @@ class AiVocabularySetGenResultValidatorTest {
             {
               "wordEn": "boarding pass",
               "meaningVi": "thẻ lên máy bay",
+              "phonetic": "ˈbɔː.dɪŋ pɑːs",
               "partOfSpeech": "noun",
               "exampleSentence": "Please show your boarding pass at the gate."
             }
@@ -98,8 +99,30 @@ class AiVocabularySetGenResultValidatorTest {
 
     assertEquals("Airport terminal with planes, flat illustration", envelope.getCoverImagePrompt());
     AiVocabularySetItemDTO item = envelope.getItems().get(0);
+    assertEquals("/ˈbɔː.dɪŋ pɑːs/", item.getPhonetic());
     assertEquals("noun", item.getPartOfSpeech());
     assertEquals("Please show your boarding pass at the gate.", item.getExampleSentence());
+  }
+
+  @Test
+  void parseAndValidate_keepsPhoneticSlashes() throws IdInvalidException {
+    String json =
+        """
+        {
+          "title": "Energy",
+          "description": "Desc",
+          "items": [
+            {
+              "wordEn": "solar power",
+              "meaningVi": "năng lượng mặt trời",
+              "phonetic": "/ˈsəʊ.lə ˈpaʊə/"
+            }
+          ]
+        }
+        """;
+
+    AiVocabularySetGenEnvelopeDTO envelope = validator.parseAndValidate(json, 1);
+    assertEquals("/ˈsəʊ.lə ˈpaʊə/", envelope.getItems().get(0).getPhonetic());
   }
 
   @Test

@@ -7,6 +7,7 @@ import com.courseenglish.api.domain.VocabularyWord;
 import com.courseenglish.api.domain.request.ReqSearchVocabularySetDTO;
 import com.courseenglish.api.domain.request.ReqVocabularyItemDTO;
 import com.courseenglish.api.domain.request.ReqVocabularySetDTO;
+import com.courseenglish.api.domain.response.ResVocabularyAiEnrichResultDTO;
 import com.courseenglish.api.domain.response.ResVocabularyItemDTO;
 import com.courseenglish.api.domain.response.ResVocabularySetDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
@@ -15,6 +16,7 @@ import com.courseenglish.api.repository.VocabularySetMemberRepository;
 import com.courseenglish.api.repository.VocabularySetRepository;
 import com.courseenglish.api.service.VocabularySetService;
 import com.courseenglish.api.service.VocabularyWordService;
+import com.courseenglish.api.service.ai.vocabulary.VocabularyAiEnrichService;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.PagingSearchUtil;
 import com.courseenglish.api.util.constant.VocabularySetStatusEnum;
@@ -44,6 +46,7 @@ public class VocabularySetServiceImpl implements VocabularySetService {
     private final VocabularySetRepository setRepository;
     private final VocabularySetMemberRepository memberRepository;
     private final VocabularyWordService vocabularyWordService;
+    private final VocabularyAiEnrichService vocabularyAiEnrichService;
     private final SubjectRepository subjectRepository;
     private final ObjectMapper objectMapper;
 
@@ -51,11 +54,13 @@ public class VocabularySetServiceImpl implements VocabularySetService {
             VocabularySetRepository setRepository,
             VocabularySetMemberRepository memberRepository,
             VocabularyWordService vocabularyWordService,
+            VocabularyAiEnrichService vocabularyAiEnrichService,
             SubjectRepository subjectRepository,
             ObjectMapper objectMapper) {
         this.setRepository = setRepository;
         this.memberRepository = memberRepository;
         this.vocabularyWordService = vocabularyWordService;
+        this.vocabularyAiEnrichService = vocabularyAiEnrichService;
         this.subjectRepository = subjectRepository;
         this.objectMapper = objectMapper;
     }
@@ -168,6 +173,19 @@ public class VocabularySetServiceImpl implements VocabularySetService {
     }
 
     @Override
+    public ResVocabularyAiEnrichResultDTO enrichFromAi(UUID setId) throws IdInvalidException {
+        setRepository.findByIdAndVoidedFalse(setId)
+                .orElseThrow(() -> new IdInvalidException("Bộ từ vựng không tồn tại"));
+
+        List<VocabularySetMember> members = memberRepository.findResolvedBySetId(setId);
+        List<VocabularyWord> words = members.stream()
+                .map(VocabularySetMember::getVocabularyWord)
+                .distinct()
+                .toList();
+        return vocabularyAiEnrichService.enrichWords(words);
+    }
+
+    @Override
     @Transactional
     public void delete(UUID id) throws IdInvalidException {
         VocabularySet entity = setRepository.findByIdAndVoidedFalse(id)
@@ -231,6 +249,7 @@ public class VocabularySetServiceImpl implements VocabularySetService {
                     vocabularyWordService.findOrCreateForSetItem(
                             item.getWordEn(),
                             item.getMeaningVi(),
+                            item.getPhonetic(),
                             item.getPartOfSpeech(),
                             item.getExampleSentence());
             VocabularySetMember member = new VocabularySetMember();

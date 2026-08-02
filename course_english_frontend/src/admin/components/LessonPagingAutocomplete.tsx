@@ -8,6 +8,7 @@ type LessonPagingAutocompleteProps = {
   disabled?: boolean;
   error?: boolean;
   helperText?: string;
+  startIcon?: React.ReactNode;
 };
 
 function lessonKey(item: LessonRecord) {
@@ -28,6 +29,7 @@ export function LessonPagingAutocomplete({
   disabled = false,
   error = false,
   helperText,
+  startIcon,
 }: LessonPagingAutocompleteProps) {
   const fetchPage: FetchPageFn<LessonRecord> = async ({ page, size, search }) => {
     const params: Record<string, unknown> = { page, size, sort: "title,asc" };
@@ -54,6 +56,7 @@ export function LessonPagingAutocomplete({
       error={error}
       helperText={helperText}
       placeholder="Chọn bài học (tuỳ chọn)..."
+      startIcon={startIcon}
     />
   );
 }

@@ -16,6 +16,8 @@
 @import "./admin-manage-enrollment.css";
 @import "./admin-manage-stories.css";
 @import "./admin-rabbitmq-lab.css";
+@import "./admin-exam-papers.css";
+
 
 :root {
   --ac-primary: #004ac6;

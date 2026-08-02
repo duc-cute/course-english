@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { studentRoutePaths } from "../../shared/constants/paths";
 import { useFeatureFlags } from "../../shared/featureFlags/useFeatureFlags";
+import "../../styles/lesson-player.css";
 import { ExercisePlayer } from "../lessonPlayer/exercise/ExercisePlayer";
 import { buildVocabPracticeSession } from "./buildVocabPracticeSession";
 import { VocabWordList } from "./VocabWordList";

@@ -1,17 +1,14 @@
 import AddIcon from "@mui/icons-material/Add";
 import RouteOutlinedIcon from "@mui/icons-material/RouteOutlined";
 import SearchIcon from "@mui/icons-material/Search";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutline";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-import StyleOutlinedIcon from "@mui/icons-material/StyleOutlined";
 
 import {
   Alert,
@@ -44,6 +41,7 @@ import {
   muDialogFooter,
   muFooterBtnOutlined,
   muFooterBtnPrimary,
+  muSelectAllowEmpty,
   muTextFieldSx,
 } from "./manageUserUiStyles";
 
@@ -56,6 +54,7 @@ function unwrapRows(response: unknown): VocabularyJourneyRecord[] {
   return Array.isArray(raw) ? raw : [];
 }
 
+/** Cover fallback khi chưa có coverImageUrl — sẽ chỉnh sau */
 const getThemeClassAndIcon = (title: string) => {
   const cleanTitle = title.toLowerCase().trim();
   if (cleanTitle.includes("ocean") || cleanTitle.includes("đại dương") || cleanTitle.includes("biển")) {
@@ -73,74 +72,18 @@ const getThemeClassAndIcon = (title: string) => {
   return { theme: "fallback-theme-default", icon: "✨" };
 };
 
-const getJourneyProgress = (title: string, status: string) => {
-  const cleanTitle = title.toLowerCase().trim();
-  if (cleanTitle.includes("ocean")) return 75;
-  if (cleanTitle.includes("forest")) return 60;
-  if (cleanTitle.includes("city")) return 20;
-  if (cleanTitle.includes("space")) return 0;
-  return status === "PUBLISHED" ? 75 : status === "DRAFT" ? 20 : 0;
-};
-
-const getJourneyVocabCount = (row: VocabularyJourneyRecord) => {
-  const cleanTitle = row.title.toLowerCase().trim();
-  if (cleanTitle.includes("ocean")) return 20;
-  if (cleanTitle.includes("forest")) return 18;
-  if (cleanTitle.includes("city")) return 0;
-  if (cleanTitle.includes("space")) return 0;
-  return (row.topicCount || 0) * 10;
-};
-
 const formatJourneyDate = (row: VocabularyJourneyRecord) => {
-  const cleanTitle = row.title.toLowerCase().trim();
-  if (cleanTitle.includes("ocean")) return "12/07/2026";
-  if (cleanTitle.includes("forest")) return "10/07/2026";
-  if (cleanTitle.includes("city")) return "08/07/2026";
-  if (cleanTitle.includes("space")) return "05/07/2026";
-
   const dateStr = row.updatedAt || row.createdAt;
-  if (!dateStr) return "13/07/2026";
+  if (!dateStr) return "—";
   try {
     const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "—";
     const pad = (n: number) => n.toString().padStart(2, "0");
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   } catch {
-    return "13/07/2026";
+    return "—";
   }
 };
-
-function CircularProgressRing({ value }: { value: number }) {
-  const radius = 30;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (value / 100) * circumference;
-
-  return (
-    <div className="journey-progress-container">
-      <svg viewBox="0 0 80 80" className="progress-ring-svg">
-        <circle
-          className="progress-ring-circle-bg"
-          strokeWidth={5}
-          r={radius}
-          cx="40"
-          cy="40"
-        />
-        <circle
-          className="progress-ring-circle"
-          strokeWidth={5}
-          strokeDasharray={`${circumference} ${circumference}`}
-          style={{ strokeDashoffset }}
-          r={radius}
-          cx="40"
-          cy="40"
-        />
-      </svg>
-      <div className="progress-ring-text-container">
-        <span className="progress-ring-val">{value}%</span>
-        <span className="progress-ring-lbl">Hoàn thành</span>
-      </div>
-    </div>
-  );
-}
 
 export function ManageVocabularyJourneysPage() {
   const navigate = useNavigate();
@@ -155,9 +98,10 @@ export function ManageVocabularyJourneysPage() {
   const [title, setTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<VocabularyJourneyRecord | null>(null);
-
-  // Three dots menu state
-  const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; row: VocabularyJourneyRecord } | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<{
+    element: HTMLElement;
+    row: VocabularyJourneyRecord;
+  } | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -216,7 +160,6 @@ export function ManageVocabularyJourneysPage() {
     }
   };
 
-  // Local sorting based on sortBy selection
   const sortedRows = [...rows].sort((a, b) => {
     if (sortBy === "newest") {
       const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -231,14 +174,12 @@ export function ManageVocabularyJourneysPage() {
     return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
   });
 
-  // Calculate statistics
   const totalCount = rows.length;
   const publishedCount = rows.filter((r) => r.status === "PUBLISHED").length;
   const draftCount = rows.filter((r) => r.status === "DRAFT").length;
 
   return (
     <Box className="vocab-journeys-container">
-      {/* Premium Header */}
       <header className="journey-header">
         <div className="journey-header-left">
           <div className="journey-header-icon">
@@ -254,7 +195,6 @@ export function ManageVocabularyJourneysPage() {
           </div>
         </div>
         <div className="journey-create-btn-wrapper">
-          {/* Dashed curved arrow decoration */}
           <svg className="decorator-arrow" width="60" height="50" viewBox="0 0 60 50" fill="none">
             <path
               d="M 5 45 C 10 25, 25 10, 52 18"
@@ -284,7 +224,6 @@ export function ManageVocabularyJourneysPage() {
             Tạo journey mới
           </Button>
 
-          {/* Sparkles decoration */}
           <svg className="decorator-sparkles" width="40" height="40" viewBox="0 0 40 40" fill="none">
             <path
               d="M 22 4 Q 22 14 32 14 Q 22 14 22 24 Q 22 14 12 14 Q 22 14 22 4 Z"
@@ -298,7 +237,6 @@ export function ManageVocabularyJourneysPage() {
         </div>
       </header>
 
-      {/* Statistics cards grid */}
       <section className="journey-stats-grid">
         <div className="journey-stat-card">
           <div className="journey-stat-icon-wrapper total">
@@ -332,20 +270,8 @@ export function ManageVocabularyJourneysPage() {
             <span className="journey-stat-desc">Chưa xuất bản</span>
           </div>
         </div>
-
-        <div className="journey-stat-card">
-          <div className="journey-stat-icon-wrapper students">
-            <PeopleAltOutlinedIcon />
-          </div>
-          <div className="journey-stat-content">
-            <span className="journey-stat-value">1.542</span>
-            <span className="journey-stat-title">Học sinh</span>
-            <span className="journey-stat-desc">Đã tham gia</span>
-          </div>
-        </div>
       </section>
 
-      {/* Filter toolbar */}
       <Box className="journey-toolbar-card">
         <div className="journey-toolbar-row">
           <TextField
@@ -374,6 +300,7 @@ export function ManageVocabularyJourneysPage() {
               size="small"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
+              SelectProps={muSelectAllowEmpty}
               fullWidth
             >
               <MenuItem value="">Trạng thái: Tất cả</MenuItem>
@@ -399,10 +326,10 @@ export function ManageVocabularyJourneysPage() {
 
           <Button
             className="journey-filter-btn"
-            startIcon={<FilterListIcon />}
+            startIcon={<SearchIcon />}
             onClick={() => setKeyword(searchInput)}
           >
-            Lọc nâng cao
+            Tìm
           </Button>
         </div>
       </Box>
@@ -413,7 +340,6 @@ export function ManageVocabularyJourneysPage() {
         </Alert>
       ) : null}
 
-      {/* Content body */}
       {loading ? (
         <Box sx={{ display: "grid", gap: 2 }}>
           {[1, 2, 3].map((i) => (
@@ -428,13 +354,10 @@ export function ManageVocabularyJourneysPage() {
         <div className="journey-list-wrap">
           {sortedRows.map((row) => {
             const themeInfo = getThemeClassAndIcon(row.title);
-            const progress = getJourneyProgress(row.title, row.status);
-            const vocabCount = getJourneyVocabCount(row);
             const updateDate = formatJourneyDate(row);
 
             return (
               <div className="journey-item-card" key={row.id}>
-                {/* Cover Image or Fallback */}
                 <div className="journey-cover-wrapper">
                   {row.coverImageUrl ? (
                     <img
@@ -444,14 +367,11 @@ export function ManageVocabularyJourneysPage() {
                     />
                   ) : (
                     <div className={`journey-cover-fallback ${themeInfo.theme}`}>
-                      <span className="journey-cover-fallback-icon">
-                        {themeInfo.icon}
-                      </span>
+                      <span className="journey-cover-fallback-icon">{themeInfo.icon}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Journey Details */}
                 <div className="journey-info-section">
                   <div className="journey-title-container">
                     <Typography className="journey-card-title">{row.title}</Typography>
@@ -461,7 +381,8 @@ export function ManageVocabularyJourneysPage() {
                   </div>
 
                   <Typography className="journey-card-desc">
-                    {row.description || `Khám phá lộ trình học từ vựng chủ đề ${row.title} với các bài học thiết kế sinh động.`}
+                    {row.description ||
+                      `Khám phá lộ trình học từ vựng chủ đề ${row.title} với các bài học thiết kế sinh động.`}
                   </Typography>
 
                   <div className="journey-card-meta-row">
@@ -474,20 +395,12 @@ export function ManageVocabularyJourneysPage() {
                       <span>{row.classroomCount ?? 0} lớp</span>
                     </div>
                     <div className="journey-meta-bubble">
-                      <StyleOutlinedIcon className="journey-meta-icon" />
-                      <span>{vocabCount} từ vựng</span>
-                    </div>
-                    <div className="journey-meta-bubble">
                       <AccessTimeIcon className="journey-meta-icon" />
                       <span>Cập nhật: {updateDate}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Circular Progress Indicator */}
-                <CircularProgressRing value={progress} />
-
-                {/* Actions stack */}
                 <div className="journey-actions-stack">
                   <Button
                     variant="outlined"
@@ -501,7 +414,9 @@ export function ManageVocabularyJourneysPage() {
                     variant="outlined"
                     className="journey-action-btn edit"
                     startIcon={<EditOutlinedIcon />}
-                    onClick={() => navigate(`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_JOURNEYS}/${row.id}`)}
+                    onClick={() =>
+                      navigate(`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_JOURNEYS}/${row.id}`)
+                    }
                   >
                     Sửa
                   </Button>
@@ -515,7 +430,6 @@ export function ManageVocabularyJourneysPage() {
                   </Button>
                 </div>
 
-                {/* Three dots menu */}
                 <IconButton
                   className="journey-card-dots"
                   onClick={(e) => setMenuAnchor({ element: e.currentTarget, row })}
@@ -528,7 +442,6 @@ export function ManageVocabularyJourneysPage() {
         </div>
       )}
 
-      {/* Menu for Three dots on mobile */}
       <Menu
         anchorEl={menuAnchor?.element}
         open={Boolean(menuAnchor)}
@@ -548,7 +461,9 @@ export function ManageVocabularyJourneysPage() {
         <MenuItem
           onClick={() => {
             if (menuAnchor) {
-              navigate(`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_JOURNEYS}/${menuAnchor.row.id}`);
+              navigate(
+                `/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_JOURNEYS}/${menuAnchor.row.id}`,
+              );
             }
             setMenuAnchor(null);
           }}
@@ -570,7 +485,6 @@ export function ManageVocabularyJourneysPage() {
         </MenuItem>
       </Menu>
 
-      {/* Create Dialog */}
       <Dialog open={openCreate} onClose={() => setOpenCreate(false)} fullWidth maxWidth="sm">
         <DialogTitle>Tạo Learning Journey</DialogTitle>
         <DialogContent>
@@ -598,7 +512,6 @@ export function ManageVocabularyJourneysPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Confirm Delete Dialog */}
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Xóa journey?"

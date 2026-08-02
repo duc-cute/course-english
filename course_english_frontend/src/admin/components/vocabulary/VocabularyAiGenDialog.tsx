@@ -206,6 +206,7 @@ export function VocabularyAiGenDialog({ open, onClose, onGenerated }: Vocabulary
       items: envelope.items.map((item) => ({
         wordEn: item.wordEn,
         meaningVi: item.meaningVi,
+        phonetic: item.phonetic,
         partOfSpeech: item.partOfSpeech,
         exampleSentence: item.exampleSentence,
       })),
@@ -247,8 +248,8 @@ export function VocabularyAiGenDialog({ open, onClose, onGenerated }: Vocabulary
         {step === "config" ? (
           <>
             <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
-              Mô tả chủ đề bộ từ — AI sinh tiêu đề, mô tả và danh sách từ (EN + nghĩa VI). Bạn xem trước và sửa
-              trước khi lưu.
+              Mô tả chủ đề bộ từ — AI sinh tiêu đề, mô tả, IPA và danh sách từ (EN + nghĩa VI). Bạn xem trước và
+              sửa trước khi lưu.
             </Typography>
 
             <TextField
@@ -368,6 +369,7 @@ export function VocabularyAiGenDialog({ open, onClose, onGenerated }: Vocabulary
                     <tr>
                       <th className="vocab-set-editor__th vocab-set-editor__th--num">#</th>
                       <th className="vocab-set-editor__th">Từ vựng (Word)</th>
+                      <th className="vocab-set-editor__th">IPA</th>
                       <th className="vocab-set-editor__th">Nghĩa (Meaning)</th>
                       <th className="vocab-set-editor__th vocab-set-editor__th--pos">Loại từ</th>
                       <th className="vocab-set-editor__th">Ví dụ (Example)</th>
@@ -379,6 +381,13 @@ export function VocabularyAiGenDialog({ open, onClose, onGenerated }: Vocabulary
                         <td className="vocab-set-editor__td vocab-set-editor__td--num">{i + 1}</td>
                         <td className="vocab-set-editor__td">
                           <span className="vocab-set-editor__preview-word">{row.wordEn}</span>
+                        </td>
+                        <td className="vocab-set-editor__td">
+                          {row.phonetic ? (
+                            <span className="vocab-set-editor__phonetic">{row.phonetic}</span>
+                          ) : (
+                            "—"
+                          )}
                         </td>
                         <td className="vocab-set-editor__td">{row.meaningVi}</td>
                         <td className="vocab-set-editor__td">

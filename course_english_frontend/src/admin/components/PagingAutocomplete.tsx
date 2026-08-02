@@ -34,6 +34,7 @@ type PagingAutocompleteProps<T> = {
   getOptionLabel: (option: T) => string;
   getOptionKey: (option: T) => string;
   renderSecondaryLine?: (option: T) => string | null;
+  startIcon?: React.ReactNode;
 };
 
 export function PagingAutocomplete<T>({
@@ -49,6 +50,7 @@ export function PagingAutocomplete<T>({
   getOptionLabel,
   getOptionKey,
   renderSecondaryLine,
+  startIcon,
 }: PagingAutocompleteProps<T>) {
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<T[]>([]);
@@ -233,6 +235,14 @@ export function PagingAutocomplete<T>({
           slotProps={{
             input: {
               ...params.InputProps,
+              startAdornment: startIcon ? (
+                <>
+                  {startIcon}
+                  {params.InputProps.startAdornment}
+                </>
+              ) : (
+                params.InputProps.startAdornment
+              ),
               endAdornment: (
                 <>
                   {loading ? <CircularProgress color="inherit" size={16} /> : null}

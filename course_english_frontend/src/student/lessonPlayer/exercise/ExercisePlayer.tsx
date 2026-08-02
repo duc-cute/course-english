@@ -136,19 +136,6 @@ export function ExercisePlayer({
     return () => clearInterval(interval);
   }, [isVocab, sessionSeed]);
 
-  const getChoiceEmoji = (choiceText: string, index: number) => {
-    const text = choiceText.toLowerCase();
-    if (text.includes("bạn") || text.includes("người") || text.includes("tôi") || text.includes("ta")) return "👥";
-    if (text.includes("học") || text.includes("trường") || text.includes("lớp")) return "🏫";
-    if (text.includes("kỳ nghỉ") || text.includes("du lịch") || text.includes("biển") || text.includes("đảo") || text.includes("dã ngoại")) return "🏝️";
-    if (text.includes("lo lắng") || text.includes("buồn") || text.includes("sợ") || text.includes("căng thẳng")) return "😟";
-    if (text.includes("vui") || text.includes("thú vị") || text.includes("sướng")) return "😊";
-    if (text.includes("sách") || text.includes("vở") || text.includes("bút")) return "📚";
-    if (text.includes("nhà") || text.includes("gia đình") || text.includes("bố") || text.includes("mẹ")) return "🏠";
-    const fallbacks = ["🧑‍🤝‍🧑", "🌴", "💭", "🏫"];
-    return fallbacks[index % fallbacks.length];
-  };
-
   const playWordAudio = () => {
     const wordObj = currentMcq || currentListen;
     const audioUrl = (wordObj as any)?.audioUkUrl || (wordObj as any)?.audioUsUrl || (wordObj as any)?.audioUrl;
@@ -964,9 +951,14 @@ export function ExercisePlayer({
   const showFeedback = phase === "feedback";
 
   if (isVocab) {
-    const wordEn = currentMcq?.wordEn || (current.displayQuestion as any).prompt?.text || "";
-    const pos = currentMcq?.partOfSpeech || "Danh từ";
+    const wordEn = (
+      currentMcq?.wordEn ||
+      currentMcq?.prompt?.text ||
+      ""
+    ).trim();
+    const pos = currentMcq?.partOfSpeech || "";
     const phonetic = currentMcq?.phonetic || "";
+    const showWordCard = Boolean(currentMcq && wordEn);
     
     const getWordIllustration = (word: string) => {
       const images = [
@@ -991,7 +983,7 @@ export function ExercisePlayer({
       return images[index]!;
     };
 
-    const imageUrl = currentMcq?.coverImageUrl || getWordIllustration(wordEn);
+    const imageUrl = currentMcq?.coverImageUrl || getWordIllustration(wordEn || lessonTitle || "vocab");
     const progressPercent = total > 0 ? Math.round(((questionIndex) / total) * 100) : 0;
 
     const reviewWords = [
@@ -1061,27 +1053,33 @@ export function ExercisePlayer({
               </div>
             </div>
 
-            {/* Target Word Card */}
-            <div className="vq-vocab-practice-word-card">
-              <div className="vq-vocab-practice-word-card__left">
-                <img src={imageUrl} alt={wordEn} className="vq-vocab-practice-word-card__img" />
-              </div>
-              <div className="vq-vocab-practice-word-card__right">
-                <h2 className="vq-vocab-practice-word-card__en">{wordEn}</h2>
-                <div className="vq-vocab-practice-word-card__phonetic-row">
-                  <button type="button" className="vq-vocab-practice-word-card__audio-btn" onClick={playWordAudio}>
-                    🔊
-                  </button>
-                  {phonetic ? (
-                    <span className="vq-vocab-practice-word-card__phonetic">{phonetic}</span>
-                  ) : null}
+            {/* Target Word Card — only for meaning MCQ that has a target word */}
+            {showWordCard ? (
+              <div className="vq-vocab-practice-word-card">
+                <div className="vq-vocab-practice-word-card__left">
+                  <img src={imageUrl} alt={wordEn} className="vq-vocab-practice-word-card__img" />
                 </div>
-                <span className="vq-vocab-practice-word-card__pos">{pos}</span>
+                <div className="vq-vocab-practice-word-card__right">
+                  <h2 className="vq-vocab-practice-word-card__en">{wordEn}</h2>
+                  <div className="vq-vocab-practice-word-card__phonetic-row">
+                    <button type="button" className="vq-vocab-practice-word-card__audio-btn" onClick={playWordAudio}>
+                      🔊
+                    </button>
+                    {phonetic ? (
+                      <span className="vq-vocab-practice-word-card__phonetic">{phonetic}</span>
+                    ) : null}
+                  </div>
+                  {pos ? <span className="vq-vocab-practice-word-card__pos">{pos}</span> : null}
+                </div>
               </div>
-            </div>
+            ) : null}
 
             {/* Question instruction */}
-            <h3 className="vq-vocab-practice-instruction">Chọn nghĩa đúng của từ vựng trên</h3>
+            <h3 className="vq-vocab-practice-instruction">
+              {currentMcq
+                ? "Chọn nghĩa đúng của từ vựng trên"
+                : current.instruction?.trim() || "Trả lời câu hỏi bên dưới"}
+            </h3>
 
             {/* MCQ Options Grid */}
             {currentMcq ? (
@@ -1098,8 +1096,6 @@ export function ExercisePlayer({
                     else if (isSelected) cardClass += " is-wrong";
                   }
 
-                  const emoji = getChoiceEmoji(choice.text, i);
-
                   return (
                     <button
                       key={choice.id}
@@ -1108,7 +1104,6 @@ export function ExercisePlayer({
                       className={cardClass}
                       onClick={() => handleSelectChoice(choice.id)}
                     >
-                      <span className="vq-vocab-practice-mcq-card__emoji">{emoji}</span>
                       <div className="vq-vocab-practice-mcq-card__letter">{letters[i]}</div>
                       <span className="vq-vocab-practice-mcq-card__text">{choice.text}</span>
                     </button>

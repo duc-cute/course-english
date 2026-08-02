@@ -20,6 +20,7 @@ public class AiVocabularySetGenResultValidator {
   private static final int TITLE_MAX_LEN = 255;
   private static final int DESCRIPTION_MAX_LEN = 2000;
   private static final int WORD_EN_MAX_LEN = 255;
+  private static final int PHONETIC_MAX_LEN = 128;
   private static final int EXAMPLE_MAX_LEN = 500;
   private static final int COVER_PROMPT_MAX_LEN = 1000;
   private static final Pattern POS_PATTERN =
@@ -73,6 +74,7 @@ public class AiVocabularySetGenResultValidator {
       AiVocabularySetItemDTO item = new AiVocabularySetItemDTO();
       item.setWordEn(wordEn);
       item.setMeaningVi(meaningVi);
+      item.setPhonetic(normalizePhonetic(optionalText(itemNode, "phonetic", PHONETIC_MAX_LEN)));
       item.setPartOfSpeech(normalizePartOfSpeech(optionalText(itemNode, "partOfSpeech", 64)));
       item.setExampleSentence(optionalText(itemNode, "exampleSentence", EXAMPLE_MAX_LEN));
       items.add(item);
@@ -100,6 +102,18 @@ public class AiVocabularySetGenResultValidator {
       return null;
     }
     return normalized;
+  }
+
+  /** Keep IPA text; wrap with slashes when AI omits them. Soft — blank stays null. */
+  private static String normalizePhonetic(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return null;
+    }
+    String value = raw.trim();
+    if (value.startsWith("/") && value.endsWith("/") && value.length() >= 2) {
+      return value;
+    }
+    return "/" + value.replaceAll("^/+|/+$", "") + "/";
   }
 
   private static String requiredText(JsonNode node, String field, int maxLen, String label)

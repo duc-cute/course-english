@@ -13,6 +13,7 @@ type ClassroomPagingAutocompleteProps = {
   disabled?: boolean;
   error?: boolean;
   helperText?: string;
+  startIcon?: React.ReactNode;
 };
 
 function classroomKey(item: ClassroomRecord) {
@@ -26,6 +27,7 @@ export function ClassroomPagingAutocomplete({
   disabled = false,
   error = false,
   helperText,
+  startIcon,
 }: ClassroomPagingAutocompleteProps) {
   const fetchPage: FetchPageFn<ClassroomRecord> = async ({ page, size, search }) => {
     const params: Record<string, unknown> = { page, size, sort: "name,asc" };
@@ -52,6 +54,7 @@ export function ClassroomPagingAutocomplete({
       error={error}
       helperText={helperText}
       placeholder="Chọn lớp học..."
+      startIcon={startIcon}
     />
   );
 }

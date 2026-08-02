@@ -32,6 +32,7 @@ public interface VocabularyWordService {
     VocabularyWord findOrCreateForSetItem(
             String wordEn,
             String meaningVi,
+            String phonetic,
             String partOfSpeech,
             String exampleSentence) throws IdInvalidException;
 

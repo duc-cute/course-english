@@ -50,13 +50,16 @@ class SpeechService:
             word_timeline: list = []
             sentence_timeline: list = []
             try:
-                word_timeline, sentence_timeline = await self._alignment.align(
-                    audio_path=synthesis.audio_path,
-                    text=request.text,
-                    tokens=request.tokens,
-                    sentence_refs=request.sentences,
-                    provider_name=request.alignment_provider,
-                )
+                if (request.alignment_provider or "").strip().lower() in {"none", "skip", "off"}:
+                    logger.info("[TTS] Alignment skipped by request (alignmentProvider=%s)", request.alignment_provider)
+                else:
+                    word_timeline, sentence_timeline = await self._alignment.align(
+                        audio_path=synthesis.audio_path,
+                        text=request.text,
+                        tokens=request.tokens,
+                        sentence_refs=request.sentences,
+                        provider_name=request.alignment_provider,
+                    )
             except ProviderNotReadyError:
                 logger.warning("[TTS] Alignment skipped — provider not ready")
             except SpeechPlatformError as exc:

@@ -384,6 +384,68 @@
   padding: 8px 0;
 }
 
+/* Reuse lesson-player exercise styles inside vocab dashboard (not under .student-player-shell) */
+.vq-vocab-practice-fallback-question .exercise-listen,
+.vq-vocab-practice-fallback-question .exercise-typed,
+.vq-vocab-practice-fallback-question .exercise-fill-blank,
+.vq-vocab-practice-fallback-question .exercise-gap-fill-mcq,
+.vq-vocab-practice-fallback-question .exercise-matching,
+.vq-vocab-practice-fallback-question .exercise-reorder,
+.vq-vocab-practice-fallback-question .exercise-tf,
+.vq-vocab-practice-fallback-question .exercise-reading {
+  max-width: none;
+  margin: 0;
+}
+
+.vq-vocab-practice-fallback-question .exercise-mcq-grid {
+  max-width: none;
+  margin: 0;
+}
+
+.vq-vocab-practice-fallback-question .exercise-mcq-option {
+  border-radius: 16px;
+  border-color: #e2e8f0;
+  background: #fff;
+}
+
+.vq-vocab-practice-fallback-question .exercise-mcq-option:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.vq-vocab-practice-fallback-question .exercise-mcq-option.is-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.vq-vocab-practice-fallback-question .exercise-mcq-option-num {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.vq-vocab-practice-fallback-question .exercise-listen-play {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.vq-vocab-practice-fallback-question .exercise-listen-play:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.vq-vocab-practice-fallback-question .exercise-typed-input,
+.vq-vocab-practice-fallback-question .exercise-fill-blank-input {
+  border-color: #bfdbfe;
+}
+
+.vq-vocab-practice-fallback-question .exercise-typed-input:focus:not(:disabled),
+.vq-vocab-practice-fallback-question .exercise-fill-blank-input:focus:not(:disabled) {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
 .vq-vocab-practice-actions {
   display: flex;
   justify-content: flex-end;

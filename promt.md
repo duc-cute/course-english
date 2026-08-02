@@ -1,190 +1,409 @@
-Prompt
+Design and implement a new feature called "Innovation Hub" for the Course English platform.
 
-I want to redesign the Student Vocabulary Learning module for an AI-powered English Learning Platform.
+The goal is to create a place where teachers and students can submit ideas, report issues, vote for feature requests, and follow the product roadmap. This should feel like a modern SaaS community portal similar to GitHub Discussions, Linear, Notion, or Figma Community.
 
-Overall Concept
+=================================================
+GENERAL STYLE
+=================================================
 
-The platform has three roles:
+The design language should match the rest of Course English.
 
-Admin manages the global Word Library and publishes Vocabulary Sets.
-Teachers select existing Vocabulary Sets (or create their own if permitted) and assign them to one or multiple classes.
-Students do not manage vocabulary. They only learn through Vocabulary Sets that are either assigned by teachers or publicly available.
+Modern SaaS UI.
 
-Students should never see the internal Word Library, because it is only a data source for administrators.
+Rounded cards.
 
-The student experience should focus on learning, practicing, reviewing, and mastering vocabulary, not managing vocabulary resources.
+Large spacing.
 
-Student Vocabulary Module
+Soft shadows.
 
-The student interface should contain multiple tabs.
+Blue primary color.
 
-1. Assigned
+Minimal but friendly.
 
-Display all Vocabulary Sets assigned by teachers.
+Lots of white space.
 
-Each card should include:
+Use subtle gradients.
 
-Cover image
-Vocabulary Set name
-Teacher name
-Number of words
-Learning progress
-Due date (if any)
-Continue Learning button
+Responsive for desktop and mobile.
 
-Students can open a set and continue learning from where they left off.
+Avoid tables whenever possible.
 
-2. Explore
+Everything should feel like a premium AI product.
 
-A public vocabulary library where students can freely explore Vocabulary Sets published by the school or teachers.
+=================================================
+SIDEBAR
+=================================================
 
-Examples:
+Add a new sidebar menu.
 
-Business English
-Travel
-Food
-Animals
-Marketing
-IELTS
-Daily Conversation
+💡 Innovation Hub
 
-Students can preview a set before starting.
+Place it above Settings.
 
-3. Favorites
+Show a small badge if there are new popular ideas.
 
-Students can bookmark:
+Example
 
-Vocabulary Sets
-Individual words
+Innovation Hub 🔥3
 
-This allows them to quickly revisit important content.
+=================================================
+PAGE HEADER
+=================================================
 
-4. Review
+Large title
 
-This section contains words that require revision.
+Innovation Hub
 
-The AI should automatically recommend review sessions based on learning history and previous mistakes.
+Subtitle
 
-Instead of reviewing an entire Vocabulary Set, students review only the words they have not yet mastered.
+Help improve Course English by sharing ideas, voting for features, reporting bugs, and following the product roadmap.
 
-5. Completed
+On the right
 
-Display all completed Vocabulary Sets.
+Primary Button
 
-Each card should show:
+- Submit Idea
 
-Completion percentage
-Accuracy
-Total study time
-Last studied date
-Review button
-Vocabulary Set Detail
+=================================================
+TOP OVERVIEW CARDS
+=================================================
 
-When opening a Vocabulary Set, students should see:
+Display four statistic cards.
 
-Cover image
+Total Ideas
+
+Ideas Submitted This Week
+
+Completed Features
+
+Community Votes
+
+Each card should have
+
+icon
+
+number
+
+small trend
+
+soft gradient background
+
+=================================================
+LAYOUT
+=================================================
+
+Desktop
+
+Left content area (70%)
+
+Right AI summary panel (30%)
+
+=================================================
+LEFT CONTENT
+=================================================
+
+Tabs
+
+Discover
+
+Trending
+
+Roadmap
+
+My Ideas
+
+---
+
+Discover
+
+Display feature request cards.
+
+Each card contains
+
 Title
+
+Short description
+
+Category badge
+
+Status badge
+
+Vote count
+
+Comment count
+
+Created by
+
+Buttons
+
+Vote
+
+Comment
+
+View Details
+
+Example
+
+Dark Mode
+
+Requested by many teachers for classroom use.
+
+Category
+
+UI
+
+Status
+
+Planning
+
+632 Votes
+
+92 Comments
+
+---
+
+Trending
+
+Sort by
+
+Today
+
+Week
+
+Month
+
+All Time
+
+Display ranking cards.
+
+---
+
+Roadmap
+
+Display a vertical roadmap.
+
+Statuses
+
+Under Review
+
+Planning
+
+In Progress
+
+Testing
+
+Completed
+
+Each feature card should move between stages.
+
+---
+
+My Ideas
+
+Display only ideas submitted by the current user.
+
+=================================================
+RIGHT PANEL
+=================================================
+
+Emma AI Summary
+
+AI automatically summarizes community feedback.
+
+Example
+
+This week AI analyzed 143 feedback submissions.
+
+Top requested features
+
+Dark Mode
+
+AI Speaking
+
+Mobile Improvements
+
+Better Reports
+
+Below that
+
+Recent announcements
+
+Recently completed features
+
+Community statistics
+
+=================================================
+SUBMIT IDEA
+=================================================
+
+Do NOT navigate to another page.
+
+Clicking "Submit Idea"
+
+opens a right-side Drawer.
+
+Drawer width around 500px.
+
+=================================================
+DRAWER CONTENT
+=================================================
+
+Header
+
+Submit an Idea
+
+Small helper text
+
+Share your idea to improve Course English.
+
+Fields
+
+Category
+
+Feature
+
+Bug
+
+UI
+
+Performance
+
+AI
+
+Other
+
+Title
+
 Description
-Difficulty level
-Estimated study time
-Total number of words
 
-Below that is the vocabulary list.
+Upload screenshots
 
-Each vocabulary item includes:
+Priority
 
-English word
-Vietnamese meaning
-IPA
-Pronunciation audio
-Part of speech
+Low
 
-Selecting a word opens a detailed learning page.
+Medium
 
-Word Detail
+High
 
-Each vocabulary word should contain:
+Buttons
 
-Meaning
-Pronunciation
-IPA
-Example sentences
-Audio
-Related words
-Synonyms
-Antonyms
-Collocations
-AI explanation
-AI examples
+Cancel
 
-Students can ask AI questions about any word directly.
+Submit
 
-Example:
+=================================================
+SMART AI
+=================================================
 
-What is the difference between "trip" and "journey"?
+Before submitting
 
-Learning Flow
+AI automatically checks whether similar ideas already exist.
 
-Each Vocabulary Set should support multiple learning modes.
+If duplicates are found
 
-Examples:
+Display
 
-Learn
-Flashcards
-Multiple Choice Quiz
-Fill in the Blank
-Matching
-Listening
-Typing
-Sentence Builder
-AI Conversation using the vocabulary
-AI Quiz Generator
+"We found similar ideas."
 
-Students may choose any learning mode.
+Show
 
-AI Review
+Dark Mode
 
-After each learning session, AI analyzes student performance.
+632 Votes
 
-Instead of simply marking a Vocabulary Set as completed, AI should determine:
+Planning
 
-Mastered words
-Learning words
-Difficult words
+Buttons
 
-The Review section should only contain words that need additional practice.
+Vote Existing
 
-Progress Tracking
+Submit Anyway
 
-Each Vocabulary Set should display learning progress.
+=================================================
+IDEA DETAIL PAGE
+=================================================
 
-Examples:
+Clicking View Details opens a detail page.
 
-Completion percentage
-Mastered words
-Remaining words
-Quiz accuracy
-Total learning time
-Review recommendation
+Include
 
-Students should always know what they have learned and what still requires practice.
+Large title
 
-Design Philosophy
+Description
 
-The interface should feel similar to modern learning platforms such as:
+Timeline
 
-Duolingo
-Quizlet
-Memrise
-Coursera
+Votes
 
-The experience should emphasize:
+Comments
 
-Learn
-Practice
-Review
-Improve
+Status
 
-Students should never feel like they are managing vocabulary resources.
+Activity
 
-Instead, they should feel like they are progressing through personalized learning journeys powered by AI.
+Community discussion
+
+Developer responses
+
+Progress history
+
+=================================================
+ROADMAP
+=================================================
+
+Display a Kanban style roadmap.
+
+Columns
+
+Under Review
+
+Planning
+
+Development
+
+Testing
+
+Released
+
+Cards can move between columns.
+
+=================================================
+MOBILE
+=================================================
+
+Bottom navigation remains unchanged.
+
+Innovation Hub is accessible from the sidebar or More menu.
+
+Submit Idea opens a Bottom Sheet instead of Drawer.
+
+Cards become stacked vertically.
+
+Statistics become horizontal scroll cards.
+
+=================================================
+INTERACTIONS
+=================================================
+
+Hover effects
+
+Smooth transitions
+
+Animated vote button
+
+Animated status badge
+
+Soft loading skeleton
+
+No heavy colors
+
+No complex borders
+
+=================================================
+DESIGN GOAL
+=================================================
+
+The page should feel like a premium SaaS product where users actively participate in improving the platform.
+
+The experience should encourage community engagement, transparency, and continuous product improvement rather than simply collecting feedback.

@@ -8,6 +8,7 @@ import lombok.Setter;
 public class AiVocabularySetItemDTO {
   private String wordEn;
   private String meaningVi;
+  private String phonetic;
   private String partOfSpeech;
   private String exampleSentence;
 }

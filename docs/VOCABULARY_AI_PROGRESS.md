@@ -13,10 +13,10 @@ Quản lý bộ từ: lưới card (admin) + card học viên có cover, hover t
 | Phase | Nội dung AI sinh | Trạng thái |
 |-------|------------------|------------|
 | **1 — MVP** | `title`, `description`, `wordEn`, `meaningVi` | ✅ Code xong |
-| **2a** | `partOfSpeech` (AI → từ điển), `exampleSentence` (AI) | ✅ Code xong — chờ test thủ công |
+| **2a** | `partOfSpeech`, `exampleSentence`, **`phonetic` (IPA)** | ✅ Code xong |
 | **2b** | **Ảnh cover bộ từ** (`cover_image_url`) — image-gen, không ảnh từng từ | ✅ Code xong — chờ migration + test |
 
-Sau lưu: phonetic / audio qua **Enrich cả bộ**. **POS:** ưu tiên AI; enrich chỉ bổ sung khi AI thiếu.
+Sau lưu: audio qua **Enrich cả bộ** (dictionary). **IPA / POS:** ưu tiên AI; enrich chỉ bổ sung khi AI thiếu.
 
 ---
 
@@ -82,6 +82,7 @@ Tham chiếu layout/hiệu ứng: `promt.md` (card grid, cover banner, chips pre
     {
       "wordEn": "boarding pass",
       "meaningVi": "thẻ lên máy bay",
+      "phonetic": "/ˈbɔː.dɪŋ pɑːs/",
       "partOfSpeech": "noun",
       "exampleSentence": "Please show your boarding pass at the gate."
     }
@@ -89,23 +90,26 @@ Tham chiếu layout/hiệu ứng: `promt.md` (card grid, cover banner, chips pre
 }
 ```
 
-**Quy tắc `partOfSpeech`:**
+**Quy tắc `partOfSpeech` / `phonetic`:**
 
 ```text
+IPA: AI lúc gen → Free Dictionary ghi đè nếu lookup thành công (từ đơn)
 POS cuối = AI.partOfSpeech ?? dictionary.partOfSpeech ?? null
 Enrich: không ghi đè POS đã có từ AI
+Không có bước AI IPA riêng sau lưu
 ```
 
 **`exampleSentence`:** chỉ từ AI. Enrich không đụng field này.
 
 **Checklist 2a:**
 
-- [x] Mở rộng prompt + validator + DTO item
-- [x] `ReqVocabularyItemDTO` + `findOrCreateForSetItem` (POS, example)
-- [x] `applyEnrichment`: POS chỉ set khi `word.partOfSpeech == null`
-- [x] Preview FE: cột POS + Example
+- [x] Mở rộng prompt + validator + DTO item (`phonetic`, POS, example)
+- [x] `ReqVocabularyItemDTO` + `findOrCreateForSetItem` (phonetic, POS, example)
+- [x] `applyEnrichment`: phonetic / POS chỉ set khi field đang trống
+- [x] Soft-fail dictionary (từ ghép / 5xx không rollback lưu bộ)
+- [x] Preview FE: cột IPA + POS + Example
 - [x] Student `VocabWordList`: hiển thị example + POS
-- [ ] Manual E2E: enrich bổ sung POS khi AI thiếu
+- [ ] Manual E2E: AI IPA cho cụm từ; enrich không ghi đè IPA AI
 
 ### 2b — Ảnh cover bộ từ (đã chốt: **image-gen**)
 

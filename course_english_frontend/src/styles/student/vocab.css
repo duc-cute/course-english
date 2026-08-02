@@ -847,17 +847,32 @@
 
 .vq-vocab-journey__header {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 14px;
+  gap: 8px;
   margin: 8px 0 28px;
 }
 
+.vq-vocab-journey__header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vq-vocab-journey__header-icon {
+  flex-shrink: 0;
+  display: block;
+}
+
 .vq-vocab-journey__header .vq-page-title {
-  margin: 0 0 4px;
+  margin: 0;
+  line-height: 1.15;
 }
 
 .vq-vocab-journey__header .vq-page-subtitle {
   margin: 0;
+  padding-left: 42px; /* align under title text (icon 30 + gap 12) */
 }
 
 .vq-vocab-journey__path-wrapper {

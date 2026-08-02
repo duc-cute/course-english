@@ -68,6 +68,7 @@ function AdminLayoutShell({
         mobileOpen={mobileOpen}
         desktopCollapsed={desktopCollapsed}
         onCloseMobileSidebar={onCloseMobileSidebar}
+        onToggleDesktopSidebar={onToggleDesktopSidebar}
       />
       <Box className="admin-layout-frame">
         <AdminHeader

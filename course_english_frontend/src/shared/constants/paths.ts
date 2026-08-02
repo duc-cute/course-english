@@ -29,6 +29,8 @@ export const paths = {
   MANAGE_VOCABULARY_JOURNEYS: "vocabulary-journeys",
   MANAGE_STORIES: "stories",
   MANAGE_SYSTEM_CONFIG: "system-config",
+  INNOVATION_HUB: "innovation-hub",
+  INNOVATION_HUB_DETAIL: "innovation-hub/:ideaId",
   LESSON_EDITOR: "manage-lesson/:lessonId/edit",
   REVIEW_DOC: "review-doc",
   AI_ASSISTANT: "ai-assistant",

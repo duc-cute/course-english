@@ -8,8 +8,10 @@ import {
   Alert,
   Box,
   Button,
+  IconButton,
   Skeleton,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
@@ -112,99 +114,68 @@ export function TeachingPlanSection() {
 
   return (
     <Box className="teaching-plan-section admin-panel-card" sx={{ mb: 3, p: { xs: 2, md: 3 } }}>
-      <Box className="teaching-plan-header">
+      <Box
+        className="teaching-plan-header"
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "1px solid #f1f5f9",
+          pb: 2,
+          mb: 1,
+        }}
+      >
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-            <CalendarMonthOutlinedIcon sx={{ color: "var(--ac-primary)" }} />
-            <Typography variant="h6" fontWeight={700} sx={{ color: "var(--ac-on-surface)" }}>
-              Kế hoạch dạy hôm nay
+            <CalendarMonthOutlinedIcon sx={{ color: "#2563eb", fontSize: "1.25rem" }} />
+            <Typography variant="h6" fontWeight={700} sx={{ color: "#0f172a", fontSize: "1.05rem" }}>
+              Lịch dạy hôm nay
             </Typography>
           </Stack>
-          {summary ? (
-            <Stack direction="row" flexWrap="wrap" gap={2} sx={{ color: "var(--ac-on-surface-variant)" }}>
-              <Stack direction="row" alignItems="center" spacing={0.5} component="span">
-                <SchoolOutlinedIcon sx={{ fontSize: 18, color: "var(--ac-primary)" }} />
-                <Typography variant="body2" component="span">
-                  {summary.classesToday} lớp hôm nay
-                </Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" spacing={0.5} component="span">
-                <ScheduleOutlinedIcon sx={{ fontSize: 18, color: "var(--ac-primary)" }} />
-                <Typography variant="body2" component="span" fontWeight={700} sx={{ color: "var(--ac-primary)" }}>
-                  {formatNextClassLabel(summary.nextSessionInMinutes ?? null) ?? "Không còn buổi sắp tới"}
-                </Typography>
-              </Stack>
-            </Stack>
-          ) : null}
-        </Box>
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          flexWrap="nowrap"
-          useFlexGap
-          className="teaching-plan-header-actions"
-        >
-          <Typography
-            variant="body2"
-            noWrap
-            sx={{
-              color: "var(--ac-on-surface-variant)",
-              fontWeight: 600,
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
-            {dateLabel}
+          <Typography variant="caption" sx={{ color: "#64748b", display: "block", mt: 0.5, fontWeight: 600 }}>
+            {dateLabel} {summary ? `· ${summary.classesToday} ca dạy` : ""}
           </Typography>
-          <Stack direction="row" spacing={0.5} alignItems="center" flexShrink={0}>
+        </Box>
+
+        <Stack direction="row" spacing={1} alignItems="center" flexShrink={0}>
+          <Tooltip title="Làm mới">
+            <IconButton
+              size="small"
+              onClick={() => void loadPlan()}
+              disabled={loading}
+              sx={{ border: "1px solid #e2e8f0", color: "#64748b", bgcolor: "#ffffff", "&:hover": { bgcolor: "#f8fafc" } }}
+            >
+              <RefreshOutlinedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Thêm ca dạy hôm nay">
+            <IconButton
+              size="small"
+              onClick={openCreateToday}
+              sx={{ border: "1px solid #e2e8f0", color: "#64748b", bgcolor: "#ffffff", "&:hover": { bgcolor: "#f8fafc" } }}
+            >
+              <EventOutlinedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
           <Button
-            size="small"
             variant="text"
-            className="teaching-plan-header-icon-btn"
             onClick={() => navigate(`/${paths.ADMIN}/${paths.SCHEDULE}`)}
-            sx={{ ...headerIconBtnSx, color: "var(--ac-primary)" }}
-            aria-label="Xem tuần"
-          >
-            <ChevronRightIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
-            <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.5 }}>
-              Xem tuần
-            </Box>
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            className="teaching-plan-header-icon-btn"
-            onClick={() => void loadPlan()}
-            disabled={loading}
-            sx={headerIconBtnSx}
-            aria-label="Làm mới"
-          >
-            <RefreshOutlinedIcon sx={{ fontSize: { xs: 20, sm: 24 }, display: { xs: "inline-flex", sm: "none" } }} />
-            <Box component="span" sx={{ display: { xs: "none", sm: "inline-flex" }, alignItems: "center", gap: 0.5 }}>
-              <RefreshOutlinedIcon fontSize="small" />
-              Làm mới
-            </Box>
-          </Button>
-          <Button
-            size="small"
-            variant="contained"
-            className="teaching-plan-header-icon-btn"
-            onClick={openCreateToday}
             sx={{
-              ...headerIconBtnSx,
-              boxShadow: { xs: "none", sm: "0 4px 0 0 #004395" },
-              "&:hover": { boxShadow: { xs: "none", sm: "0 4px 0 0 #004395" } },
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: "0.8125rem",
+              color: "#2563eb",
+              bgcolor: "#eff6ff",
+              borderRadius: "20px",
+              px: 2,
+              py: 0.5,
+              "&:hover": {
+                bgcolor: "#dbeafe",
+              },
             }}
-            aria-label="Thêm ca hôm nay"
           >
-            <EventOutlinedIcon sx={{ fontSize: { xs: 20, sm: 24 }, display: { xs: "inline-flex", sm: "none" } }} />
-            <Box component="span" sx={{ display: { xs: "none", sm: "inline-flex" }, alignItems: "center", gap: 0.5 }}>
-              <EventOutlinedIcon fontSize="small" />
-              + Ca hôm nay
-            </Box>
+            Xem lịch đầy đủ
           </Button>
-          </Stack>
         </Stack>
       </Box>
 

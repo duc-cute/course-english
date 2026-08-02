@@ -3,9 +3,12 @@ import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import type { ClassSessionRecord } from "../../../shared/api/classSession";
-import { formatSessionTimeRange, sessionSubtitle } from "./teachingPlanUtils";
+import { sessionSubtitle } from "./teachingPlanUtils";
+import { dayjs } from "../../../shared/datetime/dayjsConfig";
 
 type TeachingPlanTimelineItemProps = {
   session: ClassSessionRecord;
@@ -46,42 +49,95 @@ export function TeachingPlanTimelineItem({
     session.sessionType === "LIVE_CLASS" && isWaitingTeacher && onPasteMeetingLink;
   const starting = startOnlineClassLoadingId === session.id;
 
+  const getClassAbbreviation = (name: string): string => {
+    if (!name) return "Lớp";
+    const match = name.match(/\b\d+[A-Z]\b/i);
+    if (match) return match[0].toUpperCase();
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      const last = parts[parts.length - 1];
+      if (/^\d+[A-Z]?$/i.test(last)) return last.toUpperCase();
+    }
+    return name.slice(0, 3).toUpperCase();
+  };
+
+  const getClassBadgeClass = (name: string): string => {
+    const abbrev = getClassAbbreviation(name);
+    if (abbrev.includes("5")) return "var-purple";
+    if (abbrev.includes("6")) return "var-green";
+    if (abbrev.includes("7")) return "var-orange";
+    if (abbrev.includes("8")) return "var-blue";
+    const sum = abbrev.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const classes = ["var-purple", "var-green", "var-orange", "var-blue"];
+    return classes[sum % classes.length];
+  };
+
+  const renderStatusPill = () => {
+    if (isLive) {
+      return (
+        <span className="teaching-plan-row-status active">
+          <VideocamOutlinedIcon sx={{ fontSize: 16 }} />
+          Đã bắt đầu
+        </span>
+      );
+    }
+    if (isPast) {
+      return (
+        <span className="teaching-plan-row-status completed">
+          <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />
+          Đã kết thúc
+        </span>
+      );
+    }
+    if (isWaitingTeacher) {
+      return (
+        <span className="teaching-plan-row-status waiting">
+          <AccessTimeOutlinedIcon sx={{ fontSize: 16 }} />
+          Chờ bắt đầu
+        </span>
+      );
+    }
+    return (
+      <span className="teaching-plan-row-status pending">
+        <AccessTimeOutlinedIcon sx={{ fontSize: 16 }} />
+        Sắp diễn ra
+      </span>
+    );
+  };
+
+  const abbrev = getClassAbbreviation(classLabel);
+  const badgeClass = getClassBadgeClass(classLabel);
+  const startTime = session.startAt ? dayjs(session.startAt).format("HH:mm") : "00:00";
+  const endTime = session.endAt ? dayjs(session.endAt).format("HH:mm") : "00:00";
+
   return (
-    <Box
-      className={`teaching-plan-timeline-item${isLive ? " is-live" : ""}${isPast ? " is-past" : ""}${isUpcoming || isWaitingTeacher ? " is-upcoming" : ""}${isWaitingTeacher ? " is-waiting-teacher" : ""}`}
-    >
-      <Box className="teaching-plan-timeline-dot" aria-hidden />
-      <Box className="teaching-plan-timeline-body">
-        <Typography className="teaching-plan-timeline-time" variant="caption">
-          {formatSessionTimeRange(session.startAt, session.endAt)}
+    <Box className="teaching-plan-row">
+      <Box className="teaching-plan-time-col">
+        <span className="teaching-plan-time-start">{startTime}</span>
+        <span className="teaching-plan-time-end">- {endTime}</span>
+      </Box>
+      <Box className={`teaching-plan-square-badge ${badgeClass}`}>
+        {abbrev}
+      </Box>
+      <Box className="teaching-plan-row-info">
+        <Typography className="teaching-plan-row-title">
+          {session.classroomName || "Lớp học"}
         </Typography>
-        <Typography className="teaching-plan-timeline-title" variant="subtitle1">
-          {classLabel}: {session.title}
-          {session.recurring ? (
-            <Box component="span" className="teaching-plan-recurring-badge">
-              Lặp tuần
-            </Box>
-          ) : null}
-          {isLive ? (
-            <Box component="span" className="teaching-plan-live-badge">
-              Đang live
-            </Box>
-          ) : null}
-        </Typography>
-        <Typography className="teaching-plan-timeline-sub" variant="body2">
-          {sessionSubtitle(session)}
+        <Typography className="teaching-plan-row-sub">
+          {session.title || "Chưa nhập tiêu đề"}
         </Typography>
       </Box>
-      <Stack direction="row" spacing={1} className="teaching-plan-timeline-actions" flexShrink={0}>
+      <Box className="teaching-plan-row-actions">
+        {renderStatusPill()}
         {showStart ? (
           <Button
             size="small"
             variant="contained"
-            color="primary"
             className="teaching-plan-btn teaching-plan-btn--start"
             startIcon={<PlayCircleOutlineIcon />}
             onClick={() => onStartOnlineClass(session)}
             disabled={starting}
+            sx={{ borderRadius: "20px", textTransform: "none", fontWeight: 700 }}
           >
             {starting ? "Đang mở…" : "Bắt đầu lớp online"}
           </Button>
@@ -90,10 +146,10 @@ export function TeachingPlanTimelineItem({
           <Button
             size="small"
             variant="contained"
-            color="secondary"
             className="teaching-plan-btn teaching-plan-btn--paste"
             startIcon={<LinkOutlinedIcon />}
             onClick={() => onPasteMeetingLink(session)}
+            sx={{ borderRadius: "20px", textTransform: "none", fontWeight: 700 }}
           >
             Dán link Meet
           </Button>
@@ -105,6 +161,7 @@ export function TeachingPlanTimelineItem({
             className="teaching-plan-btn teaching-plan-btn--join"
             startIcon={<VideocamOutlinedIcon />}
             onClick={() => onJoinMeet(session)}
+            sx={{ borderRadius: "20px", textTransform: "none", fontWeight: 700 }}
           >
             Vào lớp
           </Button>
@@ -116,6 +173,7 @@ export function TeachingPlanTimelineItem({
             className="teaching-plan-btn"
             startIcon={<MenuBookOutlinedIcon />}
             onClick={() => onOpenLesson(session)}
+            sx={{ borderRadius: "20px", textTransform: "none", fontWeight: 700, borderColor: "#cbd5e1", color: "#475569" }}
           >
             Mở bài
           </Button>
@@ -127,6 +185,7 @@ export function TeachingPlanTimelineItem({
             className="teaching-plan-btn"
             startIcon={<LinkOutlinedIcon />}
             onClick={() => onAssignLesson(session)}
+            sx={{ borderRadius: "20px", textTransform: "none", fontWeight: 700, borderColor: "#cbd5e1", color: "#475569" }}
           >
             Gán bài
           </Button>
@@ -138,11 +197,12 @@ export function TeachingPlanTimelineItem({
             className="teaching-plan-btn"
             startIcon={<EditOutlinedIcon />}
             onClick={() => onEdit(session)}
+            sx={{ borderRadius: "20px", textTransform: "none", fontWeight: 700, borderColor: "#cbd5e1", color: "#475569" }}
           >
             Sửa
           </Button>
         ) : null}
-      </Stack>
+      </Box>
     </Box>
   );
 }

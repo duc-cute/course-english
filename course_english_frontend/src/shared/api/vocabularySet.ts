@@ -101,3 +101,17 @@ export async function apiEnrichAllVocabularySet(id: string, force = false) {
   })) as ApiResponse<{ enrichedCount?: number }>;
   return unwrapResponse(response);
 }
+
+export type VocabularyAiEnrichResult = {
+  phoneticFilled?: number;
+  phoneticSkipped?: number;
+  audioFilled?: number;
+  audioSkipped?: number;
+  audioFailed?: number;
+  message?: string;
+};
+
+export async function apiEnrichAiVocabularySet(id: string) {
+  const response = (await api.post(`/vocabulary-sets/${id}/enrich-ai`)) as ApiResponse<VocabularyAiEnrichResult>;
+  return unwrapResponse(response);
+}

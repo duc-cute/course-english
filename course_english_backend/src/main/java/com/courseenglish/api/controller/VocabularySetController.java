@@ -84,4 +84,11 @@ public class VocabularySetController {
         int enriched = vocabularySetService.enrichAll(id, force);
         return ResponseEntity.ok(java.util.Map.of("enrichedCount", enriched));
     }
+
+    @PostMapping("/{id}/enrich-ai")
+    @ApiMessage("Enrich missing IPA via AI and missing audio via Edge TTS")
+    public ResponseEntity<com.courseenglish.api.domain.response.ResVocabularyAiEnrichResultDTO> enrichFromAi(
+            @PathVariable UUID id) throws IdInvalidException {
+        return ResponseEntity.ok(vocabularySetService.enrichFromAi(id));
+    }
 }

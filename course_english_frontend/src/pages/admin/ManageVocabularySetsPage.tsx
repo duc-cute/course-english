@@ -48,6 +48,7 @@ import {
   apiCreateVocabularySet,
   apiDeleteVocabularySet,
   apiEnrichAllVocabularySet,
+  apiEnrichAiVocabularySet,
   apiGetVocabularySetById,
   apiSearchVocabularySets,
   apiUpdateVocabularySet,
@@ -126,6 +127,8 @@ export function ManageVocabularySetsPage() {
   const [categories, setCategories] = useState<QuestionCategoryRecord[]>([]);
   const [bankAiSaveMessage, setBankAiSaveMessage] = useState("");
   const [enrichingAll, setEnrichingAll] = useState(false);
+  const [enrichingAi, setEnrichingAi] = useState(false);
+  const [enrichMessage, setEnrichMessage] = useState("");
   const [assignTarget, setAssignTarget] = useState<VocabularySetRecord | null>(null);
   const [assignMessage, setAssignMessage] = useState("");
 
@@ -171,6 +174,7 @@ export function ManageVocabularySetsPage() {
   const resetForm = () => {
     setForm(createDefaultVocabularySetForm());
     setFormError("");
+    setEnrichMessage("");
     setEditing(null);
   };
 
@@ -289,6 +293,31 @@ export function ManageVocabularySetsPage() {
       setFormError((err as { message?: string })?.message || "Không thể enrich cả bộ.");
     } finally {
       setEnrichingAll(false);
+    }
+  };
+
+  const enrichAiInSet = async () => {
+    if (!editing?.id) return;
+    setEnrichingAi(true);
+    setFormError("");
+    setEnrichMessage("");
+    try {
+      const result = await apiEnrichAiVocabularySet(editing.id);
+      const payload =
+        (result as ApiResponse<{ message?: string }>)?.result ??
+        (result as ApiResponse<{ message?: string }>)?.data ??
+        (result as { message?: string });
+      const response = (await apiGetVocabularySetById(editing.id)) as ApiResponse<VocabularySetRecord>;
+      const detail = response?.result ?? response?.data;
+      if (detail) {
+        setForm(recordToForm(detail));
+        setEditing(detail);
+      }
+      setEnrichMessage(payload?.message || "Đã bổ sung IPA (AI) và audio (TTS) cho từ còn thiếu.");
+    } catch (err) {
+      setFormError((err as { message?: string })?.message || "Không thể enrich từ AI.");
+    } finally {
+      setEnrichingAi(false);
     }
   };
 
@@ -528,24 +557,41 @@ export function ManageVocabularySetsPage() {
           </IconButton>
         </div>
         <DialogContent className="vocab-set-editor-dialog__body">
+          {enrichMessage ? (
+            <Alert severity="success" sx={{ mb: 1.5 }} onClose={() => setEnrichMessage("")}>
+              {enrichMessage}
+            </Alert>
+          ) : null}
           <VocabularySetForm
             form={form}
             error={formError}
             onChange={setForm}
             onAiGenClick={() => setOpenAiGen(true)}
             onPickFromLibrary={() => setOpenPicker(true)}
+            setId={editing?.id}
+            onUploadError={setFormError}
           />
         </DialogContent>
         <DialogActions className="vocab-set-editor-dialog__footer">
           {editing?.id ? (
-            <Button
-              startIcon={<AutoAwesomeOutlinedIcon />}
-              onClick={() => void enrichAllInSet()}
-              disabled={enrichingAll || submitting}
-              sx={{ ...muFooterBtnOutlined, mr: "auto" }}
-            >
-              {enrichingAll ? "Đang enrich…" : "Enrich cả bộ"}
-            </Button>
+            <Box sx={{ display: "flex", gap: 1, mr: "auto", flexWrap: "wrap" }}>
+              <Button
+                startIcon={<AutoAwesomeOutlinedIcon />}
+                onClick={() => void enrichAllInSet()}
+                disabled={enrichingAll || enrichingAi || submitting}
+                sx={muFooterBtnOutlined}
+              >
+                {enrichingAll ? "Đang enrich…" : "Enrich từ điển"}
+              </Button>
+              <Button
+                startIcon={<AutoAwesomeOutlinedIcon />}
+                onClick={() => void enrichAiInSet()}
+                disabled={enrichingAll || enrichingAi || submitting}
+                sx={muFooterBtnOutlined}
+              >
+                {enrichingAi ? "Đang AI + TTS…" : "Enrich từ AI"}
+              </Button>
+            </Box>
           ) : null}
           <Button
             onClick={() => {

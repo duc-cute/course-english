@@ -151,15 +151,18 @@ export function VocabExploreJourneyPage() {
       ) : (
         <>
           <header className="vq-vocab-journey__header">
-            <ExploreOutlinedIcon sx={{ fontSize: 28, color: "var(--vq-primary)" }} />
-            <div>
+            <div className="vq-vocab-journey__header-title-row">
+              <ExploreOutlinedIcon
+                className="vq-vocab-journey__header-icon"
+                sx={{ fontSize: 30, color: "var(--vq-primary)" }}
+              />
               <h1 className="vq-page-title">{journey.title}</h1>
-              {journey.description?.trim() ? (
-                <p className="vq-page-subtitle">{journey.description}</p>
-              ) : (
-                <p className="vq-page-subtitle">Chọn một chủ đề để xem bộ từ và luyện tập.</p>
-              )}
             </div>
+            {journey.description?.trim() ? (
+              <p className="vq-page-subtitle">{journey.description}</p>
+            ) : (
+              <p className="vq-page-subtitle">Chọn một chủ đề để xem bộ từ và luyện tập.</p>
+            )}
           </header>
 
           {topics.length === 0 ? (

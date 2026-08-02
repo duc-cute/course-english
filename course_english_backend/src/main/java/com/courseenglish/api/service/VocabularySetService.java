@@ -29,4 +29,8 @@ public interface VocabularySetService {
 
     /** Enrich mọi từ trong bộ chưa có {@code enriched_at}. */
     int enrichAll(UUID setId, boolean force) throws IdInvalidException;
+
+    /** AI IPA (chỉ thiếu) + Edge TTS audio (chỉ thiếu). */
+    com.courseenglish.api.domain.response.ResVocabularyAiEnrichResultDTO enrichFromAi(UUID setId)
+            throws IdInvalidException;
 }

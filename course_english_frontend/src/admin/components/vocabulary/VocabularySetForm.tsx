@@ -6,7 +6,7 @@ import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import { Alert, CircularProgress, IconButton } from "@mui/material";
 import { useRef, useState } from "react";
 import type { VocabularyItemRecord, VocabularySetStatus } from "../../../shared/api/vocabularySet";
-import { resolveStorageAssetUrl } from "../../../shared/api/file";
+import { apiUploadFile, buildStoragePublicUrl, resolveStorageAssetUrl } from "../../../shared/api/file";
 import { apiLookupVocabularyWord } from "../../../shared/api/vocabularyWord";
 import { VocabularyAudioPreview } from "./VocabularyAudioPreview";
 
@@ -24,6 +24,9 @@ type VocabularySetFormProps = {
   onChange: (next: VocabularySetFormState) => void;
   onAiGenClick?: () => void;
   onPickFromLibrary?: () => void;
+  /** Khi sửa bộ từ đã có — dùng folder upload theo id */
+  setId?: string;
+  onUploadError?: (message: string) => void;
 };
 
 function emptyItem(): VocabularyItemRecord {
@@ -36,13 +39,42 @@ export function VocabularySetForm({
   onChange,
   onAiGenClick,
   onPickFromLibrary,
+  setId,
+  onUploadError,
 }: VocabularySetFormProps) {
   const [lookupIndex, setLookupIndex] = useState<number | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef(form);
+  formRef.current = form;
   const lookupCache = useRef<Record<string, boolean>>({});
 
   const updateItem = (index: number, patch: Partial<VocabularyItemRecord>) => {
     const items = form.items.map((item, i) => (i === index ? { ...item, ...patch } : item));
     onChange({ ...form, items });
+  };
+
+  const pickCover = () => {
+    if (!coverUploading) coverInputRef.current?.click();
+  };
+
+  const uploadCover = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      onUploadError?.("Chỉ chấp nhận file ảnh (JPG, PNG, WebP).");
+      return;
+    }
+    setCoverUploading(true);
+    try {
+      const folder = setId ? `vocabulary-sets/${setId}/cover` : "vocabulary-sets/covers";
+      const uploaded = await apiUploadFile(file, folder);
+      const url = buildStoragePublicUrl(folder, uploaded.fileName);
+      onChange({ ...formRef.current, coverImageUrl: url });
+    } catch (err) {
+      onUploadError?.((err as { message?: string })?.message || "Upload ảnh bìa thất bại.");
+    } finally {
+      setCoverUploading(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
   };
 
   const addItem = () => {
@@ -68,9 +100,9 @@ export function VocabularySetForm({
       if (preview) {
         updateItem(index, {
           phonetic: preview.phonetic ?? item.phonetic,
-          audioUkUrl: preview.audioUkUrl,
-          audioUsUrl: preview.audioUsUrl,
-          partOfSpeech: preview.partOfSpeech ?? item.partOfSpeech,
+          audioUkUrl: preview.audioUkUrl ?? item.audioUkUrl,
+          audioUsUrl: preview.audioUsUrl ?? item.audioUsUrl,
+          partOfSpeech: item.partOfSpeech || preview.partOfSpeech,
         });
       }
     } finally {
@@ -88,15 +120,49 @@ export function VocabularySetForm({
 
       <div className="vocab-set-editor__hero">
         <div className="vocab-set-editor__cover-wrap">
-          {form.coverImageUrl ? (
-            <div className="vocab-set-editor__cover">
+          <button
+            type="button"
+            className={`vocab-set-editor__cover${form.coverImageUrl ? "" : " vocab-set-editor__cover--placeholder"}${coverUploading ? " vocab-set-editor__cover--uploading" : ""}`}
+            onClick={pickCover}
+            disabled={coverUploading}
+            aria-label={form.coverImageUrl ? "Thay đổi ảnh bìa" : "Chọn ảnh bìa"}
+          >
+            {form.coverImageUrl ? (
               <img src={resolveStorageAssetUrl(form.coverImageUrl)} alt="" />
-            </div>
-          ) : (
-            <div className="vocab-set-editor__cover vocab-set-editor__cover--placeholder" aria-hidden>
+            ) : (
               <ImageOutlinedIcon />
-            </div>
-          )}
+            )}
+            <span className="vocab-set-editor__cover-overlay">
+              {coverUploading ? (
+                <CircularProgress size={22} sx={{ color: "#fff" }} />
+              ) : (
+                <>
+                  <ImageOutlinedIcon fontSize="small" />
+                  <span>{form.coverImageUrl ? "Đổi ảnh" : "Chọn ảnh"}</span>
+                </>
+              )}
+            </span>
+          </button>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/jpg,image/webp"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void uploadCover(file);
+            }}
+          />
+          {form.coverImageUrl && !coverUploading ? (
+            <button
+              type="button"
+              className="vocab-set-editor__cover-clear"
+              onClick={() => onChange({ ...form, coverImageUrl: undefined })}
+              aria-label="Xóa ảnh bìa"
+            >
+              <DeleteOutlineIcon fontSize="inherit" />
+            </button>
+          ) : null}
         </div>
 
         <div className="vocab-set-editor__meta">

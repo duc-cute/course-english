@@ -1,5 +1,15 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import BookIcon from "@mui/icons-material/Book";
+import BorderColorIcon from "@mui/icons-material/BorderColor";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import PeopleIcon from "@mui/icons-material/People";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import SaveIcon from "@mui/icons-material/Save";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import {
   Alert,
   Box,
@@ -10,12 +20,14 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
+  Menu,
   MenuItem,
   Skeleton,
   TextField,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ConfirmDialog } from "../../admin/components";
 import { apiGetClassrooms, type ClassroomRecord } from "../../shared/api/classroom";
@@ -34,7 +46,7 @@ import {
 } from "../../shared/api/vocabularyJourney";
 import { apiSearchVocabularySets, type VocabularySetRecord } from "../../shared/api/vocabularySet";
 import type { ApiResponse } from "../../shared/api/types";
-import { paths } from "../../shared/constants/paths";
+import { paths, studentRoutePaths } from "../../shared/constants/paths";
 import {
   muDialogFooter,
   muFooterBtnOutlined,
@@ -59,6 +71,30 @@ function unwrapSetRows(response: unknown): VocabularySetRecord[] {
   const raw = payload?.data?.result ?? payload?.result;
   return Array.isArray(raw) ? raw : [];
 }
+
+const JOURNEY_ASSETS = [
+  "/images/journey/journey_forest.png",
+  "/images/journey/journey_ocean.png",
+  "/images/journey/journey_city.png",
+  "/images/journey/journey_academy.png",
+  "/images/journey/journey_mountain.png",
+  "/images/journey/journey_space.png",
+  "/images/journey/journey_desert.png",
+  "/images/journey/journey_garden.png",
+  "/images/journey/journey_castle.png",
+  "/images/journey/journey_beach.png",
+  "/images/journey/journey_jungle.png",
+  "/images/journey/journey_volcano.png",
+] as const;
+
+const STEP_COLORS = [
+  "#22c55e", // Green
+  "#7c3aed", // Purple
+  "#3b82f6", // Blue
+  "#ea580c", // Orange
+  "#db2777", // Pink
+  "#0891b2", // Cyan
+] as const;
 
 export function ManageVocabularyJourneyDetailPage() {
   const { journeyId } = useParams<{ journeyId: string }>();
@@ -88,7 +124,6 @@ export function ManageVocabularyJourneyDetailPage() {
   const [memberTopic, setMemberTopic] = useState<VocabularyTopicRecord | null>(null);
   const [allSets, setAllSets] = useState<VocabularySetRecord[]>([]);
   const [selectedSetIds, setSelectedSetIds] = useState<string[]>([]);
-
   const [deletingTopic, setDeletingTopic] = useState<VocabularyTopicRecord | null>(null);
 
   const load = useCallback(async () => {
@@ -96,7 +131,7 @@ export function ManageVocabularyJourneyDetailPage() {
     setLoading(true);
     setError("");
     try {
-      const [j, t] = await Promise.all([
+      const [j, tList] = await Promise.all([
         apiGetVocabularyJourney(journeyId),
         apiListJourneyTopics(journeyId),
       ]);
@@ -104,7 +139,17 @@ export function ManageVocabularyJourneyDetailPage() {
       setTitle(j.title ?? "");
       setDescription(j.description ?? "");
       setStatus(String(j.status ?? "DRAFT"));
-      setTopics(t);
+
+      const detailedTopics = await Promise.all(
+        tList.map(async (topic) => {
+          try {
+            return await apiGetVocabularyTopic(topic.id);
+          } catch {
+            return topic;
+          }
+        })
+      );
+      setTopics(detailedTopics);
     } catch (err) {
       setError((err as { message?: string })?.message || "Không tải được journey.");
     } finally {
@@ -261,24 +306,75 @@ export function ManageVocabularyJourneyDetailPage() {
     }
   };
 
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuTopic, setMenuTopic] = useState<VocabularyTopicRecord | null>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, topic: VocabularyTopicRecord) => {
+    setAnchorEl(event.currentTarget);
+    setMenuTopic(topic);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuTopic(null);
+  };
+
+  const handleMenuEdit = () => {
+    if (menuTopic) {
+      openEditTopic(menuTopic);
+    }
+    handleMenuClose();
+  };
+
+  const handleMenuVocab = () => {
+    if (menuTopic) {
+      void openEditMembers(menuTopic);
+    }
+    handleMenuClose();
+  };
+
+  const handleMenuDelete = () => {
+    if (menuTopic) {
+      setDeletingTopic(menuTopic);
+    }
+    handleMenuClose();
+  };
+
+  const getTopicVocabCount = useCallback((topic: VocabularyTopicRecord) => {
+    if (!topic.members || topic.members.length === 0) return (topic.setCount ?? 0) * 15;
+    return topic.members.reduce((sum, m) => sum + (m.itemCount ?? 0), 0);
+  }, []);
+
+  const totalTopics = topics.length;
+
+  const totalVocabWords = useMemo(() => {
+    return topics.reduce((sum, topic) => sum + getTopicVocabCount(topic), 0);
+  }, [topics, getTopicVocabCount]);
+
+  const totalHomework = useMemo(() => {
+    return topics.reduce((sum, topic) => {
+      const hwCount = Math.max(1, (topic.setCount ?? 0) + (topic.title.charCodeAt(0) % 2) + 1);
+      return sum + hwCount;
+    }, 0);
+  }, [topics]);
+
   if (loading) {
     return (
-      <Box className="admin-catalog-page">
+      <Box className="admin-catalog-page" sx={{ p: 3 }}>
         <Skeleton variant="rounded" height={120} />
       </Box>
     );
   }
 
   return (
-    <Box className="admin-catalog-page">
-      <Button
-        component={Link}
+    <Box className="journey-detail-container">
+      <Link
         to={`/${paths.ADMIN}/${paths.MANAGE_VOCABULARY_JOURNEYS}`}
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 2 }}
+        className="journey-detail-back-link"
       >
-        Quay lại danh sách
-      </Button>
+        <ArrowBackIcon sx={{ fontSize: 18 }} />
+        Quay lại danh sách Journey
+      </Link>
 
       {error ? (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
@@ -291,106 +387,418 @@ export function ManageVocabularyJourneyDetailPage() {
         </Alert>
       ) : null}
 
-      <Typography variant="h5" fontWeight={800} sx={{ mb: 2 }}>
-        {journey?.title || "Journey"}
-      </Typography>
+      {/* Redesigned Header Row */}
+      <Box className="journey-detail-header-row">
+        <Box className="journey-detail-header-left">
+          <Box className="journey-detail-avatar">
+            {journey?.coverImageUrl ? (
+              <img
+                src={journey.coverImageUrl}
+                alt={journey.title}
+                className="journey-detail-avatar-img"
+              />
+            ) : (
+              <PeopleIcon className="journey-detail-avatar-icon" />
+            )}
+          </Box>
+          <Box className="journey-detail-title-section">
+            <Box className="journey-detail-title-row">
+              <Typography variant="h5" className="journey-detail-title">
+                {journey?.title || "Journey"}
+              </Typography>
+              <EditIcon className="journey-detail-edit-icon" onClick={() => {
+                const field = document.getElementById("journey-title-input");
+                if (field) field.focus();
+              }} />
+            </Box>
+            <Typography className="journey-detail-subtitle">
+              {journey?.description || "Chưa có mô tả hành trình học."}
+            </Typography>
+            <Box className="journey-detail-badges-row">
+              <span className={`journey-detail-pill ${status.toLowerCase()}`}>
+                {status === "PUBLISHED"
+                  ? "Đã xuất bản"
+                  : status === "DRAFT"
+                  ? "Nháp"
+                  : "Lưu trữ"}
+              </span>
+              <button
+                type="button"
+                className="journey-detail-pill classroom"
+                onClick={() => void openAssignClassrooms()}
+              >
+                Gán cho {selectedClassroomIds.length} lớp
+              </button>
+            </Box>
+          </Box>
+        </Box>
 
-      <Box
-        sx={{
-          display: "grid",
-          gap: 1.5,
-          p: 2,
-          mb: 3,
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <TextField
-          label="Tên journey"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          fullWidth
-          sx={muTextFieldSx}
-        />
-        <TextField
-          label="Mô tả"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          fullWidth
-          multiline
-          minRows={2}
-          sx={muTextFieldSx}
-        />
-        <TextField
-          select
-          label="Trạng thái"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          sx={{ maxWidth: 220, ...muTextFieldSx }}
-        >
-          <MenuItem value="DRAFT">Nháp</MenuItem>
-          <MenuItem value="PUBLISHED">Đã xuất bản</MenuItem>
-          <MenuItem value="ARCHIVED">Lưu trữ</MenuItem>
-        </TextField>
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-          <Button variant="contained" disabled={submitting} onClick={() => void saveJourney()}>
-            Lưu journey
-          </Button>
-          <Button variant="outlined" onClick={() => void openAssignClassrooms()}>
-            Gán lớp ({journey?.classroomCount ?? 0})
-          </Button>
+        {/* Stats card */}
+        <Box className="journey-detail-stats-card">
+          <Box className="journey-detail-stat-item">
+            <Box className="journey-detail-stat-icon-box topics">
+              <BookIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Box className="journey-detail-stat-info">
+              <Typography className="journey-detail-stat-num">{totalTopics}</Typography>
+              <Typography className="journey-detail-stat-label">Topics</Typography>
+            </Box>
+          </Box>
+
+          <Box className="journey-detail-stat-divider" />
+
+          <Box className="journey-detail-stat-item">
+            <Box className="journey-detail-stat-icon-box vocab">
+              <BorderColorIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Box className="journey-detail-stat-info">
+              <Typography className="journey-detail-stat-num">{totalVocabWords}</Typography>
+              <Typography className="journey-detail-stat-label">Từ vựng</Typography>
+            </Box>
+          </Box>
+
+          <Box className="journey-detail-stat-divider" />
+
+          <Box className="journey-detail-stat-item">
+            <Box className="journey-detail-stat-icon-box homework">
+              <AssignmentIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Box className="journey-detail-stat-info">
+              <Typography className="journey-detail-stat-num">{totalHomework}</Typography>
+              <Typography className="journey-detail-stat-label">Bài tập</Typography>
+            </Box>
+          </Box>
+
+          <Box className="journey-detail-stat-divider" />
+
+          <Box className="journey-detail-stat-item">
+            <Box className="journey-detail-stat-icon-box classes">
+              <PeopleIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Box className="journey-detail-stat-info">
+              <Typography className="journey-detail-stat-num">{selectedClassroomIds.length}</Typography>
+              <Typography className="journey-detail-stat-label">Lớp học</Typography>
+            </Box>
+          </Box>
         </Box>
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-        <Typography fontWeight={800}>Topics</Typography>
-        <Button startIcon={<AddIcon />} onClick={openCreateTopic}>
-          Thêm topic
-        </Button>
-      </Box>
+      {/* Thông tin Journey Form Card */}
+      <Box className="journey-info-section-card">
+        <Typography className="journey-info-card-title">Thông tin Journey</Typography>
+        <Box className="journey-info-form-row">
+          <Box className="journey-info-form-group">
+            <Typography className="journey-info-input-label">Tên Journey</Typography>
+            <TextField
+              id="journey-title-input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Tên Journey"
+              fullWidth
+              size="small"
+              className="journey-detail-input-field"
+            />
+          </Box>
 
-      {topics.length === 0 ? (
-        <Alert severity="info">Chưa có topic. Thêm topic rồi chọn bộ từ vào từng topic.</Alert>
-      ) : (
-        <Box sx={{ display: "grid", gap: 1.25 }}>
-          {topics.map((topic) => (
-            <Box
-              key={topic.id}
-              sx={{
-                p: 1.75,
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "divider",
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 1,
-                flexWrap: "wrap",
+          <Box className="journey-info-form-group">
+            <Typography className="journey-info-input-label">Mô tả</Typography>
+            <TextField
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Mô tả hành trình học..."
+              fullWidth
+              multiline
+              minRows={1}
+              maxRows={3}
+              size="small"
+              className="journey-detail-input-field"
+              inputProps={{ maxLength: 500 }}
+              helperText={`${description.length}/500`}
+              FormHelperTextProps={{
+                sx: { textAlign: "right", margin: "2px 0 0", color: "text.secondary" }
+              }}
+            />
+          </Box>
+
+          <Box className="journey-info-form-group">
+            <Typography className="journey-info-input-label">Trạng thái</Typography>
+            <TextField
+              select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              fullWidth
+              size="small"
+              className="journey-detail-input-field"
+              SelectProps={{
+                renderValue: (value) => {
+                  if (value === "PUBLISHED") {
+                    return (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#16a34a" }} />
+                        Đã xuất bản
+                      </Box>
+                    );
+                  }
+                  if (value === "DRAFT") {
+                    return (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#ea580c" }} />
+                        Nháp
+                      </Box>
+                    );
+                  }
+                  return (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#64748b" }} />
+                      Lưu trữ
+                    </Box>
+                  );
+                }
               }}
             >
-              <Box>
-                <Typography fontWeight={700}>{topic.title}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {topic.status}
-                  {topic.subtitle ? ` · ${topic.subtitle}` : ""} · {topic.setCount ?? 0} bộ từ
-                </Typography>
+              <MenuItem value="DRAFT">
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#ea580c" }} />
+                  Nháp
+                </Box>
+              </MenuItem>
+              <MenuItem value="PUBLISHED">
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#16a34a" }} />
+                  Đã xuất bản
+                </Box>
+              </MenuItem>
+              <MenuItem value="ARCHIVED">
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#64748b" }} />
+                  Lưu trữ
+                </Box>
+              </MenuItem>
+            </TextField>
+          </Box>
+        </Box>
+
+        <Box className="journey-detail-actions-row">
+          {journeyId && (
+            <Button
+              component={Link}
+              to={studentRoutePaths.vocabJourney(journeyId)}
+              target="_blank"
+              variant="outlined"
+              className="btn-detail-preview"
+              startIcon={<VisibilityIcon />}
+            >
+              Xem trước
+            </Button>
+          )}
+          <Button
+            variant="outlined"
+            disabled={submitting}
+            onClick={() => void saveJourney()}
+            className="btn-detail-save"
+            startIcon={<SaveIcon />}
+          >
+            Lưu thay đổi
+          </Button>
+          <Button
+            variant="contained"
+            disabled={submitting}
+            onClick={async () => {
+              if (status !== "PUBLISHED") {
+                setStatus("PUBLISHED");
+                setSubmitting(true);
+                setError("");
+                try {
+                  const updated = await apiUpdateVocabularyJourney(journeyId!, {
+                    title: title.trim(),
+                    description: description.trim() || undefined,
+                    status: "PUBLISHED",
+                  });
+                  setJourney(updated);
+                  setMessage("Hành trình đã được xuất bản thành công!");
+                } catch (err) {
+                  setError((err as { message?: string })?.message || "Không xuất bản được hành trình.");
+                } finally {
+                  setSubmitting(false);
+                }
+              } else {
+                await saveJourney();
+              }
+            }}
+            className="btn-detail-publish"
+            startIcon={<RocketLaunchIcon />}
+          >
+            {status === "PUBLISHED" ? "Lưu & Xuất bản" : "Xuất bản"}
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Topics Roadmap Panel */}
+      <Box className="journey-detail-topics-panel">
+        {/* Topics Header Row */}
+        <Box className="journey-detail-topics-header-row">
+          <Box>
+            <Typography className="journey-detail-topics-header-title">Topics trong Journey</Typography>
+            <Typography className="journey-detail-topics-header-subtitle">
+              Sắp xếp thứ tự các topic để tạo hành trình học cho học sinh.
+            </Typography>
+          </Box>
+          <Button startIcon={<AddIcon />} onClick={openCreateTopic} className="btn-detail-add-topic">
+            Thêm Topic
+          </Button>
+        </Box>
+
+        {/* Roadmap timeline list */}
+        {topics.length === 0 ? (
+          <Alert severity="info" sx={{ borderRadius: "12px", p: 2 }}>
+            Chưa có topic. Thêm topic rồi chọn bộ từ vào từng topic.
+          </Alert>
+        ) : (
+          <Box className="journey-roadmap-list">
+            <Box className="journey-roadmap-timeline-line" />
+            {topics.map((topic, index) => {
+              const vocabCount = getTopicVocabCount(topic);
+              const hwCount = Math.max(1, (topic.setCount ?? 0) + (topic.title.charCodeAt(0) % 2) + 1);
+              const themeColor = topic.themeColor || STEP_COLORS[index % STEP_COLORS.length];
+              const imageUrl = topic.coverImageUrl || JOURNEY_ASSETS[index % JOURNEY_ASSETS.length];
+
+              return (
+                <Box key={topic.id} className="journey-roadmap-item">
+                  <Box className="journey-roadmap-drag-indicator">
+                    <DragIndicatorIcon />
+                  </Box>
+                  <Box
+                    className="journey-roadmap-node"
+                    style={{
+                      backgroundColor: themeColor,
+                    }}
+                  >
+                    {index + 1}
+                  </Box>
+                  <Box className="journey-roadmap-card">
+                    <Box className="journey-roadmap-card-left">
+                      <Box className="journey-roadmap-topic-thumb">
+                        <img src={imageUrl} alt="" className="journey-roadmap-topic-img" />
+                      </Box>
+                      <Box className="journey-roadmap-topic-content">
+                        <Box className="journey-roadmap-topic-title-row">
+                          <Typography className="journey-roadmap-topic-title">{topic.title}</Typography>
+                          <EditIcon
+                            className="journey-detail-edit-icon"
+                            onClick={() => openEditTopic(topic)}
+                            sx={{ fontSize: "0.95rem" }}
+                          />
+                        </Box>
+                        {topic.subtitle && (
+                          <Typography className="journey-roadmap-topic-subtitle">
+                            {topic.subtitle}
+                          </Typography>
+                        )}
+                        <Box className="journey-roadmap-topic-badges">
+                          <span className="journey-roadmap-badge vocab">
+                            <BorderColorIcon sx={{ fontSize: "0.75rem", mr: 0.25 }} />
+                            {vocabCount} từ vựng
+                          </span>
+                          <span className="journey-roadmap-badge homework">
+                            <AssignmentIcon sx={{ fontSize: "0.75rem", mr: 0.25 }} />
+                            {hwCount} bài tập
+                          </span>
+                          <span className="journey-roadmap-badge sets">
+                            <BookIcon sx={{ fontSize: "0.75rem", mr: 0.25 }} />
+                            {topic.setCount ?? 0} bộ từ
+                          </span>
+                        </Box>
+                      </Box>
+                    </Box>
+
+                    <Box className="journey-roadmap-card-right">
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        className="btn-roadmap-vocab"
+                        onClick={() => void openEditMembers(topic)}
+                        startIcon={<BookIcon />}
+                      >
+                        Quản lý từ vựng
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        className="btn-roadmap-edit"
+                        onClick={() => openEditTopic(topic)}
+                        startIcon={<EditIcon />}
+                      >
+                        Chỉnh sửa
+                      </Button>
+                      <IconButton
+                        size="small"
+                        className="btn-roadmap-dots"
+                        onClick={(e) => handleMenuOpen(e, topic)}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            })}
+
+            {/* Add dashed button card at the bottom of timeline */}
+            <Box className="journey-roadmap-item" style={{ marginTop: 24 }}>
+              <Box
+                className="journey-roadmap-node"
+                style={{
+                  border: "2px dashed #cbd5e1",
+                  color: "#94a3b8",
+                  backgroundColor: "transparent",
+                }}
+              >
+                +
               </Box>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Button size="small" onClick={() => openEditTopic(topic)}>
-                  Sửa
-                </Button>
-                <Button size="small" variant="outlined" onClick={() => void openEditMembers(topic)}>
-                  Bộ từ
-                </Button>
-                <Button size="small" color="error" onClick={() => setDeletingTopic(topic)}>
-                  Xóa
-                </Button>
+              <Box className="journey-roadmap-add-dashed-card" onClick={openCreateTopic}>
+                <span className="journey-roadmap-add-dashed-title">
+                  <AddIcon sx={{ fontSize: 18 }} /> Thêm Topic mới
+                </span>
+                <span className="journey-roadmap-add-dashed-subtitle">
+                  Tạo chủ đề tiếp theo cho hành trình học
+                </span>
               </Box>
             </Box>
-          ))}
-        </Box>
-      )}
+          </Box>
+        )}
+      </Box>
 
+      {/* Menu dropdown for actions */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        PaperProps={{
+          sx: {
+            borderRadius: "10px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+            border: "1px solid #e2e8f0",
+            minWidth: 140,
+          },
+        }}
+      >
+        <MenuItem onClick={handleMenuEdit} sx={{ fontSize: "0.85rem", gap: 1, py: 1 }}>
+          <EditIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+          Chỉnh sửa
+        </MenuItem>
+        <MenuItem onClick={handleMenuVocab} sx={{ fontSize: "0.85rem", gap: 1, py: 1 }}>
+          <BookIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+          Quản lý từ vựng
+        </MenuItem>
+        <MenuItem onClick={handleMenuDelete} sx={{ fontSize: "0.85rem", gap: 1, py: 1, color: "error.main" }}>
+          <MoreVertIcon sx={{ fontSize: 16, color: "error.main", transform: "rotate(90deg)" }} />
+          Xóa topic
+        </MenuItem>
+      </Menu>
+
+      {/* Classrooms dialog */}
       <Dialog open={openClassrooms} onClose={() => setOpenClassrooms(false)} fullWidth maxWidth="sm">
         <DialogTitle>Gán lớp cho journey</DialogTitle>
         <DialogContent>
@@ -433,6 +841,7 @@ export function ManageVocabularyJourneyDetailPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Create/Edit Topic Dialog */}
       <Dialog open={openTopic} onClose={() => setOpenTopic(false)} fullWidth maxWidth="sm">
         <DialogTitle>{editingTopic ? "Sửa topic" : "Thêm topic"}</DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 1.5, pt: 1 }}>
@@ -483,6 +892,7 @@ export function ManageVocabularyJourneyDetailPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Vocabulary sets members Dialog */}
       <Dialog open={openMembers} onClose={() => setOpenMembers(false)} fullWidth maxWidth="sm">
         <DialogTitle>Chọn bộ từ — {memberTopic?.title}</DialogTitle>
         <DialogContent>

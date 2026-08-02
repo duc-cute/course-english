@@ -95,6 +95,7 @@ export type CreateExamPaperGenTaskPayload = {
 export type AiVocabularySetGenItem = {
   wordEn: string;
   meaningVi: string;
+  phonetic?: string;
   partOfSpeech?: string;
   exampleSentence?: string;
 };

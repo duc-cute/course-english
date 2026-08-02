@@ -481,3 +481,501 @@
     max-height: none;
   }
 }
+
+/* Premium Redesigned ClassSessionFormModal Styles */
+.session-modal-paper {
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.session-dialog-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 20px 24px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  background-color: #ffffff !important;
+}
+
+.session-header-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #eef2ff;
+  color: #4f46e5;
+  flex-shrink: 0;
+}
+
+.session-header-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-header-title {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  line-height: 1.2 !important;
+}
+
+.session-header-subtitle {
+  font-size: 0.875rem !important;
+  color: #64748b !important;
+  margin-top: 2px !important;
+}
+
+.session-modal-container {
+  display: flex;
+  gap: 24px;
+  padding: 24px !important;
+  background-color: #f8fafc;
+}
+
+@media (max-width: 900px) {
+  .session-modal-container {
+    flex-direction: column;
+    padding: 16px !important;
+  }
+}
+
+.session-modal-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.session-modal-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .session-modal-sidebar {
+    width: 100%;
+  }
+}
+
+.session-section-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.session-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.session-section-icon {
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.session-section-title {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+.session-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .session-grid-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.session-field-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-ai-tip {
+  display: flex;
+  gap: 12px;
+  background-color: #faf5ff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  align-items: flex-start;
+}
+
+.session-ai-tip-icon {
+  color: #a855f7;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.session-ai-tip-text {
+  font-size: 0.85rem !important;
+  color: #6b21a8 !important;
+  line-height: 1.45 !important;
+  font-weight: 500 !important;
+}
+
+.session-time-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f0f9ff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: #0369a1;
+  font-weight: 600;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.session-time-banner-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-switch-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.session-switch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.session-switch-title {
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+.session-switch-desc {
+  font-size: 0.775rem !important;
+  color: #64748b !important;
+  line-height: 1.3 !important;
+}
+
+.session-divider-or {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.775rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 4px 0;
+}
+
+.session-divider-or::before,
+.session-divider-or::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.session-divider-or:not(:empty)::before {
+  margin-right: .75em;
+}
+
+.session-divider-or:not(:empty)::after {
+  margin-left: .75em;
+}
+
+/* Sidebar Summary Styling */
+.session-sidebar-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.session-sidebar-title {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #4f46e5 !important;
+}
+
+.session-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.session-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Specific Summary Icon Backgrounds */
+.session-summary-icon.class { background-color: #eff6ff; color: #3b82f6; }
+.session-summary-icon.title { background-color: #faf5ff; color: #a855f7; }
+.session-summary-icon.type { background-color: #ecfeff; color: #06b6d4; }
+.session-summary-icon.lesson { background-color: #fdf2f8; color: #ec4899; }
+.session-summary-icon.time { background-color: #f0fdf4; color: #22c55e; }
+.session-summary-icon.method { background-color: #fff7ed; color: #f97316; }
+.session-summary-icon.notes { background-color: #fefce8; color: #eab308; }
+
+.session-summary-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.session-summary-label {
+  font-size: 0.725rem !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.session-summary-value {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  word-break: break-word;
+  line-height: 1.35 !important;
+}
+
+.session-tip-card {
+  display: flex;
+  gap: 10px;
+  background-color: #f0fdf4;
+  border-radius: 10px;
+  padding: 12px 16px;
+  align-items: flex-start;
+}
+
+.session-tip-icon {
+  color: #22c55e;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.session-tip-text {
+  font-size: 0.8rem !important;
+  color: #166534 !important;
+  line-height: 1.45 !important;
+  font-weight: 500 !important;
+}
+
+/* Footer buttons styling overrides */
+.session-footer-cancel {
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  padding: 8px 24px !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.session-footer-cancel:hover {
+  background-color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #334155 !important;
+}
+
+.session-footer-save {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  padding: 8px 24px !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+}
+
+.session-footer-save:hover {
+  background-color: #4338ca !important;
+  box-shadow: none !important;
+}
+
+.session-footer-save.Mui-disabled {
+  background-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+}
+
+/* Today's Schedule Row-based Redesign Styles */
+.teaching-plan-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background-color: #ffffff;
+  transition: background-color 0.15s ease;
+}
+
+.teaching-plan-row:last-child {
+  border-bottom: none;
+}
+
+.teaching-plan-row:hover {
+  background-color: #f8fafc;
+}
+
+.teaching-plan-time-col {
+  display: flex;
+  flex-direction: column;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.teaching-plan-time-start {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.teaching-plan-time-end {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.teaching-plan-square-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.teaching-plan-square-badge.var-purple { background-color: #f5f3ff; color: #7c3aed; }
+.teaching-plan-square-badge.var-green { background-color: #ecfdf5; color: #059669; }
+.teaching-plan-square-badge.var-orange { background-color: #fff7ed; color: #ea580c; }
+.teaching-plan-square-badge.var-blue { background-color: #eff6ff; color: #2563eb; }
+
+.teaching-plan-row-info {
+  flex-grow: 1;
+  min-width: 0;
+  margin-right: 16px;
+}
+
+.teaching-plan-row-title {
+  font-size: 0.938rem;
+  font-weight: 700;
+  color: #0b1c30;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teaching-plan-row-sub {
+  font-size: 0.775rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teaching-plan-row-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  margin-right: 16px;
+}
+
+.teaching-plan-row-status.active {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.teaching-plan-row-status.pending {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.teaching-plan-row-status.completed {
+  background-color: #f8fafc;
+  color: #94a3b8;
+}
+
+.teaching-plan-row-status.waiting {
+  background-color: #fff7ed;
+  color: #ea580c;
+}
+
+.teaching-plan-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .teaching-plan-row {
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 8px;
+  }
+  .teaching-plan-row-info {
+    width: calc(100% - 150px);
+    margin-right: 0;
+  }
+  .teaching-plan-row-status {
+    margin-right: 0;
+  }
+  .teaching-plan-row-actions {
+    width: 100%;
+    margin-top: 8px;
+    justify-content: flex-end;
+  }
+}
