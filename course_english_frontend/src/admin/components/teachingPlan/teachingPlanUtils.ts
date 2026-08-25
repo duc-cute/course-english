@@ -10,13 +10,19 @@ const TIME_FMT: Intl.DateTimeFormatOptions = {
 };
 
 export function formatSessionTimeRange(startAt: string, endAt: string): string {
-  const start = new Intl.DateTimeFormat("vi-VN", TIME_FMT).format(new Date(startAt));
-  const end = new Intl.DateTimeFormat("vi-VN", TIME_FMT).format(new Date(endAt));
+  const startDate = new Date(startAt);
+  const endDate = new Date(endAt);
+  // Guard: nếu startAt/endAt rỗng hoặc sai định dạng => tránh RangeError "Invalid time value".
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return "—";
+
+  const start = new Intl.DateTimeFormat("vi-VN", TIME_FMT).format(startDate);
+  const end = new Intl.DateTimeFormat("vi-VN", TIME_FMT).format(endDate);
   return `${start} – ${end}`;
 }
 
 export function formatPlanDateLabel(dateStr: string): string {
   const date = dateStr.includes("T") ? new Date(dateStr) : new Date(`${dateStr}T12:00:00+07:00`);
+  if (Number.isNaN(date.getTime())) return dateStr;
   return new Intl.DateTimeFormat("vi-VN", {
     weekday: "long",
     day: "numeric",
@@ -44,7 +50,18 @@ export function addMinutesToDatetimeLocal(local: string, minutes: number): strin
 }
 
 export function mergeDateWithTime(dateIso: string, timeSourceLocal: string): string {
-  return `${dateIso}T${extractTimeFromDatetimeLocal(timeSourceLocal)}`;
+  const trimmed = timeSourceLocal?.trim() ?? "";
+  // Case 1: datetime-local đầy đủ
+  if (trimmed.includes("T")) {
+    return `${dateIso}T${extractTimeFromDatetimeLocal(trimmed)}`;
+  }
+  // Case 2: chỉ dạng HH:mm
+  if (/^\d{1,2}:\d{2}$/.test(trimmed)) {
+    const [h, m] = trimmed.split(":");
+    return `${dateIso}T${String(h).padStart(2, "0")}:${m}`;
+  }
+  // Fallback: dùng extract (có thể fallback về mặc định, nhưng sẽ không gây crash)
+  return `${dateIso}T${extractTimeFromDatetimeLocal(trimmed)}`;
 }
 
 /** So sánh HH:mm — true nếu `end` sau `start` (cùng ngày). */

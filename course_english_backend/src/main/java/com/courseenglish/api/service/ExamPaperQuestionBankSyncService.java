@@ -187,6 +187,14 @@ public class ExamPaperQuestionBankSyncService {
             if (dto.getChoices() == null || dto.getChoices().size() < 2) {
                 return null;
             }
+            JsonNode items = questionNode.get("items");
+            if (items != null && items.isArray() && items.size() >= 3) {
+                ObjectNode content = objectMapper.createObjectNode();
+                String layout = questionNode.path("layout").asText("SENTENCE_ARRANGEMENT");
+                content.put("layout", layout.isBlank() ? "SENTENCE_ARRANGEMENT" : layout);
+                content.set("items", items.deepCopy());
+                dto.setContentJson(content.toString());
+            }
         } else if (type == QuestionTypeEnum.TRUE_FALSE) {
             JsonNode correctAnswer = questionNode.get("correctAnswer");
             if (correctAnswer == null || !correctAnswer.isBoolean()) {

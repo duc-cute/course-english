@@ -57,8 +57,14 @@ export function TeachingPlanTimelineItem({
     if (parts.length >= 2) {
       const last = parts[parts.length - 1];
       if (/^\d+[A-Z]?$/i.test(last)) return last.toUpperCase();
+      const initials = parts
+        .map((w) => w[0])
+        .filter(Boolean)
+        .join("")
+        .toUpperCase();
+      return initials.slice(0, 3) || name.slice(0, 2).toUpperCase();
     }
-    return name.slice(0, 3).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
   const getClassBadgeClass = (name: string): string => {

@@ -561,6 +561,10 @@
           <li class="sub"><a href="#chk-dash">2.7 Dashboard</a></li>
           <li class="sub"><a href="#chk-notify">2.8 Notify</a></li>
           <li class="sub"><a href="#chk-comm">2.9 Comm</a></li>
+          <li class="sub"><a href="#chk-vocab">2.10 Vocabulary</a></li>
+          <li class="sub"><a href="#chk-story">2.11 Story</a></li>
+          <li class="sub"><a href="#chk-innovation">2.12 Innovation Hub</a></li>
+          <li class="sub"><a href="#chk-infra-lab">2.13 Lab</a></li>
           <li><a href="#master-flow">3. Luồng tổng</a></li>
           <li><a href="#module-priority">6. MVP / V2 / V3</a></li>
           <li><a href="#sitemap">7. Sitemap</a></li>
@@ -588,6 +592,7 @@
           <li class="sub"><a href="#infra-flow">15.5 Luồng tích hợp</a></li>
           <li class="sub"><a href="#infra-rollout">15.6 Thứ tự triển khai</a></li>
           <li class="sub"><a href="#infra-checklist">15.7 Checklist</a></li>
+          <li class="sub"><a href="#rabbitmq-lab">15.8 RabbitMQ Lab</a></li>
           <li><a href="#students-need-support">16. Students Need Support</a></li>
           <li class="sub"><a href="#sns-overview">16.1 Mục tiêu &amp; phạm vi</a></li>
           <li class="sub"><a href="#sns-risk-score">16.2 Công thức Risk Score</a></li>
@@ -622,12 +627,19 @@
           <li class="sub"><a href="#vocab-ui">20.3 UI admin &amp; học viên</a></li>
           <li class="sub"><a href="#vocab-qb-link">20.4 Liên kết Question Bank</a></li>
           <li class="sub"><a href="#vocab-docs">20.5 Tài liệu MD</a></li>
+          <li class="sub"><a href="#vocab-student-learning">20.6 HS — Journey &amp; Luyện tập</a></li>
           <li><a href="#story-reading-studio">21. AI Reading Studio</a></li>
           <li class="sub"><a href="#story-overview">21.1 Tổng quan</a></li>
           <li class="sub"><a href="#story-phase-1">21.2 Phase 1 — Reading</a></li>
           <li class="sub"><a href="#story-phase-2">21.3 Phase 2 — Audio &amp; karaoke</a></li>
+          <li class="sub"><a href="#story-karaoke-premium">21.6 Karaoke premium UX</a></li>
           <li class="sub"><a href="#story-deferred">21.4 Chưa làm</a></li>
           <li class="sub"><a href="#story-docs">21.5 Tài liệu MD</a></li>
+          <li><a href="#innovation-hub">22. Innovation Hub</a></li>
+          <li class="sub"><a href="#ih-overview">22.1 Tổng quan</a></li>
+          <li class="sub"><a href="#ih-api-ui">22.2 API &amp; UI</a></li>
+          <li class="sub"><a href="#ih-deferred">22.3 Backlog</a></li>
+          <li class="sub"><a href="#rabbitmq-lab">15.8 RabbitMQ Lab (admin)</a></li>
           <li><a href="#summary">Tổng kết</a></li>
         </ul>
         <ul class="toc toc-group" data-toc="learning">
@@ -675,15 +687,18 @@
             <code>course_english_*</code>.
           </p>
           <div class="meta">
-            <span class="badge ok">MVP: Lesson Player + HS Vibrant Scholar ~85%</span>
+            <span class="badge ok">MVP: Lesson Player + HS Vibrant Scholar ~88%</span>
+            <span class="badge ok">Lesson Authoring: Manual + Import + QB + Vocab gen ✅</span>
             <span class="badge ok">Question Bank Phase 1–3 + AI-1/2/3 ✅</span>
             <span class="badge ok">ExamPaper Phase 1–3 + AI gen core</span>
-            <span class="badge ok">AI Reading Studio Phase 1–2.2 ✅</span>
+            <span class="badge ok">Vocab Journey + Assigned + mixed Practice ✅</span>
+            <span class="badge ok">AI Reading Studio + karaoke premium UX ✅</span>
+            <span class="badge ok">Innovation Hub (Community Voice) MVP ✅</span>
             <span class="badge ok">AI: LinguistAI Phase 1–2 MVP</span>
-            <span class="badge warn">V2: Assignment + Redis + RabbitMQ</span>
+            <span class="badge warn">V2: Assignment + Redis + RabbitMQ worker</span>
             <span class="badge info">V3: Parent + Adaptive + AI Coach HS</span>
             <span class="badge crit">Anti: PDF-only lesson (có SLIDE_DECK thay thế)</span>
-            <span class="badge">Cập nhật 02/07/2026</span>
+            <span class="badge">Cập nhật 20/08/2026</span>
           </div>
         </div>
 
@@ -694,7 +709,7 @@
             Learning Content <span class="tab-badge">2.3 · chi tiết</span>
           </button>
           <button type="button" role="tab" data-tab="student" aria-selected="false">
-            Student UI <span class="tab-badge">HS · ~85%</span>
+            Student UI <span class="tab-badge">HS · ~88%</span>
           </button>
         </nav>
         <div class="progress-panel" id="review-progress-panel">
@@ -723,7 +738,9 @@
             <a href="#exam-paper">Mục 19</a> (ExamPaper) →
             <a href="#vocabulary-set">Mục 20</a> (Vocabulary) →
             <a href="#story-reading-studio">Mục 21</a> (AI Reading Studio) →
-            <a href="#lesson-impl-plan">Mục 13.10</a> (bắt tay làm Lesson Player).
+            <a href="#vocab-student-learning">Mục 20.6</a> (Vocab Journey HS) →
+            <a href="#innovation-hub">Mục 22</a> (Innovation Hub) →
+            <a href="#lesson-impl-plan">Mục 13.10</a> (Lesson Player — Phases 0–4 ✓).
           </div>
         </div>
 
@@ -804,6 +821,7 @@
           <li><label><input type="checkbox" data-check-id="mod.quiz.fill" data-default="1" /><span>Fill blank, Matching, GAP_FILL_MCQ, READING_COMPREHENSION</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.listen" data-default="1" /><span>Listening quiz (<code>LISTEN_CHOOSE</code>, <code>LISTEN_TYPE</code>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.shuffle" data-default="1" /><span>Shuffle câu/đáp án + retry câu sai (ExercisePlayer)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.review-words" data-default="1" /><span>«Từ cần ôn tập» trên màn kết quả (<code>sessionReviewWords</code>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.speak" /><span>Speaking (V3)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.random" /><span>Time limit + random pool đề độc lập</span></label></li>
         </ul>
@@ -820,7 +838,10 @@
           <li><label><input type="checkbox" data-check-id="mod.vocab.library" data-default="1" /><span>Thư viện từ trung tâm + Dictionary enrich (<a href="#vocab-overview">20.1</a>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.vocab.crud" data-default="1" /><span>CRUD bộ từ + từ — card grid admin (<a href="#vocab-ui">20.3</a>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.vocab.ai" data-default="1" /><span>AI sinh bộ từ Phase 1–2b — POS, example, cover (<a href="#vocab-ai">20.2</a>)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.vocab.student" data-default="1" /><span>HS: <code>/student/vocab</code> — card cover, flashcard, IPA/audio</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.vocab.student" data-default="1" /><span>HS: <code>/student/vocab</code> — 2 tab Assigned + Khám phá (<a href="#vocab-student-learning">20.6</a>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.vocab.journey" data-default="1" /><span>Journey + Topic + gán lớp — Admin + HS explore path</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.vocab.practice" data-default="1" /><span>Mixed practice session + <code>vocab_practice_attempts</code> API</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.vocab.assignment" data-default="1" /><span>Gán bộ từ → lớp (GV/Admin) — migration <code>040</code></span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.vocab.qb" data-default="1" /><span>AI-3: sinh câu từ vocab set → Question Bank (<a href="#vocab-qb-link">20.4</a>)</span></label></li>
         </ul>
 
@@ -831,9 +852,24 @@
           <li><label><input type="checkbox" data-check-id="mod.story.cover" data-default="1" /><span>Cover image + translations / glossary</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.story.audio" data-default="1" /><span>Python TTS + <code>story_audio</code> + sinh audio admin (<a href="#story-phase-2">21.3</a>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.story.voice" data-default="1" /><span>Voice catalog + chọn profile giọng (NARRATOR MVP)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.story.karaoke" data-default="1" /><span>Audio player + karaoke highlight từ/câu</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.story.karaoke" data-default="1" /><span>Audio player + karaoke highlight từ/câu (<a href="#story-karaoke-premium">21.6</a> premium UX)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.story.e2e" /><span>E2E manual: migrations 032–036 + ElevenLabs/Edge fallback</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.story.multi" /><span>Phase 2.3 multi-speaker (AI speech manifest, ghép audio)</span></label></li>
+        </ul>
+
+        <h3 id="chk-innovation">2.12 Innovation Hub (Community Voice)</h3>
+        <ul class="checklist" data-group="mod-innovation">
+          <li><label><input type="checkbox" data-check-id="mod.innov.hub" data-default="1" /><span>Admin list + filter + vote + comment (<a href="#innovation-hub">22</a>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.innov.drawer" data-default="1" /><span>Drawer gửi góp ý + upload ảnh (max 3)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.innov.widget" data-default="1" /><span>Dashboard <code>CommunityVoiceWidget</code> — carousel + top vote</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.innov.detail" data-default="1" /><span>Trang chi tiết + đổi status + timeline</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.innov.student" /><span>Innovation Hub cho học sinh (V2)</span></label></li>
+        </ul>
+
+        <h3 id="chk-infra-lab">2.13 Hạ tầng &amp; Lab</h3>
+        <ul class="checklist" data-group="mod-infra-lab">
+          <li><label><input type="checkbox" data-check-id="mod.infra.rabbitmq-lab" data-default="1" /><span>RabbitMQ Lab admin — simulator + docs (<a href="#rabbitmq-lab">15.8</a>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.infra.rabbitmq-be" /><span>Spring AMQP worker thay <code>@Async</code> publish lesson</span></label></li>
         </ul>
 
         <h3 id="chk-progress">2.6 Progress</h3>
@@ -850,6 +886,9 @@
         <ul class="checklist" data-group="mod-dash">
           <li><label><input type="checkbox" data-check-id="mod.dash.student" data-default="1" /><span>Student home + continue (cơ bản)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.dash.teacher" data-default="1" /><span>Teacher: Students Need Support — risk score + widget + bảng HS cần hỗ trợ</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.dash.teaching-plan" data-default="1" /><span>Teaching plan hôm nay — widget lịch + online class link (<code>TeachingPlanController</code>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.dash.weather" data-default="1" /><span>Weather card + AI tip dạy học (<code>weatherAiTip</code>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.dash.innovation" data-default="1" /><span>Community Voice widget — Innovation Hub (<a href="#innovation-hub">22</a>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.dash.admin" /><span>Admin: totals report (V2)</span></label></li>
         </ul>
 
@@ -905,6 +944,7 @@
   → Theo dõi submissions
   → Chấm điểm + feedback
   → Dashboard: Students Need Support (risk widget)
+  → Innovation Hub: góp ý + vote (<a href="#innovation-hub">22</a>)
   → /admin/students-need-support — lọc + View Profile</pre>
 
         <h3 id="flow-admin">3.3 Luồng admin</h3>
@@ -924,9 +964,10 @@
 ├── 4. Quiz &amp; Assessment          [MVP ✓ — EXERCISE_SET + QB Phase 1–3 + ExamPaper]
 ├── 5. Assignment                 [V2]
 ├── 6. Progress &amp; Analytics       [MVP ✓ API + profile FE stats]
-├── 7. Notification               [P1 ✓ in-app + WS; V2 RabbitMQ]
+├── 7. Notification               [P1 ✓ in-app + WS; V2 RabbitMQ worker]
 ├── 8. Communication              [V2–V3]
-└── 9. Platform (file, search, scale) [MVP ✓ + AI module]</pre>
+├── 10. Community / Innovation    [MVP ✓ Innovation Hub + Dashboard widget]
+└── 9. Platform (file, search, scale) [MVP ✓ + AI module + RabbitMQ Lab UI]</pre>
 
         <!-- 5 -->
         <h2 class="section" id="database">5. Database high-level</h2>
@@ -989,21 +1030,29 @@ parent_student_links</code></pre>
   /lessons                   danh sách + enrollment filter
   /path                      lộ trình theo Unit
   /lessons/:slug             Lesson Player (study + practice)
-  /vocab, /vocab/:setId      trung tâm từ + flashcard
+  /vocab, /vocab/:setId      trung tâm từ — 2 tab Assigned + Khám phá
+  /vocab/journeys/:id        path topic trong Journey
+  /vocab/topics/:id          danh sách bộ từ trong topic
+  /stories, /stories/:slug   đọc truyện + karaoke premium
+  /stories/notebook          sổ tay từ đã lưu
   /profile                   hồ sơ 3 tab (stats, badges, history)
   /leaderboard               placeholder (S8b)
   /usage-guide
 
 /admin  (Teacher + Admin)
-  /dashboard                   widget Students Need Support
+  /dashboard                   weather + teaching plan + Community Voice + SNS widget
   /schedule                    lịch dạy + online class
   /students-need-support
   /manage-user, /roles
   /classrooms, /subjects, /enrollments
   /lessons, /lessons/:id/edit
-  /manage-questions, /vocabulary-*, /exam-papers, /exam-papers/:id/edit
+  /manage-questions, /vocabulary-*, /vocabulary-journeys
+  /exam-papers, /exam-papers/:id/edit
+  /stories                     AI Reading Studio
+  /innovation-hub              Community Voice (+ :ideaId detail)
   /system-config
   /ai-assistant, /activity-logs
+  /rabbitmq-lab                học topology queue (lab)
   /review-doc                  ← tài liệu này
 
 /parent/:childId             (V3)</pre>
@@ -1081,8 +1130,8 @@ parent_student_links</code></pre>
           <p><strong>Phòng tránh:</strong> block QUIZ bắt buộc; audio checkpoint; rule hoàn thành (ví dụ ≥80% quiz đúng); progress có nghĩa trên server.</p>
         </div>
         <div class="grid-2">
-          <div class="card ok"><h4>Điểm mạnh</h4><ul><li>Lesson Player + 10 loại câu exercise + progress server</li><li>HS UI Vibrant Scholar (home, path, vocab, profile)</li><li>LinguistAI chat + sinh câu từ PDF/DOCX (schema gọn + parallel batch)</li><li>Students Need Support + notification in-app</li></ul></div>
-          <div class="card warn"><h4>Điểm yếu / rủi ro</h4><ul><li>Assignment module chưa có</li><li>XP/streak/badge chưa lưu BE</li><li>VIDEO/AUDIO block editor chưa đủ</li><li>RabbitMQ/Redis chưa bật — scale sau</li></ul></div>
+          <div class="card ok"><h4>Điểm mạnh</h4><ul><li>Lesson Player + 10 loại câu + «Từ cần ôn tập» trên result</li><li>HS UI Vibrant Scholar + Vocab Journey/Assigned + mixed practice</li><li>AI Reading Studio karaoke premium UX (animate từ khi nghe)</li><li>LinguistAI + QB/Exam/Vocab AI gen + Innovation Hub cộng đồng</li><li>Students Need Support + notification in-app + Dashboard GV (weather, teaching plan)</li></ul></div>
+          <div class="card warn"><h4>Điểm yếu / rủi ro</h4><ul><li>Assignment module chưa có</li><li>XP/streak/badge chưa lưu BE</li><li>VIDEO/AUDIO block editor chưa đủ</li><li>RabbitMQ worker chưa hook BE — lab UI only</li><li>E2E manual Story audio + Vocab Journey còn backlog test</li></ul></div>
         </div>
 
         <!-- 11 -->
@@ -1125,8 +1174,8 @@ parent_student_links</code></pre>
           </tbody>
         </table>
         <p><strong>Routes FE:</strong> <code>/student/*</code> (app shell + player), <code>/admin/*</code>, <code>/login</code>, <code>/register</code>, <code>/forgot-password</code>.</p>
-        <p><strong>Đã triển khai:</strong> Auth (+ forgot password); CRUD classroom/subject/enrollment/lesson/system-config; <code>LessonBlock</code> + <code>payload_json</code> (TEXT, IMAGE, VOCABULARY, CALLOUT, SUMMARY, <code>SLIDE_DECK</code>); <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> Phase 1–3 + AI gen đề (<a href="#exam-paper">19</a>); <strong>Vocabulary Set</strong> thư viện từ + AI sinh bộ từ (<a href="#vocabulary-set">20</a>); <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (10 loại câu); AI sinh câu lesson (<code>AiExerciseGenDialog</code>); progress server; HS UI Vibrant Scholar (home, path, vocab, profile, bottom nav); notification in-app + WebSocket; <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); <strong>LinguistAI</strong> Phase 1–2 (<a href="#linguist-ai">17</a>); lịch GV + activity logs.</p>
-        <p><strong>Gap so với <code>promt.md</code>:</strong> Assignment module; VIDEO/AUDIO block đầy đủ; syllabus sidebar trong player; gamification BE (leaderboard); Redis/RabbitMQ (<a href="#redis-built-features">15.2b</a>). Chi tiết HS: tab <button type="button" class="link-btn" data-switch-tab="student">Student UI</button> · <code>docs/STUDENT_PROGRESS.md</code>.</p>
+        <p><strong>Đã triển khai:</strong> Auth (+ forgot password); CRUD classroom/subject/enrollment/lesson/system-config; <code>LessonBlock</code> + editor Manual/Import CSV/Excel + <code>QUESTION_REF</code> (<code>LESSON_AUTHORING_PROGRESS.md</code>); progress server; <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> Phase 1–3 + AI gen đề (<a href="#exam-paper">19</a>); <strong>Vocabulary Set</strong> + Journey/Assigned/Practice HS (<a href="#vocab-student-learning">20.6</a>); <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (10 loại câu + session review words); HS UI Vibrant Scholar; notification in-app + WebSocket; <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); Dashboard GV: weather AI tip, teaching plan, <strong>Innovation Hub</strong> widget (<a href="#innovation-hub">22</a>); <strong>LinguistAI</strong> Phase 1–2 (<a href="#linguist-ai">17</a>); <strong>AI Reading Studio</strong> + karaoke premium (<a href="#story-karaoke-premium">21.6</a>); <strong>RabbitMQ Lab</strong> admin (<a href="#rabbitmq-lab">15.8</a>); lịch GV + activity logs.</p>
+        <p><strong>Gap so với <code>promt.md</code>:</strong> Assignment module; VIDEO/AUDIO block đầy đủ; syllabus sidebar trong player; gamification BE (leaderboard); RabbitMQ worker production (<a href="#redis-built-features">15.2b</a>). Chi tiết HS: tab <button type="button" class="link-btn" data-switch-tab="student">Student UI</button> · <code>docs/STUDENT_PROGRESS.md</code> · <code>docs/STUDENT_VOCAB_LEARNING_PLAN.md</code>.</p>
 
         <!-- 13 — Kiến trúc Lesson theo promt.md -->
         <h2 class="section" id="lessons-core">13. Kiến trúc Lesson — Learning Blocks (<code>promt.md</code>)</h2>
@@ -1458,6 +1507,13 @@ function isStudyBlock(t: string) { return STUDY_BLOCK_TYPES.has(t); }
 function isPracticeBlock(t: string) { return PRACTICE_BLOCK_TYPES.has(t); }</code></pre>
 
         <h3 id="lesson-impl-plan">13.10 Kế hoạch triển khai — bắt tay làm (team + AI)</h3>
+        <div class="callout">
+          <div>
+            <strong>Cập nhật 20/08/2026:</strong> Phases <strong>0–4</strong> (Player shell, MCQ, Admin editor Manual/Import, progress API) và mở rộng 10 loại câu — <span class="badge ok">✅ xong</span>.
+            Còn lại: Phase 5 syllabus sidebar trong player · Assignment module · VIDEO/AUDIO block.
+            Chi tiết soạn bài: <code>docs/LESSON_AUTHORING_PROGRESS.md</code>.
+          </div>
+        </div>
         <p class="lead">Thứ tự dưới đây là <strong>lộ trình code</strong> song song với roadmap mục 14. Mỗi phase có file cụ thể, tiêu chí “xong”, và gợi ý chia việc.</p>
 
         <div class="card ok">
@@ -1814,6 +1870,23 @@ Payload mẫu:
             <li>API publish lesson: <strong>chỉ</strong> lưu DB + <code>convertAndSend</code> → trả 200 (&lt; 100ms).</li>
           </ul>
         </div>
+
+        <h3 id="rabbitmq-lab">15.8 RabbitMQ Lab — trang học tập admin <span class="badge ok">✅ UI</span></h3>
+        <p class="lead">
+          Trang <code>/admin/rabbitmq-lab</code> giúp GV/Admin hiểu topology queue trước khi bật worker Spring — không thay thế production RabbitMQ.
+          Kèm Docker Compose local và script setup topology.
+        </p>
+        <table>
+          <thead><tr><th>Thành phần</th><th>Chi tiết</th></tr></thead>
+          <tbody>
+            <tr><td>FE</td><td><code>RabbitMqLabPage</code> + <code>RabbitMqFlowSimulator</code> — mô phỏng luồng publish → queue → worker</td></tr>
+            <tr><td>Content</td><td><code>rabbitmqLabContent.ts</code> — giải thích exchange <code>course.events</code>, routing keys</td></tr>
+            <tr><td>Infra local</td><td><code>docker-compose.infra.yml</code> — AMQP :5672, Management UI :15672</td></tr>
+            <tr><td>Scripts</td><td><code>scripts/rabbitmq-lab/setup-topology.ps1</code>, <code>publish-test-message.ps1</code></td></tr>
+            <tr><td>BE tích hợp</td><td><code>CourseEventPublisher</code> + <code>@RabbitListener</code> — <span class="badge warn">⏳ chưa hook</span></td></tr>
+          </tbody>
+        </table>
+        <p><strong>Tài liệu:</strong> <code>docs/RABBITMQ_LAB.md</code> · FE notification vẫn STOMP <code>/ws/notifications</code> + <code>GET /notifications</code>.</p>
 
         <h3 id="websocket-notify">15.4 WebSocket — chuông realtime (dùng chung queue)</h3>
         <p>Socket <strong>không mâu thuẫn</strong> queue: worker sau khi ghi DB có thể push thêm tới HS đang online.</p>
@@ -2657,8 +2730,56 @@ Body: { topicPrompt, wordCount, languageLevel?, generateCover?: true }
             <tr><td><code>VOCABULARY_SET_DB_DESIGN.md</code></td><td>Schema DB bộ từ</td></tr>
             <tr><td><code>VOCABULARY_BLOCK_DESIGN.md</code></td><td>Block VOCABULARY trong lesson</td></tr>
             <tr><td><code>QUESTION_BANK_AI_3_PLAN.md</code></td><td>AI-3: vocab set → Question Bank</td></tr>
+            <tr><td><code>STUDENT_VOCAB_LEARNING_PLAN.md</code></td><td>HS Journey + Assigned + mixed practice (Phase 1–3)</td></tr>
+            <tr><td><code>LESSON_AUTHORING_PROGRESS.md</code></td><td>4 phương thức soạn lesson — Manual, Import, QB, Vocab gen</td></tr>
           </tbody>
         </table>
+
+        <h3 id="vocab-student-learning">20.6 Học sinh — Journey, Assigned &amp; Luyện tập mixed <span class="badge ok">Phase 1–3 ✅</span></h3>
+        <p class="lead">
+          Mở rộng <code>/student/vocab</code> thành <strong>2 nguồn học</strong>: bộ từ GV gán cho lớp (Assigned) và khám phá theo
+          <strong>Learning Journey</strong> (topic → danh sách bộ từ). Luyện tập = session random nhiều dạng qua <code>ExercisePlayer</code>,
+          chấm điểm + làm lại giống lesson.
+        </p>
+        <pre class="ascii">/student/vocab
+  ├── Tab «Hôm nay học gì» — assignment theo lớp (sort assigned_at mới nhất)
+  └── Tab «Khám phá» — Journey(s) của lớp enroll → Topic PUBLISHED → list set
+
+/student/vocab/:setId?mode=practice
+  → danh sách từ (Learn) + nút Luyện tập đầu trang
+  → buildVocabPracticeSession (mixer tỉ lệ) → ExercisePlayer
+  → vocab_practice_attempts (migration 041)</pre>
+        <table>
+          <thead><tr><th>Phase</th><th>Nội dung</th><th>Trạng thái</th></tr></thead>
+          <tbody>
+            <tr><td><strong>1</strong></td><td>FE shell 2 tab, set detail + mixer + <code>ExercisePlayer</code> (<code>persistAttempts=false</code> tạm)</td><td><span class="badge ok">✅</span></td></tr>
+            <tr><td><strong>2a</strong></td><td>Gán bộ từ → lớp — migration <code>040</code>, API + Admin dialog</td><td><span class="badge ok">✅</span></td></tr>
+            <tr><td><strong>2b</strong></td><td>Lưu điểm / làm lại — <code>vocab_practice_attempts</code> migration <code>041</code></td><td><span class="badge ok">✅</span></td></tr>
+            <tr><td><strong>2c</strong></td><td>Journey + Topic + gán journey→lớp — migration <code>042</code>, Admin trong menu Từ vựng</td><td><span class="badge ok">✅</span></td></tr>
+            <tr><td><strong>3</strong></td><td>Due badge, Continue CTA, completed check trên node journey</td><td><span class="badge ok">✅ code</span> — chờ test thủ công</td></tr>
+          </tbody>
+        </table>
+        <div class="grid-2">
+          <div class="card ok">
+            <h4>Admin / Teacher</h4>
+            <ul>
+              <li><code>ManageVocabularyJourneysPage</code> + <code>ManageVocabularyJourneyDetailPage</code></li>
+              <li>Topic N:N với <code>vocabulary_sets</code>; gán journey → lớp (1 lớp = 1 journey)</li>
+              <li>Dialog gán bộ từ cho lớp trên <code>ManageVocabularySetsPage</code></li>
+              <li>Routes: <code>/admin/vocabulary-journeys</code>, <code>/admin/vocabulary-journeys/:id</code></li>
+            </ul>
+          </div>
+          <div class="card ok">
+            <h4>Học sinh</h4>
+            <ul>
+              <li><code>VocabCenterPage</code> — 2 tab Assigned | Khám phá</li>
+              <li><code>VocabExploreJourneyPage</code> — path topic (PC ngang / mobile dọc)</li>
+              <li><code>VocabTopicSetsPage</code>, <code>VocabSetPracticePage</code></li>
+              <li><code>buildVocabPracticeSession.ts</code> — MCQ, Matching, Listen, Spelling… theo tỉ lệ</li>
+            </ul>
+          </div>
+        </div>
+        <p><strong>Tài liệu:</strong> <code>docs/STUDENT_VOCAB_LEARNING_PLAN.md</code> · Migrations <code>040</code>–<code>042</code>.</p>
 
         <!-- 21 — AI Reading Studio -->
         <h2 class="section" id="story-reading-studio">21. AI Reading Studio (Story) <span class="badge ok">Phase 1 + 2.2 ✅</span></h2>
@@ -2727,6 +2848,22 @@ Student StoryReaderPage
         </table>
         <p><strong>Giới hạn MVP:</strong> Chỉ profile <code>NARRATOR</code> (hoặc profile đầu tiên) được dùng khi sinh audio; các profile Nam/Nữ/Bé lưu sẵn cho Phase 2.3.</p>
 
+        <h3 id="story-karaoke-premium">21.6 Karaoke premium UX — highlight từ khi đọc <span class="badge ok">✅</span></h3>
+        <p>
+          Cải tiến trải nghiệm đọc theo audio: từ đang đọc <strong>animate mượt</strong> (scale ~1.08, gradient xanh nhạt, font-weight 600),
+          từ đã đọc tối hơn (#666 vs #222), crossfade 180–200ms giữa các từ — không nhảy cứng, không flash màu gắt.
+          Từ vựng clickable vẫn giữ link tra cứu khi trùng với từ đang highlight.
+        </p>
+        <table>
+          <thead><tr><th>Thành phần</th><th>File / chi tiết</th></tr></thead>
+          <tbody>
+            <tr><td>Hook crossfade</td><td><code>useKaraokeHighlight.ts</code> — <code>useLeavingWordIndex</code>, <code>KARAOKE_LEAVING_MS=200</code></td></tr>
+            <tr><td>Auto-scroll</td><td><code>scrollIntoComfortZone()</code> — giữ câu ở vùng giữa viewport, không jump</td></tr>
+            <tr><td>Performance</td><td>Chỉ animate token <code>--active</code>; React.memo token row — phù hợp story 3000+ từ</td></tr>
+            <tr><td>CSS</td><td><code>story-reader*.css</code> — transition scale/background/box-shadow ~200ms</td></tr>
+          </tbody>
+        </table>
+
         <h3 id="story-deferred">21.4 Chưa làm / tiếp theo</h3>
         <ul>
           <li><strong>2.3 Multi-speaker:</strong> AI manifest <code>speech.lines[]</code>, validator, TTS per sentence, concat MP3, UI cast review.</li>
@@ -2744,6 +2881,57 @@ Student StoryReaderPage
           </tbody>
         </table>
 
+        <!-- 22 — Innovation Hub -->
+        <h2 class="section" id="innovation-hub">22. Innovation Hub — Community Voice <span class="badge ok">MVP ✅</span></h2>
+        <p class="lead">
+          Module góp ý cộng đồng: giáo viên/admin gửi ý tưởng, vote, comment, theo dõi roadmap; hiển thị nổi bật trên Dashboard
+          qua widget <strong>Community Voice</strong>.
+        </p>
+
+        <h3 id="ih-overview">22.1 Tổng quan &amp; phạm vi</h3>
+        <table>
+          <thead><tr><th>Có trong MVP</th><th>Phase sau</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>List + filter (category, status, sort, «chỉ của tôi»); vote toggle; comment; detail; đổi status admin</td>
+              <td>Student shell; Kanban roadmap; AI gợi ý trùng idea; badge sidebar hot</td>
+            </tr>
+            <tr>
+              <td>Drawer gửi góp ý (Dashboard + Hub); upload 1–3 ảnh PNG/JPG ≤5MB</td>
+              <td>Thêm/xóa ảnh sau khi tạo; phân quyền fine-grained đổi status</td>
+            </tr>
+            <tr>
+              <td>Dashboard widget: carousel top vote + CTA gửi góp ý</td>
+              <td>Seed data demo khi deploy mới</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="ih-api-ui">22.2 API &amp; UI</h3>
+        <pre class="ascii">POST /api/v1/innovation-ideas/search   — paging + filter
+GET  /api/v1/innovation-ideas/stats/summary
+POST /api/v1/innovation-ideas            — create (+ imageUrls JSON)
+POST /api/v1/innovation-ideas/{id}/votes — toggle vote
+GET/POST .../comments
+
+FE: InnovationHubPage, InnovationIdeaDetailPage
+    InnovationSubmitDrawer, CommunityVoiceWidget (Dashboard)
+    /admin/innovation-hub, /admin/innovation-hub/:ideaId</pre>
+        <p>
+          <strong>Enums:</strong> Category <code>FEATURE|BUG|UI|PERFORMANCE|AI|OTHER</code> ·
+          Status <code>UNDER_REVIEW|PLANNED|IN_PROGRESS|TESTING|COMPLETED</code> ·
+          Sort <code>FEATURED|NEWEST|TRENDING</code>.
+        </p>
+        <p><strong>Storage ảnh:</strong> folder <code>inovation</code> → path <code>/storage/inovation/…</code> trên detail gallery.</p>
+
+        <h3 id="ih-deferred">22.3 Backlog &amp; test</h3>
+        <ul>
+          <li>Manual E2E: vote/unvote, comment, upload ảnh, đổi status → idea COMPLETED lên hero <code>featuredCompleted</code>.</li>
+          <li>Sidebar badge số idea hot (localStorage <code>lastSeen</code> hoặc notification).</li>
+          <li>Innovation Hub cho học sinh (shell riêng).</li>
+        </ul>
+        <p><strong>Tài liệu:</strong> <code>docs/INNOVATION_HUB_PROGRESS.md</code></p>
+
         <h2 class="section" id="summary">Tổng kết</h2>
         <p>
           <strong>Course English</strong> bám <code>promt.md</code>: 9 module nghiệp vụ + <strong>Lesson = chuỗi Learning Blocks</strong>
@@ -2751,8 +2939,8 @@ Student StoryReaderPage
           <strong>Draft → Publish → Assign → Submit → Grade</strong>.
         </p>
         <p>
-          <strong>Đã có:</strong> Lesson Player (10 loại câu), Vibrant Scholar HS UI (~85%), progress server, enrollment filter, notification in-app; <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); <strong>LinguistAI</strong> chat + sinh câu MVP + <strong>tối ưu sinh câu</strong> (<a href="#ai-question-gen-perf">17.2</a>); <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> soạn đề + AI gen đề + similar exam (<a href="#exam-paper">19</a>); <strong>Vocabulary Set</strong> thư viện từ + AI sinh bộ từ + cover (<a href="#vocabulary-set">20</a>); <strong>AI Reading Studio</strong> story reader + TTS/karaoke MVP (<a href="#story-reading-studio">21</a>).<br />
-          <strong>Đích tiếp:</strong> Story E2E + Phase 2.3 multi-speaker; ExamPaper Phase 4–5 (HS làm đề, gán lớp); manual test QB/Exam/Vocab; Assignment V2; gamification BE — <a href="#lesson-impl-plan">13.10</a>, tab Student.<br />
+          <strong>Đã có:</strong> Lesson Player (10 loại câu + review words), Vibrant Scholar HS UI (~88%), progress server, enrollment filter, notification in-app; <strong>Lesson Authoring</strong> Manual + Import + QB + Vocab generator (<code>LESSON_AUTHORING_PROGRESS.md</code>); <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); <strong>LinguistAI</strong> chat + sinh câu + tối ưu (<a href="#ai-question-gen-perf">17.2</a>); <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> soạn đề + AI gen (<a href="#exam-paper">19</a>); <strong>Vocabulary</strong> library + AI + <strong>Journey/Assigned/Practice</strong> (<a href="#vocab-student-learning">20.6</a>); <strong>AI Reading Studio</strong> + karaoke premium (<a href="#story-karaoke-premium">21.6</a>); <strong>Innovation Hub</strong> (<a href="#innovation-hub">22</a>); Dashboard GV weather + teaching plan.<br />
+          <strong>Đích tiếp:</strong> Story E2E audio; ExamPaper Phase 4–5 (HS làm đề); manual test Vocab Journey; Assignment V2; gamification BE; RabbitMQ worker — <a href="#lesson-impl-plan">13.10</a> Phase 5 syllabus, tab Student.<br />
           <strong>QB tạm dừng:</strong> AI-2b GAP/READING trong bank; Phase 4 search/analytics — <a href="#qb-deferred">18.5</a>.<br />
           <strong>Exam polish:</strong> 6.4–6.6, import T/F-Fill section — <a href="#exam-deferred">19.4</a>.<br />
           <strong>AI sau:</strong> LinguistAI import bank (Phase 2.1); context LMS — <a href="#ai-deferred">17.3</a>.<br />
@@ -2961,12 +3149,13 @@ Student StoryReaderPage
             <h1 style="font-size:2rem">Student Progress</h1>
             <p>
               Theme đang chạy: <strong>Vibrant Scholar</strong> (<code>styles/student/vibrant-theme.css</code>, token <code>--vq-*</code>).
-              Bản đầy đủ + sprint S0–S8b: <code>docs/STUDENT_PROGRESS.md</code> · Cập nhật <strong>25/06/2026</strong>.
+              Bản đầy đủ + sprint S0–S9: <code>docs/STUDENT_PROGRESS.md</code> · Vocab Journey: <code>docs/STUDENT_VOCAB_LEARNING_PLAN.md</code> · Cập nhật <strong>20/08/2026</strong>.
             </p>
             <div class="meta">
-              <span class="badge ok">Chức năng cốt lõi ~85%</span>
-              <span class="badge ok">Vibrant Scholar UI ~75%</span>
-              <span class="badge info">Exercise 10/10 loại câu</span>
+              <span class="badge ok">Chức năng cốt lõi ~88%</span>
+              <span class="badge ok">Vibrant Scholar UI ~80%</span>
+              <span class="badge info">Exercise 10/10 loại câu + review words</span>
+              <span class="badge ok">Vocab Journey + mixed practice</span>
               <span class="badge warn">Leaderboard BE — S8b</span>
             </div>
           </div>
@@ -2974,7 +3163,7 @@ Student StoryReaderPage
           <div class="progress-panel" id="st-overview-panel">
             <div class="progress-head">
               <strong>Tổng quan theo nhóm</strong>
-              <span class="progress-pct">~85% chức năng</span>
+              <span class="progress-pct">~88% chức năng</span>
             </div>
             <table style="width:100%;font-size:14px;margin-top:8px">
               <thead><tr><th>Nhóm</th><th>Tiến độ</th><th>Ghi chú</th></tr></thead>
@@ -2982,9 +3171,9 @@ Student StoryReaderPage
                 <tr><td>Shell &amp; điều hướng</td><td><strong>85%</strong></td><td>Sidebar + bottom nav; 6 mục chính</td></tr>
                 <tr><td>Trang chủ &amp; danh sách bài</td><td><strong>90%</strong></td><td>Home bento + XP/streak FE + enrollment filter</td></tr>
                 <tr><td>Lesson Player</td><td><strong>85%</strong></td><td>Vq reskin, TOC, focus, sync server, SLIDE_DECK</td></tr>
-                <tr><td>Bài tập (Exercise)</td><td><strong>90%</strong></td><td>10 loại câu; retry câu sai; result/review Vq</td></tr>
-                <tr><td>Từ vựng</td><td><strong>75%</strong></td><td><code>/student/vocab</code> + flashcard practice</td></tr>
-                <tr><td>Đọc truyện (Story)</td><td><strong>80%</strong></td><td><code>/student/stories</code> + reader + karaoke — chờ E2E audio</td></tr>
+                <tr><td>Bài tập (Exercise)</td><td><strong>92%</strong></td><td>10 loại câu; retry; result/review + «Từ cần ôn tập»</td></tr>
+                <tr><td>Từ vựng</td><td><strong>88%</strong></td><td>2 tab Assigned/Khám phá; Journey path; mixed practice + attempts API</td></tr>
+                <tr><td>Đọc truyện (Story)</td><td><strong>85%</strong></td><td>Reader + karaoke premium UX — chờ E2E audio pipeline</td></tr>
                 <tr><td>Gamification (FE)</td><td><strong>40%</strong></td><td>XP/streak/badge client-side (S8a); chưa BE</td></tr>
                 <tr><td>Enrollment filter</td><td><strong>70%</strong></td><td>BE + FE list/path/vocab (S6)</td></tr>
                 <tr><td>Assignment / nộp bài</td><td><strong>0%</strong></td><td>Roadmap v1 — chưa có màn HS</td></tr>
@@ -3009,11 +3198,13 @@ Student StoryReaderPage
               <tr><td><code>/student/lessons</code></td><td>Danh sách bài + enrollment filter</td><td><span class="badge ok">✓ S3/S6</span></td></tr>
               <tr><td><code>/student/lessons/:slug</code></td><td>Lesson Player</td><td><span class="badge ok">✓ S4/S5</span></td></tr>
               <tr><td><code>/student/path</code></td><td>Lộ trình theo Unit</td><td><span class="badge ok">✓ S3</span></td></tr>
-              <tr><td><code>/student/vocab</code></td><td>Trung tâm từ vựng</td><td><span class="badge ok">✓ S7</span></td></tr>
-              <tr><td><code>/student/vocab/:setId</code></td><td>Flashcard practice</td><td><span class="badge ok">✓ S7</span></td></tr>
+              <tr><td><code>/student/vocab</code></td><td>Trung tâm từ — tab Assigned + Khám phá</td><td><span class="badge ok">✓ S7/S9</span></td></tr>
+              <tr><td><code>/student/vocab/journeys/:id</code></td><td>Learning Journey — path topic</td><td><span class="badge ok">✓ S9</span></td></tr>
+              <tr><td><code>/student/vocab/topics/:id</code></td><td>Danh sách bộ từ trong topic</td><td><span class="badge ok">✓ S9</span></td></tr>
+              <tr><td><code>/student/vocab/:setId</code></td><td>Learn list + mixed practice (<code>?mode=practice</code>)</td><td><span class="badge ok">✓ S7/S9</span></td></tr>
               <tr><td><code>/student/stories</code></td><td>Danh sách truyện đọc</td><td><span class="badge ok">✓ Story</span></td></tr>
-              <tr><td><code>/student/stories/:slug</code></td><td>Story reader + audio karaoke</td><td><span class="badge ok">✓ Story</span></td></tr>
-              <tr><td><code>/student/notebook</code></td><td>Sổ tay từ đã lưu</td><td><span class="badge ok">✓ Story</span></td></tr>
+              <tr><td><code>/student/stories/:slug</code></td><td>Story reader + karaoke premium</td><td><span class="badge ok">✓ Story</span></td></tr>
+              <tr><td><code>/student/stories/notebook</code></td><td>Sổ tay từ đã lưu</td><td><span class="badge ok">✓ Story</span></td></tr>
               <tr><td><code>/student/profile</code></td><td>Hồ sơ 3 tab</td><td><span class="badge ok">✓ S8a</span></td></tr>
               <tr><td><code>/student/leaderboard</code></td><td>Bảng xếp hạng</td><td><span class="badge warn">Placeholder S8b</span></td></tr>
               <tr><td><code>/student/usage-guide</code></td><td>Hướng dẫn</td><td><span class="badge ok">✓</span></td></tr>
@@ -3031,8 +3222,9 @@ Student StoryReaderPage
               <tr><td>S4</td><td>Lesson player Vq reskin</td><td>✓</td></tr>
               <tr><td>S5</td><td>TRUE_FALSE, retry câu sai, result/review Vq</td><td>✓</td></tr>
               <tr><td>S6</td><td>Enrollment filter BE + FE</td><td>✓</td></tr>
-              <tr><td>S7</td><td>Vocab center MVP</td><td>✓</td></tr>
+              <tr><td>S7</td><td>Vocab center MVP (flat list)</td><td>✓</td></tr>
               <tr><td><strong>S8a</strong></td><td>Profile MVP — stats + badges + history (FE-only)</td><td>✓</td></tr>
+              <tr><td><strong>S9</strong></td><td>Vocab Journey + Assigned + mixed practice + attempts API</td><td>✓ code — chờ test</td></tr>
               <tr><td>S8b</td><td>Gamification BE — streak, rank, leaderboard</td><td>📋 <code>GAMIFICATION_PLAN.md</code></td></tr>
             </tbody>
           </table>
@@ -3081,7 +3273,26 @@ Student StoryReaderPage
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Lưu attempt server (<code>lesson_practice_attempts</code>)</span></label></li>
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Session localStorage (F5)</span></label></li>
             <li class="is-done"><label><input type="checkbox" checked disabled /><span>Luyện lại chỉ câu sai (<code>onRetryWrong</code>)</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>«Từ cần ôn tập» trên result (<code>sessionReviewWords.ts</code>)</span></label></li>
             <li><label><input type="checkbox" disabled /><span>Polish UI mock còn lại (tactile tray 100%)</span></label></li>
+          </ul>
+
+          <h3 id="st-vocab">B.5 Từ vựng (S7 + S9)</h3>
+          <ul class="checklist" data-group="st-done-vocab">
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>2 tab: Hôm nay học gì (Assigned) + Khám phá</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Journey path topic — <code>VocabExploreJourneyPage</code></span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Set detail: list từ + nút Luyện tập đầu trang</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Mixed practice — <code>buildVocabPracticeSession</code> + <code>ExercisePlayer</code></span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Lưu điểm — <code>vocab_practice_attempts</code> API</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>Due badge + Continue CTA trên journey node (chờ test)</span></label></li>
+          </ul>
+
+          <h3 id="st-story">B.6 Đọc truyện (Story)</h3>
+          <ul class="checklist" data-group="st-done-story">
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Danh sách + reader + click từ + notebook</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Audio player + timeline karaoke</span></label></li>
+            <li class="is-done"><label><input type="checkbox" checked disabled /><span>Karaoke premium — animate từ, crossfade, comfort scroll</span></label></li>
+            <li><label><input type="checkbox" disabled /><span>E2E: Python TTS :8100 + ElevenLabs smoke test</span></label></li>
           </ul>
 
           <h3 id="st-profile">B.4 Profile (S8a — FE-only)</h3>
@@ -3100,7 +3311,8 @@ Student StoryReaderPage
               <tr><td><code>student_home_dashboard</code></td><td><code>student/home/HomePage.tsx</code></td><td>✓ S2</td></tr>
               <tr><td><code>learning_path</code></td><td><code>student/lessons/LearningPathPage.tsx</code></td><td>✓ S3</td></tr>
               <tr><td><code>lesson_player_content_block</code></td><td><code>StudyPanel</code> + <code>lesson-player-vq.css</code></td><td>✓ S4</td></tr>
-              <tr><td><code>vocab_center_*</code></td><td><code>VocabCenterPage</code> + <code>VocabSetPracticePage</code></td><td>✓ S7</td></tr>
+              <tr><td><code>vocab_center_*</code></td><td><code>VocabCenterPage</code> + <code>VocabSetPracticePage</code></td><td>✓ S7/S9</td></tr>
+              <tr><td><code>vocab_journey_*</code></td><td><code>VocabExploreJourneyPage</code>, <code>VocabTopicSetsPage</code></td><td>✓ S9</td></tr>
               <tr><td><code>quiz_result_encouragement</code></td><td><code>ExerciseResultScreen</code></td><td>✓ S5</td></tr>
               <tr><td><code>student_achievements</code></td><td><code>ProfileBadgesTab</code></td><td>✓ S8a</td></tr>
               <tr><td><code>profile_leaderboard</code></td><td><code>StudentLeaderboardPage</code> placeholder</td><td>S8b</td></tr>
@@ -3119,7 +3331,10 @@ Student StoryReaderPage
               <tr><td><code>GET /api/v1/lesson-reading-progress/continue</code></td><td>Tiếp tục học</td></tr>
               <tr><td><code>POST /api/v1/lesson-practice-attempts</code></td><td>Nộp bài tập</td></tr>
               <tr><td><code>GET …/latest</code>, <code>/best</code>, summary</td><td>List + banner + profile</td></tr>
-              <tr><td><code>GET /api/v1/vocabulary-sets</code></td><td>Vocab center</td></tr>
+              <tr><td><code>GET /api/v1/vocabulary-sets</code></td><td>Vocab center + assigned</td></tr>
+              <tr><td><code>GET /api/v1/vocabulary-journeys/my</code></td><td>Journey explore (lớp enroll)</td></tr>
+              <tr><td><code>POST /api/v1/vocabulary-practice-attempts</code></td><td>Nộp luyện từ vựng</td></tr>
+              <tr><td><code>GET /api/v1/stories/*</code></td><td>Story list + reader payload + audio</td></tr>
               <tr><td><code>GET /api/v1/notifications</code></td><td>Chuông thông báo</td></tr>
             </tbody>
           </table>
@@ -3165,7 +3380,8 @@ src/student/shell/          StudentAppLayout, StudentSidebar, bottom nav
 src/student/home/           HomePage (bento dashboard)
 src/student/lessons/        LessonListPage, LearningPathPage, enrollment filter
 src/student/lessonPlayer/   StudyPanel, ExercisePlayer, *Question.tsx
-src/student/vocab/          VocabCenterPage, VocabSetPracticePage
+src/student/vocab/          VocabCenterPage, VocabExploreJourneyPage, VocabSetPracticePage
+src/student/stories/        StoryReaderPage, useKaraokeHighlight.ts
 src/student/profile/        ProfilePage, badges, useStudentStats
 src/student/notifications/  NotificationBell, useNotifications
 src/styles/student/         vibrant-theme.css, lesson-player-vq.css, profile.css

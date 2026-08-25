@@ -22,8 +22,12 @@ import java.util.UUID;
 public class NotificationEmailLog extends BaseObject {
 
     @JdbcTypeCode(SqlTypes.CHAR)
-    @Column(name = "lesson_id", nullable = false, length = 36)
+    @Column(name = "lesson_id", length = 36)
     private UUID lessonId;
+
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "exam_assignment_id", length = 36)
+    private UUID examAssignmentId;
 
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "user_id", nullable = false, length = 36)

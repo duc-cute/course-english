@@ -4,6 +4,9 @@ export function getStudentPageTitle(pathname: string): string {
   if (/^\/student\/lessons\/[^/]+$/.test(pathname)) {
     return "Bài học";
   }
+  if (/^\/student\/exams(\/|$)/.test(pathname)) {
+    return "Đề thi";
+  }
   if (/^\/student\/vocab\/[^/]+$/.test(pathname)) {
     return "Ôn từ vựng";
   }
@@ -13,6 +16,7 @@ export function getStudentPageTitle(pathname: string): string {
     [studentRoutePaths.lessons]: "Bài học",
     [studentRoutePaths.path]: "Lộ trình",
     [studentRoutePaths.vocab]: "Từ vựng",
+    [studentRoutePaths.exams]: "Đề thi",
     [studentRoutePaths.profile]: "Hồ sơ",
     [studentRoutePaths.leaderboard]: "Xếp hạng",
     [studentRoutePaths.usageGuide]: "Hướng dẫn",

@@ -724,6 +724,34 @@ public class QuestionServiceImpl implements QuestionService {
             return Map.of();
         }
         map.put("correctChoiceId", correctChoiceId);
+
+        JsonNode content = parseContentJson(question.getContentJson());
+        if (content != null && content.isObject()) {
+            if (content.has("layout") && content.get("layout").isTextual()) {
+                map.put("layout", content.get("layout").asText());
+            }
+            if (content.has("items") && content.get("items").isArray() && content.get("items").size() >= 3) {
+                List<Map<String, String>> items = new ArrayList<>();
+                for (JsonNode row : content.get("items")) {
+                    if (row == null || !row.isObject()) {
+                        continue;
+                    }
+                    String key = row.path("key").asText("").trim();
+                    String text = row.path("text").asText("").trim();
+                    if (key.isBlank() || text.isBlank()) {
+                        continue;
+                    }
+                    Map<String, String> item = new HashMap<>();
+                    item.put("key", key);
+                    item.put("text", text);
+                    items.add(item);
+                }
+                if (items.size() >= 3) {
+                    map.put("items", items);
+                    map.putIfAbsent("layout", "SENTENCE_ARRANGEMENT");
+                }
+            }
+        }
         return map;
     }
 

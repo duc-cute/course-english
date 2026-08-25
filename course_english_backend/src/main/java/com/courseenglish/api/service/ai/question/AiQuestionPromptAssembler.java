@@ -236,6 +236,20 @@ public class AiQuestionPromptAssembler {
           "\n\nAll items in this batch belong ONLY to this section. "
               + "Match the section instruction (e.g. synonyms vs antonyms vs general MCQ).");
     }
+    if (questionType == QuestionTypeEnum.MULTIPLE_CHOICE
+        && looksLikeSentenceArrangementSection(sectionTitle, sectionInstruction)) {
+      sb.append(
+          """
+
+
+          SENTENCE ARRANGEMENT layout (mandatory for this section):
+          - Each question: promptText = short stem/instruction ONLY.
+          - contentJson.layout = "SENTENCE_ARRANGEMENT"
+          - contentJson.items = scrambled utterances a, b, c, ... (usually 4–5)
+          - choices = four order strings like "d – e – b – c – a"
+          - Do NOT paste a./b./c. lines into promptText.
+          """);
+    }
     return sb.toString().trim();
   }
 
@@ -424,5 +438,16 @@ public class AiQuestionPromptAssembler {
         """
         .formatted(actionNote.trim(), referenceExcerpt, questionType.name(), difficulty, promptLang, readingNote)
         .trim();
+  }
+
+  private static boolean looksLikeSentenceArrangementSection(String title, String instruction) {
+    String haystack =
+        ((title == null ? "" : title) + " " + (instruction == null ? "" : instruction))
+            .toLowerCase();
+    return haystack.contains("sentence arrangement")
+        || haystack.contains("arrange the sentences")
+        || haystack.contains("rearrange the following")
+        || haystack.contains("sắp xếp câu")
+        || haystack.contains("sắp xếp các câu");
   }
 }

@@ -1,10 +1,12 @@
 package com.courseenglish.api.service.impl;
 
 import com.courseenglish.api.config.MailProperties;
+import com.courseenglish.api.domain.Enrollment;
 import com.courseenglish.api.domain.ClassSession;
 import com.courseenglish.api.domain.SessionReminder;
 import com.courseenglish.api.domain.User;
 import com.courseenglish.api.domain.dto.notification.SessionReminderNotifyContext;
+import com.courseenglish.api.repository.EnrollmentRepository;
 import com.courseenglish.api.repository.ClassSessionRepository;
 import com.courseenglish.api.repository.SessionReminderRepository;
 import com.courseenglish.api.repository.UserRepository;
@@ -21,10 +23,13 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collections;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -33,7 +38,6 @@ public class SessionReminderEmailServiceImpl implements SessionReminderEmailServ
 
     private static final Logger log = LoggerFactory.getLogger(SessionReminderEmailServiceImpl.class);
     private static final ZoneId TEACHING_PLAN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    private static final long LEAD_MINUTES = 15;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm", Locale.forLanguageTag("vi-VN"))
             .withZone(TEACHING_PLAN_ZONE);
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("EEEE, d/M/yyyy", Locale.forLanguageTag("vi-VN"))
@@ -41,6 +45,7 @@ public class SessionReminderEmailServiceImpl implements SessionReminderEmailServ
 
     private final SessionReminderRepository sessionReminderRepository;
     private final ClassSessionRepository classSessionRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final UserRepository userRepository;
     private final MailTemplateService mailTemplateService;
     private final MailSenderService mailSenderService;
@@ -49,12 +54,14 @@ public class SessionReminderEmailServiceImpl implements SessionReminderEmailServ
     public SessionReminderEmailServiceImpl(
             SessionReminderRepository sessionReminderRepository,
             ClassSessionRepository classSessionRepository,
+            EnrollmentRepository enrollmentRepository,
             UserRepository userRepository,
             MailTemplateService mailTemplateService,
             MailSenderService mailSenderService,
             MailProperties mailProperties) {
         this.sessionReminderRepository = sessionReminderRepository;
         this.classSessionRepository = classSessionRepository;
+        this.enrollmentRepository = enrollmentRepository;
         this.userRepository = userRepository;
         this.mailTemplateService = mailTemplateService;
         this.mailSenderService = mailSenderService;
@@ -90,7 +97,9 @@ public class SessionReminderEmailServiceImpl implements SessionReminderEmailServ
             return;
         }
 
-        ClassSession session = classSessionRepository.findByIdAndVoidedFalse(reminder.getSessionId()).orElse(null);
+        ClassSession session = classSessionRepository
+                .findByIdAndVoidedFalseWithClassroomAndLesson(reminder.getSessionId())
+                .orElse(null);
         if (session == null
                 || session.getStatus() == SessionStatusEnum.CANCELLED
                 || !session.getStartAt().isAfter(Instant.now())) {
@@ -108,12 +117,47 @@ public class SessionReminderEmailServiceImpl implements SessionReminderEmailServ
         }
 
         try {
-            SessionReminderNotifyContext context = buildContext(session, teacher);
-            RenderedMailMessage mail = mailTemplateService.renderSessionReminder(context);
-            mailSenderService.send(mail);
-            reminder.setStatus(SessionReminderStatusEnum.SENT);
-            reminder.setSentAt(Instant.now());
-            reminder.setLastError(null);
+            // Gửi tới: giáo viên + học sinh đang ACTIVE trong lớp.
+            LinkedHashMap<String, String> recipients = new LinkedHashMap<>();
+            recipients.put(teacher.getEmail().trim(), teacher.getName());
+
+            UUID classroomId = session.getClassroom() != null ? session.getClassroom().getId() : null;
+            if (classroomId != null) {
+                List<Enrollment> enrollments = enrollmentRepository
+                        .findActiveByClassroomIdsWithStudent(Collections.singleton(classroomId));
+                for (Enrollment enrollment : enrollments) {
+                    if (enrollment.getStudent() == null || enrollment.getStudent().getEmail() == null) continue;
+                    String email = enrollment.getStudent().getEmail().trim();
+                    if (!email.isBlank()) {
+                        if (!recipients.containsKey(email)) {
+                            recipients.put(email, enrollment.getStudent().getName());
+                        }
+                    }
+                }
+            }
+
+            int successCount = 0;
+            String lastError = null;
+            for (var entry : recipients.entrySet()) {
+                try {
+                    SessionReminderNotifyContext context = buildContext(session, teacher, entry.getKey(), entry.getValue());
+                    RenderedMailMessage mail = mailTemplateService.renderSessionReminder(context);
+                    mailSenderService.send(mail);
+                    successCount++;
+                } catch (Exception ex) {
+                    lastError = ex.getMessage();
+                    log.warn("Failed to send session reminder {} to {}: {}", reminderId, entry.getKey(), ex.getMessage());
+                }
+            }
+
+            if (successCount > 0) {
+                reminder.setStatus(SessionReminderStatusEnum.SENT);
+                reminder.setSentAt(Instant.now());
+                reminder.setLastError(lastError);
+            } else {
+                reminder.setStatus(SessionReminderStatusEnum.FAILED);
+                reminder.setLastError(lastError != null ? lastError : "Không thể gửi email cho người nhận.");
+            }
             sessionReminderRepository.save(reminder);
         } catch (Exception ex) {
             log.warn("Failed to send session reminder {}: {}", reminderId, ex.getMessage());
@@ -123,21 +167,23 @@ public class SessionReminderEmailServiceImpl implements SessionReminderEmailServ
         }
     }
 
-    private SessionReminderNotifyContext buildContext(ClassSession session, User teacher) {
+    private SessionReminderNotifyContext buildContext(ClassSession session, User teacher, String recipientEmail, String recipientName) {
         String classroomName = session.getClassroom() != null ? safe(session.getClassroom().getName()) : "";
         String lessonTitle = session.getLesson() != null ? safe(session.getLesson().getTitle()) : "";
         String teacherName = safe(teacher.getName());
-        if (teacherName.isBlank()) {
-            teacherName = "thầy/cô";
-        }
+        if (teacherName.isBlank()) teacherName = "Giáo viên";
+        String resolvedRecipientName = safe(recipientName);
+        if (resolvedRecipientName.isBlank()) resolvedRecipientName = "bạn";
 
-        long minutesUntil = Duration.between(Instant.now(), session.getStartAt()).toMinutes();
-        boolean startingSoon = minutesUntil <= LEAD_MINUTES;
+        LocalDate today = Instant.now().atZone(TEACHING_PLAN_ZONE).toLocalDate();
+        LocalDate startDate = session.getStartAt() != null ? session.getStartAt().atZone(TEACHING_PLAN_ZONE).toLocalDate() : null;
+        boolean startingSoon = startDate != null && startDate.equals(today);
 
         String scheduleUrl = normalizeBase(mailProperties.getFrontendBaseUrl()) + "/admin/schedule";
 
         return new SessionReminderNotifyContext(
-                teacher.getEmail().trim(),
+                recipientEmail.trim(),
+                resolvedRecipientName,
                 teacherName,
                 classroomName,
                 safe(session.getTitle()),

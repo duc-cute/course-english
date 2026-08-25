@@ -2,6 +2,10 @@ import { stringifyBlockPayload } from "../api/lesson";
 import { countBlankPlaceholders, MAX_FILL_BLANK_SLOTS, syncBlanksWithPrompt } from "./fillBlankUtils";
 import { syncGapFillBlanksWithPrompt } from "./gapFillMcqUtils";
 import {
+  MCQ_LAYOUT_SENTENCE_ARRANGEMENT,
+  normalizeMcqArrangementFields,
+} from "./mcqArrangementUtils";
+import {
   READING_PRESENTATION_SPLIT,
 } from "./readingComprehensionUtils";
 import {
@@ -596,12 +600,26 @@ export function validateExerciseSetPayload(payload: ExerciseSetPayload): Exercis
 }
 
 function cleanMcqQuestion(q: MultipleChoiceQuestion): MultipleChoiceQuestion {
-  return {
+  const cleaned: MultipleChoiceQuestion = {
     ...q,
     prompt: { ...q.prompt, text: q.prompt.text.trim() },
     choices: q.choices.map((c) => ({ ...c, text: c.text.trim() })),
     explanation: q.explanation?.trim() || undefined,
   };
+  return normalizeMcqArrangementFields({
+    ...cleaned,
+    items: cleaned.items
+      ?.map((item) => ({
+        key: item.key.trim().toLowerCase(),
+        text: item.text.trim(),
+      }))
+      .filter((item) => item.key && item.text),
+    layout:
+      cleaned.layout === MCQ_LAYOUT_SENTENCE_ARRANGEMENT ||
+      (cleaned.items?.length ?? 0) >= 3
+        ? MCQ_LAYOUT_SENTENCE_ARRANGEMENT
+        : undefined,
+  });
 }
 
 function cleanMatchingQuestion(q: MatchingQuestion): MatchingQuestion {

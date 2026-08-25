@@ -1,4 +1,4 @@
-import { countBlankPlaceholders, parseFillBlankPrompt } from "./fillBlankUtils";
+import { countBlankPlaceholders, parseFillBlankPrompt, type FillBlankSegment } from "./fillBlankUtils";
 import type { ExerciseChoice, GapFillMcqBlank } from "../../student/lessonPlayer/exercise/types";
 
 export const GAP_FILL_MCQ_CHOICE_IDS = ["a", "b", "c", "d"] as const;
@@ -85,4 +85,36 @@ export function scoreGapFillMcq(
   };
 }
 
+/**
+ * AI / nguồn đề thường chèn số câu gốc sau chỗ trống: `___ (6) popular`.
+ * Khi UI tự đánh số (1)(2)… thì bỏ suffix `(n)` ngay sau blank.
+ */
+export function stripLeadingSourceBlankNumber(textAfterBlank: string): string {
+  return textAfterBlank.replace(/^\s*\(\d+\)(?=\s|$|[.,;:!?…'"”’)])\s*/, " ");
+}
+
+/** Passage segments for exam-style cloze: text + blank slots (no inline select). */
+export function buildGapFillMcqPassageSegments(
+  promptText: string,
+  blanks: GapFillMcqBlank[],
+): FillBlankSegment[] {
+  const raw = parseFillBlankPrompt(promptText, blanks);
+  const out: FillBlankSegment[] = [];
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const segment = raw[i]!;
+    if (segment.kind === "text") {
+      const prev = out[out.length - 1];
+      const value =
+        prev?.kind === "blank" ? stripLeadingSourceBlankNumber(segment.value) : segment.value;
+      out.push({ kind: "text", value });
+      continue;
+    }
+    out.push(segment);
+  }
+
+  return out;
+}
+
 export { parseFillBlankPrompt, countBlankPlaceholders };
+export type { FillBlankSegment };

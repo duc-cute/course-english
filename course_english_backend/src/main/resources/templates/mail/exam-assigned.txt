@@ -1,0 +1,14 @@
+[[${brandName}]] — Đề thi mới
+================================
+
+Xin chào [[${studentName}]],
+
+Có đề thi mới!
+
+[[${actorName}]] vừa gán đề "[[${examTitle}]]" cho lớp của bạn.
+Lớp: [[${classroomName}]]
+[[${windowLabel}]]
+
+Làm bài ngay: [[${examUrl}]]
+
+— [[${brandName}]]

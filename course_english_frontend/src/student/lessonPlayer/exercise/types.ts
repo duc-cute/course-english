@@ -32,6 +32,9 @@ export type MultipleChoiceQuestion = {
   choices: ExerciseChoice[];
   correctChoiceId: string;
   explanation?: string;
+  /** Sentence-arrangement MCQ: scrambled utterances a–e (exam Part 3). */
+  layout?: "SENTENCE_ARRANGEMENT";
+  items?: { key: string; text: string }[];
   wordEn?: string;
   phonetic?: string;
   partOfSpeech?: string;

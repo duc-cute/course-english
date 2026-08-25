@@ -1,17 +1,22 @@
-Course English — Nhắc buổi dạy
-================================
+[[${brandName}]] — Thông báo lịch học
+===================================
 
-Xin chào [[${teacherName}]],
+Xin chào [[${recipientName}]],
 
-Buổi dạy của bạn [[${startingSoon} ? 'sắp bắt đầu' : 'sẽ bắt đầu sau khoảng 15 phút']]:
+Bạn có buổi học trong ngày trên [[${brandName}]]. Vui lòng kiểm tra thông tin bên dưới.
 
 - Lớp: [[${classroomName}]]
 - Buổi: [[${sessionTitle}]]
 - Bài: [[${lessonTitle}]]
 - Ngày: [[${dateLabel}]]
 - Giờ: [[${timeRange}]]
-- Meet: [[${meetLink}]]
+- Link học: [[${meetLink}]]
 
-Xem lịch dạy: [[${scheduleUrl}]]
+Xem lịch học: [[${scheduleUrl}]]
 
-— Course English
+Hãy chuẩn bị tài liệu và thiết bị trước buổi học để mang đến trải nghiệm tốt nhất.
+
+Trân trọng,
+[[${teacherName}]]
+
+© [[${currentYear}]] [[${brandName}]]. All rights reserved.

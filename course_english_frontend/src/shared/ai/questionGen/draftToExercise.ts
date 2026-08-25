@@ -1,6 +1,10 @@
 import { generateQuestionId } from "../../lesson/exercisePayload";
 import { normalizeFillBlankPrompt, syncBlanksWithPrompt } from "../../lesson/fillBlankUtils";
 import { syncGapFillBlanksWithPrompt } from "../../lesson/gapFillMcqUtils";
+import {
+  MCQ_LAYOUT_SENTENCE_ARRANGEMENT,
+  normalizeMcqArrangementFields,
+} from "../../lesson/mcqArrangementUtils";
 import { READING_PRESENTATION_SPLIT } from "../../lesson/readingComprehensionUtils";
 import type {
   ExerciseQuestion,
@@ -31,14 +35,31 @@ export function draftToExerciseQuestion(draft: AiDraftQuestion): ExerciseQuestio
     }));
     const correct = draft.choices?.find((c) => c.correct);
     if (choices.length < 2) return null;
-    return {
+    const payload = parseContentJsonObject(draft.contentJson);
+    const rawItems = Array.isArray(payload?.items) ? payload.items : [];
+    const items = rawItems
+      .map((row) => {
+        const item = row as { key?: string; text?: string };
+        return {
+          key: String(item.key ?? "").trim().toLowerCase(),
+          text: String(item.text ?? "").trim(),
+        };
+      })
+      .filter((item) => item.key && item.text);
+    const layout =
+      payload?.layout === MCQ_LAYOUT_SENTENCE_ARRANGEMENT || items.length >= 3
+        ? MCQ_LAYOUT_SENTENCE_ARRANGEMENT
+        : undefined;
+    return normalizeMcqArrangementFields({
       id: generateQuestionId(),
       type: "MULTIPLE_CHOICE",
       prompt,
       choices,
       correctChoiceId: correct?.choiceKey ?? choices[0].id,
       explanation,
-    };
+      layout,
+      items: items.length >= 3 ? items : undefined,
+    });
   }
 
   if (draft.questionType === "TRUE_FALSE") {

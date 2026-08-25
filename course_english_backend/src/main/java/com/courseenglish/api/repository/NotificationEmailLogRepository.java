@@ -16,4 +16,10 @@ public interface NotificationEmailLogRepository extends JpaRepository<Notificati
             UUID userId,
             NotificationTypeEnum type,
             NotificationEmailStatusEnum status);
+
+    boolean existsByExamAssignmentIdAndUserIdAndTypeAndStatusAndVoidedFalse(
+            UUID examAssignmentId,
+            UUID userId,
+            NotificationTypeEnum type,
+            NotificationEmailStatusEnum status);
 }

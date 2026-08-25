@@ -2,7 +2,7 @@ import { Alert, Button } from "@mui/material";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { useStudentDashboard } from "../../shell/StudentDashboardContext";
+import { useOptionalStudentDashboard } from "../../shell/StudentDashboardContext";
 import { getStudentDisplayName } from "../../shared/auth/getStudentDisplayName";
 import { NotificationBell } from "../../notifications/NotificationBell";
 import { StudentUserMenu } from "../../shell/StudentUserMenu";
@@ -83,6 +83,18 @@ type ExercisePlayerProps = {
   nextLessonTitle?: string;
   /** When false, skip practice-attempt API. Default true. */
   persistAttempts?: boolean;
+  /** practice = feedback từng câu; exam = không hiện đúng/sai giữa bài. */
+  mode?: "practice" | "exam";
+  /** Exam: gọi khi hết câu / nộp — trả attempt từ server (điểm chấm BE). */
+  onExamComplete?: (payload: {
+    answers: Record<string, ExerciseAnswerSnapshot>;
+    elapsedMs: number;
+  }) => Promise<{
+    scorePercent?: number | null;
+    passed?: boolean | null;
+    correctCount?: number | null;
+    totalCount?: number | null;
+  } | void>;
   /** When set, persist to vocabulary practice attempts instead of lesson attempts. */
   vocabularySetId?: string;
   /** Cover of the vocabulary set — shown in overview card when present. */
@@ -106,6 +118,8 @@ export function ExercisePlayer({
   practiceBlocks,
   nextLessonTitle,
   persistAttempts = true,
+  mode = "practice",
+  onExamComplete,
   vocabularySetId,
   coverImageUrl,
   assignmentId = null,
@@ -116,10 +130,11 @@ export function ExercisePlayer({
   onContinueStudy,
   onBackToLessons,
 }: ExercisePlayerProps) {
+  const examMode = mode === "exam";
   const blockIdsKey = useMemo(() => practiceBlocks.map((b) => b.id).join(","), [practiceBlocks]);
   const blockIds = useMemo(() => practiceBlocks.map((b) => b.id), [practiceBlocks]);
 
-  const dashboard = useStudentDashboard();
+  const dashboard = useOptionalStudentDashboard();
   const isVocab = Boolean(vocabularySetId);
   const displayName = getStudentDisplayName();
   const callName = displayName ? (displayName.trim().split(" ").pop() || "bạn") : "bạn";
@@ -192,6 +207,12 @@ export function ExercisePlayer({
   const [matchingSelections, setMatchingSelections] = useState<Record<string, string>>({});
   const [activeMatchingLeft, setActiveMatchingLeft] = useState<string | null>(null);
   const [phase, setPhase] = useState<PlayerPhase>("answer");
+  const [examServerResult, setExamServerResult] = useState<{
+    scorePercent: number;
+    passed: boolean;
+    correctCount: number;
+    totalCount: number;
+  } | null>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerRecord>>({});
   const [showExplanation, setShowExplanation] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -408,10 +429,10 @@ export function ExercisePlayer({
   }, [phase, onViewChange]);
 
   const sessionScore = useMemo(() => computeSessionScore(items, answers), [items, answers]);
-  const scoringCorrectUnits = sessionScore.correctUnits;
-  const scoringTotalUnits = sessionScore.totalUnits;
-  const scorePct = sessionScore.scorePct;
-  const passed = scorePct >= passScorePercent;
+  const scoringCorrectUnits = examServerResult?.correctCount ?? sessionScore.correctUnits;
+  const scoringTotalUnits = examServerResult?.totalCount ?? sessionScore.totalUnits;
+  const scorePct = examServerResult?.scorePercent ?? sessionScore.scorePct;
+  const passed = examServerResult ? examServerResult.passed : scorePct >= passScorePercent;
 
   const ensureStartedAt = useCallback(() => {
     if (startedAtRef.current) return startedAtRef.current;
@@ -562,6 +583,56 @@ export function ExercisePlayer({
     };
   }, [attemptBannerPlacement, onAttemptBanner, serverLatestAttempt, handleReview, phase]);
 
+  const resetQuestionDrafts = () => {
+    setChoiceDrafts({});
+    setTypedAnswer("");
+    setFillBlankAnswers({});
+    setGapFillMcqAnswers({});
+    setReadingSubAnswers({});
+    setReorderTokenOrder([]);
+    setMatchingSelections({});
+    setActiveMatchingLeft(null);
+    setShowExplanation(false);
+  };
+
+  const finishExamSession = async (finalAnswers: Record<string, AnswerRecord>) => {
+    const startedAt = ensureStartedAt();
+    const elapsed = Date.now() - startedAt;
+    setElapsedMs(elapsed);
+    persistSession(questionIndex, true, finalAnswers, { elapsedMs: elapsed });
+    if (onExamComplete) {
+      try {
+        const result = await onExamComplete({ answers: finalAnswers, elapsedMs: elapsed });
+        if (result && result.scorePercent != null && result.totalCount != null) {
+          setExamServerResult({
+            scorePercent: result.scorePercent,
+            passed: Boolean(result.passed),
+            correctCount: result.correctCount ?? 0,
+            totalCount: result.totalCount,
+          });
+        }
+      } catch {
+        // parent shows error
+      }
+    }
+    setPhase("done");
+  };
+
+  const commitExamAnswer = (nextAnswers: Record<string, AnswerRecord>) => {
+    setAnswers(nextAnswers);
+    setShowExplanation(false);
+    persistSession(questionIndex, false, nextAnswers);
+    if (questionIndex >= total - 1) {
+      void finishExamSession(nextAnswers);
+      return;
+    }
+    const next = questionIndex + 1;
+    setQuestionIndex(next);
+    resetQuestionDrafts();
+    setPhase("answer");
+    persistSession(next, false, nextAnswers);
+  };
+
   const handleCheck = () => {
     if (!current) return;
     ensureStartedAt();
@@ -573,6 +644,10 @@ export function ExercisePlayer({
         ...answers,
         [choiceQuestion.id]: { correct, selectedChoiceId },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setPhase("feedback");
@@ -587,6 +662,10 @@ export function ExercisePlayer({
         ...answers,
         [currentTrueFalse.id]: { correct, selectedChoiceId },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setPhase("feedback");
@@ -603,6 +682,10 @@ export function ExercisePlayer({
         ...answers,
         [typedQuestion.id]: { correct, typedAnswer: typedAnswer.trim() },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setPhase("feedback");
@@ -623,6 +706,10 @@ export function ExercisePlayer({
         ...answers,
         [currentFillBlank.id]: { correct, fillBlankAnswers: { ...fillBlankAnswers } },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setPhase("feedback");
@@ -644,6 +731,10 @@ export function ExercisePlayer({
           totalBlanks: scored.totalBlanks,
         },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setPhase("feedback");
@@ -668,6 +759,10 @@ export function ExercisePlayer({
           totalSubQuestions: scored.totalSubQuestions,
         },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setPhase("feedback");
@@ -687,6 +782,10 @@ export function ExercisePlayer({
           reorderTokenOrder: [...reorderTokenOrder],
         },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setPhase("feedback");
@@ -703,6 +802,10 @@ export function ExercisePlayer({
           matchingSelections: { ...matchingSelections },
         },
       };
+      if (examMode) {
+        commitExamAnswer(nextAnswers);
+        return;
+      }
       setAnswers(nextAnswers);
       setShowExplanation(false);
       setActiveMatchingLeft(null);
@@ -757,6 +860,10 @@ export function ExercisePlayer({
 
   const handleNext = () => {
     if (questionIndex >= total - 1) {
+      if (examMode) {
+        void finishExamSession(answers);
+        return;
+      }
       const startedAt = ensureStartedAt();
       const elapsed = Date.now() - startedAt;
       setElapsedMs(elapsed);
@@ -767,15 +874,7 @@ export function ExercisePlayer({
     }
     const next = questionIndex + 1;
     setQuestionIndex(next);
-    setChoiceDrafts({});
-    setTypedAnswer("");
-    setFillBlankAnswers({});
-    setGapFillMcqAnswers({});
-    setReadingSubAnswers({});
-    setReorderTokenOrder([]);
-    setMatchingSelections({});
-    setActiveMatchingLeft(null);
-    setShowExplanation(false);
+    resetQuestionDrafts();
     setPhase("answer");
     persistSession(next, false, answers);
   };
@@ -953,7 +1052,7 @@ export function ExercisePlayer({
     );
   }
 
-  const showFeedback = phase === "feedback";
+  const showFeedback = phase === "feedback" && !examMode;
 
   if (isVocab) {
     const wordEn = (
@@ -1198,7 +1297,11 @@ export function ExercisePlayer({
                     disabled={!canCheck}
                     onClick={handleCheck}
                   >
-                    Kiểm tra →
+                    {examMode
+                      ? questionIndex >= total - 1
+                        ? "Nộp bài →"
+                        : "Câu tiếp →"
+                      : "Kiểm tra →"}
                   </button>
                 </>
               ) : (
@@ -1312,7 +1415,7 @@ export function ExercisePlayer({
   }
 
   return (
-    <div className="exercise-player">
+    <div className={`exercise-player${examMode ? " exercise-player--exam" : ""}`}>
       {showInlineAttemptBanner ? (
         <PracticeAttemptBanner latest={serverLatestAttempt} onReview={handleReview} />
       ) : null}

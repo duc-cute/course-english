@@ -1,33 +1,298 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Nhắc buổi dạy</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Thông báo lịch học</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap');
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    @media only screen and (max-width: 620px) {
+      .email-container { width: 100% !important; }
+      .stack-pad { padding-left: 20px !important; padding-right: 20px !important; }
+      .hero-title { font-size: 24px !important; line-height: 1.3 !important; }
+      .badge-hide-mobile { display: none !important; }
+    }
+  </style>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937; max-width: 560px; margin: 0 auto; padding: 24px;">
-  <h2 style="margin-top: 0;" th:text="${startingSoon} ? 'Buổi dạy sắp bắt đầu' : 'Buổi dạy sau khoảng 15 phút'">Nhắc buổi dạy</h2>
-  <p>Xin chào <strong th:text="${teacherName}">thầy/cô</strong>,</p>
-  <p>Bạn có buổi dạy trên Course English:</p>
-  <ul style="padding-left: 20px;">
-    <li><strong>Lớp:</strong> <span th:text="${classroomName}">Class 10A1</span></li>
-    <li><strong>Buổi:</strong> <span th:text="${sessionTitle}">Creative Writing</span></li>
-    <li th:if="${lessonTitle != null and !lessonTitle.isEmpty()}">
-      <strong>Bài:</strong> <span th:text="${lessonTitle}">Unit 3</span>
-    </li>
-    <li><strong>Ngày:</strong> <span th:text="${dateLabel}">Thứ Tư, 21/6/2026</span></li>
-    <li><strong>Giờ:</strong> <span th:text="${timeRange}">19:00 – 19:50</span></li>
-    <li th:if="${meetLink != null and !meetLink.isEmpty()}">
-      <strong>Meet:</strong>
-      <a th:href="${meetLink}" th:text="${meetLink}">https://meet.google.com/...</a>
-    </li>
-  </ul>
-  <p>
-    <a th:href="${scheduleUrl}"
-       style="display: inline-block; background: #004ac6; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-weight: 600;">
-      Xem lịch dạy
-    </a>
-  </p>
-  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
-  <p style="font-size: 12px; color: #9ca3af;">© <span th:text="${currentYear}">2026</span> Course English</p>
+<body style="margin:0;padding:0;background-color:#f8f9ff;font-family:'Nunito Sans',Segoe UI,Helvetica,Arial,sans-serif;color:#0b1c30;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
+    <span th:text="|Buổi học ${classroomName}: ${timeRange} · ${dateLabel}|">Bạn có buổi học trong ngày.</span>
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f8f9ff;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" class="email-container" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;">
+
+          <!-- Header -->
+          <tr>
+            <td class="stack-pad" style="padding:8px 0 24px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="left" valign="middle">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td valign="middle" style="padding-right:10px;">
+                          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 100%);text-align:center;line-height:40px;">
+                            <span style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:14px;font-weight:800;color:#ffffff;">CE</span>
+                          </div>
+                        </td>
+                        <td valign="middle">
+                          <div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:22px;font-weight:700;color:#2151da;letter-spacing:-0.02em;" th:text="${brandName}">Nova English</div>
+                          <div style="font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:11px;font-weight:600;color:#747686;letter-spacing:0.04em;">Learn · Practice · Achieve</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td class="badge-hide-mobile" align="right" valign="middle">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td style="background-color:#e5eeff;border-radius:9999px;padding:8px 16px;">
+                          <span style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#0037b0;text-transform:uppercase;letter-spacing:0.08em;">&#128276; Th&#244;ng b&#225;o l&#7883;ch h&#7885;c</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background-color:#ffffff;border-radius:24px;border:1px solid #c4c5d7;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+
+                <!-- Hero -->
+                <tr>
+                  <td class="stack-pad" style="padding:36px 40px 20px;background:linear-gradient(180deg,#eff4ff 0%,#ffffff 100%);">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="left" valign="middle" style="padding-right:16px;">
+                          <h1 class="hero-title" style="margin:0 0 10px;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:28px;line-height:1.3;font-weight:700;color:#0b1c30;">
+                            Bu&#7893;i h&#7885;c trong ng&#224;y
+                          </h1>
+                          <p style="margin:0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:16px;line-height:1.6;color:#434655;">
+                            Xin ch&#224;o <strong th:text="${recipientName}" style="color:#0b1c30;">b&#7841;n</strong>,
+                            b&#7841;n c&#243; bu&#7893;i h&#7885;c tr&#234;n <span th:text="${brandName}">Nova English</span>. Vui l&#242;ng ki&#7875;m tra th&#244;ng tin chi ti&#7871;t b&#234;n d&#432;&#7899;i &#273;&#7875; chu&#7849;n b&#7883; t&#7889;t nh&#7845;t.
+                          </p>
+                        </td>
+                        <td class="badge-hide-mobile" width="96" align="center" valign="middle">
+                          <div style="width:88px;height:88px;border-radius:20px;background:linear-gradient(135deg,#e5eeff 0%,#d3e4fe 100%);line-height:88px;text-align:center;font-size:40px;">
+                            &#128197;
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Detail card -->
+                <tr>
+                  <td class="stack-pad" style="padding:8px 40px 28px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
+
+                      <tr>
+                        <td style="padding:16px 18px;border-bottom:1px solid #f1f5f9;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td width="40" valign="middle" style="padding-right:12px;">
+                                <div style="width:36px;height:36px;border-radius:10px;background:#f3e8ff;text-align:center;line-height:36px;font-size:16px;">&#128101;</div>
+                              </td>
+                              <td valign="middle">
+                                <div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#747686;text-transform:uppercase;letter-spacing:0.06em;">L&#7899;p</div>
+                                <div style="font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:15px;font-weight:700;color:#0b1c30;" th:text="${classroomName}">L&#7899;p h&#7885;c</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="padding:16px 18px;border-bottom:1px solid #f1f5f9;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td width="40" valign="middle" style="padding-right:12px;">
+                                <div style="width:36px;height:36px;border-radius:10px;background:#dcfce7;text-align:center;line-height:36px;font-size:16px;">&#128218;</div>
+                              </td>
+                              <td valign="middle">
+                                <div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#747686;text-transform:uppercase;letter-spacing:0.06em;">Bu&#7893;i</div>
+                                <div style="font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:15px;font-weight:700;color:#0b1c30;" th:text="${sessionTitle}">Ti&#234;u &#273;&#7873; bu&#7893;i h&#7885;c</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <tr th:if="${lessonTitle != null and !#strings.isEmpty(lessonTitle)}">
+                        <td style="padding:16px 18px;border-bottom:1px solid #f1f5f9;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td width="40" valign="middle" style="padding-right:12px;">
+                                <div style="width:36px;height:36px;border-radius:10px;background:#ffedd5;text-align:center;line-height:36px;font-size:16px;">&#128196;</div>
+                              </td>
+                              <td valign="middle">
+                                <div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#747686;text-transform:uppercase;letter-spacing:0.06em;">B&#224;i</div>
+                                <div style="font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:15px;font-weight:700;color:#0b1c30;" th:text="${lessonTitle}">B&#224;i h&#7885;c</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="padding:16px 18px;border-bottom:1px solid #f1f5f9;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td width="40" valign="middle" style="padding-right:12px;">
+                                <div style="width:36px;height:36px;border-radius:10px;background:#dbeafe;text-align:center;line-height:36px;font-size:16px;">&#128197;</div>
+                              </td>
+                              <td valign="middle">
+                                <div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#747686;text-transform:uppercase;letter-spacing:0.06em;">Ng&#224;y</div>
+                                <div style="font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:15px;font-weight:700;color:#0b1c30;" th:text="${dateLabel}">Th&#7913; N&#259;m, 20/8/2026</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="padding:16px 18px;" th:styleappend="${meetLink != null and !#strings.isEmpty(meetLink)} ? 'border-bottom:1px solid #f1f5f9;' : ''">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td width="40" valign="middle" style="padding-right:12px;">
+                                <div style="width:36px;height:36px;border-radius:10px;background:#fce7f3;text-align:center;line-height:36px;font-size:16px;">&#128337;</div>
+                              </td>
+                              <td valign="middle">
+                                <div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#747686;text-transform:uppercase;letter-spacing:0.06em;">Gi&#7901;</div>
+                                <div style="font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:15px;font-weight:700;color:#0b1c30;" th:text="${timeRange}">20:00 – 22:00</div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <tr th:if="${meetLink != null and !#strings.isEmpty(meetLink)}">
+                        <td style="padding:16px 18px;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td width="40" valign="middle" style="padding-right:12px;">
+                                <div style="width:36px;height:36px;border-radius:10px;background:#e0f2fe;text-align:center;line-height:36px;font-size:16px;">&#127909;</div>
+                              </td>
+                              <td valign="middle">
+                                <div style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:11px;font-weight:700;color:#747686;text-transform:uppercase;letter-spacing:0.06em;">Link h&#7885;c</div>
+                                <a th:href="${meetLink}" th:text="${meetLink}" target="_blank"
+                                   style="font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:14px;font-weight:600;color:#1d4ed8;word-break:break-all;text-decoration:none;">
+                                  https://meet.google.com/...
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- CTAs -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;">
+                      <tr>
+                        <td align="center">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td align="center" style="border-radius:9999px;background:linear-gradient(135deg,#1d4ed8 0%,#3b82f6 100%);">
+                                <a th:href="${scheduleUrl}" target="_blank"
+                                   style="display:inline-block;padding:14px 32px;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:9999px;">
+                                  &#128197; Xem l&#7883;ch h&#7885;c
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr th:if="${meetLink != null and !#strings.isEmpty(meetLink)}">
+                        <td align="center" style="padding-top:12px;">
+                          <a th:href="${meetLink}" target="_blank"
+                             style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:14px;font-weight:700;color:#006c49;text-decoration:none;">
+                            V&#224;o l&#7899;p ngay &#8594;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Tip -->
+                <tr>
+                  <td class="stack-pad" style="padding:20px 40px 28px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eff4ff;border-radius:14px;">
+                      <tr>
+                        <td style="padding:16px 18px;">
+                          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                              <td width="36" valign="top" style="padding-right:12px;font-size:20px;">&#128161;</td>
+                              <td valign="middle">
+                                <p style="margin:0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:14px;line-height:1.55;color:#0b1c30;">
+                                  H&#227;y chu&#7849;n b&#7883; t&#224;i li&#7879;u v&#224; thi&#7871;t b&#7883; tr&#432;&#7899;c bu&#7893;i h&#7885;c &#273;&#7875; mang &#273;&#7871;n tr&#7843;i nghi&#7879;m t&#7889;t nh&#7845;t.
+                                </p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin:18px 0 0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:14px;line-height:1.6;color:#434655;">
+                      Tr&#226;n tr&#7885;ng,<br/>
+                      <strong style="color:#0b1c30;" th:text="${teacherName}">Giáo viên phụ trách</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="stack-pad" style="padding:32px 0 0;text-align:center;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="center" style="padding-bottom:10px;">
+                    <span style="font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:18px;font-weight:700;color:#0037b0;" th:text="${brandName}">Nova English</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-bottom:12px;">
+                    <p style="margin:0;font-family:'Nunito Sans',Segoe UI,sans-serif;font-size:12px;line-height:1.6;color:#747686;">
+                      Email th&#244;ng b&#225;o t&#7921; &#273;&#7897;ng khi c&#243; l&#7883;ch h&#7885;c trong ng&#224;y.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <p style="margin:0;font-family:'Plus Jakarta Sans',Segoe UI,sans-serif;font-size:12px;font-weight:700;color:#747686;">
+                      &#169; <span th:text="${currentYear}">2026</span> <span th:text="${brandName}">Nova English</span>. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

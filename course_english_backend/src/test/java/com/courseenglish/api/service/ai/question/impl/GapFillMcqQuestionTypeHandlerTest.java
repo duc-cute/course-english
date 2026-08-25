@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GapFillMcqQuestionTypeHandlerTest {
@@ -46,5 +47,42 @@ class GapFillMcqQuestionTypeHandlerTest {
     handler.normalize(draft);
     List<String> errors = handler.validate(draft);
     assertTrue(errors.isEmpty(), () -> String.join("; ", errors));
+  }
+
+  @Test
+  void normalizeStripsSourceNumbersAfterBlanks() throws Exception {
+    String json =
+        """
+        {
+          "questionType": "GAP_FILL_MCQ",
+          "promptText": "Psychology of Money is ___ (6) popular book. Many readers find it ___ (7) insightful.",
+          "contentJson": {
+            "blanks": [
+              {
+                "choices": [
+                  { "choiceText": "a", "correct": false },
+                  { "choiceText": "an", "correct": true },
+                  { "choiceText": "the", "correct": false },
+                  { "choiceText": "one", "correct": false }
+                ]
+              },
+              {
+                "choices": [
+                  { "choiceText": "very", "correct": true },
+                  { "choiceText": "much", "correct": false },
+                  { "choiceText": "too", "correct": false },
+                  { "choiceText": "so", "correct": false }
+                ]
+              }
+            ]
+          }
+        }
+        """;
+    AiDraftQuestionDTO draft = objectMapper.readValue(json, AiDraftQuestionDTO.class);
+    handler.normalize(draft);
+    assertEquals(
+        "Psychology of Money is ___ popular book. Many readers find it ___ insightful.",
+        draft.getPromptText());
+    assertTrue(handler.validate(draft).isEmpty());
   }
 }

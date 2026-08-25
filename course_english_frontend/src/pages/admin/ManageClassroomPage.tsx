@@ -21,6 +21,7 @@ import {
   AdminCatalogPageHeader,
   AdminCatalogToolbar,
   ConfirmDialog,
+  PagingAutocomplete,
   type CatalogGridColumn,
 } from "../../admin/components";
 import {
@@ -40,10 +41,36 @@ import {
   type ClassroomRecord,
   type ClassroomsPaginationResult,
 } from "../../shared/api/classroom";
-import type { ApiResponse } from "../../shared/api/types";
+import { apiGetAccount, apiGetUsers } from "../../shared/api/user";
+import type { ApiResponse, UserRecord } from "../../shared/api/types";
 
-type ClassroomForm = { name: string; code: string; description: string };
-const defaultForm: ClassroomForm = { name: "", code: "", description: "" };
+type ClassroomForm = { name: string; code: string; description: string; teacher: UserRecord | null };
+const defaultForm: ClassroomForm = { name: "", code: "", description: "", teacher: null };
+
+const ALLOWED_CLASSROOM_ROLE_NAMES = ["TEACHER_ROLE", "ADMIN_ROLE"] as const;
+
+function getUserRoleNames(user: UserRecord): string[] {
+  if (user.roles?.length) return user.roles;
+  if (user.role?.includes(",")) {
+    return user.role
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return user.role ? [user.role] : [];
+}
+
+function toUserOption(user?: Partial<UserRecord> | null): UserRecord | null {
+  if (!user?.id) return null;
+  return {
+    id: user.id,
+    name: user.name?.trim() || user.email?.trim() || "Người dùng",
+    email: user.email?.trim() || "",
+    avatarUrl: user.avatarUrl ?? null,
+    role: user.role,
+    roles: user.roles,
+  };
+}
 
 export function ManageClassroomPage() {
   const [rows, setRows] = useState<ClassroomRecord[]>([]);
@@ -60,6 +87,7 @@ export function ManageClassroomPage() {
   const [editing, setEditing] = useState<ClassroomRecord | null>(null);
   const [form, setForm] = useState<ClassroomForm>(defaultForm);
   const [formError, setFormError] = useState("");
+  const [currentAccount, setCurrentAccount] = useState<UserRecord | null>(null);
 
   const [openDelete, setOpenDelete] = useState(false);
   const [deleting, setDeleting] = useState<ClassroomRecord | null>(null);
@@ -89,9 +117,21 @@ export function ManageClassroomPage() {
     void fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    void (async () => {
+      try {
+        const response = await apiGetAccount();
+        const account = toUserOption(response?.data?.user ?? response?.result?.user);
+        setCurrentAccount(account);
+      } catch {
+        setCurrentAccount(null);
+      }
+    })();
+  }, []);
+
   const openCreate = () => {
     setEditing(null);
-    setForm(defaultForm);
+    setForm({ ...defaultForm, teacher: currentAccount });
     setFormError("");
     setOpenForm(true);
   };
@@ -107,15 +147,72 @@ export function ManageClassroomPage() {
         name: detail?.name ?? "",
         code: detail?.code ?? "",
         description: detail?.description ?? "",
+        teacher:
+          toUserOption({
+            id: detail?.teacherId,
+            name: detail?.teacherName,
+          }) ?? currentAccount,
       });
     } catch {
       setForm({
         name: item.name ?? "",
         code: item.code ?? "",
         description: item.description ?? "",
+        teacher:
+          toUserOption({
+            id: item.teacherId,
+            name: item.teacherName,
+          }) ?? currentAccount,
       });
     }
   };
+
+  useEffect(() => {
+    if (!openForm || editing || form.teacher || !currentAccount) return;
+    setForm((prev) => ({ ...prev, teacher: currentAccount }));
+  }, [openForm, editing, form.teacher, currentAccount]);
+
+  const fetchTeacherOptions = useCallback(
+    async ({ page, size, search }: { page: number; size: number; search: string }) => {
+      const trimmed = search.trim();
+      const requests = ALLOWED_CLASSROOM_ROLE_NAMES.map((roleName) =>
+        apiGetUsers({
+          page,
+          size,
+          sort: "name,asc",
+          roleName,
+          ...(trimmed ? { keyword: trimmed } : {}),
+        }).catch(() => null),
+      );
+
+      const responses = await Promise.all(requests);
+      const map = new Map<string, UserRecord>();
+
+      responses.forEach((response) => {
+        const payload = response as ApiResponse<{ result?: UserRecord[] }> | null;
+        const items = payload?.data?.result ?? payload?.result ?? [];
+        items.forEach((user) => {
+          const option = toUserOption(user);
+          if (option) {
+            map.set(String(option.id), option);
+          }
+        });
+      });
+
+      if (currentAccount) {
+        const currentRoles = getUserRoleNames(currentAccount);
+        if (currentRoles.some((role) => ALLOWED_CLASSROOM_ROLE_NAMES.includes(role as (typeof ALLOWED_CLASSROOM_ROLE_NAMES)[number]))) {
+          map.set(String(currentAccount.id), currentAccount);
+        }
+      }
+
+      return {
+        items: Array.from(map.values()),
+        total: map.size,
+      };
+    },
+    [currentAccount],
+  );
 
   const submitForm = async () => {
     const name = form.name.trim();
@@ -124,13 +221,27 @@ export function ManageClassroomPage() {
       setFormError("Tên lớp và mã lớp là bắt buộc.");
       return;
     }
+    if (!form.teacher?.id) {
+      setFormError("Vui lòng chọn giáo viên phụ trách.");
+      return;
+    }
     setSubmitting(true);
     setFormError("");
     try {
       if (editing?.id) {
-        await apiUpdateClassroom(editing.id, { name, code, description: form.description.trim() || undefined });
+        await apiUpdateClassroom(editing.id, {
+          name,
+          code,
+          description: form.description.trim() || undefined,
+          teacherId: String(form.teacher.id),
+        });
       } else {
-        await apiCreateClassroom({ name, code, description: form.description.trim() || undefined });
+        await apiCreateClassroom({
+          name,
+          code,
+          description: form.description.trim() || undefined,
+          teacherId: String(form.teacher.id),
+        });
       }
       setOpenForm(false);
       setEditing(null);
@@ -191,6 +302,14 @@ export function ManageClassroomPage() {
         mobileRole: "meta",
         className: "catalog-table-muted",
         render: (item) => item.description || "—",
+      },
+      {
+        key: "teacherName",
+        header: "Giáo viên phụ trách",
+        width: "220px",
+        mobileRole: "meta",
+        className: "catalog-table-muted",
+        render: (item) => item.teacherName || "—",
       },
       {
         key: "actions",
@@ -284,6 +403,24 @@ export function ManageClassroomPage() {
             <TextField label="Tên lớp" size="small" required value={form.name} sx={muTextFieldSx} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
             <TextField label="Mã lớp" size="small" required value={form.code} sx={muTextFieldSx} onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))} />
             <TextField label="Mô tả" size="small" multiline minRows={2} sx={muTextFieldSx} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+            <PagingAutocomplete<UserRecord>
+              multiple={false}
+              value={form.teacher}
+              onChange={(value) => setForm((prev) => ({ ...prev, teacher: (value as UserRecord | null) ?? null }))}
+              fetchPage={fetchTeacherOptions}
+              getOptionLabel={(user) => user.name || user.email || "Người dùng"}
+              getOptionKey={(user) => String(user.id)}
+              renderSecondaryLine={(user) => {
+                const roles = getUserRoleNames(user)
+                  .filter((role) => ALLOWED_CLASSROOM_ROLE_NAMES.includes(role as (typeof ALLOWED_CLASSROOM_ROLE_NAMES)[number]))
+                  .map((role) => (role === "ADMIN_ROLE" ? "Quản trị" : "Giáo viên"))
+                  .join(" · ");
+                const email = user.email?.trim();
+                return [email, roles].filter(Boolean).join(" · ") || null;
+              }}
+              helperText="Mặc định là tài khoản đang đăng nhập. Chỉ hiển thị user có role Giáo viên hoặc Quản trị."
+              placeholder="Chọn giáo viên phụ trách..."
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={muDialogFooter}>

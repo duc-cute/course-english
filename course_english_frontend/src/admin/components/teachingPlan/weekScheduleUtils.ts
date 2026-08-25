@@ -11,20 +11,30 @@ const WEEKDAY_MAP: Record<string, number> = {
   Sat: 6,
 };
 
+function parseDateAtNoonInTz(iso: string): Date | null {
+  if (!iso?.trim()) return null;
+  const normalized = iso.includes("T") ? iso : `${iso}T12:00:00+07:00`;
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export function toIsoDateInTz(date: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TEACHING_PLAN_TZ }).format(date);
 }
 
 export function getDayOfWeekInTz(iso: string): number {
+  const date = parseDateAtNoonInTz(iso);
+  if (!date) return 0;
   const weekday = new Intl.DateTimeFormat("en-US", {
     timeZone: TEACHING_PLAN_TZ,
     weekday: "short",
-  }).format(new Date(`${iso}T12:00:00+07:00`));
+  }).format(date);
   return WEEKDAY_MAP[weekday] ?? 0;
 }
 
 export function addDays(iso: string, days: number): string {
-  const date = new Date(`${iso}T12:00:00+07:00`);
+  const date = parseDateAtNoonInTz(iso);
+  if (!date) return formatTodayIsoInTz();
   date.setDate(date.getDate() + days);
   return toIsoDateInTz(date);
 }
@@ -50,20 +60,24 @@ export function getWeekDays(weekStart: string): string[] {
 }
 
 export function formatWeekRangeLabel(from: string, to: string): string {
+  const fromDate = parseDateAtNoonInTz(from);
+  const toDate = parseDateAtNoonInTz(to);
+  if (!fromDate || !toDate) return "—";
+
   const fromMonth = new Intl.DateTimeFormat("vi-VN", {
     month: "numeric",
     timeZone: TEACHING_PLAN_TZ,
-  }).format(new Date(`${from}T12:00:00+07:00`));
+  }).format(fromDate);
   const toMonth = new Intl.DateTimeFormat("vi-VN", {
     month: "numeric",
     timeZone: TEACHING_PLAN_TZ,
-  }).format(new Date(`${to}T12:00:00+07:00`));
+  }).format(toDate);
 
   const fromDay = new Intl.DateTimeFormat("vi-VN", { day: "numeric", timeZone: TEACHING_PLAN_TZ }).format(
-    new Date(`${from}T12:00:00+07:00`),
+    fromDate,
   );
   const toDay = new Intl.DateTimeFormat("vi-VN", { day: "numeric", timeZone: TEACHING_PLAN_TZ }).format(
-    new Date(`${to}T12:00:00+07:00`),
+    toDate,
   );
 
   if (fromMonth === toMonth) {
@@ -71,7 +85,7 @@ export function formatWeekRangeLabel(from: string, to: string): string {
       month: "long",
       year: "numeric",
       timeZone: TEACHING_PLAN_TZ,
-    }).format(new Date(`${from}T12:00:00+07:00`));
+    }).format(fromDate);
     return `${fromDay} – ${toDay} ${monthYear}`;
   }
 
@@ -79,27 +93,31 @@ export function formatWeekRangeLabel(from: string, to: string): string {
     day: "numeric",
     month: "short",
     timeZone: TEACHING_PLAN_TZ,
-  }).format(new Date(`${from}T12:00:00+07:00`));
+  }).format(fromDate);
   const toLabel = new Intl.DateTimeFormat("vi-VN", {
     day: "numeric",
     month: "short",
     year: "numeric",
     timeZone: TEACHING_PLAN_TZ,
-  }).format(new Date(`${to}T12:00:00+07:00`));
+  }).format(toDate);
   return `${fromLabel} – ${toLabel}`;
 }
 
 export function formatDaySectionLabel(iso: string): string {
+  const date = parseDateAtNoonInTz(iso);
+  if (!date) return "—";
   return new Intl.DateTimeFormat("vi-VN", {
     weekday: "long",
     day: "numeric",
     month: "long",
     timeZone: TEACHING_PLAN_TZ,
-  }).format(new Date(`${iso}T12:00:00+07:00`));
+  }).format(date);
 }
 
 export function sessionDayKey(startAt: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: TEACHING_PLAN_TZ }).format(new Date(startAt));
+  const date = new Date(startAt);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TEACHING_PLAN_TZ }).format(date);
 }
 
 export function isTodayIso(iso: string): boolean {

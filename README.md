@@ -21,25 +21,27 @@ LMS học tiếng Anh Grade 1–9: **Lesson = chuỗi Learning Blocks** (đọc/
 - [x] `LessonBlock` + `payload_json`, editor/reader TEXT + IMAGE
 - [x] Student `/student`, progress local (scroll)
 
-### P1 — đang làm (Lesson Player MVP)
-
-Ưu tiên theo [REVIEW.html §13.10](./course_english_frontend/docs/REVIEW.html#lesson-impl-plan):
+### P1 — Lesson Player MVP ✅ (Phases 0–4)
 
 | Phase | Deliverable | Trạng thái |
 |-------|-------------|------------|
 | **0** | `EXERCISE_SET` enum + `blockTypes.ts` + schema payload | ✓ |
-| **1** | BE `lesson_block_progress` + attempt API | ⏳ |
+| **1** | Progress API (`lesson_practice_attempts`, `lesson_reading_progress`) | ✓ |
 | **2** | FE tab **Bài học / Bài tập** (`LessonReaderPage`) | ✓ |
-| **3** | `ExercisePlayer` + MCQ stepped (0/N, KIỂM TRA) | ✓ |
-| **4** | Admin editor `EXERCISE_SET` | ⏳ |
-| **5** | Syllabus sidebar Unit + enrollment filter | ⏳ |
+| **3** | `ExercisePlayer` — 10 loại câu + result/review | ✓ |
+| **4** | Admin editor Manual + Import CSV/Excel + QUESTION_REF | ✓ |
+| **5** | Syllabus sidebar trong player | ⏳ |
 
-Song song (sau Player MVP): AUDIO/CALLOUT/SUMMARY đầy đủ.
+CALLOUT, SUMMARY, VOCABULARY flashcard, SLIDE_DECK, enrollment filter — ✓. VIDEO/AUDIO block — ⏳.
 
-### P2 — sau P1
+### P2 — mở rộng (đã có phần lớn)
 
-- Question bank + Quiz player độc lập
-- Assignment, Dashboard GV
+- Question Bank Phase 1–3 + AI gen ✅
+- ExamPaper soạn đề + AI gen ✅ (HS làm đề ⏳)
+- Vocab Journey + Assigned + mixed practice ✅
+- AI Reading Studio + karaoke premium ✅
+- Innovation Hub ✅
+- Assignment module ⏳
 
 ## Chạy local
 
@@ -106,8 +108,11 @@ Unit (Subject) → nhiều Lesson (vocab, grammar, …)
 
 ## Tài liệu
 
-- **[LESSON_AUTHORING_PROGRESS.md](./docs/LESSON_AUTHORING_PROGRESS.md)** — tiến độ 4 phương thức soạn lesson (đang làm: Manual → Import)
-- **[REVIEW.html](./course_english_frontend/public/docs/REVIEW.html)** — product review + checklist (Admin → Review tài liệu)
+- **[docs/README.md](./course_english_frontend/docs/README.md)** — **danh mục chức năng** (tóm tắt dễ đọc, cập nhật 20/08/2026)
+- **[REVIEW.html](./course_english_frontend/public/docs/REVIEW.html)** — product review + checklist tick (Admin → Review tài liệu)
+- **[LESSON_AUTHORING_PROGRESS.md](./docs/LESSON_AUTHORING_PROGRESS.md)** — 4 phương thức soạn lesson ✅
+- [STUDENT_VOCAB_LEARNING_PLAN.md](./docs/STUDENT_VOCAB_LEARNING_PLAN.md) — Vocab Journey HS
+- [INNOVATION_HUB_PROGRESS.md](./docs/INNOVATION_HUB_PROGRESS.md) — Innovation Hub
 - [ENGLISH_LEARNING_CLONE_PLAN.md](./docs/ENGLISH_LEARNING_CLONE_PLAN.md)
 - [FORK_FROM_CELL_ARCHITECTURE.md](./docs/FORK_FROM_CELL_ARCHITECTURE.md)
 

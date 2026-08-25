@@ -19,11 +19,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 public class AiExamPaperOutlineService {
 
   private static final int OUTLINE_EXCERPT_MAX_CHARS = 48_000;
+
+  /** THPT cloze slot: (1) _______ */
+  private static final Pattern NUMBERED_BLANK_SLOT =
+      Pattern.compile("\\(\\s*[1-9]\\d*\\s*\\)\\s*[_.…]{2,}");
+
+  /** "best fits each of the numbered blanks from 1 to 6" */
+  private static final Pattern NUMBERED_BLANKS_INSTRUCTION =
+      Pattern.compile(
+          "(?i)numbered\\s+blanks?(?:\\s+from\\s+\\d+\\s+to\\s+\\d+)?|blanks?\\s+from\\s+\\d+\\s+to\\s+\\d+");
+
+  private static final Pattern MARK_ABCD =
+      Pattern.compile("(?i)mark\\s+the\\s+letter\\s+a\\s*,?\\s*b\\s*,?\\s*c\\s*,?\\s*(?:or\\s+)?d");
 
   private final AiDocumentService aiDocumentService;
   private final AiAccessSupport aiAccessSupport;
@@ -78,11 +91,15 @@ public class AiExamPaperOutlineService {
             - Use instruction text as the boundary — do NOT merge distinct parts.
             - READING_COMPREHENSION: each section = ONE passage. questionCount = number of
               sub-questions in that passage (e.g. instruction "questions 11 to 20" → questionCount: 10).
-            - GAP_FILL_MCQ: THPT cloze — one passage, Mark A/B/C/D per blank.
-              questionCount = number of blanks (e.g. 6–10 → 5). NOT typed answers.
-            - MULTIPLE_CHOICE / TRUE_FALSE: questionCount = scorable items in that section.
+            - GAP_FILL_MCQ: THPT cloze — ONE passage with blanks (1)(2)… and Question N options A/B/C/D
+              under the passage. questionCount = number of blanks (e.g. 6). NOT typed answers.
+              Output ONE LMS item (not N separate MCQs).
+            - MULTIPLE_CHOICE: standalone stems with A/B/C/D — NO shared cloze passage / numbered blanks.
+            - TRUE_FALSE: questionCount = scorable items in that section.
             - FILL_BLANK: ONLY when students TYPE a word (no A/B/C/D). Rare in THPT.
-            - If instruction says "Mark the letter A, B, C or D" with cloze passage → GAP_FILL_MCQ.
+            - If instruction says "Mark the letter A, B, C or D" AND "numbered blanks" / cloze passage
+              → ALWAYS GAP_FILL_MCQ (never MULTIPLE_CHOICE, never FILL_BLANK).
+            - NEVER split a cloze passage into multiple MULTIPLE_CHOICE sections/items.
             - If the file has no clear instruction for a part, write a standard English exam instruction.
             - Allowed questionType values: MULTIPLE_CHOICE, TRUE_FALSE, GAP_FILL_MCQ, FILL_BLANK, READING_COMPREHENSION.
 
@@ -92,8 +109,14 @@ public class AiExamPaperOutlineService {
               "paperInstruction": "string or null",
               "sections": [
                 {
-                  "title": "PART I — MULTIPLE CHOICE",
-                  "instruction": "Mark the letter A, B, C, or D...",
+                  "title": "PART I — CLOZE",
+                  "instruction": "Read the following passage and mark the letter A, B, C, or D to indicate the correct option that best fits each of the numbered blanks from 1 to 6.",
+                  "questionType": "GAP_FILL_MCQ",
+                  "questionCount": 6
+                },
+                {
+                  "title": "PART II — MULTIPLE CHOICE",
+                  "instruction": "Mark the letter A, B, C, or D to indicate the correct answer to each of the following questions.",
                   "questionType": "MULTIPLE_CHOICE",
                   "questionCount": 12
                 }
@@ -124,10 +147,114 @@ public class AiExamPaperOutlineService {
     if (outline.getSections().isEmpty()) {
       warnings.add("AI không nhận diện được phần nào — hãy chỉnh outline thủ công hoặc thử PDF/dán text.");
     } else {
+      reclassifyClozeAsGapFillMcq(text, outline.getSections(), warnings);
       examSectionSliceService.applySlices(text, outline.getSections(), warnings);
     }
     outline.setWarnings(warnings);
     return outline;
+  }
+
+  /**
+   * LLM often mis-labels THPT cloze (passage + numbered blanks + A/B/C/D) as MULTIPLE_CHOICE.
+   * Correct to {@link QuestionTypeEnum#GAP_FILL_MCQ} using instruction + document signals.
+   */
+  void reclassifyClozeAsGapFillMcq(
+      String documentText, List<ExamSectionGenSpecDTO> sections, List<String> warnings) {
+    if (sections == null || sections.isEmpty()) {
+      return;
+    }
+    String doc = documentText != null ? documentText : "";
+    boolean docHasNumberedBlankSlots = NUMBERED_BLANK_SLOT.matcher(doc).find();
+
+    for (ExamSectionGenSpecDTO spec : sections) {
+      QuestionTypeEnum type = spec.getQuestionType();
+      if (type != QuestionTypeEnum.MULTIPLE_CHOICE && type != QuestionTypeEnum.FILL_BLANK) {
+        continue;
+      }
+      if (!looksLikeGapFillMcq(spec.getTitle(), spec.getInstruction(), docHasNumberedBlankSlots)) {
+        continue;
+      }
+      spec.setQuestionType(QuestionTypeEnum.GAP_FILL_MCQ);
+      int blanks = inferBlankCount(spec.getInstruction(), doc, spec.getQuestionCount());
+      spec.setQuestionCount(blanks);
+      String label =
+          spec.getTitle() != null && !spec.getTitle().isBlank() ? spec.getTitle() : "section";
+      warnings.add(
+          "Đã chỉnh \""
+              + label
+              + "\": "
+              + type.name()
+              + " → GAP_FILL_MCQ (cloze A/B/C/D, "
+              + blanks
+              + " ô trống).");
+    }
+  }
+
+  private boolean looksLikeGapFillMcq(
+      String title, String instruction, boolean docHasNumberedBlankSlots) {
+    String probe =
+        ((title == null ? "" : title) + "\n" + (instruction == null ? "" : instruction))
+            .toLowerCase(Locale.ROOT);
+    if (probe.isBlank()) {
+      // Không đoán chỉ từ file — tránh đổi nhầm section MCQ thường trong đề nhiều phần.
+      return false;
+    }
+
+    boolean numberedBlanks = NUMBERED_BLANKS_INSTRUCTION.matcher(probe).find();
+    boolean markAbcd = MARK_ABCD.matcher(probe).find()
+        || probe.contains("a, b, c, or d")
+        || probe.contains("a, b, c or d");
+    boolean clozeWord =
+        probe.contains("cloze")
+            || probe.contains("gap-fill")
+            || probe.contains("gap fill")
+            || probe.contains("điền từ vào chỗ trống")
+            || probe.contains("chỗ trống");
+    boolean mentionsBlank = probe.contains("blank") || probe.contains("chỗ trống");
+
+    // "numbered blanks from 1 to 6" — tín hiệu mạnh nhất (đúng đề user)
+    if (numberedBlanks) {
+      return true;
+    }
+    // Instruction cloze + Mark A/B/C/D
+    if (markAbcd && clozeWord) {
+      return true;
+    }
+    // Mark A/B/C/D + nói blank + file có (1) _______
+    if (markAbcd && mentionsBlank && docHasNumberedBlankSlots) {
+      return true;
+    }
+    if (clozeWord && docHasNumberedBlankSlots) {
+      return true;
+    }
+    return false;
+  }
+
+  private int inferBlankCount(String instruction, String documentText, Integer currentCount) {
+    if (instruction != null) {
+      var fromTo =
+          Pattern.compile("(?i)blanks?\\s+from\\s+(\\d+)\\s+to\\s+(\\d+)").matcher(instruction);
+      if (fromTo.find()) {
+        int from = Integer.parseInt(fromTo.group(1));
+        int to = Integer.parseInt(fromTo.group(2));
+        if (to >= from && to - from + 1 <= 12) {
+          return Math.max(2, to - from + 1);
+        }
+      }
+    }
+    int slots = 0;
+    var matcher = NUMBERED_BLANK_SLOT.matcher(documentText != null ? documentText : "");
+    while (matcher.find()) {
+      slots++;
+      if (slots >= 12) {
+        break;
+      }
+    }
+    if (slots >= 2) {
+      return slots;
+    }
+    int fallback = currentCount != null ? currentCount : 6;
+    return Math.max(2, Math.min(12, fallback));
   }
 
   private ResExamPaperOutlineDTO parseOutlineJson(String json, List<String> warnings)

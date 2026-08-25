@@ -184,6 +184,11 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         AppConstants.notificationEmailEnabled = readBoolean(
                 findValue(all, SystemConfigKeyEnum.NOTIFICATION_EMAIL_ENABLED.getKey()),
                 false);
+        AppConstants.mailBrandName = trimToEmpty(
+                findValue(all, SystemConfigKeyEnum.MAIL_BRAND_NAME.getKey()));
+        if (AppConstants.mailBrandName.isEmpty()) {
+            AppConstants.mailBrandName = SystemConfigKeyEnum.MAIL_BRAND_NAME.getDefaultValue();
+        }
         AppConstants.wordExportLogoUrl = trimToEmpty(
                 findValue(all, SystemConfigKeyEnum.WORD_EXPORT_LOGO_URL.getKey()));
         AppConstants.wordExportWatermarkText = trimToEmpty(

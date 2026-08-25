@@ -233,14 +233,13 @@ export function ClassSessionFormModal({
     if (!newTime) return;
     setForm((prev) => {
       const date = extractDateFromDatetimeLocal(prev.startLocal) || formatTodayIsoInTz();
-      const startLocal = mergeDateWithTime(date, newTime);
-      let endLocal = prev.endLocal;
-      if (
-        endLocal &&
-        new Date(datetimeLocalToIso(endLocal)).getTime() <= new Date(datetimeLocalToIso(startLocal)).getTime()
-      ) {
-        endLocal = addMinutesToDatetimeLocal(startLocal, SESSION_DEFAULT_DURATION_MIN);
-      }
+      // AppTimePicker trả về dạng HH:mm, không có 'T' => ghép trực tiếp để tránh bị fallback sai.
+      const startLocal = `${date}T${newTime.slice(0, 5)}`;
+      // Theo yêu cầu: đổi giờ bắt đầu thì giờ kết thúc tự theo cấu hình (duration mặc định).
+      // Nếu duration tràn sang ngày hôm sau thì cap lại ở 23:59 cùng ngày để tránh wrap lệch.
+      const candidate = addMinutesToDatetimeLocal(startLocal, SESSION_DEFAULT_DURATION_MIN);
+      const candidateDate = extractDateFromDatetimeLocal(candidate);
+      const endLocal = candidateDate !== date ? `${date}T23:59` : candidate;
       return { ...prev, startLocal, endLocal };
     });
   };
@@ -249,7 +248,8 @@ export function ClassSessionFormModal({
     if (!newTime) return;
     setForm((prev) => {
       const date = extractDateFromDatetimeLocal(prev.startLocal) || formatTodayIsoInTz();
-      const endLocal = mergeDateWithTime(date, newTime);
+      // AppTimePicker trả về dạng HH:mm, không có 'T' => ghép trực tiếp.
+      const endLocal = `${date}T${newTime.slice(0, 5)}`;
       return { ...prev, endLocal };
     });
   };
@@ -712,7 +712,7 @@ export function ClassSessionFormModal({
                   }}
                 />
 
-                <Box className="session-grid-row">
+                <Box className="session-time-grid-row">
                   <AppTimePicker
                     label="Giờ bắt đầu"
                     value={form.startLocal ? extractTimeFromDatetimeLocal(form.startLocal) : ""}

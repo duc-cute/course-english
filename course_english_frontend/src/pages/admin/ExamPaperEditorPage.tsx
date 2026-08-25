@@ -2,29 +2,27 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-import TableViewOutlinedIcon from "@mui/icons-material/TableViewOutlined";
-import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import {
   Alert,
   CircularProgress,
   Skeleton,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   type ExamPaperImportApplied,
 } from "../../admin/components/exam/ExamPaperImportDialog";
+import { ExamAssignToClassroomDialog } from "../../admin/components/exam/ExamAssignToClassroomDialog";
+import { ExamAssignmentScoresDialog } from "../../admin/components/exam/ExamAssignmentScoresDialog";
 import { ExamPaperAiFromDocDialog } from "../../admin/components/exam/ExamPaperAiFromDocDialog";
 import { ExamPaperSimilarAiDialog } from "../../admin/components/exam/ExamPaperSimilarAiDialog";
 import { ExamPaperSettings, type ExamPaperSettingsValues } from "../../admin/components/exam/ExamPaperSettings";
-import {
-  ExamSectionImportDialog,
-  type ExamSectionImportAppliedMeta,
-  type ExamSectionImportFormat,
-} from "../../admin/components/exam/ExamSectionImportDialog";
 import { ExamSectionReadingParseDialog } from "../../admin/components/exam/ExamSectionReadingParseDialog";
 import {
   ExamSectionListPanel,
@@ -126,17 +124,24 @@ export function ExamPaperEditorPage() {
   });
   const [sections, setSections] = useState<ExamSectionDraft[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [sectionImportOpen, setSectionImportOpen] = useState(false);
-  const [sectionImportFormat, setSectionImportFormat] = useState<ExamSectionImportFormat>("excel");
   const [readingParseOpen, setReadingParseOpen] = useState(false);
   const [aiFromDocOpen, setAiFromDocOpen] = useState(false);
   const [aiSimilarOpen, setAiSimilarOpen] = useState(false);
   const [wordExporting, setWordExporting] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [scoresOpen, setScoresOpen] = useState(false);
   const { flags } = useFeatureFlags();
 
   const activeSection = sections[activeIndex] ?? null;
   const totalQuestions = useMemo(() => countTotalQuestions(sections), [sections]);
   const canSimilarGen = sections.length > 0 && totalQuestions > 0 && Boolean(examPaperId);
+  const paperRef = useMemo(
+    () =>
+      examPaperId
+        ? ({ id: examPaperId, title: settings.title, status: settings.status } as ExamPaperRecord)
+        : null,
+    [examPaperId, settings.title, settings.status],
+  );
 
   const loadPaper = useCallback(async () => {
     if (!examPaperId) return;
@@ -239,19 +244,6 @@ export function ExamPaperEditorPage() {
     } finally {
       setSectionSaving(false);
     }
-  };
-
-  const handleSectionImportApplied = (applied: ExamSectionImportAppliedMeta) => {
-    const questionType = inferQuestionTypeFromPayload(applied.payloadJson) ?? "MULTIPLE_CHOICE";
-    updateActiveSection({
-      payloadJson: applied.payloadJson,
-      questionType,
-      ...(applied.title !== undefined ? { title: applied.title } : {}),
-      ...(applied.instruction !== undefined ? { instruction: applied.instruction } : {}),
-    });
-    setMessage(
-      "Đã import câu hỏi vào phần này (chưa lưu lên server — bấm Lưu đề để ghi).",
-    );
   };
 
   const handleReadingParseApplied = (payloadJson: string) => {
@@ -408,7 +400,7 @@ export function ExamPaperEditorPage() {
             onClick={() => navigate(`/${paths.ADMIN}/${paths.MANAGE_EXAM_PAPERS}`)}
           >
             <ArrowBackIcon sx={{ fontSize: 16 }} />
-            Danh sách đề
+            <span className="exam-editor-breadcrumb__back-label">Danh sách đề</span>
           </button>
           <span className="exam-editor-breadcrumb__sep">/</span>
           <span className="exam-editor-breadcrumb__current">Soạn đề thi</span>
@@ -420,27 +412,63 @@ export function ExamPaperEditorPage() {
               type="button"
               className="exam-editor-btn exam-editor-btn--ai"
               onClick={() => setAiSimilarOpen(true)}
+              title="Tạo đề tương tự"
             >
               <AutoAwesomeOutlinedIcon />
-              Tạo đề tương tự
+              <span className="exam-editor-btn__label">Tạo đề tương tự</span>
             </button>
           ) : null}
+          <Tooltip
+            title={
+              settings.status === "PUBLISHED"
+                ? "Gán đề đã publish cho lớp"
+                : "Publish đề trước khi gán cho lớp"
+            }
+          >
+            <span>
+              <button
+                type="button"
+                className="exam-editor-btn exam-editor-btn--outlined"
+                disabled={!examPaperId || settings.status !== "PUBLISHED"}
+                onClick={() => setAssignOpen(true)}
+                title="Gán lớp"
+              >
+                <GroupAddOutlinedIcon />
+                <span className="exam-editor-btn__label">Gán lớp</span>
+              </button>
+            </span>
+          </Tooltip>
+          <button
+            type="button"
+            className="exam-editor-btn exam-editor-btn--outlined"
+            disabled={!examPaperId}
+            onClick={() => setScoresOpen(true)}
+            title="Điểm lớp"
+          >
+            <LeaderboardOutlinedIcon />
+            <span className="exam-editor-btn__label">Điểm lớp</span>
+          </button>
           <button
             type="button"
             className="exam-editor-btn exam-editor-btn--outlined"
             disabled={wordExporting || wordExportStats.exportable === 0}
             onClick={() => void handleExportWord("worksheet")}
+            title="Xuất Word — Đề"
           >
             <DescriptionOutlinedIcon />
-            {wordExporting ? "Đang xuất..." : "Word — Đề"}
+            <span className="exam-editor-btn__label">
+              {wordExporting ? "Đang xuất..." : "Word — Đề"}
+            </span>
           </button>
           <button
             type="button"
             className="exam-editor-btn exam-editor-btn--outlined"
             disabled={wordExporting || wordExportStats.exportable === 0}
             onClick={() => void handleExportWord("answer_key")}
+            title="Xuất Word — Đáp án"
           >
-            Word — Đáp án
+            <DescriptionOutlinedIcon />
+            <span className="exam-editor-btn__label">Word — Đáp án</span>
           </button>
           <button
             type="button"
@@ -453,7 +481,7 @@ export function ExamPaperEditorPage() {
             ) : (
               <SaveOutlinedIcon />
             )}
-            {saving ? "Đang lưu..." : "Lưu đề thi"}
+            <span className="exam-editor-btn__label">{saving ? "Đang lưu..." : "Lưu đề thi"}</span>
           </button>
         </div>
       </header>
@@ -564,10 +592,10 @@ export function ExamPaperEditorPage() {
                               onChange={(e) => updateActiveSection({ instruction: e.target.value })}
                             />
                           </div>
-                          <div className="exam-editor-section-editor__toolbar">
-                            {(activeSection.questionType ??
-                              inferQuestionTypeFromPayload(activeSection.payloadJson)) ===
-                            "READING_COMPREHENSION" ? (
+                          {(activeSection.questionType ??
+                            inferQuestionTypeFromPayload(activeSection.payloadJson)) ===
+                          "READING_COMPREHENSION" ? (
+                            <div className="exam-editor-section-editor__toolbar">
                               <button
                                 type="button"
                                 className="exam-editor-btn exam-editor-btn--outlined"
@@ -576,30 +604,8 @@ export function ExamPaperEditorPage() {
                                 <AutoAwesomeOutlinedIcon />
                                 AI Reading
                               </button>
-                            ) : null}
-                            <button
-                              type="button"
-                              className="exam-editor-btn exam-editor-btn--outlined"
-                              onClick={() => {
-                                setSectionImportFormat("excel");
-                                setSectionImportOpen(true);
-                              }}
-                            >
-                              <TableViewOutlinedIcon />
-                              Import Excel
-                            </button>
-                            <button
-                              type="button"
-                              className="exam-editor-btn exam-editor-btn--outlined"
-                              onClick={() => {
-                                setSectionImportFormat("csv");
-                                setSectionImportOpen(true);
-                              }}
-                            >
-                              <UploadFileOutlinedIcon />
-                              Import CSV
-                            </button>
-                          </div>
+                            </div>
+                          ) : null}
                         </div>
                         <ExerciseSetEditor
                           key={activeSection.clientKey}
@@ -621,21 +627,6 @@ export function ExamPaperEditorPage() {
           </div>
         </div>
       </div>
-
-      {activeSection ? (
-        <ExamSectionImportDialog
-          open={sectionImportOpen}
-          format={sectionImportFormat}
-          expectedQuestionType={
-            activeSection.questionType ?? inferQuestionTypeFromPayload(activeSection.payloadJson)
-          }
-          sectionTitle={activeSection.title}
-          sectionInstruction={activeSection.instruction}
-          currentPayloadJson={editorPayloadJson}
-          onClose={() => setSectionImportOpen(false)}
-          onApplied={handleSectionImportApplied}
-        />
-      ) : null}
 
       {activeSection ? (
         <ExamSectionReadingParseDialog
@@ -665,6 +656,24 @@ export function ExamPaperEditorPage() {
           onClose={() => setAiSimilarOpen(false)}
         />
       ) : null}
+
+      <ExamAssignToClassroomDialog
+        open={assignOpen}
+        paper={paperRef}
+        onClose={() => setAssignOpen(false)}
+        onSuccess={(msg) => setMessage(msg)}
+      />
+
+      <ExamAssignmentScoresDialog
+        open={scoresOpen}
+        paper={paperRef}
+        onClose={() => setScoresOpen(false)}
+        onAssignClick={() => {
+          setScoresOpen(false);
+          setAssignOpen(true);
+        }}
+        onMessage={(msg) => setMessage(msg)}
+      />
     </div>
   );
 }

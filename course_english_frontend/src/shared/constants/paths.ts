@@ -9,6 +9,8 @@ export const paths = {
   STUDENT_LESSON_READ: "lessons/:lessonSlug",
   STUDENT_PATH: "path",
   STUDENT_VOCAB: "vocab",
+  STUDENT_EXAMS: "exams",
+  STUDENT_EXAM_TAKE: "exams/:assignmentId",
   STUDENT_STORIES: "stories",
   STUDENT_STORY_READ: "stories/:storySlug",
   STUDENT_PROFILE: "profile",
@@ -51,6 +53,8 @@ export const studentRoutePaths = {
     `/${paths.STUDENT}/${paths.STUDENT_VOCAB}/journeys/${journeyId}`,
   vocabTopic: (topicId: string) =>
     `/${paths.STUDENT}/${paths.STUDENT_VOCAB}/topics/${topicId}`,
+  exams: `/${paths.STUDENT}/${paths.STUDENT_EXAMS}`,
+  examTake: (assignmentId: string) => `/${paths.STUDENT}/${paths.STUDENT_EXAMS}/${assignmentId}`,
   stories: `/${paths.STUDENT}/${paths.STUDENT_STORIES}`,
   storyNotebook: `/${paths.STUDENT}/${paths.STUDENT_STORIES}/notebook`,
   storyRead: (storySlug: string) => `/${paths.STUDENT}/${paths.STUDENT_STORIES}/${storySlug}`,

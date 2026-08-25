@@ -34,6 +34,8 @@ import { LessonReaderPage } from "../pages/student/LessonReaderPage";
 import { StudentPathPage } from "../pages/student/StudentPathPage";
 import { StudentVocabPage } from "../pages/student/StudentVocabPage";
 import { StudentVocabSetPage } from "../pages/student/StudentVocabSetPage";
+import { StudentExamsPage } from "../pages/student/StudentExamsPage";
+import { ExamPlayerPage } from "../pages/student/ExamPlayerPage";
 import { VocabExploreJourneyPage } from "../student/vocab/VocabExploreJourneyPage";
 import { VocabTopicSetsPage } from "../student/vocab/VocabTopicSetsPage";
 import { StudentProfilePage } from "../pages/student/StudentProfilePage";
@@ -130,6 +132,10 @@ export const appRouter = createBrowserRouter([
             element: <StudentVocabPage />,
           },
           {
+            path: paths.STUDENT_EXAMS,
+            element: <StudentExamsPage />,
+          },
+          {
             path: `${paths.STUDENT_VOCAB}/journeys/:journeyId`,
             element: <VocabExploreJourneyPage />,
           },
@@ -169,6 +175,10 @@ export const appRouter = createBrowserRouter([
           {
             path: paths.STUDENT_LESSON_READ,
             element: <LessonReaderPage />,
+          },
+          {
+            path: paths.STUDENT_EXAM_TAKE,
+            element: <ExamPlayerPage />,
           },
         ],
       },

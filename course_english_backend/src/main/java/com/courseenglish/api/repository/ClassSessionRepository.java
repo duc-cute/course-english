@@ -19,6 +19,15 @@ public interface ClassSessionRepository extends JpaRepository<ClassSession, UUID
 
     @Query("""
             SELECT s FROM ClassSession s
+            LEFT JOIN FETCH s.classroom c
+            LEFT JOIN FETCH s.lesson l
+            WHERE s.id = :id
+              AND s.voided = false
+            """)
+    Optional<ClassSession> findByIdAndVoidedFalseWithClassroomAndLesson(@Param("id") UUID id);
+
+    @Query("""
+            SELECT s FROM ClassSession s
             WHERE s.teacher.id = :teacherId
               AND s.voided = false
               AND s.status <> :cancelled

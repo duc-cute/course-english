@@ -6,6 +6,10 @@ import type {
   QuestionType,
 } from "../api/question";
 import { createEmptyFillBlankQuestion, createEmptyMcqQuestion } from "./exercisePayload";
+import {
+  MCQ_LAYOUT_SENTENCE_ARRANGEMENT,
+  normalizeMcqArrangementFields,
+} from "./mcqArrangementUtils";
 import type {
   ExerciseQuestion,
   FillBlankQuestion,
@@ -109,14 +113,29 @@ export function questionRecordToExerciseQuestion(record: QuestionRecord): Exerci
     empty.explanation = record.explanation ?? "";
     return empty;
   }
-  return {
+  const content = parseContentJson<{
+    layout?: string;
+    items?: { key?: string; text?: string }[];
+  }>(record.contentJson);
+  const items = (content?.items ?? [])
+    .map((item) => ({
+      key: String(item.key ?? "").trim().toLowerCase(),
+      text: String(item.text ?? "").trim(),
+    }))
+    .filter((item) => item.key && item.text);
+  return normalizeMcqArrangementFields({
     id: record.id,
     type: "MULTIPLE_CHOICE",
     prompt,
     choices,
     correctChoiceId: correct?.choiceKey ?? choices[0].id,
     explanation: record.explanation,
-  };
+    layout:
+      content?.layout === MCQ_LAYOUT_SENTENCE_ARRANGEMENT || items.length >= 3
+        ? MCQ_LAYOUT_SENTENCE_ARRANGEMENT
+        : undefined,
+    items: items.length >= 3 ? items : undefined,
+  });
 }
 
 export function recordToFormMeta(record: QuestionRecord): QuestionFormMeta {
@@ -161,14 +180,25 @@ export function exerciseQuestionToQuestionForm(
   };
 
   if (question.type === "MULTIPLE_CHOICE") {
+    const normalized = normalizeMcqArrangementFields(question);
+    const contentPayload =
+      normalized.layout === MCQ_LAYOUT_SENTENCE_ARRANGEMENT &&
+      (normalized.items?.length ?? 0) >= 3
+        ? {
+            layout: MCQ_LAYOUT_SENTENCE_ARRANGEMENT,
+            items: normalized.items,
+          }
+        : undefined;
     return {
       ...base,
-      choices: question.choices.map((c, index) => ({
+      promptText: normalized.prompt?.text ?? "",
+      choices: normalized.choices.map((c, index) => ({
         choiceKey: c.id,
         choiceText: c.text,
-        correct: c.id === question.correctChoiceId,
+        correct: c.id === normalized.correctChoiceId,
         displayOrder: index,
       })),
+      contentJson: contentPayload ? JSON.stringify(contentPayload) : undefined,
     };
   }
 

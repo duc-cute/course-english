@@ -20,7 +20,8 @@ npm run build
 
 ## Tài liệu review
 
-- **REVIEW.html** — `public/docs/REVIEW.html` (5 trụ cột, phase P1–P4, quiz design)
+- **[docs/README.md](./docs/README.md)** — danh mục chức năng (tóm tắt)
+- **REVIEW.html** — `docs/REVIEW.html` + `public/docs/REVIEW.html` (checklist chi tiết)
 - Trong app: `/admin/review-doc` (iframe)
 
 ## Đã gỡ so với Cell Studio

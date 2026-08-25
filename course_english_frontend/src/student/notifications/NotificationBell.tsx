@@ -1,5 +1,5 @@
 import ChevronRightOutlinedIcon from "@mui/icons-material/ChevronRightOutlined";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import { CircularProgress } from "@mui/material";
 import { useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +46,7 @@ export function NotificationBell() {
         aria-expanded={open}
         onClick={handleOpen}
       >
-        <NotificationsNoneOutlinedIcon sx={{ fontSize: 22 }} />
+        <NotificationsOutlinedIcon sx={{ fontSize: 22 }} />
         {hasUnread ? (
           <span className="student-notification-bell__badge" aria-hidden>
             {unreadCount}

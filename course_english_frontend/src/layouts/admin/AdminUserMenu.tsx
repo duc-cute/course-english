@@ -1,4 +1,8 @@
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import { useEffect, useId, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -7,12 +11,8 @@ import { ProfileAvatar } from "../../shared/ui/ProfileAvatar";
 import { initialsFromDisplayName } from "../../student/shared/auth/studentInitials";
 import { performStudentLogout } from "../../student/shared/auth/studentLogout";
 import { useStudentAccountProfile } from "../../student/shared/auth/useStudentAccountProfile";
-
-function truncateIdentity(email: string | null, maxLen = 22): string {
-  if (!email) return "Quản trị viên";
-  if (email.length <= maxLen) return email;
-  return `${email.slice(0, maxLen)}…`;
-}
+import { getAccessToken } from "../../shared/auth/token";
+import { getRolesFromAccessToken } from "../../shared/auth/jwtUtils";
 
 function adminInitials(name: string): string {
   const initials = initialsFromDisplayName(name);
@@ -23,10 +23,15 @@ export function AdminUserMenu() {
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const { displayName, email, avatarUrl } = useStudentAccountProfile();
+  const { displayName, avatarUrl } = useStudentAccountProfile();
   const initials = adminInitials(displayName);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const token = getAccessToken();
+  const roles = token ? getRolesFromAccessToken(token) : [];
+  const isTeacher = roles.includes("TEACHER_ROLE") || roles.includes("TEACHER") || roles.some(r => r.toUpperCase() === "TEACHER_ROLE" || r.toUpperCase() === "TEACHER");
+  const roleName = isTeacher ? "Giáo viên" : "Quản trị viên";
 
   useEffect(() => {
     if (!open) return;
@@ -73,18 +78,69 @@ export function AdminUserMenu() {
           hasImageClassName="admin-user-menu__avatar--has-image"
           imgClassName="admin-user-menu__avatar-img"
         />
+        <div className="admin-user-menu__trigger-info">
+          <span className="admin-user-menu__trigger-name">{displayName}</span>
+          <span className="admin-user-menu__trigger-role">{roleName}</span>
+        </div>
+        <KeyboardArrowDownIcon className="admin-user-menu__trigger-arrow" />
       </button>
 
       {open ? (
         <div id={menuId} className="admin-user-menu__panel" role="menu">
           <div className="admin-user-menu__identity">
+            <ProfileAvatar
+              avatarUrl={avatarUrl}
+              initials={initials}
+              className="admin-user-menu__avatar admin-user-menu__panel-avatar"
+              hasImageClassName="admin-user-menu__avatar--has-image"
+              imgClassName="admin-user-menu__avatar-img"
+            />
             <div className="admin-user-menu__meta">
               <p className="admin-user-menu__name">{displayName}</p>
-              <p className="admin-user-menu__email">Quản trị viên • {truncateIdentity(email)}</p>
+              <p className="admin-user-menu__email">{roleName}</p>
             </div>
           </div>
 
           <div className="admin-user-menu__menu">
+            <button
+              type="button"
+              className="admin-user-menu__item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                navigate(`/${paths.STUDENT}/${paths.STUDENT_PROFILE}`);
+              }}
+            >
+              <PersonOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+              Hồ sơ cá nhân
+            </button>
+            <button
+              type="button"
+              className="admin-user-menu__item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                navigate(`/${paths.ADMIN}/${paths.MANAGE_SYSTEM_CONFIG}`);
+              }}
+            >
+              <SettingsOutlinedIcon sx={{ fontSize: 18 }} />
+              Cài đặt
+            </button>
+            <button
+              type="button"
+              className="admin-user-menu__item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                navigate(`/${paths.ADMIN}/${paths.USAGE_GUIDE}`);
+              }}
+            >
+              <HelpOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+              Trợ giúp
+            </button>
+            
+            <div className="admin-user-menu__divider" />
+
             <button
               type="button"
               className="admin-user-menu__item admin-user-menu__item--danger"

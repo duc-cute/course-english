@@ -17,6 +17,9 @@ import java.util.regex.Pattern;
 public class GapFillMcqQuestionTypeHandler implements AiQuestionTypeHandler {
 
   private static final Pattern BLANK_RUN_RE = Pattern.compile("_{3,}");
+  /** Collapse `___ (6)` / `___ (12)` source exam numbers that AI copies after blanks. */
+  private static final Pattern BLANK_SOURCE_NUMBER_RE =
+      Pattern.compile("_{3,}\\s*\\(\\d+\\)(?=\\s|$|[.,;:!?…'\"”’)])");
   private static final int MIN_BLANKS = 2;
   private static final int MAX_BLANKS = 12;
   private static final String[] CHOICE_KEYS = {"a", "b", "c", "d"};
@@ -35,6 +38,7 @@ public class GapFillMcqQuestionTypeHandler implements AiQuestionTypeHandler {
         - blanks.length must equal the number of ___ in promptText
         - Each blank: exactly 4 choices, exactly one correct: true
         - Extract options A/B/C/D from source for each numbered blank when present
+        - After each ___, do NOT copy source exam numbers like "(1)" "(6)" — UI numbers blanks itself
         - Do NOT use FILL_BLANK (typing) for Mark-letter-A-B-C-D cloze sections
         - Do NOT output blank id or choiceKey — server assigns b1.. and a..d
         """;
@@ -45,7 +49,7 @@ public class GapFillMcqQuestionTypeHandler implements AiQuestionTypeHandler {
     return """
         {
           "questionType": "GAP_FILL_MCQ",
-          "promptText": "Psychology of Money is ___ (6) popular book. Many readers find it ___ (7) insightful.",
+          "promptText": "Psychology of Money is ___ popular book. Many readers find it ___ insightful.",
           "explanation": "Chọn từ phù hợp ngữ cảnh trong đoạn văn (mạo từ và tính từ trong câu).",
           "contentJson": {
             "blanks": [
@@ -181,6 +185,7 @@ public class GapFillMcqQuestionTypeHandler implements AiQuestionTypeHandler {
   }
 
   private String normalizeBlankRuns(String promptText) {
-    return BLANK_RUN_RE.matcher(promptText).replaceAll("___");
+    String withoutSourceNumbers = BLANK_SOURCE_NUMBER_RE.matcher(promptText).replaceAll("___");
+    return BLANK_RUN_RE.matcher(withoutSourceNumbers).replaceAll("___");
   }
 }

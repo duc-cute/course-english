@@ -111,7 +111,11 @@ export async function saveAiQuestionsToBank(
           ? { correctAnswer: q.correctAnswer }
           : q.type === "FILL_BLANK"
             ? { blanks: q.blanks }
-            : undefined,
+            : q.type === "MULTIPLE_CHOICE" &&
+                q.layout === "SENTENCE_ARRANGEMENT" &&
+                (q.items?.length ?? 0) >= 3
+              ? { layout: "SENTENCE_ARRANGEMENT", items: q.items }
+              : undefined,
     },
   }));
   return saveAiDraftsToBank(items, meta);

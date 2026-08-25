@@ -1,4 +1,4 @@
-Course English — Bài học mới
+[[${brandName}]] — Bài học mới
 ================================
 
 Xin chào [[${studentName}]],
@@ -13,4 +13,4 @@ Bắt đầu học ngay: [[${lessonUrl}]]
 
 "Mỗi bài học hoàn thành đưa bạn đến gần hơn với sự thành thạo."
 
-— Course English
+— [[${brandName}]]

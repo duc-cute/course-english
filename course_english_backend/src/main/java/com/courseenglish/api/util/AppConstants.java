@@ -19,6 +19,8 @@ public final class AppConstants {
     public static int vocabularyPracticePassScore = 80;
     public static boolean studentSelfRegistrationEnabled = true;
     public static boolean notificationEmailEnabled = false;
+    /** Tên thương hiệu hiển thị trong email và các thông báo liên quan. */
+    public static String mailBrandName = "Nova English";
     /** Public URL — logo header xuất Word bài tập */
     public static String wordExportLogoUrl = "";
     /** Watermark text trên file đề Word (có thể rỗng) */

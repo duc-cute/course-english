@@ -75,6 +75,9 @@ export function formatGridHourLabel(hour: number): string {
 
 export function formatGridDayHeader(iso: string): { weekday: string; dayMonth: string } {
   const date = new Date(`${iso}T12:00:00+07:00`);
+  if (Number.isNaN(date.getTime())) {
+    return { weekday: "—", dayMonth: "—" };
+  }
   const weekday = new Intl.DateTimeFormat("vi-VN", {
     weekday: "short",
     timeZone: TEACHING_PLAN_TZ,

@@ -52,8 +52,13 @@ export function StudentDashboardProvider({ children }: { children: ReactNode }) 
   );
 }
 
+/** Safe outside StudentAppShell (e.g. Lesson Player layout). */
+export function useOptionalStudentDashboard(): StudentDashboardContextValue | null {
+  return useContext(StudentDashboardContext);
+}
+
 export function useStudentDashboard(): StudentDashboardContextValue {
-  const ctx = useContext(StudentDashboardContext);
+  const ctx = useOptionalStudentDashboard();
   if (!ctx) {
     throw new Error("useStudentDashboard must be used within StudentDashboardProvider");
   }

@@ -84,7 +84,8 @@ function GridSessionEvent({
       type="button"
       className={`schedule-week-grid-event ${sessionTypeClass(session.sessionType)} ${uiStateClass(session.uiState)}`}
       // style={{ top: layout.topPx, height: layout.heightPx }}
-      style={{ top: layout.topPx}}
+      // Đặt cả `height` để event khớp chiều cao slot, tránh lệch/nhảy layout khi nội dung thay đổi.
+      style={{ top: layout.topPx, height: layout.heightPx }}
       onClick={(e) => {
         e.stopPropagation();
         onEdit(session);

@@ -442,13 +442,10 @@
 .admin-schedule-row {
   display: flex;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--ac-outline-variant, #c3c6d7);
-  transition: background-color 0.15s ease;
-}
-
-.admin-schedule-row:last-child {
+  padding: 0 24px;
   border-bottom: none;
+  position: relative;
+  transition: background-color 0.15s ease;
 }
 
 .admin-schedule-row:hover {
@@ -456,56 +453,59 @@
 }
 
 .admin-schedule-time {
-  display: flex;
-  flex-direction: column;
-  width: 90px;
-  flex-shrink: 0;
-}
-
-.admin-schedule-time-start {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #1e293b;
-  line-height: 1.2;
-}
-
-.admin-schedule-time-end {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  margin-top: 2px;
-}
-
-.admin-schedule-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 0.875rem;
   font-weight: 700;
+  color: var(--ac-primary, #004ac6);
+  width: 105px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 16px 0;
+}
+
+.admin-schedule-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
   margin-right: 16px;
+  align-self: stretch;
+}
+
+.admin-schedule-timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--ac-primary, #004ac6);
+  z-index: 2;
+  box-shadow: 0 0 0 4px var(--ac-primary-fixed, #dbe1ff);
   flex-shrink: 0;
 }
 
-.admin-schedule-badge--5a {
-  background-color: #7c3aed;
-  color: #ffffff;
+.admin-schedule-timeline-line-upper {
+  width: 2px;
+  flex: 0 0 26px;
+  background-color: var(--ac-primary-fixed, #dbe1ff);
+  z-index: 1;
 }
 
-.admin-schedule-badge--6b {
-  background-color: #059669;
-  color: #ffffff;
+.admin-schedule-timeline-line-lower {
+  width: 2px;
+  flex: 1 1 auto;
+  background-color: var(--ac-primary-fixed, #dbe1ff);
+  z-index: 1;
 }
 
-.admin-schedule-badge--7a {
-  background-color: #ea580c;
-  color: #ffffff;
+.admin-schedule-row:first-child .admin-schedule-timeline-line-upper {
+  background-color: transparent;
 }
 
-.admin-schedule-badge--8c {
-  background-color: #2563eb;
-  color: #ffffff;
+.admin-schedule-row:last-child .admin-schedule-timeline-line-lower {
+  background-color: transparent;
+}
+
+.admin-schedule-row:first-child:last-child .admin-schedule-timeline-line-upper,
+.admin-schedule-row:first-child:last-child .admin-schedule-timeline-line-lower {
+  background-color: transparent;
 }
 
 .admin-panel-action-btn--pill {
@@ -524,47 +524,45 @@
   flex-grow: 1;
   min-width: 0;
   margin-right: 16px;
+  padding: 16px 0;
 }
 
 .admin-schedule-title {
   font-size: 0.938rem;
-  font-weight: 600;
-  color: var(--ac-on-surface, #0b1c30);
+  font-weight: 700;
+  color: #0f172a;
   margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .admin-schedule-sub {
-  font-size: 0.75rem;
-  color: var(--ac-on-surface-variant, #434655);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.8125rem;
+  color: #64748b;
 }
 
 .admin-schedule-status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
   font-size: 0.75rem;
   font-weight: 700;
   padding: 4px 12px;
   border-radius: 20px;
-  text-transform: none;
   white-space: nowrap;
-  margin-right: 16px;
 }
 
 .admin-schedule-status-pill--active {
-  background-color: #dcfce7;
-  color: #15803d;
+  background-color: #dcfce7 !important;
+  color: #16a34a !important;
+}
+
+.admin-schedule-status-pill--upcoming {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
 }
 
 .admin-schedule-status-pill--pending {
-  background-color: #f1f5f9;
-  color: #64748b;
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
 }
 
 .admin-schedule-btn {
@@ -917,11 +915,23 @@
     font-size: 1.75rem;
   }
 
-  .admin-schedule-row,
   .admin-support-row,
   .admin-assignment-row,
   .admin-activity-row {
     padding: 12px 16px;
+  }
+
+  .admin-schedule-row {
+    padding: 0 16px;
+  }
+
+  .admin-schedule-time,
+  .admin-schedule-info {
+    padding: 12px 0;
+  }
+
+  .admin-schedule-timeline-line-upper {
+    flex: 0 0 22px; /* 12px padding + 10px alignment */
   }
 
   .admin-schedule-time {

@@ -29,6 +29,23 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
       return null;
     }
 
+    const items = Array.isArray(raw.items)
+      ? raw.items
+          .filter(isRecord)
+          .map((item) => ({
+            key: String(item.key ?? "").trim().toLowerCase(),
+            text: String(item.text ?? "").trim(),
+          }))
+          .filter((item) => item.key && item.text)
+      : undefined;
+
+    const layout =
+      raw.layout === "SENTENCE_ARRANGEMENT"
+        ? ("SENTENCE_ARRANGEMENT" as const)
+        : items && items.length >= 3
+          ? ("SENTENCE_ARRANGEMENT" as const)
+          : undefined;
+
     return {
       id: raw.id,
       type: "MULTIPLE_CHOICE",
@@ -36,6 +53,8 @@ function parseQuestion(raw: unknown): ExerciseQuestion | null {
       choices: parsedChoices,
       correctChoiceId: raw.correctChoiceId,
       explanation: typeof raw.explanation === "string" ? raw.explanation : undefined,
+      layout,
+      items: items && items.length >= 3 ? items : undefined,
     };
   }
 

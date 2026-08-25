@@ -1,6 +1,6 @@
-import { useState } from "react";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import { useState } from "react";
 import type { NotificationRecord } from "../../shared/api/notification";
 import { AvatarImage } from "../../shared/ui/ProfileAvatar";
 import { formatNotificationTime } from "./formatNotificationTime";

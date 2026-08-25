@@ -8,7 +8,7 @@ import { buildDailyGoals } from "../home/dailyGoalsUtils";
 import { useStudentAccountProfile } from "../shared/auth/useStudentAccountProfile";
 import { initialsFromDisplayName } from "../shared/auth/studentInitials";
 import { performStudentLogout } from "../shared/auth/studentLogout";
-import { useStudentDashboard } from "./StudentDashboardContext";
+import { useOptionalStudentDashboard } from "./StudentDashboardContext";
 
 function truncateIdentity(email: string | null, maxLen = 22): string {
   if (!email) return "Học sinh";
@@ -24,11 +24,11 @@ export function StudentUserMenu() {
   const initials = initialsFromDisplayName(displayName);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const dashboard = useStudentDashboard();
+  const dashboard = useOptionalStudentDashboard();
 
-  const goals = buildDailyGoals(dashboard.continueProgress, dashboard.practiceSummary);
+  const goals = buildDailyGoals(dashboard?.continueProgress ?? null, dashboard?.practiceSummary ?? {});
   const goalsDone = goals.filter((goal) => goal.done).length;
-  const showStats = open && !dashboard.loading;
+  const showStats = open && Boolean(dashboard) && !dashboard.loading;
 
   useEffect(() => {
     if (!open) return;
@@ -91,7 +91,7 @@ export function StudentUserMenu() {
               <div className="student-vq-user-menu__stat student-vq-user-menu__stat--lessons">
                 <span className="student-vq-user-menu__stat-emoji" aria-hidden>📚</span>
                 <span className="student-vq-user-menu__stat-label">Bài học</span>
-                <span className="student-vq-user-menu__stat-value">{dashboard.stats.lessonsCompleted} Bài</span>
+                <span className="student-vq-user-menu__stat-value">{dashboard?.stats.lessonsCompleted ?? 0} Bài</span>
               </div>
               <div className="student-vq-user-menu__stat student-vq-user-menu__stat--goal">
                 <span className="student-vq-user-menu__stat-emoji" aria-hidden>🎯</span>

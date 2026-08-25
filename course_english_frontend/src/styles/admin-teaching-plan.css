@@ -601,8 +601,19 @@
   gap: 16px;
 }
 
+.session-time-grid-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
 @media (max-width: 600px) {
   .session-grid-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .session-time-grid-row {
     grid-template-columns: 1fr;
     gap: 12px;
   }

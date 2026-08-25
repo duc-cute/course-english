@@ -1,7 +1,6 @@
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
-import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
-import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
@@ -50,6 +49,15 @@ export const studentNavItems: StudentNavItem[] = [
     icon: MenuBookOutlinedIcon,
     showInSidebar: true,
     showInBottomNav: true,
+  },
+  {
+    id: "exams",
+    label: "Đề thi",
+    bottomNavLabel: "Đề thi",
+    to: studentRoutePaths.exams,
+    icon: AssignmentOutlinedIcon,
+    showInSidebar: true,
+    showInBottomNav: false,
   },
   {
     id: "stories",

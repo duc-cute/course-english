@@ -103,7 +103,7 @@ function classroomShortLabel(session: ClassSessionRecord): string {
 
 function sessionStatusLabel(session: ClassSessionRecord): { text: string; active: boolean } {
   if (session.uiState === "LIVE" || session.status === "IN_PROGRESS") {
-    return { text: "Đã bắt đầu", active: true };
+    return { text: "Đang diễn ra", active: true };
   }
   if (session.uiState === "PAST" || session.status === "COMPLETED") {
     return { text: "Đã kết thúc", active: false };
@@ -794,22 +794,16 @@ export function AdminDashboardPage() {
                     session.canStartOnlineClass ||
                     session.needsSetup;
                   const starting = startingId === session.id;
-                  const shortLabel = classroomShortLabel(session);
                   return (
                     <Box className="admin-schedule-row" key={session.id}>
                       <Box className="admin-schedule-time">
-                        <span className="admin-schedule-time-start">
-                          {session.startAt ? dayjs(session.startAt).format("HH:mm") : "00:00"}
-                        </span>
-                        <span className="admin-schedule-time-end">
-                          - {session.endAt ? dayjs(session.endAt).format("HH:mm") : "00:00"}
-                        </span>
+                        {session.startAt ? dayjs(session.startAt).format("HH:mm") : "00:00"} - {session.endAt ? dayjs(session.endAt).format("HH:mm") : "00:00"}
                       </Box>
-                      <Box
-                        className={`admin-schedule-badge admin-schedule-badge--${badgeVariant(shortLabel)}`}
-                      >
-                        {shortLabel}
-                      </Box>
+                      <div className="admin-schedule-timeline">
+                        <div className="admin-schedule-timeline-line-upper" />
+                        <div className="admin-schedule-timeline-dot" />
+                        <div className="admin-schedule-timeline-line-lower" />
+                      </div>
                       <Box className="admin-schedule-info">
                         <Box className="admin-schedule-title">
                           {session.classroomName || session.title}
@@ -820,14 +814,13 @@ export function AdminDashboardPage() {
                       </Box>
                       <span
                         className={`admin-schedule-status-pill${
-                          status.active ? " admin-schedule-status-pill--active" : " admin-schedule-status-pill--pending"
+                          status.active
+                            ? " admin-schedule-status-pill--active"
+                            : status.text === "Sắp diễn ra"
+                            ? " admin-schedule-status-pill--upcoming"
+                            : " admin-schedule-status-pill--pending"
                         }`}
                       >
-                        {status.active ? (
-                          <VideocamOutlinedIcon sx={{ fontSize: 14 }} />
-                        ) : (
-                          <AccessTimeOutlinedIcon sx={{ fontSize: 14 }} />
-                        )}
                         {status.text}
                       </span>
                       {canCamera ? (
@@ -837,6 +830,7 @@ export function AdminDashboardPage() {
                           className="admin-schedule-btn admin-schedule-btn--active"
                           disabled={starting}
                           onClick={() => handleSessionCamera(session)}
+                          sx={{ ml: 1 }}
                         >
                           {session.canJoinMeet ? "Vào lớp" : starting ? "Đang mở…" : "Bắt đầu"}
                         </Button>

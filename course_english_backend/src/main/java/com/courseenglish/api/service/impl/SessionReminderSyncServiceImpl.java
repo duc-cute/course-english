@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.UUID;
@@ -24,7 +24,6 @@ import java.util.UUID;
 public class SessionReminderSyncServiceImpl implements SessionReminderSyncService {
 
     static final ZoneId TEACHING_PLAN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    static final long LEAD_MINUTES = 15;
 
     private final SessionReminderRepository sessionReminderRepository;
     private final ClassSessionRepository classSessionRepository;
@@ -62,25 +61,32 @@ public class SessionReminderSyncServiceImpl implements SessionReminderSyncServic
             return;
         }
 
+        // Gửi email ngay khi buổi dạy được tạo trong "hôm nay" (theo teaching plan timezone).
+        // Các buổi không thuộc hôm nay sẽ bỏ qua, không tạo reminder để đợi cron sau.
+        LocalDate today = now.atZone(TEACHING_PLAN_ZONE).toLocalDate();
+        LocalDate startDate = session.getStartAt().atZone(TEACHING_PLAN_ZONE).toLocalDate();
+        if (!startDate.equals(today)) {
+            if (reminder.getId() != null) {
+                reminder.setStatus(SessionReminderStatusEnum.CANCELLED);
+                sessionReminderRepository.save(reminder);
+            }
+            return;
+        }
+
         UUID teacherId = session.getTeacher() != null ? session.getTeacher().getId() : null;
         if (teacherId == null) {
             return;
         }
 
-        long minutesUntilStart = Duration.between(now, session.getStartAt()).toMinutes();
-        boolean sendImmediately = minutesUntilStart <= LEAD_MINUTES;
-
         reminder.setSessionId(session.getId());
         reminder.setTeacherId(teacherId);
         reminder.setChannel(SessionReminderChannelEnum.EMAIL);
-        reminder.setRemindAt(sendImmediately ? now : session.getStartAt().minus(Duration.ofMinutes(LEAD_MINUTES)));
+        reminder.setRemindAt(now);
         reminder.setStatus(SessionReminderStatusEnum.PENDING);
         reminder.setLastError(null);
         SessionReminder saved = sessionReminderRepository.save(reminder);
 
-        if (sendImmediately) {
-            scheduleDispatchAfterCommit(saved.getId());
-        }
+        scheduleDispatchAfterCommit(saved.getId());
     }
 
     @Override

@@ -32,7 +32,11 @@ public enum SystemConfigKeyEnum {
     NOTIFICATION_EMAIL_ENABLED(
             "NOTIFICATION_EMAIL_ENABLED",
             "false",
-            "Gửi email cho HS khi GV publish bài học (true/1=bật, cần cấu hình SMTP)"),
+            "Gửi email cho HS khi GV publish bài học / gán đề thi (true/1=bật, cần cấu hình SMTP)"),
+    MAIL_BRAND_NAME(
+            "MAIL_BRAND_NAME",
+            "Nova English",
+            "Tên thương hiệu hiển thị trong email/thông báo (ví dụ: Nova English)"),
     WORD_EXPORT_LOGO_URL(
             "WORD_EXPORT_LOGO_URL",
             "",

@@ -1,6 +1,8 @@
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
+import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
@@ -27,6 +29,8 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "../../admin/components";
+import { ExamAssignToClassroomDialog } from "../../admin/components/exam/ExamAssignToClassroomDialog";
+import { ExamAssignmentScoresDialog } from "../../admin/components/exam/ExamAssignmentScoresDialog";
 import {
   apiCreateExamPaper,
   apiDeleteExamPaper,
@@ -77,6 +81,9 @@ export function ManageExamPapersPage() {
   const [deleting, setDeleting] = useState<ExamPaperRecord | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuRow, setMenuRow] = useState<ExamPaperRecord | null>(null);
+  const [assignPaper, setAssignPaper] = useState<ExamPaperRecord | null>(null);
+  const [scoresPaper, setScoresPaper] = useState<ExamPaperRecord | null>(null);
+  const [toast, setToast] = useState("");
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, row: ExamPaperRecord) => {
     setAnchorEl(event.currentTarget);
@@ -293,8 +300,13 @@ export function ManageExamPapersPage() {
       </Box>
 
       {error ? (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: "10px" }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: "10px" }} onClose={() => setError("")}>
           {error}
+        </Alert>
+      ) : null}
+      {toast ? (
+        <Alert severity="success" sx={{ mb: 2, borderRadius: "10px" }} onClose={() => setToast("")}>
+          {toast}
         </Alert>
       ) : null}
 
@@ -504,6 +516,27 @@ export function ManageExamPapersPage() {
           Chỉnh sửa đề
         </MenuItem>
         <MenuItem
+          disabled={menuRow?.status !== "PUBLISHED"}
+          onClick={() => {
+            if (menuRow) setAssignPaper(menuRow);
+            handleMenuClose();
+          }}
+          sx={{ gap: 1, fontSize: 13, py: 1 }}
+        >
+          <GroupAddOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />
+          Gán cho lớp
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuRow) setScoresPaper(menuRow);
+            handleMenuClose();
+          }}
+          sx={{ gap: 1, fontSize: 13, py: 1 }}
+        >
+          <LeaderboardOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />
+          Gán / điểm lớp
+        </MenuItem>
+        <MenuItem
           onClick={() => {
             if (menuRow) {
               setDeleting(menuRow);
@@ -517,6 +550,26 @@ export function ManageExamPapersPage() {
           Xóa đề thi
         </MenuItem>
       </Menu>
+
+      <ExamAssignToClassroomDialog
+        open={Boolean(assignPaper)}
+        paper={assignPaper}
+        onClose={() => setAssignPaper(null)}
+        onSuccess={(msg) => setToast(msg)}
+      />
+
+      <ExamAssignmentScoresDialog
+        open={Boolean(scoresPaper)}
+        paper={scoresPaper}
+        onClose={() => setScoresPaper(null)}
+        onAssignClick={() => {
+          if (scoresPaper) {
+            setAssignPaper(scoresPaper);
+            setScoresPaper(null);
+          }
+        }}
+        onMessage={(msg) => setToast(msg)}
+      />
 
       <ConfirmDialog
         open={openDelete}

@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public record SessionReminderNotifyContext(
         String teacherEmail,
+        String recipientName,
         String teacherName,
         String classroomName,
         String sessionTitle,
