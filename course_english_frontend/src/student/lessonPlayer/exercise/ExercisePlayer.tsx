@@ -52,6 +52,16 @@ import {
 } from "../../../shared/lesson/readingComprehensionUtils";
 import { compareReorderOrder, isReorderComplete } from "../../../shared/lesson/reorderSentenceUtils";
 import { computeSessionScore } from "./exerciseScoring";
+import { ExamTakeShell, type ExamNavCellStatus } from "../../exam/ExamTakeShell";
+import {
+  buildExamNavUnits,
+  countAnsweredExamUnits,
+  examUnitDomId,
+  examUnitFlagId,
+  findAdjacentPartUnitIndex,
+  findUnitIndexForItem,
+  isExamUnitAnswered,
+} from "../../exam/examTakeNav";
 import type {
   ListenChooseQuestion as ListenChooseType,
   FillBlankQuestion as FillBlankType,
@@ -106,6 +116,14 @@ type ExercisePlayerProps = {
   onProgressChange?: (current: number, total: number) => void;
   onContinueStudy?: () => void;
   onBackToLessons?: () => void;
+  /** Exam shell: countdown label (e.g. 01:23:45) */
+  examRemainingLabel?: string | null;
+  /** Exam shell: Thoát */
+  onExamExit?: () => void;
+  /** Exam: Làm lại bằng API start attempt mới (nếu còn lượt) */
+  onExamRetry?: () => void;
+  /** Tăng giá trị → buộc nộp bài (hết giờ), cùng luồng nút Nộp bài */
+  examForceSubmitToken?: number;
 };
 
 type AnswerRecord = ExerciseAnswerSnapshot;
@@ -129,6 +147,10 @@ export function ExercisePlayer({
   onProgressChange,
   onContinueStudy,
   onBackToLessons,
+  examRemainingLabel = null,
+  onExamExit,
+  onExamRetry,
+  examForceSubmitToken = 0,
 }: ExercisePlayerProps) {
   const examMode = mode === "exam";
   const blockIdsKey = useMemo(() => practiceBlocks.map((b) => b.id).join(","), [practiceBlocks]);
@@ -195,6 +217,11 @@ export function ExercisePlayer({
   const items = plan.items;
   const total = items.length;
   const passScorePercent = plan.passScorePercent;
+  const examUnits = useMemo(
+    () => (examMode ? buildExamNavUnits(items) : []),
+    [examMode, items],
+  );
+  const examUnitTotal = examUnits.length;
 
   const [questionIndex, setQuestionIndex] = useState(0);
   /** Lựa chọn đang chọn theo từng câu — tránh dùng chung id a/b/c/d giữa các câu */
@@ -219,6 +246,12 @@ export function ExercisePlayer({
   const [serverLatestAttempt, setServerLatestAttempt] = useState<PracticeAttemptBannerLatest>(null);
   const [reviewItems, setReviewItems] = useState<PreparedExerciseItem[] | null>(null);
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, AnswerRecord> | null>(null);
+  const [flaggedQuestionIds, setFlaggedQuestionIds] = useState<string[]>([]);
+  const [examUnitIndex, setExamUnitIndex] = useState(0);
+  const flaggedQuestionIdsRef = useRef<string[]>([]);
+  flaggedQuestionIdsRef.current = flaggedQuestionIds;
+  const examUnitIndexRef = useRef(0);
+  examUnitIndexRef.current = examUnitIndex;
 
   useEffect(() => {
     if (!persistAttempts) {
@@ -267,11 +300,17 @@ export function ExercisePlayer({
         setPhase("answer");
         setElapsedMs(0);
       }
+      setFlaggedQuestionIds(saved.flaggedQuestionIds ?? []);
+      if (typeof saved.examUnitIndex === "number") {
+        setExamUnitIndex(saved.examUnitIndex);
+      }
     } else {
       setQuestionIndex(0);
       setPhase("answer");
       setAnswers({});
       setElapsedMs(0);
+      setFlaggedQuestionIds([]);
+      setExamUnitIndex(0);
     }
 
     setChoiceDrafts({});
@@ -331,21 +370,92 @@ export function ExercisePlayer({
     phase === "feedback" && currentQuestionId
       ? answers[currentQuestionId]?.selectedChoiceId ?? null
       : currentQuestionId
-        ? choiceDrafts[currentQuestionId] ?? null
+        ? choiceDrafts[currentQuestionId] ?? answers[currentQuestionId]?.selectedChoiceId ?? null
         : null;
 
   const handleSelectChoice = useCallback(
     (choiceId: string) => {
       if (phase !== "answer" || !currentQuestionId) return;
       setChoiceDrafts((prev) => ({ ...prev, [currentQuestionId]: choiceId }));
+      if (!examMode || !current) return;
+
+      const q = current.displayQuestion;
+      let correct = false;
+      if (q.type === "MULTIPLE_CHOICE" || q.type === "LISTEN_CHOOSE") {
+        correct = choiceId === q.correctChoiceId;
+      } else if (q.type === "TRUE_FALSE") {
+        correct = choiceId === trueFalseCorrectChoiceId(q);
+      } else {
+        return;
+      }
+      setAnswers((prev) => {
+        const nextAnswers = {
+          ...prev,
+          [currentQuestionId]: { correct, selectedChoiceId: choiceId },
+        };
+        const startedAt = startedAtRef.current ?? Date.now();
+        if (!startedAtRef.current) startedAtRef.current = startedAt;
+        const sess = getExerciseSession(lessonId);
+        saveExerciseSession({
+          lessonId,
+          blockIds,
+          questionIndex,
+          completed: false,
+          questionIdsOrder: plan.questionIdsOrder,
+          choiceOrders: plan.choiceOrders,
+          answers: nextAnswers,
+          startedAt,
+          flaggedQuestionIds: flaggedQuestionIdsRef.current,
+          serverAttemptSynced: sess?.serverAttemptSynced,
+        });
+        return nextAnswers;
+      });
     },
-    [phase, currentQuestionId],
+    [
+      phase,
+      currentQuestionId,
+      examMode,
+      current,
+      lessonId,
+      blockIds,
+      questionIndex,
+      plan.questionIdsOrder,
+      plan.choiceOrders,
+    ],
   );
 
   useEffect(() => {
     if (!onProgressChange || total <= 0) return;
     onProgressChange(questionIndex + 1, total);
   }, [onProgressChange, questionIndex, total]);
+
+  useEffect(() => {
+    if (!examMode || examUnitTotal === 0) return;
+    setExamUnitIndex((prev) => {
+      if (prev >= 0 && prev < examUnitTotal) {
+        const u = examUnits[prev];
+        if (u && u.itemIndex === questionIndex) return prev;
+      }
+      return findUnitIndexForItem(examUnits, questionIndex);
+    });
+  }, [examMode, examUnitTotal, examUnits, questionIndex]);
+
+  useEffect(() => {
+    if (!examMode || examUnitTotal === 0) return;
+    const unit = examUnits[examUnitIndex];
+    if (!unit?.partKey) return;
+    const id = examUnitDomId(unit);
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      document
+        .querySelectorAll(".exam-unit-focus")
+        .forEach((node) => node.classList.remove("exam-unit-focus"));
+      el.classList.add("exam-unit-focus");
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [examMode, examUnitIndex, examUnitTotal, examUnits, questionIndex]);
 
   useEffect(() => {
     if (!current) return;
@@ -462,9 +572,11 @@ export function ExercisePlayer({
         startedAt,
         elapsedMs: extra?.elapsedMs,
         serverAttemptSynced: extra?.serverAttemptSynced ?? prev?.serverAttemptSynced,
+        flaggedQuestionIds: examMode ? flaggedQuestionIdsRef.current : prev?.flaggedQuestionIds,
+        examUnitIndex: examMode ? examUnitIndexRef.current : prev?.examUnitIndex,
       });
     },
-    [lessonId, blockIds, plan.questionIdsOrder, plan.choiceOrders, ensureStartedAt],
+    [lessonId, blockIds, plan.questionIdsOrder, plan.choiceOrders, ensureStartedAt, examMode],
   );
 
   const submitPracticeAttempt = useCallback(
@@ -618,19 +730,222 @@ export function ExercisePlayer({
     setPhase("done");
   };
 
-  const commitExamAnswer = (nextAnswers: Record<string, AnswerRecord>) => {
+  /** Exam: lưu đáp án hiện tại, không tự chuyển câu. */
+  const saveExamAnswers = (nextAnswers: Record<string, AnswerRecord>) => {
     setAnswers(nextAnswers);
     setShowExplanation(false);
     persistSession(questionIndex, false, nextAnswers);
-    if (questionIndex >= total - 1) {
-      void finishExamSession(nextAnswers);
-      return;
+  };
+
+  /** Gộp draft đang nhập vào answers (kể cả chưa đủ blank). */
+  const mergeCurrentDraftIntoAnswers = useCallback(
+    (base: Record<string, AnswerRecord>): Record<string, AnswerRecord> => {
+      if (!current) return base;
+      ensureStartedAt();
+
+      const choiceQuestion = currentMcq ?? currentListen;
+      const choiceId =
+        (currentQuestionId ? choiceDrafts[currentQuestionId] : null) ??
+        (currentQuestionId ? base[currentQuestionId]?.selectedChoiceId : null) ??
+        null;
+
+      if (choiceQuestion && choiceId) {
+        return {
+          ...base,
+          [choiceQuestion.id]: {
+            correct: choiceId === choiceQuestion.correctChoiceId,
+            selectedChoiceId: choiceId,
+          },
+        };
+      }
+
+      if (currentTrueFalse && choiceId) {
+        const correctId = trueFalseCorrectChoiceId(currentTrueFalse);
+        return {
+          ...base,
+          [currentTrueFalse.id]: {
+            correct: choiceId === correctId,
+            selectedChoiceId: choiceId,
+          },
+        };
+      }
+
+      const typedQuestion = currentSpelling ?? currentListenType;
+      if (typedQuestion && typedAnswer.trim()) {
+        return {
+          ...base,
+          [typedQuestion.id]: {
+            correct: compareTypedAnswers(typedAnswer, typedQuestion.correctAnswer, {
+              caseSensitive: typedQuestion.caseSensitive,
+            }),
+            typedAnswer: typedAnswer.trim(),
+          },
+        };
+      }
+
+      if (currentFillBlank && Object.keys(fillBlankAnswers).length > 0) {
+        const complete = isFillBlankComplete(fillBlankAnswers, currentFillBlank.blanks);
+        return {
+          ...base,
+          [currentFillBlank.id]: {
+            correct: complete
+              ? compareFillBlankAnswers(
+                  fillBlankAnswers,
+                  currentFillBlank.blanks,
+                  currentFillBlank.caseSensitive,
+                )
+              : false,
+            fillBlankAnswers: { ...fillBlankAnswers },
+          },
+        };
+      }
+
+      if (currentGapFillMcq && Object.keys(gapFillMcqAnswers).length > 0) {
+        const scored = scoreGapFillMcq(currentGapFillMcq.blanks, gapFillMcqAnswers);
+        return {
+          ...base,
+          [currentGapFillMcq.id]: {
+            correct: scored.allCorrect,
+            gapFillMcqAnswers: { ...gapFillMcqAnswers },
+            correctBlankCount: scored.correctBlankCount,
+            totalBlanks: scored.totalBlanks,
+          },
+        };
+      }
+
+      if (currentReading && Object.keys(readingSubAnswers).length > 0) {
+        const scored = scoreReadingComprehension(currentReading.subQuestions, readingSubAnswers);
+        return {
+          ...base,
+          [currentReading.id]: {
+            correct: scored.allCorrect,
+            readingSubAnswers: { ...readingSubAnswers },
+            correctSubCount: scored.correctSubCount,
+            totalSubQuestions: scored.totalSubQuestions,
+          },
+        };
+      }
+
+      if (currentReorder && reorderTokenOrder.length > 0) {
+        const complete = isReorderComplete(reorderTokenOrder, currentReorder.tokens.length);
+        return {
+          ...base,
+          [currentReorder.id]: {
+            correct: complete
+              ? compareReorderOrder(reorderTokenOrder, currentReorder.correctOrder)
+              : false,
+            reorderTokenOrder: [...reorderTokenOrder],
+          },
+        };
+      }
+
+      if (currentMatching && Object.keys(matchingSelections).length > 0) {
+        const complete = isMatchingComplete(currentMatching.pairs, matchingSelections);
+        return {
+          ...base,
+          [currentMatching.id]: {
+            correct: complete
+              ? scoreMatchingAnswer(currentMatching.pairs, matchingSelections)
+              : false,
+            matchingSelections: { ...matchingSelections },
+          },
+        };
+      }
+
+      return base;
+    },
+    [
+      current,
+      currentMcq,
+      currentListen,
+      currentTrueFalse,
+      currentSpelling,
+      currentListenType,
+      currentFillBlank,
+      currentGapFillMcq,
+      currentReading,
+      currentReorder,
+      currentMatching,
+      currentQuestionId,
+      choiceDrafts,
+      typedAnswer,
+      fillBlankAnswers,
+      gapFillMcqAnswers,
+      readingSubAnswers,
+      reorderTokenOrder,
+      matchingSelections,
+      ensureStartedAt,
+    ],
+  );
+
+  const navigateExamToUnit = useCallback(
+    (nextUnitIndex: number) => {
+      if (nextUnitIndex < 0 || nextUnitIndex >= examUnitTotal) return;
+      const unit = examUnits[nextUnitIndex];
+      if (!unit) return;
+
+      if (unit.itemIndex !== questionIndex) {
+        const nextAnswers = mergeCurrentDraftIntoAnswers(answers);
+        setAnswers(nextAnswers);
+        setQuestionIndex(unit.itemIndex);
+        setShowExplanation(false);
+        setPhase("answer");
+        examUnitIndexRef.current = nextUnitIndex;
+        setExamUnitIndex(nextUnitIndex);
+        persistSession(unit.itemIndex, false, nextAnswers);
+        return;
+      }
+
+      examUnitIndexRef.current = nextUnitIndex;
+      setExamUnitIndex(nextUnitIndex);
+      persistSession(questionIndex, false, answers);
+    },
+    [
+      examUnitTotal,
+      examUnits,
+      questionIndex,
+      mergeCurrentDraftIntoAnswers,
+      answers,
+      persistSession,
+    ],
+  );
+
+  const handleExamToggleFlag = useCallback(() => {
+    const unit = examUnits[examUnitIndex];
+    if (!unit) return;
+    const flagId = examUnitFlagId(unit);
+    setFlaggedQuestionIds((prev) => {
+      const next = prev.includes(flagId) ? prev.filter((id) => id !== flagId) : [...prev, flagId];
+      flaggedQuestionIdsRef.current = next;
+      persistSession(questionIndex, false, answers);
+      return next;
+    });
+  }, [examUnits, examUnitIndex, questionIndex, answers, persistSession]);
+
+  const handleExamSubmit = (options?: { skipConfirm?: boolean }) => {
+    const nextAnswers = mergeCurrentDraftIntoAnswers(answers);
+    const answered = countAnsweredExamUnits(examUnits, nextAnswers);
+    if (!options?.skipConfirm && answered < examUnitTotal) {
+      const ok = window.confirm(`Bạn đã làm ${answered}/${examUnitTotal} câu. Nộp bài ngay?`);
+      if (!ok) return;
     }
-    const next = questionIndex + 1;
-    setQuestionIndex(next);
-    resetQuestionDrafts();
-    setPhase("answer");
-    persistSession(next, false, nextAnswers);
+    void finishExamSession(nextAnswers);
+  };
+
+  const handleExamSubmitRef = useRef(handleExamSubmit);
+  handleExamSubmitRef.current = handleExamSubmit;
+
+  const examForceSubmitSeenRef = useRef(0);
+  useEffect(() => {
+    if (!examMode || !examForceSubmitToken) return;
+    if (examForceSubmitToken === examForceSubmitSeenRef.current) return;
+    if (phase === "done" || phase === "review") return;
+    examForceSubmitSeenRef.current = examForceSubmitToken;
+    handleExamSubmitRef.current({ skipConfirm: true });
+  }, [examMode, examForceSubmitToken, phase]);
+
+  const commitExamAnswer = (nextAnswers: Record<string, AnswerRecord>) => {
+    saveExamAnswers(nextAnswers);
   };
 
   const handleCheck = () => {
@@ -859,11 +1174,12 @@ export function ExercisePlayer({
   };
 
   const handleNext = () => {
+    if (examMode) {
+      if (examUnitIndex >= examUnitTotal - 1) return;
+      navigateExamToUnit(examUnitIndex + 1);
+      return;
+    }
     if (questionIndex >= total - 1) {
-      if (examMode) {
-        void finishExamSession(answers);
-        return;
-      }
       const startedAt = ensureStartedAt();
       const elapsed = Date.now() - startedAt;
       setElapsedMs(elapsed);
@@ -1017,7 +1333,7 @@ export function ExercisePlayer({
         isWrongOnlyRetry={isWrongOnlyRetry}
         nextLessonTitle={nextLessonTitle}
         onReview={handleReview}
-        onRetry={handleRetry}
+        onRetry={examMode ? onExamRetry : handleRetry}
         onContinueStudy={onContinueStudy}
         onBackToLessons={onBackToLessons}
       />
@@ -1053,6 +1369,20 @@ export function ExercisePlayer({
   }
 
   const showFeedback = phase === "feedback" && !examMode;
+
+  const currentExamUnit = examMode ? examUnits[examUnitIndex] : undefined;
+  const examAnsweredCount = examMode ? countAnsweredExamUnits(examUnits, answers) : 0;
+  const examFlagged = currentExamUnit
+    ? flaggedQuestionIds.includes(examUnitFlagId(currentExamUnit))
+    : false;
+  const examCellStatus = (unitIndex: number): ExamNavCellStatus => {
+    if (unitIndex === examUnitIndex) return "current";
+    const unit = examUnits[unitIndex];
+    if (!unit) return "todo";
+    if (flaggedQuestionIds.includes(examUnitFlagId(unit))) return "flagged";
+    if (isExamUnitAnswered(unit, answers)) return "done";
+    return "todo";
+  };
 
   if (isVocab) {
     const wordEn = (
@@ -1414,25 +1744,27 @@ export function ExercisePlayer({
     );
   }
 
-  return (
+  const player = (
     <div className={`exercise-player${examMode ? " exercise-player--exam" : ""}`}>
       {showInlineAttemptBanner ? (
         <PracticeAttemptBanner latest={serverLatestAttempt} onReview={handleReview} />
       ) : null}
-      <QuestionProgressBar current={questionIndex + 1} total={total} />
+      {!examMode ? <QuestionProgressBar current={questionIndex + 1} total={total} /> : null}
 
-      <header className={`exercise-player-head${currentMatching || currentReorder || currentReading ? " exercise-player-head--compact" : ""}`}>
-        <div className="exercise-player-eyebrow">
-          <QuizOutlinedIcon sx={{ fontSize: 18 }} />
-          {current.blockTitle || lessonTitle}
-        </div>
-        {current.instruction && !currentMatching && !currentReorder && !currentReading ? (
-          <p className="exercise-player-instruction">{current.instruction}</p>
-        ) : null}
-        {isWrongOnlyRetry ? (
-          <p className="vq-exercise-mode-note">Luyện lại {total} câu đã trả lời sai</p>
-        ) : null}
-      </header>
+      {!examMode ? (
+        <header className={`exercise-player-head${currentMatching || currentReorder || currentReading ? " exercise-player-head--compact" : ""}`}>
+          <div className="exercise-player-eyebrow">
+            <QuizOutlinedIcon sx={{ fontSize: 18 }} />
+            {current.blockTitle || lessonTitle}
+          </div>
+          {current.instruction && !currentMatching && !currentReorder && !currentReading ? (
+            <p className="exercise-player-instruction">{current.instruction}</p>
+          ) : null}
+          {isWrongOnlyRetry ? (
+            <p className="vq-exercise-mode-note">Luyện lại {total} câu đã trả lời sai</p>
+          ) : null}
+        </header>
+      ) : null}
 
       {currentTrueFalse ? (
         <TrueFalseQuestion
@@ -1507,7 +1839,26 @@ export function ExercisePlayer({
           showResult={showFeedback}
           isCorrect={gapFillMcqIsCorrect}
           onChange={(blankId, choiceId) =>
-            setGapFillMcqAnswers((prev) => ({ ...prev, [blankId]: choiceId }))
+            setGapFillMcqAnswers((prev) => {
+              const nextGaps = { ...prev, [blankId]: choiceId };
+              if (examMode && currentGapFillMcq) {
+                const scored = scoreGapFillMcq(currentGapFillMcq.blanks, nextGaps);
+                setAnswers((ansPrev) => {
+                  const nextAnswers = {
+                    ...ansPrev,
+                    [currentGapFillMcq.id]: {
+                      correct: scored.allCorrect,
+                      gapFillMcqAnswers: nextGaps,
+                      correctBlankCount: scored.correctBlankCount,
+                      totalBlanks: scored.totalBlanks,
+                    },
+                  };
+                  persistSession(questionIndex, false, nextAnswers);
+                  return nextAnswers;
+                });
+              }
+              return nextGaps;
+            })
           }
         />
       ) : null}
@@ -1519,8 +1870,28 @@ export function ExercisePlayer({
           disabled={showFeedback}
           showResult={showFeedback}
           isCorrect={readingIsCorrect}
+          focusSubId={examMode ? currentExamUnit?.partKey ?? null : null}
           onSelectSub={(subId, choiceId) =>
-            setReadingSubAnswers((prev) => ({ ...prev, [subId]: choiceId }))
+            setReadingSubAnswers((prev) => {
+              const nextSubs = { ...prev, [subId]: choiceId };
+              if (examMode && currentReading) {
+                const scored = scoreReadingComprehension(currentReading.subQuestions, nextSubs);
+                setAnswers((ansPrev) => {
+                  const nextAnswers = {
+                    ...ansPrev,
+                    [currentReading.id]: {
+                      correct: scored.allCorrect,
+                      readingSubAnswers: nextSubs,
+                      correctSubCount: scored.correctSubCount,
+                      totalSubQuestions: scored.totalSubQuestions,
+                    },
+                  };
+                  persistSession(questionIndex, false, nextAnswers);
+                  return nextAnswers;
+                });
+              }
+              return nextSubs;
+            })
           }
         />
       ) : null}
@@ -1555,39 +1926,74 @@ export function ExercisePlayer({
         <QuestionExplanationPanel explanation={currentExplanation} />
       ) : null}
 
-      <div className={`exercise-player-actions${showFeedback ? " exercise-player-actions--row" : ""}`}>
-        {!showFeedback ? (
-          <Button
-            className="exercise-btn-check"
-            variant="contained"
-            fullWidth
-            disabled={!canCheck}
-            onClick={handleCheck}
-          >
-            KIỂM TRA
-          </Button>
-        ) : (
-          <>
+      {!examMode ? (
+        <div className={`exercise-player-actions${showFeedback ? " exercise-player-actions--row" : ""}`}>
+          {!showFeedback ? (
             <Button
-              className="exercise-btn-explain"
-              variant="outlined"
-              disabled={!currentExplanation?.trim()}
-              onClick={() => setShowExplanation((v) => !v)}
-              sx={{ textTransform: "none", borderRadius: "999px", py: 1.25, fontWeight: 600, flexShrink: 0 }}
-            >
-              GIẢI THÍCH
-            </Button>
-            <Button
-              className="exercise-btn-continue student-btn-teal"
+              className="exercise-btn-check"
               variant="contained"
               fullWidth
-              onClick={handleNext}
+              disabled={!canCheck}
+              onClick={handleCheck}
             >
-              {questionIndex >= total - 1 ? "XEM KẾT QUẢ" : "LÀM TIẾP"}
+              KIỂM TRA
             </Button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <Button
+                className="exercise-btn-explain"
+                variant="outlined"
+                disabled={!currentExplanation?.trim()}
+                onClick={() => setShowExplanation((v) => !v)}
+                sx={{ textTransform: "none", borderRadius: "999px", py: 1.25, fontWeight: 600, flexShrink: 0 }}
+              >
+                GIẢI THÍCH
+              </Button>
+              <Button
+                className="exercise-btn-continue student-btn-teal"
+                variant="contained"
+                fullWidth
+                onClick={handleNext}
+              >
+                {questionIndex >= total - 1 ? "XEM KẾT QUẢ" : "LÀM TIẾP"}
+              </Button>
+            </>
+          )}
+        </div>
+      ) : null}
     </div>
   );
+
+  if (examMode) {
+    const prevPartUnit = findAdjacentPartUnitIndex(examUnits, items, examUnitIndex, -1);
+    const nextPartUnit = findAdjacentPartUnitIndex(examUnits, items, examUnitIndex, 1);
+    return (
+      <ExamTakeShell
+        examTitle={lessonTitle}
+        remainingLabel={examRemainingLabel}
+        answeredCount={examAnsweredCount}
+        totalCount={examUnitTotal}
+        cellStatus={examCellStatus}
+        onJump={navigateExamToUnit}
+        onPrev={() => {
+          if (prevPartUnit != null) navigateExamToUnit(prevPartUnit);
+        }}
+        onNext={() => {
+          if (nextPartUnit != null) navigateExamToUnit(nextPartUnit);
+        }}
+        onToggleFlag={handleExamToggleFlag}
+        flagged={examFlagged}
+        canPrev={prevPartUnit != null}
+        canNext={nextPartUnit != null}
+        onSubmit={handleExamSubmit}
+        onExit={() => (onExamExit ? onExamExit() : onBackToLessons?.())}
+        sectionTitle={current.blockTitle || undefined}
+        instruction={current.instruction || undefined}
+      >
+        {player}
+      </ExamTakeShell>
+    );
+  }
+
+  return player;
 }

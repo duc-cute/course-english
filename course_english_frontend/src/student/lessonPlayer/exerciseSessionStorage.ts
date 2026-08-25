@@ -38,6 +38,10 @@ export type ExerciseSessionSnapshot = {
   elapsedMs?: number;
   /** Đã POST attempt lên server — tránh gửi trùng khi F5 màn kết quả */
   serverAttemptSynced?: boolean;
+  /** Exam take: question ids marked for review */
+  flaggedQuestionIds?: string[];
+  /** Exam take: flat unit index (blank/sub as câu) */
+  examUnitIndex?: number;
 };
 
 function storageKey(lessonId: string): string {

@@ -27,8 +27,8 @@ type ExerciseResultScreenProps = {
   passed: boolean;
   isWrongOnlyRetry?: boolean;
   nextLessonTitle?: string;
-  onReview: () => void;
-  onRetry: () => void;
+  onReview?: () => void;
+  onRetry?: () => void;
   onContinueStudy?: () => void;
   onBackToLessons?: () => void;
 };
@@ -76,14 +76,18 @@ export function ExerciseResultScreen({
         ) : (
           <span />
         )}
-        <button
-          type="button"
-          className="exercise-result-nav-review"
-          onClick={onReview}
-        >
-          <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
-          Xem lại bài làm
-        </button>
+        {onReview ? (
+          <button
+            type="button"
+            className="exercise-result-nav-review"
+            onClick={onReview}
+          >
+            <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />
+            Xem lại bài làm
+          </button>
+        ) : (
+          <span />
+        )}
       </nav>
 
       {isWrongOnlyRetry ? (
@@ -248,33 +252,39 @@ export function ExerciseResultScreen({
             ) : null}
 
             <div className="exercise-result-actions">
-              <div className="exercise-result-actions-secondary">
-                <button
-                  type="button"
-                  className="exercise-result-btn exercise-result-btn--secondary"
-                  onClick={onReview}
-                >
-                  <span className="exercise-result-btn-icon">
-                    <VisibilityOutlinedIcon sx={{ fontSize: 20 }} />
-                  </span>
-                  <span className="exercise-result-btn-text exercise-result-btn-text-full">
-                    Xem lại bài làm
-                  </span>
-                  <span className="exercise-result-btn-text exercise-result-btn-text-short">
-                    Xem lại
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="exercise-result-btn exercise-result-btn--secondary"
-                  onClick={onRetry}
-                >
-                  <span className="exercise-result-btn-icon">
-                    <ReplayOutlinedIcon sx={{ fontSize: 20 }} />
-                  </span>
-                  <span className="exercise-result-btn-text">Làm lại</span>
-                </button>
-              </div>
+              {onReview || onRetry ? (
+                <div className="exercise-result-actions-secondary">
+                  {onReview ? (
+                    <button
+                      type="button"
+                      className="exercise-result-btn exercise-result-btn--secondary"
+                      onClick={onReview}
+                    >
+                      <span className="exercise-result-btn-icon">
+                        <VisibilityOutlinedIcon sx={{ fontSize: 20 }} />
+                      </span>
+                      <span className="exercise-result-btn-text exercise-result-btn-text-full">
+                        Xem lại bài làm
+                      </span>
+                      <span className="exercise-result-btn-text exercise-result-btn-text-short">
+                        Xem lại
+                      </span>
+                    </button>
+                  ) : null}
+                  {onRetry ? (
+                    <button
+                      type="button"
+                      className="exercise-result-btn exercise-result-btn--secondary"
+                      onClick={onRetry}
+                    >
+                      <span className="exercise-result-btn-icon">
+                        <ReplayOutlinedIcon sx={{ fontSize: 20 }} />
+                      </span>
+                      <span className="exercise-result-btn-text">Làm lại</span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
               {onContinueStudy ? (
                 <button
                   type="button"

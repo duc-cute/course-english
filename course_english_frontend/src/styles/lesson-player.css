@@ -633,26 +633,22 @@
 
 .exercise-gap-fill-mcq-slot-line {
   display: inline;
-  border-bottom: 1.5px solid currentColor;
-  padding: 0 2px 1px;
+  padding: 0 2px;
   letter-spacing: 0.02em;
 }
 
 .exercise-gap-fill-mcq-slot.is-filled .exercise-gap-fill-mcq-slot-line {
   color: #0f766e;
-  border-bottom-color: rgba(15, 118, 110, 0.45);
 }
 
 .exercise-gap-fill-mcq-slot.is-correct .exercise-gap-fill-mcq-slot-num,
 .exercise-gap-fill-mcq-slot.is-correct .exercise-gap-fill-mcq-slot-line {
   color: #1b5e20;
-  border-bottom-color: #2e7d32;
 }
 
 .exercise-gap-fill-mcq-slot.is-wrong .exercise-gap-fill-mcq-slot-num,
 .exercise-gap-fill-mcq-slot.is-wrong .exercise-gap-fill-mcq-slot-line {
   color: #b71c1c;
-  border-bottom-color: #c62828;
 }
 
 .exercise-gap-fill-mcq-questions {

@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  READING_PRESENTATION_SPLIT,
   READING_PRESENTATION_STEPPED,
   scoreReadingComprehension,
 } from "../../../shared/lesson/readingComprehensionUtils";
@@ -18,6 +17,8 @@ type ReadingComprehensionQuestionProps = {
   showResult?: boolean;
   isCorrect?: boolean;
   onSelectSub: (subId: string, choiceId: string) => void;
+  /** Exam nav: highlight / step to this sub */
+  focusSubId?: string | null;
 };
 
 function toMcqShape(sub: ReadingSubQuestion): McqType {
@@ -43,6 +44,7 @@ function ReadingPassageCard({ question }: { question: ReadingType }) {
 
 function SubMcqBlock({
   sub,
+  parentQuestionId,
   index,
   total,
   selectedId,
@@ -52,6 +54,7 @@ function SubMcqBlock({
   onSelect,
 }: {
   sub: ReadingSubQuestion;
+  parentQuestionId: string;
   index: number;
   total: number;
   selectedId: string | null;
@@ -61,7 +64,10 @@ function SubMcqBlock({
   onSelect: (choiceId: string) => void;
 }) {
   return (
-    <div className={`exercise-reading-sub${compact ? " exercise-reading-sub--compact" : ""}`}>
+    <div
+      id={`exam-unit-${parentQuestionId}-${sub.id}`}
+      className={`exercise-reading-sub${compact ? " exercise-reading-sub--compact" : ""}`}
+    >
       <p className="exercise-reading-sub-label">
         Câu {index + 1}/{total}
       </p>
@@ -86,11 +92,18 @@ export function ReadingComprehensionQuestion({
   showResult = false,
   isCorrect = false,
   onSelectSub,
+  focusSubId = null,
 }: ReadingComprehensionQuestionProps) {
   const isStepped = question.presentation === READING_PRESENTATION_STEPPED;
   const [stepIndex, setStepIndex] = useState(0);
   const subs = question.subQuestions;
   const scored = showResult ? scoreReadingComprehension(subs, subAnswers) : null;
+
+  useEffect(() => {
+    if (!focusSubId) return;
+    const idx = subs.findIndex((s) => s.id === focusSubId);
+    if (idx >= 0) setStepIndex(idx);
+  }, [focusSubId, subs]);
 
   const safeStep = Math.min(stepIndex, Math.max(0, subs.length - 1));
   const currentSub = subs[safeStep];
@@ -104,6 +117,7 @@ export function ReadingComprehensionQuestion({
           {currentSub ? (
             <SubMcqBlock
               sub={currentSub}
+              parentQuestionId={question.id}
               index={safeStep}
               total={subs.length}
               selectedId={subAnswers[currentSub.id] ?? null}
@@ -152,6 +166,7 @@ export function ReadingComprehensionQuestion({
             <SubMcqBlock
               key={sub.id}
               sub={sub}
+              parentQuestionId={question.id}
               index={index}
               total={subs.length}
               selectedId={subAnswers[sub.id] ?? null}

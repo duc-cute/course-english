@@ -619,8 +619,9 @@
           <li class="sub"><a href="#exam-overview">19.1 Tổng quan</a></li>
           <li class="sub"><a href="#exam-phase-1-3">19.2 Phase 1–3</a></li>
           <li class="sub"><a href="#exam-phase-6">19.3 Phase 6 — AI sinh đề</a></li>
-          <li class="sub"><a href="#exam-deferred">19.4 Chưa làm (4–5, 6.4–6.6)</a></li>
-          <li class="sub"><a href="#exam-docs">19.5 Tài liệu MD</a></li>
+          <li class="sub"><a href="#exam-phase-4-5">19.4 Phase 4–5 — HS làm đề</a></li>
+          <li class="sub"><a href="#exam-deferred">19.5 Chưa làm (polish 6.4–6.6)</a></li>
+          <li class="sub"><a href="#exam-docs">19.6 Tài liệu MD</a></li>
           <li><a href="#vocabulary-set">20. Vocabulary Set</a></li>
           <li class="sub"><a href="#vocab-overview">20.1 Thư viện từ</a></li>
           <li class="sub"><a href="#vocab-ai">20.2 AI sinh bộ từ</a></li>
@@ -690,7 +691,7 @@
             <span class="badge ok">MVP: Lesson Player + HS Vibrant Scholar ~88%</span>
             <span class="badge ok">Lesson Authoring: Manual + Import + QB + Vocab gen ✅</span>
             <span class="badge ok">Question Bank Phase 1–3 + AI-1/2/3 ✅</span>
-            <span class="badge ok">ExamPaper Phase 1–3 + AI gen core</span>
+            <span class="badge ok">ExamPaper Phase 1–5 + AI gen + HS take UI</span>
             <span class="badge ok">Vocab Journey + Assigned + mixed Practice ✅</span>
             <span class="badge ok">AI Reading Studio + karaoke premium UX ✅</span>
             <span class="badge ok">Innovation Hub (Community Voice) MVP ✅</span>
@@ -698,7 +699,7 @@
             <span class="badge warn">V2: Assignment + Redis + RabbitMQ worker</span>
             <span class="badge info">V3: Parent + Adaptive + AI Coach HS</span>
             <span class="badge crit">Anti: PDF-only lesson (có SLIDE_DECK thay thế)</span>
-            <span class="badge">Cập nhật 20/08/2026</span>
+            <span class="badge">Cập nhật 25/08/2026</span>
           </div>
         </div>
 
@@ -816,7 +817,7 @@
           <li><label><input type="checkbox" data-check-id="mod.quiz.bank.p2" data-default="1" /><span>QB Phase 2 — metadata, preview drawer, MCQ/TF/Fill (<a href="#qb-phase-1-2">18.2</a>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.bank.ai" data-default="1" /><span>QB AI-1/2/3 — sinh câu topic/vocab → bank (<a href="#qb-ai-gen">18.3</a>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.bank.p3" data-default="1" /><span>QB Phase 3 — bulk, explain, similar, rewrite fork, bulk AI (<a href="#qb-phase-3">18.4</a>)</span></label></li>
-          <li><label><input type="checkbox" data-check-id="mod.quiz.exam" data-default="1" /><span>ExamPaper — soạn đề + AI gen (<a href="#exam-paper">19</a>)</span></label></li>
+          <li><label><input type="checkbox" data-check-id="mod.quiz.exam" data-default="1" /><span>ExamPaper — soạn đề + AI gen + HS làm đề (<a href="#exam-paper">19</a>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.mcq" data-default="1" /><span>MCQ + T/F + auto-grade (<code>EXERCISE_SET</code>)</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.fill" data-default="1" /><span>Fill blank, Matching, GAP_FILL_MCQ, READING_COMPREHENSION</span></label></li>
           <li><label><input type="checkbox" data-check-id="mod.quiz.listen" data-default="1" /><span>Listening quiz (<code>LISTEN_CHOOSE</code>, <code>LISTEN_TYPE</code>)</span></label></li>
@@ -1010,7 +1011,7 @@ parent_student_links</code></pre>
           <tbody>
             <tr><td>Auth + RBAC</td><td>✓ Login, register, roles, forgot password</td><td>SSO trường</td><td>—</td></tr>
             <tr><td>Course + Lesson CMS</td><td>✓ CRUD + reader + enrollment filter</td><td>VIDEO/AUDIO block editor</td><td>Adaptive path</td></tr>
-            <tr><td>Quiz</td><td>✓ EXERCISE_SET 10 loại + QB Phase 1–3 + ExamPaper</td><td>Assignment module; QB AI-2b GAP/READING</td><td>Speaking AI</td></tr>
+            <tr><td>Quiz</td><td>✓ EXERCISE_SET 10 loại + QB Phase 1–3 + ExamPaper Phase 1–5</td><td>Assignment module; QB AI-2b GAP/READING</td><td>Speaking AI</td></tr>
             <tr><td>Assignment</td><td>—</td><td>Homework → Final test</td><td>Light proctor</td></tr>
             <tr><td>Progress + Dashboard</td><td>✓ Completion API + profile stats FE</td><td>Streak/XP BE, GV analytics</td><td>District view</td></tr>
             <tr><td>Notification + Comm</td><td>✓ In-app + WS (publish lesson)</td><td>RabbitMQ + due + announcement</td><td>Discussion</td></tr>
@@ -1035,6 +1036,8 @@ parent_student_links</code></pre>
   /vocab/topics/:id          danh sách bộ từ trong topic
   /stories, /stories/:slug   đọc truyện + karaoke premium
   /stories/notebook          sổ tay từ đã lưu
+  /exams                     danh sách đề được gán
+  /exams/:assignmentId       làm đề (ExamTakeShell) / xem kết quả
   /profile                   hồ sơ 3 tab (stats, badges, history)
   /leaderboard               placeholder (S8b)
   /usage-guide
@@ -1174,7 +1177,7 @@ parent_student_links</code></pre>
           </tbody>
         </table>
         <p><strong>Routes FE:</strong> <code>/student/*</code> (app shell + player), <code>/admin/*</code>, <code>/login</code>, <code>/register</code>, <code>/forgot-password</code>.</p>
-        <p><strong>Đã triển khai:</strong> Auth (+ forgot password); CRUD classroom/subject/enrollment/lesson/system-config; <code>LessonBlock</code> + editor Manual/Import CSV/Excel + <code>QUESTION_REF</code> (<code>LESSON_AUTHORING_PROGRESS.md</code>); progress server; <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> Phase 1–3 + AI gen đề (<a href="#exam-paper">19</a>); <strong>Vocabulary Set</strong> + Journey/Assigned/Practice HS (<a href="#vocab-student-learning">20.6</a>); <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (10 loại câu + session review words); HS UI Vibrant Scholar; notification in-app + WebSocket; <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); Dashboard GV: weather AI tip, teaching plan, <strong>Innovation Hub</strong> widget (<a href="#innovation-hub">22</a>); <strong>LinguistAI</strong> Phase 1–2 (<a href="#linguist-ai">17</a>); <strong>AI Reading Studio</strong> + karaoke premium (<a href="#story-karaoke-premium">21.6</a>); <strong>RabbitMQ Lab</strong> admin (<a href="#rabbitmq-lab">15.8</a>); lịch GV + activity logs.</p>
+        <p><strong>Đã triển khai:</strong> Auth (+ forgot password); CRUD classroom/subject/enrollment/lesson/system-config; <code>LessonBlock</code> + editor Manual/Import CSV/Excel + <code>QUESTION_REF</code> (<code>LESSON_AUTHORING_PROGRESS.md</code>); progress server; <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> Phase 1–5 (soạn đề + AI gen + HS assign/attempt + <code>ExamTakeShell</code>) (<a href="#exam-paper">19</a>); <strong>Vocabulary Set</strong> + Journey/Assigned/Practice HS (<a href="#vocab-student-learning">20.6</a>); <code>EXERCISE_SET</code> + <code>ExercisePlayer</code> (10 loại câu + session review words); HS UI Vibrant Scholar; notification in-app + WebSocket; <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); Dashboard GV: weather AI tip, teaching plan, <strong>Innovation Hub</strong> widget (<a href="#innovation-hub">22</a>); <strong>LinguistAI</strong> Phase 1–2 (<a href="#linguist-ai">17</a>); <strong>AI Reading Studio</strong> + karaoke premium (<a href="#story-karaoke-premium">21.6</a>); <strong>RabbitMQ Lab</strong> admin (<a href="#rabbitmq-lab">15.8</a>); lịch GV + activity logs.</p>
         <p><strong>Gap so với <code>promt.md</code>:</strong> Assignment module; VIDEO/AUDIO block đầy đủ; syllabus sidebar trong player; gamification BE (leaderboard); RabbitMQ worker production (<a href="#redis-built-features">15.2b</a>). Chi tiết HS: tab <button type="button" class="link-btn" data-switch-tab="student">Student UI</button> · <code>docs/STUDENT_PROGRESS.md</code> · <code>docs/STUDENT_VOCAB_LEARNING_PLAN.md</code>.</p>
 
         <!-- 13 — Kiến trúc Lesson theo promt.md -->
@@ -2546,11 +2549,11 @@ AI_CLIENT_POLL_TIMEOUT_MS=300000</code></pre>
         </table>
 
         <!-- 19 — ExamPaper -->
-        <h2 class="section" id="exam-paper">19. ExamPaper — Module làm đề <span class="badge ok">Phase 1–3 + 6 core ✅</span></h2>
+        <h2 class="section" id="exam-paper">19. ExamPaper — Module làm đề <span class="badge ok">Phase 1–5 + 6 core ✅</span></h2>
         <p class="lead">
           Module <strong>tách khỏi Lesson</strong>: GV soạn đề thi nhiều phần (I, II, III…), mỗi section = 1 loại câu + instruction.
           Reuse schema <code>ExerciseQuestion</code> / <code>questions[]</code> nhưng entity riêng <code>ExamPaper</code> + <code>ExamSection</code>.
-          <strong>Không</strong> nhét đề vào <code>LessonBlock</code>.
+          <strong>Không</strong> nhét đề vào <code>LessonBlock</code>. HS làm đề qua assignment + attempt (Phase 4–5).
         </p>
 
         <h3 id="exam-overview">19.1 Tổng quan &amp; Lesson vs Exam</h3>
@@ -2559,15 +2562,16 @@ AI_CLIENT_POLL_TIMEOUT_MS=300000</code></pre>
           <tbody>
             <tr><td><strong>Mục đích</strong></td><td>Ôn bài, nhớ từ, luyện kỹ năng</td><td>Đo kết quả, format đề thi</td></tr>
             <tr><td><strong>Cấu trúc</strong></td><td>Block lẻ trong lesson</td><td>Nhiều section + instruction từng phần</td></tr>
-            <tr><td><strong>Thời gian</strong></td><td>Không giới hạn</td><td><code>durationMinutes</code> (HS làm đề — Phase 4)</td></tr>
-            <tr><td><strong>Làm lại</strong></td><td>Thoải mái</td><td>1 lần / có hạn (Phase 5)</td></tr>
+            <tr><td><strong>Thời gian</strong></td><td>Không giới hạn</td><td><code>durationMinutes</code> + countdown trên <code>ExamTakeShell</code></td></tr>
+            <tr><td><strong>Làm lại</strong></td><td>Thoải mái</td><td><code>maxAttempts</code> / hết lượt; TIMED_OUT tính như đã nộp</td></tr>
           </tbody>
         </table>
         <div class="callout">
           <div>
             <strong>Routes admin:</strong> <code>/admin/exam-papers</code>, <code>/admin/exam-papers/:id/edit</code> ·
-            <strong>FE:</strong> <code>ManageExamPapersPage</code>, <code>ExamPaperEditorPage</code> ·
-            <strong>Migration:</strong> <code>028_exam_papers.sql</code>
+            <strong>Routes HS:</strong> <code>/student/exams</code>, <code>/student/exams/:assignmentId</code> ·
+            <strong>FE:</strong> <code>ManageExamPapersPage</code>, <code>ExamPaperEditorPage</code>, <code>StudentExamsPage</code>, <code>ExamPlayerPage</code>, <code>ExamTakeShell</code> ·
+            <strong>Migration:</strong> <code>028_exam_papers.sql</code> (+ assignment/attempt)
           </div>
         </div>
 
@@ -2629,20 +2633,68 @@ AI_CLIENT_POLL_TIMEOUT_MS=300000</code></pre>
           <strong>sectionSpecs[]</strong> thay <code>typeQuotas</code>: mỗi phần có <code>title</code>, <code>instruction</code>, <code>questionType</code>, <code>questionCount</code> riêng — cần thiết khi 2 section cùng MCQ nhưng Synonyms vs Antonyms.
         </div>
 
-        <h3 id="exam-deferred">19.4 Chưa làm — Phase 4, 5 &amp; polish Phase 6</h3>
+        <h3 id="exam-phase-4-5">19.4 Phase 4–5 — HS làm đề &amp; gán lớp <span class="badge ok">✅</span></h3>
+        <p>
+          GV gán đề cho lớp (<code>ExamAssignToClassroomDialog</code>); HS vào danh sách đề → start attempt → làm trong shell riêng → nộp / hết giờ → màn kết quả.
+          Mode exam: <strong>không</strong> hiện đúng/sai giữa bài; lưu đáp án live để lưới sidebar phản ánh «đã trả lời».
+        </p>
         <table>
-          <thead><tr><th>Phase</th><th>Nội dung</th><th>Trạng thái</th></tr></thead>
+          <thead><tr><th>#</th><th>Nội dung đã ship</th><th>Code / ghi chú</th></tr></thead>
           <tbody>
-            <tr><td><strong>Phase 4</strong></td><td>HS làm đề: <code>ExamPlayerPage</code>, timer, nộp bài, mode exam (không feedback giữa bài)</td><td><span class="badge warn">⏳</span></td></tr>
-            <tr><td><strong>Phase 5</strong></td><td>Gán lớp, <code>ExamAssignment</code>, <code>ExamAttempt</code>, chặn làm lại</td><td><span class="badge warn">⏳</span></td></tr>
+            <tr>
+              <td><strong>5</strong></td>
+              <td>Gán lớp, <code>ExamAssignment</code>, <code>ExamAttempt</code>, max attempts, điểm theo assignment</td>
+              <td>Admin: gán + <code>ExamAssignmentScoresDialog</code>; HS list <code>StudentExamsPage</code></td>
+            </tr>
+            <tr>
+              <td><strong>4</strong></td>
+              <td>Start / submit attempt, timer, force submit khi hết giờ (cùng path với Nộp bài)</td>
+              <td><code>ExamPlayerPage</code> + <code>apiStartExamAttempt</code> / <code>apiSubmitExamAttempt</code></td>
+            </tr>
+            <tr>
+              <td><strong>UI take</strong></td>
+              <td>
+                Shell cố định viewport: header (Thoát / tiêu đề / timer / Nộp bài), sidebar lưới <strong>1–N</strong> phẳng
+                (todo / done / current / flagged), main scroll nội dung Part + instruction, footer Câu trước · Đánh dấu · Câu tiếp theo
+              </td>
+              <td><code>ExamTakeShell.tsx</code>, <code>exam-take.css</code></td>
+            </tr>
+            <tr>
+              <td><strong>Nav model</strong></td>
+              <td>
+                FE build units: MCQ thường = 1 unit; <code>GAP_FILL_MCQ</code> blank = 1 unit; READING sub = 1 unit.
+                Footer Prev/Next nhảy <strong>Part (section)</strong> (nhãn vẫn «Câu trước/tiếp theo»); lưới sidebar nhảy từng unit + scroll/focus
+              </td>
+              <td><code>examTakeNav.ts</code> (<code>buildExamNavUnits</code>, <code>findAdjacentPartUnitIndex</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>Player</strong></td>
+              <td>
+                <code>ExercisePlayer</code> exam mode: flush save khi nhảy, flag, live answer cho grid, <code>examForceSubmitToken</code>,
+                sau nộp reload assignment → <code>ExerciseResultScreen</code>; list «Xem kết quả» → <code>?view=results</code>
+              </td>
+              <td>Reuse loại câu Lesson; không auto-advance sau chọn đáp án</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="quote">
+          <strong>UX đã chốt:</strong> nhiều câu cùng Part nhìn thấy trên 1 màn → Prev/Next theo Part hợp lý hơn theo từng blank;
+          chọn câu lẻ vẫn qua lưới số. Badge «Hết lượt» khi remaining = 0; TIMED_OUT đếm như SUBMITTED.
+        </div>
+
+        <h3 id="exam-deferred">19.5 Chưa làm — polish Phase 6 &amp; mở rộng</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Nội dung</th><th>Trạng thái</th></tr></thead>
+          <tbody>
             <tr><td>6.4</td><td>AI gen trong 1 section (editor)</td><td><span class="badge warn">⏳</span></td></tr>
             <tr><td>6.5</td><td>Duplicate đề / section</td><td><span class="badge warn">⏳</span></td></tr>
             <tr><td>6.6</td><td>Question Bank → kéo câu vào section</td><td><span class="badge warn">⏳</span></td></tr>
             <tr><td>—</td><td>Import T/F, Fill blank per section (Phase 3.1b)</td><td><span class="badge warn">⏳</span></td></tr>
+            <tr><td>—</td><td>Xem lại chi tiết attempt cũ từ list (không có session answers local)</td><td><span class="badge warn">⏳</span></td></tr>
           </tbody>
         </table>
 
-        <h3 id="exam-docs">19.5 Tài liệu MD</h3>
+        <h3 id="exam-docs">19.6 Tài liệu MD</h3>
         <table>
           <thead><tr><th>File</th><th>Nội dung</th></tr></thead>
           <tbody>
@@ -2939,10 +2991,10 @@ FE: InnovationHubPage, InnovationIdeaDetailPage
           <strong>Draft → Publish → Assign → Submit → Grade</strong>.
         </p>
         <p>
-          <strong>Đã có:</strong> Lesson Player (10 loại câu + review words), Vibrant Scholar HS UI (~88%), progress server, enrollment filter, notification in-app; <strong>Lesson Authoring</strong> Manual + Import + QB + Vocab generator (<code>LESSON_AUTHORING_PROGRESS.md</code>); <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); <strong>LinguistAI</strong> chat + sinh câu + tối ưu (<a href="#ai-question-gen-perf">17.2</a>); <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> soạn đề + AI gen (<a href="#exam-paper">19</a>); <strong>Vocabulary</strong> library + AI + <strong>Journey/Assigned/Practice</strong> (<a href="#vocab-student-learning">20.6</a>); <strong>AI Reading Studio</strong> + karaoke premium (<a href="#story-karaoke-premium">21.6</a>); <strong>Innovation Hub</strong> (<a href="#innovation-hub">22</a>); Dashboard GV weather + teaching plan.<br />
-          <strong>Đích tiếp:</strong> Story E2E audio; ExamPaper Phase 4–5 (HS làm đề); manual test Vocab Journey; Assignment V2; gamification BE; RabbitMQ worker — <a href="#lesson-impl-plan">13.10</a> Phase 5 syllabus, tab Student.<br />
+          <strong>Đã có:</strong> Lesson Player (10 loại câu + review words), Vibrant Scholar HS UI (~88%), progress server, enrollment filter, notification in-app; <strong>Lesson Authoring</strong> Manual + Import + QB + Vocab generator (<code>LESSON_AUTHORING_PROGRESS.md</code>); <strong>Students Need Support</strong> (<a href="#students-need-support">16</a>); <strong>LinguistAI</strong> chat + sinh câu + tối ưu (<a href="#ai-question-gen-perf">17.2</a>); <strong>Question Bank</strong> Phase 1–3 + AI-1/2/3 (<a href="#question-bank">18</a>); <strong>ExamPaper</strong> soạn đề + AI gen + <strong>HS làm đề</strong> (assign/attempt + <code>ExamTakeShell</code>) (<a href="#exam-paper">19</a>); <strong>Vocabulary</strong> library + AI + <strong>Journey/Assigned/Practice</strong> (<a href="#vocab-student-learning">20.6</a>); <strong>AI Reading Studio</strong> + karaoke premium (<a href="#story-karaoke-premium">21.6</a>); <strong>Innovation Hub</strong> (<a href="#innovation-hub">22</a>); Dashboard GV weather + teaching plan.<br />
+          <strong>Đích tiếp:</strong> Story E2E audio; manual test Vocab Journey; Assignment V2; gamification BE; RabbitMQ worker — <a href="#lesson-impl-plan">13.10</a> Phase 5 syllabus, tab Student.<br />
           <strong>QB tạm dừng:</strong> AI-2b GAP/READING trong bank; Phase 4 search/analytics — <a href="#qb-deferred">18.5</a>.<br />
-          <strong>Exam polish:</strong> 6.4–6.6, import T/F-Fill section — <a href="#exam-deferred">19.4</a>.<br />
+          <strong>Exam polish:</strong> 6.4–6.6, import T/F-Fill section, deep review attempt — <a href="#exam-deferred">19.5</a>.<br />
           <strong>AI sau:</strong> LinguistAI import bank (Phase 2.1); context LMS — <a href="#ai-deferred">17.3</a>.<br />
           <strong>Scale:</strong> Redis + RabbitMQ theo <a href="#redis-built-features">15.2b</a> khi &gt;1k HS.
         </p>

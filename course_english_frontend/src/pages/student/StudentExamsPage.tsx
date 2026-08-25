@@ -1,7 +1,6 @@
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -172,7 +171,9 @@ export function StudentExamsPage() {
             const cta = row.inProgressAttempt
               ? "Tiếp tục làm"
               : row.canStart
-                ? "Làm đề"
+                ? row.latestSubmittedAttempt
+                  ? "Làm lại"
+                  : "Làm đề"
                 : row.latestSubmittedAttempt
                   ? "Xem kết quả"
                   : row.windowOpen
@@ -236,7 +237,9 @@ export function StudentExamsPage() {
                         <Box className="student-exam-attempts-badge">
                           <RefreshIcon className="student-exam-attempts-icon" />
                           <Typography className="student-exam-attempts-text">
-                            Còn {row.attemptsRemaining ?? 0}/{row.maxAttempts ?? 1} lần
+                            {(row.attemptsRemaining ?? 0) > 0
+                              ? `Còn ${row.attemptsRemaining}/${row.maxAttempts ?? 1} lần`
+                              : `Hết lượt (${row.maxAttempts ?? 1}/${row.maxAttempts ?? 1})`}
                           </Typography>
                         </Box>
                       </Box>
@@ -249,8 +252,15 @@ export function StudentExamsPage() {
                       disabled={!canEnter && !row.inProgressAttempt && !row.latestSubmittedAttempt}
                       onClick={() => {
                         const path = studentRoutePaths.examTake(row.id);
-                        // Làm đề mới → vào player và tự start, không dừng ở màn "Bắt đầu làm bài"
-                        if (row.canStart && !row.inProgressAttempt) {
+                        if (row.inProgressAttempt) {
+                          navigate(path);
+                          return;
+                        }
+                        if (row.latestSubmittedAttempt && !row.canStart) {
+                          navigate(`${path}?view=results`);
+                          return;
+                        }
+                        if (row.canStart) {
                           navigate(`${path}?autostart=1`);
                           return;
                         }
@@ -259,12 +269,6 @@ export function StudentExamsPage() {
                       className="student-exam-btn-action"
                     >
                       {cta}
-                    </Button>
-                    <Button
-                      className="student-exam-btn-detail"
-                      onClick={() => navigate(studentRoutePaths.examTake(row.id))}
-                    >
-                      Xem chi tiết <ChevronRightIcon fontSize="inherit" style={{ marginLeft: 2 }} />
                     </Button>
                   </Box>
                 </Box>

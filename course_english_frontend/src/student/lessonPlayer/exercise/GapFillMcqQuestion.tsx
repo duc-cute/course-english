@@ -89,7 +89,11 @@ export function GapFillMcqQuestion({
           const blankCorrect = scored?.perBlank[blank.id];
 
           return (
-            <li key={blank.id} className="exercise-gap-fill-mcq-question">
+            <li
+              key={blank.id}
+              id={`exam-unit-${question.id}-${blank.id}`}
+              className="exercise-gap-fill-mcq-question"
+            >
               <div className="exercise-gap-fill-mcq-question-label">Question {ordinal}.</div>
               <div
                 className="exercise-gap-fill-mcq-options"
