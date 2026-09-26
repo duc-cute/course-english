@@ -10,6 +10,9 @@ import java.util.List;
 @Setter
 public class StoryTranslationsPayloadDTO {
 
+    /** Vietnamese title (optional — set by monologue generator). */
+    private String titleVi;
+
     /** Vietnamese translation per sentence, aligned by sentenceIndex after merge. */
     private List<String> sentenceTranslations = new ArrayList<>();
     private List<StoryGlossaryEntryDTO> glossary = new ArrayList<>();

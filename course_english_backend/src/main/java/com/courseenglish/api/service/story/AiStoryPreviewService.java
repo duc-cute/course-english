@@ -8,6 +8,7 @@ import com.courseenglish.api.domain.response.ResVocabularySetDTO;
 import com.courseenglish.api.service.VocabularySetService;
 import com.courseenglish.api.service.impl.OpenRouterClient;
 import com.courseenglish.api.util.AppConstants;
+import com.courseenglish.api.util.constant.StoryFormatEnum;
 import com.courseenglish.api.util.error.IdInvalidException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,14 +33,26 @@ public class AiStoryPreviewService {
               "content": "string — plain text story body in English only",
               "sentenceTranslations": ["string — Vietnamese translation of sentence 1", "..."],
               "glossary": [
-                { "word": "string", "meaningVi": "string — short Vietnamese gloss" }
+                {
+                  "word": "string",
+                  "meaningVi": "string — short Vietnamese gloss",
+                  "ipa": "string — IPA transcription (General American), no slashes, e.g. ˈpæspɔːrt",
+                  "partOfSpeech": "noun | verb | adjective | adverb | phrase | ..."
+                }
               ]
             }
             Rules:
             - content MUST be plain text paragraphs in English. Never HTML or markdown.
             - sentenceTranslations MUST have the SAME number of items as English sentences in content.
               Split English sentences by . ! ? boundaries (same order as they appear).
+            - Vietnamese quality: translate as a Vietnamese author would write the story for Vietnamese
+              readers — natural, idiomatic, consistent tone across the whole story. Within one sentence
+              you may reorder clauses, drop pronouns Vietnamese omits, and use idioms; never word by word.
+              Example: "You write it down, say it aloud, and still it slips away."
+              BAD: "Bạn viết nó ra, nói to lên, và nó vẫn trôi đi mất."
+              GOOD: "Chép ra, đọc to lên, rồi nó vẫn cứ tuột khỏi đầu."
             - glossary: 8-25 useful words/phrases from the story with concise Vietnamese meanings.
+              ipa: standard IPA for the base form; leave "" if unsure. Multi-word phrases: IPA of the whole phrase.
             - Match the requested CEFR level and approximate reading time (word count).
             - If a vocabulary list is provided, weave those words naturally and include them in glossary.
             """;
@@ -48,16 +61,19 @@ public class AiStoryPreviewService {
     private final ObjectMapper objectMapper;
     private final VocabularySetService vocabularySetService;
     private final StoryTranslationMergeService storyTranslationMergeService;
+    private final StoryAiGenActivityLogger activityLogger;
 
     public AiStoryPreviewService(
             OpenRouterClient openRouterClient,
             ObjectMapper objectMapper,
             VocabularySetService vocabularySetService,
-            StoryTranslationMergeService storyTranslationMergeService) {
+            StoryTranslationMergeService storyTranslationMergeService,
+            StoryAiGenActivityLogger activityLogger) {
         this.openRouterClient = openRouterClient;
         this.objectMapper = objectMapper;
         this.vocabularySetService = vocabularySetService;
         this.storyTranslationMergeService = storyTranslationMergeService;
+        this.activityLogger = activityLogger;
     }
 
     public ResStoryAiPreviewDTO preview(ReqStoryAiPreviewDTO request) throws IdInvalidException {
@@ -76,9 +92,19 @@ public class AiStoryPreviewService {
                         Map.of("role", "system", "content", SYSTEM_PROMPT),
                         Map.of("role", "user", "content", userPrompt));
 
-        OpenRouterClient.ChatResult chat =
-                openRouterClient.chatJson(
-                        model, messages, timeoutSec);
+        int minutes = request.getReadingTimeMinutes() != null ? request.getReadingTimeMinutes() : 5;
+        Map<String, Object> logContext = activityLogger.baseContext(
+                StoryFormatEnum.STORYBOOK.name(), model, request.getLevel(), minutes);
+        logContext.put("prompt", request.getPrompt() == null ? null : request.getPrompt().trim());
+        logContext.put("vocabularySetId", request.getVocabularySetId());
+
+        OpenRouterClient.ChatResult chat;
+        try {
+            chat = openRouterClient.chatJson(model, messages, timeoutSec);
+        } catch (IdInvalidException ex) {
+            activityLogger.failure(logContext, ex.getMessage(), null);
+            throw ex;
+        }
 
         try {
             JsonNode root = objectMapper.readTree(chat.getContent());
@@ -114,12 +140,15 @@ public class AiStoryPreviewService {
                     chat.getPromptTokens(),
                     chat.getCompletionTokens(),
                     chat.getDurationMs());
+            activityLogger.success(logContext, dto.getTitle(), dto.getContent(), minutes * 120, translations, chat);
             return dto;
         } catch (IdInvalidException ex) {
             log.warn("[StoryAI] Preview validation failed model={} reason={}", model, ex.getMessage());
+            activityLogger.failure(logContext, ex.getMessage(), chat);
             throw ex;
         } catch (Exception ex) {
             log.error("[StoryAI] Preview parse failed model={} error={}", model, ex.getMessage(), ex);
+            activityLogger.failure(logContext, "Không phân tích được kết quả AI: " + ex.getMessage(), chat);
             throw new IdInvalidException("Không phân tích được kết quả AI: " + ex.getMessage());
         }
     }

@@ -5,6 +5,7 @@ import com.courseenglish.api.domain.dto.story.StoryTokenDTO;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +28,10 @@ public class ResStoryDTO {
     private String processingStatus;
     private boolean aiGenerated;
     private String voiceProfileJson;
+    private String storyFormat;
+    private String visualStyle;
+    /** Độ dài file audio (giây), null nếu chưa AUDIO_READY. */
+    private BigDecimal duration;
     private Instant createdAt;
     private Instant updatedAt;
     private String createdBy;

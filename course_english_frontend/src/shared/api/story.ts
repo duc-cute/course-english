@@ -3,6 +3,52 @@ import type { ApiResponse } from "./types";
 
 export type StoryStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type StoryProcessingStatus = "PENDING" | "TOKENIZED" | "AUDIO_READY" | "AUDIO_FAILED";
+export type StoryIllustrationStatus =
+  | "NONE"
+  | "ANALYZED"
+  | "GENERATING"
+  | "PARTIAL"
+  | "READY"
+  | "FAILED";
+
+export type StorySceneSegment = {
+  type: "narration" | "dialogue" | string;
+  speaker?: string;
+  text: string;
+};
+
+export type StoryScene = {
+  id?: string;
+  sceneIndex: number;
+  sentenceStart: number;
+  sentenceEnd: number;
+  description?: string;
+  location?: string;
+  characters?: string[];
+  segments?: StorySceneSegment[];
+  imagePrompt?: string;
+  imageUrl?: string;
+  status?: string;
+};
+
+export type StoryCharacterProfile = {
+  name: string;
+  age?: number;
+  gender?: string;
+  hair?: string;
+  clothing?: string;
+  appearance?: string;
+  artStyle?: string;
+  colorStyle?: string;
+  referenceImageUrl?: string;
+};
+
+export type StoryVisualProfile = {
+  artStyle?: string;
+  colorStyle?: string;
+  lighting?: string;
+  mood?: string;
+};
 
 export type StoryToken = {
   type: "text" | "word";
@@ -49,6 +95,19 @@ export type StorySentenceTimelineItem = {
   end: number;
 };
 
+export type StoryFormat = "STORYBOOK" | "MONOLOGUE";
+export type StoryVisualStyle = "PASTEL_STORYBOOK" | "INK_SKETCH";
+
+export const STORY_FORMAT_OPTIONS: { value: StoryFormat; label: string }[] = [
+  { value: "STORYBOOK", label: "Truyện tranh" },
+  { value: "MONOLOGUE", label: "Tự sự" },
+];
+
+export const STORY_VISUAL_STYLE_OPTIONS: { value: StoryVisualStyle; label: string }[] = [
+  { value: "PASTEL_STORYBOOK", label: "Pastel sách tranh" },
+  { value: "INK_SKETCH", label: "Phác thảo bút mực" },
+];
+
 export type StoryRecord = {
   id: string;
   title: string;
@@ -62,8 +121,12 @@ export type StoryRecord = {
   vocabularySetTitle?: string;
   status: StoryStatus;
   processingStatus?: StoryProcessingStatus;
+  /** Độ dài audio (giây) — từ story_audio khi AUDIO_READY. */
+  duration?: number;
   aiGenerated?: boolean;
   voiceProfileJson?: string;
+  storyFormat?: StoryFormat;
+  visualStyle?: StoryVisualStyle;
   createdAt?: string;
   updatedAt?: string;
   createdBy?: string;
@@ -77,6 +140,10 @@ export type StoryReaderPayload = {
   readingTimeMinutes?: number;
   vocabularySetId?: string;
   processingStatus?: StoryProcessingStatus;
+  illustrationStatus?: StoryIllustrationStatus;
+  storyFormat?: StoryFormat;
+  visualStyle?: StoryVisualStyle;
+  titleVi?: string;
   tokens: StoryToken[];
   sentences: StorySentence[];
   audioUrl?: string;
@@ -85,6 +152,19 @@ export type StoryReaderPayload = {
   wordTimeline?: StoryWordTimelineItem[];
   sentenceTimeline?: StorySentenceTimelineItem[];
   glossary?: StoryGlossaryEntry[];
+  scenes?: StoryScene[];
+  characters?: StoryCharacterProfile[];
+  visualProfile?: StoryVisualProfile;
+};
+
+export type StoryIllustrationStatusPayload = {
+  storyId: string;
+  illustrationStatus: StoryIllustrationStatus;
+  errorMessage?: string;
+  visualProfile?: StoryVisualProfile;
+  characters?: StoryCharacterProfile[];
+  scenes?: StoryScene[];
+  message?: string;
 };
 
 export type StoryAudioStatus = {
@@ -142,6 +222,8 @@ export type StoryFormPayload = {
   aiGenerated?: boolean;
   translationsJson?: string;
   voiceProfileJson?: string;
+  storyFormat?: StoryFormat;
+  visualStyle?: StoryVisualStyle;
 };
 
 export type TtsVoiceCatalogItem = {
@@ -168,6 +250,25 @@ export type StoryAiPreviewResult = {
   level?: string;
   readingTimeMinutes?: number;
   translationsJson?: string;
+  /** Monologue generator only. */
+  titleVi?: string;
+  storyFormat?: StoryFormat;
+  visualStyle?: StoryVisualStyle;
+  themeGroup?: string;
+  prompt?: string;
+};
+
+export type StoryMonologuePreviewPayload = {
+  /** Để trống = ngẫu nhiên. */
+  themeGroup?: string;
+  level?: string;
+  readingTimeMinutes?: number;
+};
+
+export type MonologueTheme = {
+  key: string;
+  name: string;
+  description?: string;
 };
 
 export type StoryCoverPreviewPayload = {
@@ -268,6 +369,18 @@ export async function apiPreviewStoryAi(payload: StoryAiPreviewPayload) {
   return api.post("/stories/ai-preview", payload) as Promise<ApiResponse<StoryAiPreviewResult>>;
 }
 
+export async function apiListMonologueThemes() {
+  return api.get("/stories/monologue-themes") as Promise<ApiResponse<MonologueTheme[]>>;
+}
+
+export async function apiPreviewMonologueStoryAi(payload: StoryMonologuePreviewPayload) {
+  return api.post("/stories/ai-monologue-preview", payload) as Promise<ApiResponse<StoryAiPreviewResult>>;
+}
+
+export async function apiRetranslateStory(id: string) {
+  return api.post(`/stories/${id}/retranslate`) as Promise<ApiResponse<StoryRecord>>;
+}
+
 export async function apiPreviewStoryCoverAi(payload: StoryCoverPreviewPayload) {
   return api.post("/stories/ai-cover-preview", payload) as Promise<ApiResponse<StoryCoverPreviewResult>>;
 }
@@ -278,6 +391,30 @@ export async function apiGenerateStoryAudio(storyId: string) {
 
 export async function apiGetStoryAudioStatus(storyId: string) {
   return api.get(`/stories/${storyId}/audio`) as Promise<ApiResponse<StoryAudioStatus>>;
+}
+
+export async function apiAnalyzeStoryScenes(storyId: string) {
+  return api.post(`/stories/${storyId}/analyze-scenes`) as Promise<
+    ApiResponse<StoryIllustrationStatusPayload>
+  >;
+}
+
+export async function apiGenerateStoryIllustrations(storyId: string) {
+  return api.post(`/stories/${storyId}/generate-illustrations`) as Promise<
+    ApiResponse<StoryIllustrationStatusPayload>
+  >;
+}
+
+export async function apiGetStoryIllustrations(storyId: string) {
+  return api.get(`/stories/${storyId}/illustrations`) as Promise<
+    ApiResponse<StoryIllustrationStatusPayload>
+  >;
+}
+
+export async function apiRegenerateStorySceneImage(storyId: string, sceneIndex: number) {
+  return api.post(`/stories/${storyId}/scenes/${sceneIndex}/regenerate-image`) as Promise<
+    ApiResponse<StoryIllustrationStatusPayload>
+  >;
 }
 
 export type ElevenLabsVoiceItem = {

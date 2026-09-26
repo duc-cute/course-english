@@ -45,7 +45,8 @@ export function scrollIntoComfortZone(target: HTMLElement, container: HTMLElemen
   const visibleTop = containerRect.top + edgePadding;
   const visibleBottom = containerRect.bottom - edgePadding;
 
-  if (targetTop >= visibleTop && targetBottom <= visibleBottom) {
+  const fullyVisible = targetTop >= visibleTop && targetBottom <= visibleBottom;
+  if (fullyVisible) {
     return;
   }
 
@@ -72,5 +73,11 @@ export function scrollIntoComfortZone(target: HTMLElement, container: HTMLElemen
   }
 
   if (Math.abs(scrollDelta) < 1) return;
-  container.scrollBy({ top: scrollDelta, behavior: "smooth" });
+
+  // User wheel cancels in-flight smooth scroll; catch-up must be instant when off-screen.
+  const offScreen = targetBottom < containerRect.top || targetTop > containerRect.bottom;
+  container.scrollBy({
+    top: scrollDelta,
+    behavior: offScreen ? "auto" : "smooth",
+  });
 }

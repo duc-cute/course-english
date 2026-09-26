@@ -35,12 +35,22 @@ public class StoryTokenizerService {
     }
 
     public StoryTokensPayloadDTO tokenize(String content, UUID vocabularySetId) {
-        StoryTokensPayloadDTO payload = new StoryTokensPayloadDTO();
         if (content == null || content.isEmpty()) {
-            return payload;
+            return new StoryTokensPayloadDTO();
         }
+        return tokenizeWith(content, buildVocabularyLookup(content, vocabularySetId));
+    }
 
-        Map<String, UUID> vocabLookup = buildVocabularyLookup(content, vocabularySetId);
+    /** Tách câu giống reader nhưng không tra vocab DB (dùng cho thống kê / log). */
+    public List<StorySentenceDTO> splitSentences(String content) {
+        if (content == null || content.isEmpty()) {
+            return List.of();
+        }
+        return tokenizeWith(content, Map.of()).getSentences();
+    }
+
+    private StoryTokensPayloadDTO tokenizeWith(String content, Map<String, UUID> vocabLookup) {
+        StoryTokensPayloadDTO payload = new StoryTokensPayloadDTO();
         List<StoryTokenDTO> tokens = new ArrayList<>();
         List<StorySentenceDTO> sentences = new ArrayList<>();
 

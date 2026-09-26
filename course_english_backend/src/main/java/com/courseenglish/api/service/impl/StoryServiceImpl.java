@@ -3,6 +3,7 @@ package com.courseenglish.api.service.impl;
 import com.courseenglish.api.domain.Story;
 import com.courseenglish.api.domain.VocabularySet;
 import com.courseenglish.api.domain.VocabularyWord;
+import com.courseenglish.api.domain.WordPronunciationCache;
 import com.courseenglish.api.domain.dto.story.StoryGlossaryEntryDTO;
 import com.courseenglish.api.domain.dto.story.StoryTokensPayloadDTO;
 import com.courseenglish.api.domain.dto.story.StoryTranslationsPayloadDTO;
@@ -14,13 +15,25 @@ import com.courseenglish.api.domain.response.ResStoryWordLookupDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.integration.dictionary.model.VocabularyEnrichmentData;
 import com.courseenglish.api.integration.dictionary.service.DictionaryLookupService;
+import com.courseenglish.api.repository.StoryAudioRepository;
 import com.courseenglish.api.repository.StoryRepository;
 import com.courseenglish.api.repository.VocabularySetRepository;
 import com.courseenglish.api.repository.VocabularyWordRepository;
+import com.courseenglish.api.domain.StoryScene;
+import com.courseenglish.api.domain.dto.story.StoryCharacterProfileDTO;
+import com.courseenglish.api.domain.dto.story.StoryVisualProfileDTO;
+import com.courseenglish.api.repository.StorySceneRepository;
 import com.courseenglish.api.service.StoryService;
 import com.courseenglish.api.service.story.StoryAudioService;
+import com.courseenglish.api.service.story.StoryGlossaryEnrichService;
+import com.courseenglish.api.service.story.StoryGlossaryEnrichWorker;
+import com.courseenglish.api.service.story.StorySceneAnalyzerService;
 import com.courseenglish.api.service.story.StoryTokenizerService;
 import com.courseenglish.api.service.story.StoryTranslationMergeService;
+import com.courseenglish.api.util.constant.StoryFormatEnum;
+import com.courseenglish.api.util.constant.StoryIllustrationStatusEnum;
+import com.courseenglish.api.util.constant.StoryVisualStyleEnum;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.courseenglish.api.util.CatalogSearchSpecs;
 import com.courseenglish.api.util.LessonSlugUtil;
 import com.courseenglish.api.util.PagingSearchUtil;
@@ -51,6 +64,11 @@ public class StoryServiceImpl implements StoryService {
     private final StoryTokenizerService storyTokenizerService;
     private final StoryTranslationMergeService storyTranslationMergeService;
     private final StoryAudioService storyAudioService;
+    private final StoryAudioRepository storyAudioRepository;
+    private final StorySceneRepository storySceneRepository;
+    private final StorySceneAnalyzerService storySceneAnalyzerService;
+    private final StoryGlossaryEnrichService storyGlossaryEnrichService;
+    private final StoryGlossaryEnrichWorker storyGlossaryEnrichWorker;
     private final ObjectMapper objectMapper;
 
     public StoryServiceImpl(
@@ -61,7 +79,14 @@ public class StoryServiceImpl implements StoryService {
             StoryTokenizerService storyTokenizerService,
             StoryTranslationMergeService storyTranslationMergeService,
             StoryAudioService storyAudioService,
+            StoryAudioRepository storyAudioRepository,
+            StorySceneRepository storySceneRepository,
+            StorySceneAnalyzerService storySceneAnalyzerService,
+            StoryGlossaryEnrichService storyGlossaryEnrichService,
+            StoryGlossaryEnrichWorker storyGlossaryEnrichWorker,
             ObjectMapper objectMapper) {
+        this.storyGlossaryEnrichService = storyGlossaryEnrichService;
+        this.storyGlossaryEnrichWorker = storyGlossaryEnrichWorker;
         this.storyRepository = storyRepository;
         this.vocabularySetRepository = vocabularySetRepository;
         this.vocabularyWordRepository = vocabularyWordRepository;
@@ -69,6 +94,9 @@ public class StoryServiceImpl implements StoryService {
         this.storyTokenizerService = storyTokenizerService;
         this.storyTranslationMergeService = storyTranslationMergeService;
         this.storyAudioService = storyAudioService;
+        this.storyAudioRepository = storyAudioRepository;
+        this.storySceneRepository = storySceneRepository;
+        this.storySceneAnalyzerService = storySceneAnalyzerService;
         this.objectMapper = objectMapper;
     }
 
@@ -151,6 +179,18 @@ public class StoryServiceImpl implements StoryService {
             return dto;
         }
 
+        Optional<WordPronunciationCache> cached = storyGlossaryEnrichService.findCached(wordKey);
+        if (cached.isPresent()) {
+            WordPronunciationCache c = cached.get();
+            dto.setPhonetic(c.getPhonetic());
+            dto.setAudioUkUrl(c.getAudioUkUrl());
+            dto.setAudioUsUrl(c.getAudioUrl());
+            dto.setPartOfSpeech(c.getPartOfSpeech());
+            dto.setInDatabase(false);
+            dto.setMeaningSource("dictionary");
+            return dto;
+        }
+
         Optional<VocabularyEnrichmentData> enrichment = dictionaryLookupService.lookup(wordKey);
         if (enrichment.isPresent()) {
             VocabularyEnrichmentData data = enrichment.get();
@@ -175,6 +215,7 @@ public class StoryServiceImpl implements StoryService {
         Story entity = new Story();
         applyFields(request, entity, true);
         tokenizeAndSave(entity);
+        storyGlossaryEnrichWorker.enqueueAfterCommit(entity.getId());
         return toDto(entity);
     }
 
@@ -202,6 +243,7 @@ public class StoryServiceImpl implements StoryService {
             storyAudioService.invalidateAudio(entity.getId());
             entity.setProcessingStatus(StoryProcessingStatusEnum.TOKENIZED);
             storyRepository.save(entity);
+            storyGlossaryEnrichWorker.enqueueAfterCommit(entity.getId());
         } else {
             storyRepository.save(entity);
         }
@@ -221,9 +263,10 @@ public class StoryServiceImpl implements StoryService {
         StoryTranslationsPayloadDTO translations = readTranslations(entity.getTranslationsJson());
         storyTranslationMergeService.applySentenceTranslations(
                 payload.getSentences(), translations.getSentenceTranslations());
-        List<StoryGlossaryEntryDTO> enrichedGlossary = storyTranslationMergeService.buildReaderGlossary(
-                payload.getTokens(), translations, true);
-        translations.setGlossary(enrichedGlossary);
+        // Không tra từ điển đồng bộ ở đây (chậm, có thể timeout) — IPA/audio bổ sung nền qua StoryGlossaryEnrichWorker
+        List<StoryGlossaryEntryDTO> mergedGlossary = storyTranslationMergeService.buildReaderGlossary(
+                payload.getTokens(), translations, false);
+        translations.setGlossary(mergedGlossary);
         try {
             entity.setTokensJson(objectMapper.writeValueAsString(payload));
             entity.setTranslationsJson(objectMapper.writeValueAsString(translations));
@@ -277,6 +320,8 @@ public class StoryServiceImpl implements StoryService {
             entity.setVoiceProfileJson(null);
         }
 
+        applyFormatAndStyle(request, entity);
+
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             try {
                 entity.setStatus(StoryStatusEnum.valueOf(request.getStatus().trim().toUpperCase()));
@@ -289,6 +334,25 @@ public class StoryServiceImpl implements StoryService {
 
         if (isCreate || previousTitle == null || !previousTitle.equalsIgnoreCase(request.getTitle().trim())) {
             entity.setSlug(resolveUniqueSlug(request.getTitle().trim(), isCreate ? null : entity.getId()));
+        }
+    }
+
+    private void applyFormatAndStyle(ReqStoryDTO request, Story entity) throws IdInvalidException {
+        if (request.getStoryFormat() != null && !request.getStoryFormat().isBlank()) {
+            try {
+                entity.setStoryFormat(StoryFormatEnum.valueOf(request.getStoryFormat().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                throw new IdInvalidException("Thể loại story không hợp lệ");
+            }
+        }
+        if (request.getVisualStyle() != null && !request.getVisualStyle().isBlank()) {
+            try {
+                entity.setVisualStyle(StoryVisualStyleEnum.valueOf(request.getVisualStyle().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                throw new IdInvalidException("Phong cách ảnh không hợp lệ");
+            }
+        } else if (request.getStoryFormat() != null && !request.getStoryFormat().isBlank()) {
+            entity.setVisualStyle(StoryVisualStyleEnum.defaultFor(entity.getStoryFormat()));
         }
     }
 
@@ -343,9 +407,31 @@ public class StoryServiceImpl implements StoryService {
             dto.setReadingTimeMinutes(story.getReadingTimeMinutes());
             dto.setVocabularySetId(story.getVocabularySetId());
             dto.setProcessingStatus(story.getProcessingStatus().name());
+            dto.setIllustrationStatus(
+                    story.getIllustrationStatus() != null
+                            ? story.getIllustrationStatus().name()
+                            : StoryIllustrationStatusEnum.NONE.name());
+            dto.setStoryFormat(story.getStoryFormat() != null ? story.getStoryFormat().name() : null);
+            dto.setVisualStyle(story.getVisualStyle() != null ? story.getVisualStyle().name() : null);
+            dto.setTitleVi(translations != null ? translations.getTitleVi() : null);
             dto.setTokens(payload.getTokens());
             dto.setSentences(payload.getSentences());
             dto.setGlossary(glossary);
+            List<StoryScene> scenes =
+                    storySceneRepository.findByStoryIdAndVoidedFalseOrderBySceneIndexAsc(story.getId());
+            dto.setScenes(storySceneAnalyzerService.toSceneDtos(scenes));
+            try {
+                if (story.getCharactersJson() != null && !story.getCharactersJson().isBlank()) {
+                    dto.setCharacters(objectMapper.readValue(
+                            story.getCharactersJson(), new TypeReference<List<StoryCharacterProfileDTO>>() {}));
+                }
+                if (story.getVisualProfileJson() != null && !story.getVisualProfileJson().isBlank()) {
+                    dto.setVisualProfile(
+                            objectMapper.readValue(story.getVisualProfileJson(), StoryVisualProfileDTO.class));
+                }
+            } catch (JsonProcessingException ignored) {
+                // optional storybook metadata
+            }
             storyAudioService.attachAudioToReaderPayload(dto, story.getId());
             return dto;
         } catch (JsonProcessingException ex) {
@@ -373,6 +459,14 @@ public class StoryServiceImpl implements StoryService {
         dto.setProcessingStatus(story.getProcessingStatus().name());
         dto.setAiGenerated(story.isAiGenerated());
         dto.setVoiceProfileJson(story.getVoiceProfileJson());
+        dto.setStoryFormat(story.getStoryFormat() != null ? story.getStoryFormat().name() : null);
+        dto.setVisualStyle(story.getVisualStyle() != null ? story.getVisualStyle().name() : null);
+        if (story.getProcessingStatus() == StoryProcessingStatusEnum.AUDIO_READY) {
+            storyAudioRepository
+                    .findFirstByStoryIdAndVoidedFalseOrderByCreatedAtDesc(story.getId())
+                    .map(audio -> audio.getDuration())
+                    .ifPresent(dto::setDuration);
+        }
         dto.setCreatedAt(story.getCreatedAt());
         dto.setUpdatedAt(story.getUpdatedAt());
         dto.setCreatedBy(story.getCreatedBy());

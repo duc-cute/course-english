@@ -17,8 +17,15 @@ import com.courseenglish.api.domain.response.ResStoryWordLookupDTO;
 import com.courseenglish.api.domain.response.ResultPaginationDTO;
 import com.courseenglish.api.service.story.ElevenLabsVoiceDiscoveryService;
 import com.courseenglish.api.service.story.AiStoryPreviewService;
+import com.courseenglish.api.service.story.AiMonologueStoryService;
+import com.courseenglish.api.service.story.StoryRetranslateService;
+import com.courseenglish.api.domain.request.ReqStoryMonologuePreviewDTO;
+import com.courseenglish.api.domain.response.ResMonologueThemeDTO;
+import com.courseenglish.api.domain.response.ResStoryIllustrationStatusDTO;
 import com.courseenglish.api.service.story.StoryCoverImageService;
 import com.courseenglish.api.service.story.StoryAudioService;
+import com.courseenglish.api.service.story.StoryIllustrationService;
+import com.courseenglish.api.service.story.StorySceneAnalyzerService;
 import com.courseenglish.api.service.story.StoryWordAiEnrichService;
 import com.courseenglish.api.service.story.StoryVoiceCatalogService;
 import com.courseenglish.api.service.StoryService;
@@ -43,6 +50,10 @@ public class StoryController {
     private final StoryWordAiEnrichService storyWordAiEnrichService;
     private final StoryVoiceCatalogService storyVoiceCatalogService;
     private final ElevenLabsVoiceDiscoveryService elevenLabsVoiceDiscoveryService;
+    private final StorySceneAnalyzerService storySceneAnalyzerService;
+    private final StoryIllustrationService storyIllustrationService;
+    private final AiMonologueStoryService aiMonologueStoryService;
+    private final StoryRetranslateService storyRetranslateService;
 
     public StoryController(
             StoryService storyService,
@@ -51,7 +62,11 @@ public class StoryController {
             StoryCoverImageService storyCoverImageService,
             StoryWordAiEnrichService storyWordAiEnrichService,
             StoryVoiceCatalogService storyVoiceCatalogService,
-            ElevenLabsVoiceDiscoveryService elevenLabsVoiceDiscoveryService) {
+            ElevenLabsVoiceDiscoveryService elevenLabsVoiceDiscoveryService,
+            StorySceneAnalyzerService storySceneAnalyzerService,
+            StoryIllustrationService storyIllustrationService,
+            AiMonologueStoryService aiMonologueStoryService,
+            StoryRetranslateService storyRetranslateService) {
         this.storyService = storyService;
         this.aiStoryPreviewService = aiStoryPreviewService;
         this.storyAudioService = storyAudioService;
@@ -59,6 +74,10 @@ public class StoryController {
         this.storyWordAiEnrichService = storyWordAiEnrichService;
         this.storyVoiceCatalogService = storyVoiceCatalogService;
         this.elevenLabsVoiceDiscoveryService = elevenLabsVoiceDiscoveryService;
+        this.storySceneAnalyzerService = storySceneAnalyzerService;
+        this.storyIllustrationService = storyIllustrationService;
+        this.aiMonologueStoryService = aiMonologueStoryService;
+        this.storyRetranslateService = storyRetranslateService;
     }
 
     @PostMapping("/search")
@@ -143,6 +162,26 @@ public class StoryController {
         return ResponseEntity.ok(aiStoryPreviewService.preview(request));
     }
 
+    @GetMapping("/monologue-themes")
+    @ApiMessage("List monologue story themes")
+    public ResponseEntity<List<ResMonologueThemeDTO>> listMonologueThemes() {
+        return ResponseEntity.ok(aiMonologueStoryService.listThemes());
+    }
+
+    @PostMapping("/ai-monologue-preview")
+    @ApiMessage("AI preview monologue (inspirational) story — no prompt needed")
+    public ResponseEntity<ResStoryAiPreviewDTO> aiMonologuePreview(
+            @RequestBody ReqStoryMonologuePreviewDTO request) throws IdInvalidException {
+        return ResponseEntity.ok(aiMonologueStoryService.preview(request));
+    }
+
+    @PostMapping("/{id}/retranslate")
+    @ApiMessage("AI re-translate all sentences + title (keeps EN/tokens/scenes/audio)")
+    public ResponseEntity<ResStoryDTO> retranslate(@PathVariable UUID id) throws IdInvalidException {
+        storyRetranslateService.retranslate(id);
+        return ResponseEntity.ok(storyService.getById(id));
+    }
+
     @PostMapping("/ai-cover-preview")
     @ApiMessage("AI preview story cover image")
     public ResponseEntity<ResStoryCoverPreviewDTO> aiCoverPreview(
@@ -160,5 +199,33 @@ public class StoryController {
     @ApiMessage("Get story audio generation status")
     public ResponseEntity<ResStoryAudioDTO> getAudioStatus(@PathVariable UUID id) throws IdInvalidException {
         return ResponseEntity.ok(storyAudioService.getAudioStatus(id));
+    }
+
+    @PostMapping("/{id}/analyze-scenes")
+    @ApiMessage("AI analyze story into storybook scenes + characters")
+    public ResponseEntity<ResStoryIllustrationStatusDTO> analyzeScenes(@PathVariable UUID id)
+            throws IdInvalidException {
+        return ResponseEntity.ok(storySceneAnalyzerService.analyze(id));
+    }
+
+    @PostMapping("/{id}/generate-illustrations")
+    @ApiMessage("Queue storybook illustration generation")
+    public ResponseEntity<ResStoryIllustrationStatusDTO> generateIllustrations(@PathVariable UUID id)
+            throws IdInvalidException {
+        return ResponseEntity.accepted().body(storyIllustrationService.queueGeneration(id));
+    }
+
+    @GetMapping("/{id}/illustrations")
+    @ApiMessage("Get story illustration / scene status")
+    public ResponseEntity<ResStoryIllustrationStatusDTO> getIllustrations(@PathVariable UUID id)
+            throws IdInvalidException {
+        return ResponseEntity.ok(storySceneAnalyzerService.getStatus(id));
+    }
+
+    @PostMapping("/{id}/scenes/{sceneIndex}/regenerate-image")
+    @ApiMessage("Regenerate one storybook scene illustration")
+    public ResponseEntity<ResStoryIllustrationStatusDTO> regenerateSceneImage(
+            @PathVariable UUID id, @PathVariable int sceneIndex) throws IdInvalidException {
+        return ResponseEntity.ok(storyIllustrationService.regenerateScene(id, sceneIndex));
     }
 }

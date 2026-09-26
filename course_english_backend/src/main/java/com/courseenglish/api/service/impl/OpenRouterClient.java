@@ -20,6 +20,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -418,21 +419,51 @@ public class OpenRouterClient {
 
     public ImageGenResult generateImage(String model, String prompt, long timeoutSec, String aspectRatio)
             throws IdInvalidException {
+        return generateImage(model, prompt, timeoutSec, aspectRatio, null);
+    }
+
+    public ImageGenResult generateImage(
+            String model,
+            String prompt,
+            long timeoutSec,
+            String aspectRatio,
+            List<String> inputReferenceDataUrls)
+            throws IdInvalidException {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IdInvalidException("AI chưa được cấu hình OPENROUTER_API_KEY");
         }
         if (prompt == null || prompt.isBlank()) {
             throw new IdInvalidException("Thiếu prompt ảnh");
         }
+        if (model == null || model.isBlank()) {
+            throw new IdInvalidException(
+                    "Thiếu model sinh ảnh — cấu hình AI_STORY_ILLUSTRATION_MODEL hoặc AI_VOCAB_SET_COVER_IMAGE_MODEL");
+        }
 
         String ratio = aspectRatio == null || aspectRatio.isBlank() ? "1:1" : aspectRatio.trim();
+        String resolvedModel = model.trim();
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("model", model);
+        payload.put("model", resolvedModel);
         payload.put("prompt", prompt.trim());
         payload.put("n", 1);
         payload.put("aspect_ratio", ratio);
         payload.put("output_format", "png");
+        if (inputReferenceDataUrls != null && !inputReferenceDataUrls.isEmpty()) {
+            List<Map<String, Object>> refs = new ArrayList<>();
+            for (String dataUrl : inputReferenceDataUrls) {
+                if (dataUrl == null || dataUrl.isBlank()) {
+                    continue;
+                }
+                Map<String, Object> ref = new LinkedHashMap<>();
+                ref.put("type", "image_url");
+                ref.put("image_url", Map.of("url", dataUrl.trim()));
+                refs.add(ref);
+            }
+            if (!refs.isEmpty()) {
+                payload.put("input_references", refs);
+            }
+        }
 
         String requestBody;
         try {
@@ -444,7 +475,7 @@ public class OpenRouterClient {
         HttpRequest request =
                 HttpRequest.newBuilder()
                         .uri(URI.create(baseUrl + "/images"))
-                        .timeout(Duration.ofSeconds(timeoutSec))
+                        .timeout(Duration.ofSeconds(Math.max(30, timeoutSec)))
                         .header("Authorization", "Bearer " + apiKey)
                         .header("HTTP-Referer", httpReferer)
                         .header("X-Title", xTitle)
@@ -454,14 +485,15 @@ public class OpenRouterClient {
 
         if (logRequests) {
             log.info(
-                    "[OpenRouter][Image] >>> model={} aspectRatio={} timeoutSec={} promptLength={} endpoint={}/images",
-                    model,
+                    "[OpenRouter][Image] >>> model={} aspectRatio={} timeoutSec={} promptLength={} refs={} bodyBytes={} endpoint={}/images",
+                    resolvedModel,
                     ratio,
                     timeoutSec,
                     prompt.trim().length(),
+                    inputReferenceDataUrls == null ? 0 : inputReferenceDataUrls.size(),
+                    requestBody.length(),
                     baseUrl);
             log.debug("[OpenRouter][Image] >>> prompt={}", prompt);
-            log.debug("[OpenRouter][Image] >>> requestBody={}", requestBody);
         }
 
         HttpResponse<String> response;
@@ -471,7 +503,16 @@ public class OpenRouterClient {
             Thread.currentThread().interrupt();
             throw new IdInvalidException("Kết nối sinh ảnh bị gián đoạn");
         } catch (IOException e) {
-            throw new IdInvalidException("Không gọi được OpenRouter sinh ảnh");
+            log.error(
+                    "[OpenRouter][Image] IO error model={} cause={}",
+                    resolvedModel,
+                    e.toString(),
+                    e);
+            throw new IdInvalidException(
+                    "Không gọi được OpenRouter sinh ảnh (model="
+                            + resolvedModel
+                            + "): "
+                            + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
         }
 
         if (response.statusCode() >= 400) {
@@ -480,7 +521,7 @@ public class OpenRouterClient {
                 log.error(
                         "[OpenRouter][Image] HTTP {} model={} responseBody={}",
                         response.statusCode(),
-                        model,
+                        resolvedModel,
                         body);
             }
             throw new IdInvalidException(
@@ -504,7 +545,7 @@ public class OpenRouterClient {
             if (logRequests) {
                 log.info(
                         "[OpenRouter][Image] <<< model={} hasUrl={} hasB64={}",
-                        model,
+                        resolvedModel,
                         url != null && !url.isBlank(),
                         b64 != null && !b64.isBlank());
             }
@@ -513,7 +554,7 @@ public class OpenRouterClient {
             throw e;
         } catch (Exception e) {
             if (logRequests) {
-                log.error("[OpenRouter][Image] parse response failed model={} body={}", model, response.body(), e);
+                log.error("[OpenRouter][Image] parse response failed model={} body={}", resolvedModel, response.body(), e);
             }
             throw new IdInvalidException("Không parse được phản hồi sinh ảnh");
         }

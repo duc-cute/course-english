@@ -324,44 +324,57 @@
 }
 
 .story-reader__sentence-block {
-  margin: 0 0 1.1rem;
-  padding: 0.5rem 0.65rem 0.55rem 0.75rem;
-  border-left: 3px solid transparent;
-  border-radius: 0 10px 10px 0;
+  display: block;
+  margin: 0 0 0.75rem;
+  padding: 0.7rem 0.85rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
   transition:
     background 220ms ease,
-    border-color 220ms ease;
+    border-color 220ms ease,
+    opacity 220ms ease,
+    box-shadow 220ms ease;
 }
 
 .story-reader__sentence-block--active {
-  background: rgba(37, 99, 235, 0.06);
-  border-left-color: #2563eb;
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.55);
+  box-shadow: 0 0 0 1px rgba(13, 148, 136, 0.12);
+}
+
+.story-reader__sentence-block--dim {
+  opacity: 0.42;
 }
 
 .story-reader--dark .story-reader__sentence-block--active {
-  background: rgba(96, 165, 250, 0.1);
-  border-left-color: #60a5fa;
+  background: rgba(45, 212, 191, 0.12);
+  border-color: rgba(45, 212, 191, 0.5);
 }
 
 .story-reader__sentence-en {
-  display: inline;
+  display: block;
+  font-weight: 600;
+  color: inherit;
 }
 
 .story-reader__sentence-vi {
   display: block;
-  margin-top: 0.45rem;
+  margin-top: 0.4rem;
   padding-top: 0.35rem;
-  border-top: 1px dashed rgba(148, 163, 184, 0.45);
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
   color: #64748b;
-  font-size: 0.94em;
-  line-height: 1.6;
-  font-style: normal;
+  font-size: 0.92em;
+  line-height: 1.55;
   font-weight: 500;
 }
 
 .story-reader--dark .story-reader__sentence-vi {
   color: #94a3b8;
   border-top-color: rgba(148, 163, 184, 0.25);
+}
+
+.story-reader__content--blocks {
+  white-space: normal;
 }
 
 .story-reader__content--translate {
@@ -1840,8 +1853,9 @@ html.story-reader-immersive body {
 }
 
 .theme-container .story-reader__sentence-block--active {
-  background: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
-  border-left-color: var(--theme-primary) !important;
+  background: color-mix(in srgb, var(--theme-primary) 12%, transparent) !important;
+  border-color: color-mix(in srgb, var(--theme-primary) 55%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-primary) 18%, transparent) !important;
 }
 
 .theme-container .story-reader__body-toolbar {
@@ -2048,6 +2062,54 @@ html.story-reader-immersive body {
   -webkit-backdrop-filter: blur(16px);
 }
 
+.progress-sky-autoscroll-btn {
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 32px !important;
+  height: 32px !important;
+  color: var(--theme-text, #e2e8f0) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  backdrop-filter: blur(8px);
+}
+
+.progress-sky-autoscroll-btn:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+.progress-sky-autoscroll-btn--on {
+  color: var(--theme-primary, #2dd4bf) !important;
+  border-color: color-mix(in srgb, var(--theme-primary, #2dd4bf) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-primary, #2dd4bf) 16%, transparent) !important;
+}
+
+.progress-sky-autoscroll-btn--off {
+  color: #94a3b8 !important;
+  opacity: 0.95;
+}
+
+.progress-sky-autoscroll-btn__off-wrap {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
+}
+
+/* Gạch chéo nhẹ = tự cuộn đang tắt */
+.progress-sky-autoscroll-btn__off-wrap::after {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 50%;
+  height: 1.5px;
+  background: currentColor;
+  transform: rotate(-45deg);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
 .progress-sky-chapter-bar {
   display: none;
 }
@@ -2221,17 +2283,9 @@ html.story-reader-immersive body {
 }
 
 @media (max-width: 768px) {
+  /* Mobile: ẩn thanh theme + card tiến độ (ProgressSky) cho gọn; auto-scroll vẫn mặc định ON */
   .story-reader__journey-header {
-    padding: 8px 14px 6px;
-  }
-
-  .story-reader__journey-header .theme-selector-bar {
-    padding: 4px 8px;
-    gap: 4px;
-  }
-
-  .story-reader__journey-header .progress-sky-card {
-    padding: 8px 10px 6px;
+    display: none;
   }
 
   .story-reader__center-body {
@@ -2249,6 +2303,14 @@ html.story-reader-immersive body {
     gap: 6px;
     margin-bottom: 6px;
     min-width: 0;
+    padding-right: 36px; /* chừa chỗ nút tự cuộn */
+  }
+
+  .progress-sky-autoscroll-btn {
+    top: 6px;
+    right: 6px;
+    width: 28px !important;
+    height: 28px !important;
   }
 
   .progress-sky-title-row {
@@ -2385,3 +2447,389 @@ html.story-reader-immersive body {
 }
 
 
+
+/* --- Storybook mode (Phase 5) --- */
+.story-reader__mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.story-reader__mode-btn {
+  text-transform: none !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  color: inherit !important;
+  font-weight: 600 !important;
+}
+
+.story-reader__mode-btn--active {
+  background: color-mix(in srgb, var(--theme-primary, #0d9488) 18%, transparent) !important;
+  border-color: color-mix(in srgb, var(--theme-primary, #0d9488) 45%, transparent) !important;
+}
+
+.storybook-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.storybook-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--theme-text-muted, #64748b);
+}
+
+.storybook-page__indicator {
+  font-weight: 700;
+}
+
+.storybook-page__illustration-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.storybook-page__illustration {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.storybook-page__illustration--placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: linear-gradient(145deg, #e2e8f0, #f8fafc 40%, #ccfbf1);
+  color: #475569;
+  font-weight: 700;
+  text-align: center;
+  padding: 1rem;
+}
+
+.storybook-page__placeholder-sub {
+  font-size: 0.8rem;
+  font-weight: 500;
+  max-width: 28rem;
+  color: #64748b;
+}
+
+.storybook-page__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  font-size: 1.125rem;
+  line-height: 1.85;
+}
+
+.storybook-page__sentence {
+  margin: 0;
+  padding: 0.7rem 0.85rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  transition:
+    background 220ms ease,
+    border-color 220ms ease,
+    opacity 220ms ease,
+    box-shadow 220ms ease;
+  scroll-margin-block: 2rem;
+}
+
+.storybook-page__sentence--dialogue {
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: #0d9488;
+  background: rgba(13, 148, 136, 0.04);
+}
+
+.storybook-page__sentence--active {
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(13, 148, 136, 0.55);
+  box-shadow: 0 0 0 1px rgba(13, 148, 136, 0.12);
+  opacity: 1;
+}
+
+.storybook-page__sentence--dim {
+  opacity: 0.4;
+}
+
+.storybook-page__sentence-en {
+  font-weight: 600;
+}
+
+.storybook-page__sentence-vi {
+  margin: 0.4rem 0 0;
+  padding-top: 0.35rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+  color: #64748b;
+  font-size: 0.92em;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.storybook-page__narration {
+  margin: 0;
+}
+
+.storybook-page__dialogue {
+  margin: 0.15rem 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid #0d9488;
+  border-radius: 0 12px 12px 0;
+  background: rgba(13, 148, 136, 0.06);
+}
+
+.storybook-page__speaker {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.2rem;
+}
+
+.storybook-page__dialogue-text {
+  margin: 0;
+}
+
+.storybook-page__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.storybook-page__nav-btn {
+  text-transform: none !important;
+  font-weight: 600 !important;
+}
+
+.storybook-page__dots {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.storybook-page__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.storybook-page__dot--active {
+  background: var(--theme-primary, #0d9488);
+  transform: scale(1.15);
+}
+
+@media (max-width: 720px) {
+  .storybook-page__illustration-wrap {
+    border-radius: 12px;
+  }
+  .storybook-page__text {
+    font-size: 1.05rem;
+  }
+}
+
+/* ===== Monologue reader (truyện tự sự) — ảnh dính trên, mỗi câu 1 dòng EN + VI ===== */
+.monologue-reader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #fbf7ee;
+  border-radius: 18px;
+  padding: 0.75rem 0.75rem 1.25rem;
+  margin: -0.25rem;
+}
+
+.monologue-reader__sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.25rem 0 0.6rem;
+  background: linear-gradient(#fbf7ee 88%, rgba(251, 247, 238, 0));
+}
+
+.monologue-reader__heading {
+  text-align: center;
+  padding: 0.25rem 0.5rem 0.6rem;
+}
+
+/* Tiêu đề kiểu ảnh mẫu: chữ tròn, xanh, viền đậm + bóng trắng */
+.monologue-reader__title {
+  margin: 0;
+  font-family: "Baloo 2", "Lexend", sans-serif;
+  font-weight: 800;
+  font-size: 1.7rem;
+  line-height: 1.15;
+  color: #7a9be0;
+  -webkit-text-stroke: 1.5px #2f4f8f;
+  paint-order: stroke fill;
+  text-shadow:
+    0 2px 0 #ffffff,
+    0 4px 10px rgba(47, 79, 143, 0.25);
+  letter-spacing: 0.01em;
+}
+
+.monologue-reader__title-vi {
+  margin: 0.15rem 0 0;
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2f4f8f;
+}
+
+.monologue-reader__hero {
+  position: relative;
+}
+
+.monologue-reader__image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 34vh;
+  object-fit: contain;
+  display: block;
+  border-radius: 16px;
+  background: #f5efe1;
+  box-shadow: 0 8px 24px rgba(120, 100, 60, 0.12);
+  animation: monologue-fade 320ms ease;
+}
+
+.monologue-reader__image--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  color: #7c6f57;
+  font-family: "Lexend", "Be Vietnam Pro", sans-serif;
+  font-weight: 600;
+  border: 1px dashed rgba(124, 111, 87, 0.35);
+}
+
+@keyframes monologue-fade {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}
+
+.monologue-reader__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 0.5rem;
+}
+
+.monologue-reader__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(124, 111, 87, 0.25);
+  transition: transform 200ms ease, background 200ms ease;
+}
+
+.monologue-reader__dot--active {
+  background: #3b82f6;
+  transform: scale(1.4);
+}
+
+.monologue-reader__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.monologue-reader__line {
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  scroll-margin-block: 2rem;
+}
+
+.monologue-reader__line--active {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.14);
+}
+
+.monologue-reader__en {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.55rem;
+  font-family: "Lexend", "Be Vietnam Pro", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.monologue-reader__line--active .monologue-reader__en {
+  color: #1e3a8a;
+}
+
+.monologue-reader__vi {
+  margin-top: 0.3rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.monologue-reader__line--active .monologue-reader__vi {
+  color: #1e40af;
+}
+
+.monologue-reader__word {
+  padding: 0 0.15rem;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.monologue-reader__word:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.monologue-reader__word--vocab {
+  text-decoration: underline dotted rgba(59, 130, 246, 0.6);
+  text-underline-offset: 4px;
+}
+
+.monologue-reader__word--active {
+  border-color: #1e3a8a;
+  background: #fff;
+}
+
+.monologue-reader__word--clicked {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+@media (max-width: 640px) {
+  .monologue-reader__title { font-size: 1.45rem; }
+  .monologue-reader__en { font-size: 1.15rem; }
+  .monologue-reader__vi { font-size: 0.9rem; }
+}
+
+.story-reader__title-vi {
+  margin: -0.35rem 0 0.5rem;
+  font-size: 1rem;
+  color: var(--theme-text-muted, #64748b);
+}
+
+.monologue-reader__hero {
+  touch-action: pan-y; /* cho phép cuộn dọc, bắt vuốt ngang để đổi scene */
+  user-select: none;
+}
+.monologue-reader__image { -webkit-user-drag: none; }

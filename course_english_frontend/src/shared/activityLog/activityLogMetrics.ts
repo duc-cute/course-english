@@ -155,6 +155,24 @@ export function formatActivityLogMetrics(row: ActivityLogRecord): string | null 
     if (parts.length) return parts.join(" | ");
   }
 
+  if (action === "STORY_AI_GEN" || action === "STORY_AI_GEN_FAIL") {
+    const words = num(ctx, "words");
+    const target = num(ctx, "targetWords");
+    const en = num(ctx, "sentencesEn");
+    const vi = num(ctx, "sentencesVi");
+    const completion = num(ctx, "completionTokens");
+    const duration = num(ctx, "durationMs");
+    const parts: string[] = [];
+    const format = typeof ctx?.storyFormat === "string" ? ctx.storyFormat : null;
+    const level = typeof ctx?.level === "string" ? ctx.level : null;
+    if (format || level) parts.push([format, level].filter(Boolean).join(" "));
+    if (words != null) parts.push(`${words}${target != null ? `/${target}` : ""} từ`);
+    if (en != null && vi != null) parts.push(`câu EN/VI ${en}/${vi}${en === vi ? "" : " ⚠"}`);
+    if (completion != null) parts.push(`${formatThousands(completion)} tok`);
+    if (duration != null && duration > 0) parts.push(formatDurationMs(duration));
+    if (parts.length) return parts.join(" | ");
+  }
+
   return null;
 }
 

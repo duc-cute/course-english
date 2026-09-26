@@ -13,6 +13,8 @@ import RemoveRedEyeOutlinedIcon from "@mui/icons-material/RemoveRedEyeOutlined";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import CloseIcon from "@mui/icons-material/Close";
+import TranslateIcon from "@mui/icons-material/Translate";
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import {
   Alert,
   Box,
@@ -28,25 +30,33 @@ import {
 } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminCatalogPageHeader, ConfirmDialog } from "../../admin/components";
-import { ElevenLabsVoicePanel } from "../../admin/components/story/ElevenLabsVoicePanel";
 import { StoryAiGenDialog } from "../../admin/components/story/StoryAiGenDialog";
+import { StoryMonologueGenDialog } from "../../admin/components/story/StoryMonologueGenDialog";
+import { StoryIllustrationPreviewDialog } from "../../admin/components/story/StoryIllustrationPreviewDialog";
 import { StoryAudioPlayer } from "../../student/stories/StoryAudioPlayer";
 import {
+  apiAnalyzeStoryScenes,
   apiCreateStory,
   apiDeleteStory,
   apiGenerateStoryAudio,
-  apiGetElevenLabsVoices,
-  unwrapElevenLabsVoiceList,
+  apiGenerateStoryIllustrations,
   apiGetStoryById,
   apiGetStoryAudioStatus,
+  apiGetStoryIllustrations,
   apiGetStoryVoiceCatalog,
   apiPreviewStoryCoverAi,
+  apiRetranslateStory,
   apiSearchStories,
   apiUpdateStory,
+  STORY_FORMAT_OPTIONS,
+  STORY_VISUAL_STYLE_OPTIONS,
   type StoryAiPreviewResult,
+  type StoryFormat,
+  type StoryIllustrationStatus,
+  type StoryIllustrationStatusPayload,
   type StoryRecord,
   type StoryStatus,
-  type ElevenLabsVoiceItem,
+  type StoryVisualStyle,
   type TtsVoiceCatalogItem,
 } from "../../shared/api/story";
 import type { ApiResponse } from "../../shared/api/types";
@@ -69,6 +79,8 @@ type StoryFormState = {
   status: StoryStatus;
   aiGenerated: boolean;
   translationsJson: string;
+  storyFormat: StoryFormat;
+  visualStyle: StoryVisualStyle;
   narratorVoiceId: string;
   maleAdultVoiceId: string;
   femaleAdultVoiceId: string;
@@ -80,33 +92,6 @@ const VOICE_PROFILE_KEYS = ["NARRATOR", "MALE_ADULT", "FEMALE_ADULT", "BOY_CHILD
 
 function catalogOptionKey(v: TtsVoiceCatalogItem): string {
   return `${v.provider}|${v.voiceId}`;
-}
-
-function mergeVoiceCatalogWithElevenLabs(
-  catalog: TtsVoiceCatalogItem[],
-  elevenLabs: ElevenLabsVoiceItem[],
-): TtsVoiceCatalogItem[] {
-  const map = new Map<string, TtsVoiceCatalogItem>();
-  for (const item of catalog) {
-    map.set(catalogOptionKey(item), item);
-  }
-  for (const voice of elevenLabs) {
-    const key = `elevenlabs|${voice.voiceId}`;
-    if (map.has(key)) continue;
-    map.set(key, {
-      id: `el-api-${voice.voiceId}`,
-      provider: "elevenlabs",
-      voiceId: voice.voiceId,
-      displayName: `${voice.name}${voice.freeApiHint ? " ★" : ""}`,
-      gender: voice.gender,
-      ageGroup: voice.age,
-    });
-  }
-  return Array.from(map.values()).sort((a, b) => {
-    const pa = a.provider.localeCompare(b.provider);
-    if (pa !== 0) return pa;
-    return a.displayName.localeCompare(b.displayName);
-  });
 }
 
 function buildVoiceProfileEntry(
@@ -208,6 +193,8 @@ const defaultForm = (): StoryFormState => ({
   status: "DRAFT",
   aiGenerated: false,
   translationsJson: "",
+  storyFormat: "STORYBOOK",
+  visualStyle: "PASTEL_STORYBOOK",
   narratorVoiceId: "",
   maleAdultVoiceId: "",
   femaleAdultVoiceId: "",
@@ -232,14 +219,20 @@ export function ManageStoriesPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [monologueOpen, setMonologueOpen] = useState(false);
   const [editing, setEditing] = useState<StoryRecord | null>(null);
   const [form, setForm] = useState<StoryFormState>(defaultForm());
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<StoryRecord | null>(null);
   const [vocabSets, setVocabSets] = useState<VocabularySetRecord[]>([]);
   const [voiceCatalog, setVoiceCatalog] = useState<TtsVoiceCatalogItem[]>([]);
-  const [elevenLabsVoices, setElevenLabsVoices] = useState<ElevenLabsVoiceItem[]>([]);
   const [audioGeneratingId, setAudioGeneratingId] = useState<string | null>(null);
+  const [illustrationBusyId, setIllustrationBusyId] = useState<string | null>(null);
+  const [illustrationPreviewStory, setIllustrationPreviewStory] = useState<StoryRecord | null>(null);
+  const [illustrationStatusById, setIllustrationStatusById] = useState<
+    Record<string, StoryIllustrationStatus>
+  >({});
+  const [illustrationMessage, setIllustrationMessage] = useState("");
   const [audioMessage, setAudioMessage] = useState("");
   const [listenOpen, setListenOpen] = useState(false);
   const [listenTitle, setListenTitle] = useState("");
@@ -250,6 +243,7 @@ export function ManageStoriesPage() {
   const [listenContentOpen, setListenContentOpen] = useState(false);
   const [listenContent, setListenContent] = useState("");
   const [coverGenerating, setCoverGenerating] = useState(false);
+  const [retranslating, setRetranslating] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -291,26 +285,16 @@ export function ManageStoriesPage() {
     })();
   }, []);
 
-  const mergedVoiceCatalog = useMemo(
-    () => mergeVoiceCatalogWithElevenLabs(voiceCatalog, elevenLabsVoices),
-    [voiceCatalog, elevenLabsVoices],
+  const edgeVoiceCatalog = useMemo(
+    () =>
+      voiceCatalog
+        .filter((v) => v.provider === "edge")
+        .sort((a, b) => a.displayName.localeCompare(b.displayName)),
+    [voiceCatalog],
   );
 
-  useEffect(() => {
-    if (!formOpen) return;
-    void (async () => {
-      try {
-        const response = await apiGetElevenLabsVoices({ freeOnly: true });
-        const payload = unwrapElevenLabsVoiceList(response);
-        setElevenLabsVoices(payload.voices);
-      } catch {
-        setElevenLabsVoices([]);
-      }
-    })();
-  }, [formOpen]);
-
   const parseVoiceProfileJson = (value?: string) =>
-    parseVoiceProfileFormValues(value, mergedVoiceCatalog);
+    parseVoiceProfileFormValues(value, edgeVoiceCatalog);
 
   const openCreate = () => {
     setEditing(null);
@@ -331,6 +315,8 @@ export function ManageStoriesPage() {
       status: row.status ?? "DRAFT",
       aiGenerated: Boolean(row.aiGenerated),
       translationsJson: "",
+      storyFormat: row.storyFormat ?? "STORYBOOK",
+      visualStyle: row.visualStyle ?? "PASTEL_STORYBOOK",
       ...parseVoiceProfileJson(row.voiceProfileJson),
     });
     setFormOpen(true);
@@ -349,11 +335,30 @@ export function ManageStoriesPage() {
       status: "DRAFT",
       aiGenerated: true,
       translationsJson: preview.translationsJson ?? "",
+      storyFormat: "STORYBOOK",
+      visualStyle: "PASTEL_STORYBOOK",
       narratorVoiceId: "",
       maleAdultVoiceId: "",
       femaleAdultVoiceId: "",
       boyChildVoiceId: "",
       girlChildVoiceId: "",
+    });
+    setFormOpen(true);
+  };
+
+  const handleMonologueApply = (preview: StoryAiPreviewResult) => {
+    setEditing(null);
+    setForm({
+      ...defaultForm(),
+      title: preview.title,
+      content: preview.content,
+      level: preview.level ?? "A2",
+      readingTimeMinutes: preview.readingTimeMinutes ?? 3,
+      prompt: preview.prompt ?? "",
+      aiGenerated: true,
+      translationsJson: preview.translationsJson ?? "",
+      storyFormat: preview.storyFormat ?? "MONOLOGUE",
+      visualStyle: preview.visualStyle ?? "INK_SKETCH",
     });
     setFormOpen(true);
   };
@@ -366,7 +371,7 @@ export function ManageStoriesPage() {
     setSaving(true);
     setError("");
     try {
-      const voiceProfileJson = buildVoiceProfileJson(form, mergedVoiceCatalog);
+      const voiceProfileJson = buildVoiceProfileJson(form, edgeVoiceCatalog);
       const payload = {
         title: form.title.trim(),
         content: form.content.trim(),
@@ -379,6 +384,8 @@ export function ManageStoriesPage() {
         aiGenerated: form.aiGenerated,
         translationsJson: form.translationsJson.trim() || undefined,
         voiceProfileJson,
+        storyFormat: form.storyFormat,
+        visualStyle: form.visualStyle,
       };
       if (editing?.id) {
         await apiUpdateStory(editing.id, payload);
@@ -480,6 +487,78 @@ export function ManageStoriesPage() {
     }
   };
 
+  const applyIllustrationPayload = (storyId: string, data?: StoryIllustrationStatusPayload | null) => {
+    if (!data?.illustrationStatus) return;
+    setIllustrationStatusById((prev) => ({ ...prev, [storyId]: data.illustrationStatus }));
+  };
+
+  const pollIllustrationReady = async (storyId: string) => {
+    const maxAttempts = 60;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const response = (await apiGetStoryIllustrations(storyId)) as ApiResponse<StoryIllustrationStatusPayload>;
+      const data = response?.result ?? response?.data;
+      applyIllustrationPayload(storyId, data);
+      const status = data?.illustrationStatus;
+      if (status === "READY" || status === "PARTIAL") {
+        return {
+          ok: true as const,
+          message: data?.message ?? `Illustrations ${status.toLowerCase()} (${data?.scenes?.length ?? 0} scenes).`,
+        };
+      }
+      if (status === "FAILED") {
+        return {
+          ok: false as const,
+          message: data?.errorMessage ?? data?.message ?? "Sinh illustrations thất bại.",
+        };
+      }
+    }
+    return { ok: false as const, message: "Hết thời gian chờ sinh illustrations." };
+  };
+
+  /** Phân tích scenes → sinh toàn bộ ảnh storybook (một nút). */
+  const handleGenerateStorybookImages = async (row: StoryRecord) => {
+    if (!row.id) return;
+    setIllustrationBusyId(row.id);
+    setIllustrationMessage("");
+    setError("");
+    try {
+      setIllustrationMessage(`Đang phân tích scenes cho "${row.title}"...`);
+      const analyzeRes = (await apiAnalyzeStoryScenes(row.id)) as ApiResponse<StoryIllustrationStatusPayload>;
+      const analyzed = analyzeRes?.result ?? analyzeRes?.data;
+      applyIllustrationPayload(row.id, analyzed);
+      const sceneCount = analyzed?.scenes?.length ?? 0;
+      if (sceneCount === 0) {
+        setError("AI không trả scenes — không thể sinh ảnh.");
+        setIllustrationMessage("");
+        return;
+      }
+
+      setIllustrationMessage(`Đã có ${sceneCount} scenes — đang sinh ảnh storybook...`);
+      const genRes = (await apiGenerateStoryIllustrations(row.id)) as ApiResponse<StoryIllustrationStatusPayload>;
+      const queued = genRes?.result ?? genRes?.data;
+      applyIllustrationPayload(row.id, queued);
+      if (queued?.illustrationStatus === "READY" || queued?.illustrationStatus === "PARTIAL") {
+        setIllustrationMessage(
+          queued.message ?? `Đã sinh ảnh storybook cho "${row.title}" (${sceneCount} scenes).`,
+        );
+        return;
+      }
+      const result = await pollIllustrationReady(row.id);
+      if (result.ok) {
+        setIllustrationMessage(`"${row.title}": ${result.message}`);
+      } else {
+        setError(result.message);
+        setIllustrationMessage("");
+      }
+    } catch (err) {
+      setIllustrationMessage("");
+      setError(err instanceof Error ? err.message : "Sinh ảnh storybook thất bại.");
+    } finally {
+      setIllustrationBusyId(null);
+    }
+  };
+
   const handleListenAudio = async (row: StoryRecord) => {
     if (!row.id) return;
     setListenLoading(true);
@@ -542,6 +621,21 @@ export function ManageStoriesPage() {
       if (coverInputRef.current) {
         coverInputRef.current.value = "";
       }
+    }
+  };
+
+  const handleRetranslate = async () => {
+    if (!editing?.id) return;
+    setRetranslating(true);
+    setError("");
+    try {
+      await apiRetranslateStory(editing.id);
+      await loadRows();
+      setIllustrationMessage(`Đã dịch lại "${editing.title}" — mở reader để xem bản dịch mới.`);
+    } catch {
+      setError("Dịch lại thất bại. Thử lại sau vài giây.");
+    } finally {
+      setRetranslating(false);
     }
   };
 
@@ -685,6 +779,11 @@ export function ManageStoriesPage() {
         {error ? (
           <Alert severity="error" onClose={() => setError("")}>
             {error}
+          </Alert>
+        ) : null}
+        {illustrationMessage ? (
+          <Alert severity="success" onClose={() => setIllustrationMessage("")} sx={{ mb: 2 }}>
+            {illustrationMessage}
           </Alert>
         ) : null}
 
@@ -879,6 +978,42 @@ export function ManageStoriesPage() {
               </Box>
             </Box>
 
+            {/* Story format + visual style */}
+            <Box className="story-editor__row-2col">
+              <Box className="story-editor__field-group">
+                <span className="story-editor__field-label">Thể loại</span>
+                <TextField
+                  select
+                  size="small"
+                  value={form.storyFormat}
+                  onChange={(e) => setForm((f) => ({ ...f, storyFormat: e.target.value as StoryFormat }))}
+                  fullWidth
+                >
+                  {STORY_FORMAT_OPTIONS.map((o) => (
+                    <MenuItem key={o.value} value={o.value}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+              <Box className="story-editor__field-group">
+                <span className="story-editor__field-label">Phong cách ảnh</span>
+                <TextField
+                  select
+                  size="small"
+                  value={form.visualStyle}
+                  onChange={(e) => setForm((f) => ({ ...f, visualStyle: e.target.value as StoryVisualStyle }))}
+                  fullWidth
+                >
+                  {STORY_VISUAL_STYLE_OPTIONS.map((o) => (
+                    <MenuItem key={o.value} value={o.value}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+            </Box>
+
             {/* Vocab set */}
             <Box className="story-editor__field-group">
               <span className="story-editor__field-label">Bộ từ vựng</span>
@@ -902,7 +1037,7 @@ export function ManageStoriesPage() {
             <Box className="story-editor__field-group">
               <span className="story-editor__field-label">Voice casting profiles</span>
               <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                Dropdown gồm DB catalog + voice ElevenLabs API (★ = gợi ý free). Xem bảng đầy đủ ở màn danh sách story.
+                Chọn giọng Edge TTS từ danh mục hệ thống (tts_voice_catalog).
               </Typography>
               <Box className="story-editor__row-3col" sx={{ mb: 1.5 }}>
                 <TextField
@@ -914,7 +1049,7 @@ export function ManageStoriesPage() {
                   label="Narrator"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {mergedVoiceCatalog
+                  {edgeVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "NARRATOR")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -931,7 +1066,7 @@ export function ManageStoriesPage() {
                   label="Nam"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {mergedVoiceCatalog
+                  {edgeVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "MALE_ADULT")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -948,7 +1083,7 @@ export function ManageStoriesPage() {
                   label="Nữ"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {mergedVoiceCatalog
+                  {edgeVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "FEMALE_ADULT")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -967,7 +1102,7 @@ export function ManageStoriesPage() {
                   label="Bé trai"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {mergedVoiceCatalog
+                  {edgeVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "BOY_CHILD")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -984,7 +1119,7 @@ export function ManageStoriesPage() {
                   label="Bé gái"
                 >
                   <MenuItem value="">— Mặc định hệ thống —</MenuItem>
-                  {mergedVoiceCatalog
+                  {edgeVoiceCatalog
                     .filter((v) => !v.profileKey || v.profileKey === "GIRL_CHILD")
                     .map((v) => (
                       <MenuItem key={v.id} value={catalogOptionKey(v)}>
@@ -1056,7 +1191,7 @@ export function ManageStoriesPage() {
                   <span className="story-editor__feature-name">
                     {hasAudio ? "Sinh lại audio" : "Sinh audio"}
                   </span>
-                  <span className="story-editor__feature-sub">Giọng: Default (A)</span>
+                  <span className="story-editor__feature-sub">Edge TTS only</span>
                 </Box>
               </Box>
               {editing ? (
@@ -1079,13 +1214,71 @@ export function ManageStoriesPage() {
               )}
             </Box>
 
+            {/* Box: Preview ảnh storybook */}
+            <Box className="story-editor__feature-box">
+              <Box className="story-editor__feature-info">
+                <RemoveRedEyeOutlinedIcon className="story-editor__feature-icon" />
+                <Box className="story-editor__feature-texts">
+                  <span className="story-editor__feature-name">Xem & sửa ảnh scene</span>
+                  <span className="story-editor__feature-sub">
+                    {editing
+                      ? illustrationStatusById[editing.id] ?? "Xem ảnh đã sinh, sinh lại từng scene"
+                      : "Xem ảnh đã sinh, sinh lại từng scene"}
+                  </span>
+                </Box>
+              </Box>
+              {editing ? (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  className="story-editor__feature-action-btn"
+                  startIcon={<RemoveRedEyeOutlinedIcon />}
+                  onClick={() => setIllustrationPreviewStory(editing)}
+                >
+                  Xem ảnh
+                </Button>
+              ) : (
+                <span style={{ fontSize: "0.8rem", color: "#94a3b8", fontWeight: 500 }}>Cần lưu trước</span>
+              )}
+            </Box>
+
+            {/* Box: Phân tích scenes + sinh ảnh (1 nút) */}
+            <Box className="story-editor__feature-box">
+              <Box className="story-editor__feature-info">
+                <ImageOutlinedIcon className="story-editor__feature-icon" />
+                <Box className="story-editor__feature-texts">
+                  <span className="story-editor__feature-name">Sinh ảnh cả truyện</span>
+                  <span className="story-editor__feature-sub">
+                    {editing
+                      ? illustrationStatusById[editing.id] ?? "AI chia scene rồi sinh toàn bộ ảnh"
+                      : "Chia scenes rồi sinh toàn bộ ảnh"}
+                  </span>
+                </Box>
+              </Box>
+              {editing ? (
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="primary"
+                  className="story-editor__feature-action-btn"
+                  startIcon={<ImageOutlinedIcon />}
+                  disabled={illustrationBusyId === editing.id}
+                  onClick={() => void handleGenerateStorybookImages(editing)}
+                >
+                  {illustrationBusyId === editing.id ? "Đang sinh..." : "Phân tích + sinh"}
+                </Button>
+              ) : (
+                <span style={{ fontSize: "0.8rem", color: "#94a3b8", fontWeight: 500 }}>Cần lưu trước</span>
+              )}
+            </Box>
+
             {/* Box 3: Sinh bằng AI */}
             <Box className="story-editor__feature-box">
               <Box className="story-editor__feature-info">
                 <AutoAwesomeOutlinedIcon className="story-editor__feature-icon" />
                 <Box className="story-editor__feature-texts">
-                  <span className="story-editor__feature-name">Sinh bằng AI</span>
-                  <span className="story-editor__feature-sub">Model: GPT-4o</span>
+                  <span className="story-editor__feature-name">Sinh lại nội dung</span>
+                  <span className="story-editor__feature-sub">AI viết lại truyện từ prompt</span>
                 </Box>
               </Box>
               <Button
@@ -1099,13 +1292,38 @@ export function ManageStoriesPage() {
               </Button>
             </Box>
 
+            {/* Box: Dịch lại */}
+            <Box className="story-editor__feature-box">
+              <Box className="story-editor__feature-info">
+                <TranslateIcon className="story-editor__feature-icon" />
+                <Box className="story-editor__feature-texts">
+                  <span className="story-editor__feature-name">Dịch lại tiếng Việt</span>
+                  <span className="story-editor__feature-sub">Giữ nguyên EN, ảnh, audio — chỉ đổi bản dịch</span>
+                </Box>
+              </Box>
+              {editing ? (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  className="story-editor__feature-action-btn"
+                  startIcon={<TranslateIcon />}
+                  onClick={() => void handleRetranslate()}
+                  disabled={retranslating}
+                >
+                  {retranslating ? "Đang dịch..." : "Dịch lại"}
+                </Button>
+              ) : (
+                <span style={{ fontSize: "0.8rem", color: "#94a3b8", fontWeight: 500 }}>Cần lưu trước</span>
+              )}
+            </Box>
+
             {/* Box 4: Gợi ý minh họa */}
             <Box className="story-editor__feature-box">
               <Box className="story-editor__feature-info">
                 <ImageOutlinedIcon className="story-editor__feature-icon" />
                 <Box className="story-editor__feature-texts">
-                  <span className="story-editor__feature-name">Gợi ý minh họa</span>
-                  <span className="story-editor__feature-sub">Tạo ảnh minh họa</span>
+                  <span className="story-editor__feature-name">Ảnh bìa</span>
+                  <span className="story-editor__feature-sub">AI tạo 1 ảnh cover cho card story</span>
                 </Box>
               </Box>
               <Button
@@ -1143,6 +1361,17 @@ export function ManageStoriesPage() {
 
         {/* Support AI dialog */}
         <StoryAiGenDialog open={aiOpen} onClose={() => setAiOpen(false)} onApply={handleAiApply} />
+      <StoryMonologueGenDialog
+        open={monologueOpen}
+        onClose={() => setMonologueOpen(false)}
+        onApply={handleMonologueApply}
+      />
+
+        <StoryIllustrationPreviewDialog
+          open={Boolean(illustrationPreviewStory)}
+          story={illustrationPreviewStory}
+          onClose={() => setIllustrationPreviewStory(null)}
+        />
 
         {/* Listen dialog */}
         <Dialog open={listenOpen} onClose={() => setListenOpen(false)} maxWidth="sm" fullWidth>
@@ -1217,6 +1446,14 @@ export function ManageStoriesPage() {
               Sinh bằng AI
             </Button>
             <Button
+              size="small"
+              className="header-action-btn header-action-btn--ai"
+              startIcon={<WbSunnyOutlinedIcon />}
+              onClick={() => setMonologueOpen(true)}
+            >
+              Truyện truyền cảm hứng
+            </Button>
+            <Button
               variant="contained"
               size="small"
               className="header-action-btn header-action-btn--add"
@@ -1244,8 +1481,6 @@ export function ManageStoriesPage() {
           TÌM
         </Button>
       </Box>
-
-      <ElevenLabsVoicePanel />
 
       <Box className="story-filter-bar">
         <Box className="story-filter-tabs">
@@ -1333,6 +1568,12 @@ export function ManageStoriesPage() {
         </Alert>
       ) : null}
 
+      {illustrationMessage ? (
+        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setIllustrationMessage("")}>
+          {illustrationMessage}
+        </Alert>
+      ) : null}
+
       {error ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -1363,6 +1604,9 @@ export function ManageStoriesPage() {
               onClick={() => setAiOpen(true)}
             >
               Sinh bằng AI
+            </Button>
+            <Button variant="outlined" startIcon={<WbSunnyOutlinedIcon />} onClick={() => setMonologueOpen(true)}>
+              Truyện truyền cảm hứng
             </Button>
             <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
               Story mới
@@ -1485,6 +1729,25 @@ export function ManageStoriesPage() {
                         </Button>
                         <Button
                           className="story-card__action-btn"
+                          disabled={illustrationBusyId === row.id}
+                          onClick={() => void handleGenerateStorybookImages(row)}
+                          title={
+                            illustrationBusyId === row.id
+                              ? "Đang phân tích + sinh ảnh..."
+                              : "Phân tích scenes + sinh ảnh storybook"
+                          }
+                        >
+                          <ImageOutlinedIcon />
+                        </Button>
+                        <Button
+                          className="story-card__action-btn"
+                          onClick={() => setIllustrationPreviewStory(row)}
+                          title="Preview ảnh storybook"
+                        >
+                          <RemoveRedEyeOutlinedIcon />
+                        </Button>
+                        <Button
+                          className="story-card__action-btn"
                           onClick={() => openEdit(row)}
                           title="Sửa"
                         >
@@ -1570,6 +1833,17 @@ export function ManageStoriesPage() {
 {/* Full-page editor is used instead of dialog */}
 
       <StoryAiGenDialog open={aiOpen} onClose={() => setAiOpen(false)} onApply={handleAiApply} />
+      <StoryMonologueGenDialog
+        open={monologueOpen}
+        onClose={() => setMonologueOpen(false)}
+        onApply={handleMonologueApply}
+      />
+
+      <StoryIllustrationPreviewDialog
+        open={Boolean(illustrationPreviewStory)}
+        story={illustrationPreviewStory}
+        onClose={() => setIllustrationPreviewStory(null)}
+      />
 
       <Dialog open={listenOpen} onClose={() => setListenOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Nghe audio: {listenTitle || "Story"}</DialogTitle>

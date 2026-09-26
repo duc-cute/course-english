@@ -190,22 +190,22 @@ public class StoryAudioServiceImpl implements StoryAudioService {
                 return;
             }
 
-            SpeechGenerationRequest primaryRequest =
-                    speechRequestAssembler.assembleElevenLabs(story, tokensPayload);
+            SpeechGenerationRequest speechRequest =
+                    speechRequestAssembler.assemble(story, tokensPayload);
             log.info(
-                    "[StoryAudio] Start generation storyId={} primaryProvider={} primaryVoice={} contentLength={}",
+                    "[StoryAudio] Start generation storyId={} provider={} voice={} contentLength={}",
                     storyId,
-                    primaryRequest.getTtsProvider(),
-                    primaryRequest.getVoice(),
-                    primaryRequest.getText() == null ? 0 : primaryRequest.getText().length());
+                    speechRequest.getTtsProvider(),
+                    speechRequest.getVoice(),
+                    speechRequest.getText() == null ? 0 : speechRequest.getText().length());
 
             writeActivityLog(
                     ActivityLogSeverityEnum.INFO,
                     ActivityLogActionEnum.STORY_AUDIO_START,
                     "Worker TTS — "
-                            + primaryRequest.getTtsProvider()
+                            + speechRequest.getTtsProvider()
                             + " / "
-                            + primaryRequest.getVoice()
+                            + speechRequest.getVoice()
                             + " | \""
                             + story.getTitle()
                             + "\"",
@@ -213,14 +213,19 @@ public class StoryAudioServiceImpl implements StoryAudioService {
                     triggeredByUserId,
                     contentHash,
                     null,
-                    "primaryProvider",
-                    primaryRequest.getTtsProvider(),
-                    "primaryVoice",
-                    primaryRequest.getVoice(),
+                    "provider",
+                    speechRequest.getTtsProvider(),
+                    "voice",
+                    speechRequest.getVoice(),
                     "contentLength",
-                    primaryRequest.getText() == null ? 0 : primaryRequest.getText().length());
+                    speechRequest.getText() == null ? 0 : speechRequest.getText().length());
 
-            SpeechResult result = generateWithEdgeFallback(story, tokensPayload, primaryRequest, triggeredByUserId);
+            SpeechResult result = speechGenerationService.generate(speechRequest);
+            log.info(
+                    "[StoryAudio] TTS succeeded storyId={} provider={} voice={}",
+                    storyId,
+                    result.getProvider(),
+                    result.getVoice());
 
             voidPreviousAudio(story.getId());
 
@@ -228,7 +233,7 @@ public class StoryAudioServiceImpl implements StoryAudioService {
             entity.setStoryId(story.getId());
             entity.setVoice(result.getVoice());
             entity.setTtsProvider(result.getProvider());
-            entity.setAlignmentProvider(primaryRequest.getAlignmentProvider());
+            entity.setAlignmentProvider(speechRequest.getAlignmentProvider());
             entity.setAudioUrl(result.getAudioUrl());
             entity.setDuration(BigDecimal.valueOf(result.getDuration()));
             entity.setWordTimelineJson(writeJson(mapWordTimeline(result.getTimeline())));
@@ -368,73 +373,6 @@ public class StoryAudioServiceImpl implements StoryAudioService {
     private StoryTokensPayloadDTO loadTokensPayload(Story story) throws JsonProcessingException {
         ensureTokenized(story);
         return objectMapper.readValue(story.getTokensJson(), StoryTokensPayloadDTO.class);
-    }
-
-    private SpeechResult generateWithEdgeFallback(
-            Story story,
-            StoryTokensPayloadDTO tokensPayload,
-            SpeechGenerationRequest primaryRequest,
-            UUID triggeredByUserId) {
-        UUID storyId = story.getId();
-        try {
-            SpeechResult result = speechGenerationService.generate(primaryRequest);
-            log.info(
-                    "[StoryAudio] Primary provider succeeded storyId={} provider={} voice={}",
-                    storyId,
-                    result.getProvider(),
-                    result.getVoice());
-            return result;
-        } catch (Exception primaryEx) {
-            log.warn(
-                    "[StoryAudio] Primary provider failed storyId={} provider={} voice={} reason={} — fallback to edge",
-                    storyId,
-                    primaryRequest.getTtsProvider(),
-                    primaryRequest.getVoice(),
-                    primaryEx.getMessage());
-
-            writeActivityLog(
-                    ActivityLogSeverityEnum.WARN,
-                    ActivityLogActionEnum.STORY_AUDIO_START,
-                    "Primary TTS lỗi — fallback Edge | "
-                            + primaryRequest.getTtsProvider()
-                            + ": "
-                            + primaryEx.getMessage(),
-                    story,
-                    triggeredByUserId,
-                    null,
-                    primaryEx.getMessage(),
-                    "primaryProvider",
-                    primaryRequest.getTtsProvider(),
-                    "step",
-                    "fallback_edge");
-
-            SpeechGenerationRequest fallbackRequest =
-                    speechRequestAssembler.assembleEdgeFallback(story, tokensPayload);
-            log.info(
-                    "[StoryAudio] Fallback attempt storyId={} provider={} voice={}",
-                    storyId,
-                    fallbackRequest.getTtsProvider(),
-                    fallbackRequest.getVoice());
-
-            try {
-                SpeechResult fallbackResult = speechGenerationService.generate(fallbackRequest);
-                log.info(
-                        "[StoryAudio] Fallback provider succeeded storyId={} provider={} voice={}",
-                        storyId,
-                        fallbackResult.getProvider(),
-                        fallbackResult.getVoice());
-                return fallbackResult;
-            } catch (Exception fallbackEx) {
-                log.error(
-                        "[StoryAudio] Fallback provider failed storyId={} provider={} voice={} reason={}",
-                        storyId,
-                        fallbackRequest.getTtsProvider(),
-                        fallbackRequest.getVoice(),
-                        fallbackEx.getMessage(),
-                        fallbackEx);
-                throw fallbackEx;
-            }
-        }
     }
 
     private Story requireStory(UUID storyId) throws IdInvalidException {

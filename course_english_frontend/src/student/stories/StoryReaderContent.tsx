@@ -13,6 +13,8 @@ type StoryReaderContentProps = {
   activeWordIndex: number | null;
   activeSentenceIndex: number | null;
   highlightOn?: boolean;
+  /** Hiện bản dịch VI ngay dưới từng câu (prototype karaoke-block). */
+  showTranslation?: boolean;
   onWordClick: (token: StoryToken, event: React.MouseEvent<HTMLSpanElement>) => void;
   clickedWordIndex?: number | null;
   onTextSelect?: (selectedText: string) => void;
@@ -131,6 +133,7 @@ export const StoryReaderContent = memo(function StoryReaderContent({
   activeWordIndex,
   activeSentenceIndex,
   highlightOn = true,
+  showTranslation = false,
   onWordClick,
   clickedWordIndex,
   onTextSelect,
@@ -232,24 +235,46 @@ export const StoryReaderContent = memo(function StoryReaderContent({
     });
   }, [sentences, tokens]);
 
+  const hasActiveSentence = effectiveSentence != null;
+
   return (
-    <div ref={contentRef} className="story-reader__content" onMouseUp={handleMouseUp}>
+    <div
+      ref={contentRef}
+      className={`story-reader__content ${sentenceBlocks ? "story-reader__content--blocks" : ""} ${
+        showTranslation ? "story-reader__content--translate" : ""
+      }`}
+      onMouseUp={handleMouseUp}
+    >
       {sentenceBlocks ? (
         sentenceBlocks.map(({ sentence, slice }) => {
           const isSentenceActive = sentence.sentenceIndex === effectiveSentence;
+          const isDimmed = hasActiveSentence && !isSentenceActive;
+          const vi = sentence.textVi?.trim();
           return (
-            <span
+            <div
               key={`s-${sentence.sentenceIndex}`}
-              ref={isSentenceActive ? (activeSentenceRef as React.RefObject<HTMLSpanElement | null>) : undefined}
-              className={`story-reader__sentence-inline ${isSentenceActive ? "story-reader__sentence-inline--active" : ""}`}
+              ref={isSentenceActive ? (activeSentenceRef as React.RefObject<HTMLDivElement | null>) : undefined}
+              className={[
+                "story-reader__sentence-block",
+                isSentenceActive ? "story-reader__sentence-block--active" : "",
+                isDimmed ? "story-reader__sentence-block--dim" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              data-sentence-index={sentence.sentenceIndex}
             >
-              {slice.map(({ token, index }) => {
-                if (token.type === "text") {
-                  return <span key={`t-${index}`}>{token.value}</span>;
-                }
-                return renderWordToken(token, index);
-              })}
-            </span>
+              <div className="story-reader__sentence-en">
+                {slice.map(({ token, index }) => {
+                  if (token.type === "text") {
+                    return <span key={`t-${index}`}>{token.value}</span>;
+                  }
+                  return renderWordToken(token, index);
+                })}
+              </div>
+              {showTranslation && vi ? (
+                <p className="story-reader__sentence-vi">{vi}</p>
+              ) : null}
+            </div>
           );
         })
       ) : (

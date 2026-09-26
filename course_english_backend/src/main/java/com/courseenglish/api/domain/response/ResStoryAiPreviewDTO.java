@@ -12,4 +12,11 @@ public class ResStoryAiPreviewDTO {
     private String level;
     private Integer readingTimeMinutes;
     private String translationsJson;
+    /** Monologue generator only. */
+    private String titleVi;
+    private String storyFormat;
+    private String visualStyle;
+    private String themeGroup;
+    /** Prompt BE tự ghép — lưu vào stories.prompt để truy vết. */
+    private String prompt;
 }

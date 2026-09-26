@@ -1,7 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
 import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
+import MouseOutlinedIcon from "@mui/icons-material/MouseOutlined";
 import ParagraphIcon from "@mui/icons-material/Notes";
 import TimerIcon from "@mui/icons-material/Timer";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import { prefersReducedMotion, useSmoothProgress } from "./useSmoothProgress";
 
 type ProgressSkyProps = {
@@ -11,6 +14,8 @@ type ProgressSkyProps = {
   currentParagraph: number;
   totalParagraphs: number;
   readingTimeMinutes: number;
+  autoScrollOn?: boolean;
+  onToggleAutoScroll?: () => void;
 };
 
 const THEME_ICONS: Record<
@@ -33,6 +38,8 @@ export function ProgressSky({
   currentParagraph,
   totalParagraphs,
   readingTimeMinutes,
+  autoScrollOn = true,
+  onToggleAutoScroll,
 }: ProgressSkyProps) {
   const normTheme = theme.toLowerCase();
   const themeSpec = THEME_ICONS[normTheme] ?? THEME_ICONS.ocean;
@@ -92,6 +99,33 @@ export function ProgressSky({
 
   return (
     <div className="progress-sky-card">
+      {onToggleAutoScroll ? (
+        <Tooltip
+          title={
+            autoScrollOn
+              ? "Tắt tự cuộn — giữ ảnh / cuộn tay tự do"
+              : "Bật tự cuộn theo câu đang đọc"
+          }
+          placement="left"
+        >
+          <IconButton
+            size="small"
+            className={`progress-sky-autoscroll-btn ${autoScrollOn ? "progress-sky-autoscroll-btn--on" : "progress-sky-autoscroll-btn--off"}`}
+            onClick={onToggleAutoScroll}
+            aria-label={autoScrollOn ? "Tắt tự cuộn" : "Bật tự cuộn"}
+            aria-pressed={autoScrollOn}
+          >
+            {autoScrollOn ? (
+              <MouseOutlinedIcon fontSize="small" />
+            ) : (
+              <span className="progress-sky-autoscroll-btn__off-wrap" aria-hidden>
+                <MouseOutlinedIcon fontSize="small" />
+              </span>
+            )}
+          </IconButton>
+        </Tooltip>
+      ) : null}
+
       <div className="progress-sky-chapter-bar" title={chapterTitle}>
         <AutoStoriesOutlinedIcon className="progress-sky-chapter-bar__icon" />
         <span className="progress-sky-chapter-bar__text">{chapterTitle}</span>

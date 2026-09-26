@@ -20,6 +20,7 @@
 | **2.3 — Multi-speaker** | 📋 **Chưa làm** | AI `speech.lines[]`, sinh từng câu, ghép audio |
 | **3 — AI Context** | 📋 Chưa làm | Text selection, Ask AI theo story |
 | **4 — Review+** | 📋 Chưa làm | Notebook review modes, analytics, pronunciation |
+| **5 — Storybook illustrations** | ✅ **Code xong (MVP)** | Scenes 4:3, character refs, dialogue cards — [`STORYBOOK_READER_UX.md`](./STORYBOOK_READER_UX.md) |
 
 ### Đánh giá: đã ổn chưa?
 
@@ -53,10 +54,9 @@ flowchart LR
 
 **Chiến lược TTS hiện tại:**
 
-1. Đọc `stories.voice_profile_json` → ưu tiên profile `NARRATOR` (hoặc profile đầu tiên có trong JSON)
-2. **Thử ElevenLabs trước** (voice từ catalog)
-3. **Lỗi** → fallback **Edge TTS** (cùng `profile_key` trong catalog)
-4. Log prefix `[StoryAudio]` trên Spring Boot
+1. Đọc `stories.voice_profile_json` → ưu tiên profile `NARRATOR` (map sang **Edge** theo `profile_key`)
+2. **Chỉ dùng Edge TTS** (không gọi ElevenLabs)
+3. Log prefix `[StoryAudio]` trên Spring Boot
 
 **Giới hạn hiện tại:** Một giọng đọc **cả story** (narrator mode). Chưa sinh từng câu / nhiều nhân vật.
 
@@ -84,6 +84,7 @@ mysql -u root -p course_english < course_english_backend/migrations/033_story_au
 mysql -u root -p course_english < course_english_backend/migrations/034_story_cover_image.sql
 mysql -u root -p course_english < course_english_backend/migrations/035_story_translations.sql
 mysql -u root -p course_english < course_english_backend/migrations/036_tts_voice_catalog.sql
+mysql -u root -p course_english < course_english_backend/migrations/052_story_illustrations.sql
 ```
 
 | Migration | Nội dung |
@@ -93,6 +94,7 @@ mysql -u root -p course_english < course_english_backend/migrations/036_tts_voic
 | `034_story_cover_image.sql` | `stories.cover_image_url` |
 | `035_story_translations.sql` | `stories.translations_json` (song ngữ / glossary) |
 | `036_tts_voice_catalog.sql` | `tts_voice_catalog`, `stories.voice_profile_json` |
+| `052_story_illustrations.sql` | `story_scenes`, visual/characters JSON, illustration status |
 
 ---
 
@@ -352,6 +354,101 @@ Catalog seed trong `036_tts_voice_catalog.sql` (Edge + ElevenLabs: Adam, Ed, Lya
 
 ---
 
+## Phase 6 — Truyện tự sự (MONOLOGUE)
+
+Thể loại truyện truyền cảm hứng / bài học ngắn: **một giọng kể** nói với người đọc, không hội thoại nhân vật. Admin bấm **một nút** — không cần viết prompt, không cần bộ từ vựng.
+
+### Khái niệm — 2 trục độc lập
+
+| Trục | Cột | Giá trị | Quyết định |
+|------|-----|---------|------------|
+| Thể loại | `stories.story_format` | `STORYBOOK` (Truyện tranh) \| `MONOLOGUE` (Tự sự) | Cấu trúc nội dung, prompt scene, layout reader, audio 1 hay nhiều giọng |
+| Phong cách ảnh | `stories.visual_style` | `PASTEL_STORYBOOK` \| `INK_SKETCH` | Chuỗi style cố định ghép vào prompt ảnh |
+
+| | STORYBOOK | MONOLOGUE |
+|---|---|---|
+| Ngôi kể | Ngôi 3 + thoại | Ngôi 1/2 ("We…", "You…") |
+| Nhân vật | Nhiều, có tên | 0–1 hình tượng vô danh |
+| Cấu trúc | Mở → diễn biến → kết | Câu chuyện nhỏ (~60%) → lời nhắn 5 nhịp (~40%) |
+| Ảnh | Scene minh hoạ sát chữ | Ẩn dụ (mưa → nắng…), 5–6 ảnh |
+| Audio | Multi-speaker (Phase 2.3) | Luôn NARRATOR |
+
+Mặc định: `MONOLOGUE` → `INK_SKETCH`, `STORYBOOK` → `PASTEL_STORYBOOK` (admin đổi được). Story cũ = `STORYBOOK` + `PASTEL_STORYBOOK`.
+
+**Lời nhắn 5 nhịp:** Chạm nỗi đau → Bước ngoặt ("But…") → Trấn an → Hành động nhỏ → Thông điệp chốt.
+
+### Danh mục chủ đề (BE constant, admin chọn hoặc Ngẫu nhiên)
+
+| Key | Tên |
+|-----|-----|
+| `CONFIDENCE` | Lấy lại sự tự tin |
+| `STUDY_PERSEVERANCE` | Học tập & kiên trì |
+| `SELF_CARE` | Tự chăm sóc bản thân |
+| `GRATITUDE_FAMILY` | Biết ơn & gia đình |
+| `FRIENDSHIP_KINDNESS` | Tình bạn & tử tế |
+| `PARABLE` | Ngụ ngôn bài học |
+
+Mỗi nhóm có nhiều "góc khai thác"; BE random 1 góc + gửi tiêu đề MONOLOGUE gần đây để tránh trùng.
+
+### Level & độ dài
+
+| Level | Câu | Tốc độ đọc ước lượng |
+|-------|-----|----------------------|
+| A1 | 3–6 từ, hiện tại đơn | 70 wpm |
+| A2 | 5–9 từ, + quá khứ đơn, but/because | 90 wpm |
+| B1 | 8–14 từ, mệnh đề phụ, collocation | 110 wpm |
+| B2+ | Linh hoạt, idiom | 130 wpm |
+
+Thời lượng 2 / 3 / 5 phút — **mặc định 3 phút, A2**. Glossary 8–15 từ đáng học (vẫn highlight + notebook).
+
+### Luồng
+
+1. Admin: **✨ Truyện truyền cảm hứng** → chọn chủ đề / level / thời lượng (đều có mặc định) → Sinh → xem trước → Sinh lại / Dùng truyện này.
+2. Form điền sẵn `storyFormat=MONOLOGUE`, `visualStyle=INK_SKETCH` → Lưu (tokenize như cũ).
+3. **Sinh ảnh**: analyzer rẽ nhánh theo `story_format`; style lấy từ `visual_style`.
+4. **Sinh audio**: như cũ (narrator).
+
+### API
+
+| Method | Path | Mô tả |
+|--------|------|-------|
+| GET | `/api/v1/stories/monologue-themes` | Danh mục chủ đề |
+| POST | `/api/v1/stories/ai-monologue-preview` | `{ themeGroup?, level?, readingTimeMinutes? }` → preview như `ai-preview` + `titleVi`, `storyFormat`, `visualStyle`, `prompt` |
+
+### Checklist Phase 6
+
+- [x] Migration `055_story_format_visual_style.sql` — **chạy trước khi start BE**
+- [x] `StoryFormatEnum`, `StoryVisualStyleEnum`; `Story`, `ReqStoryDTO`, `ResStoryDTO`, reader payload (`storyFormat`, `visualStyle`, `titleVi`)
+- [x] `MonologueThemeCatalog` + API themes
+- [x] `AiMonologueStoryService` + API preview (`titleVi` lưu trong `translations_json`)
+- [x] Scene analyzer rẽ nhánh MONOLOGUE + style cố định theo `visual_style`; fix rollback khi AI lỗi
+- [x] FE: `StoryMonologueGenDialog` + nút trên `ManageStoriesPage` + 2 select trên form
+- [ ] Manual test: sinh A1/A2/B1 × 2/3/5 phút — soát số từ, sentence count khớp, ảnh INK_SKETCH
+
+### Glossary IPA + audio — chạy nền (thay tra từ điển đồng bộ khi Lưu)
+
+Trước: `tokenizeAndSave` gọi Free Dictionary **tuần tự từng từ** trong request Lưu → chậm, timeout/429.
+
+| Bước | Nguồn | Ghi chú |
+|------|-------|---------|
+| 1 | **AI** trả `ipa`, `partOfSpeech` trong `glossary[]` (cả 2 prompt) | 0 lần gọi thêm; `normalizeIpa` bỏ `/…/` |
+| 2 | `word_pronunciation_cache` (migration `056`) | 1 word_key = 1 lần sinh, dùng chung mọi story |
+| 3 | Edge TTS qua `reading_text` `/tts/generate` với `alignmentProvider=none` | audio từ, không chạy faster-whisper |
+| fallback | Free Dictionary chỉ khi AI không trả IPA | vẫn chạy nền |
+
+- `StoryGlossaryEnrichWorker.enqueueAfterCommit(storyId)` — gọi sau `tokenizeAndSave` (create/update), job chạy **sau commit** trên `speechTaskExecutor`.
+- `StoryGlossaryEnrichService.enrichStory` cập nhật `translations_json.glossary[]` (`phonetic`, `audioUsUrl`, `audioUkUrl`, `partOfSpeech`). Reader payload đọc lại từ đó → không đổi FE.
+- `lookup-word` (popup từ ngoài glossary): tra cache trước, rồi mới từ điển.
+- Log: `[StoryGlossary] Done storyId=… cacheHits= dictCalls= ttsCalls= failed= durationMs=`
+
+- [x] Migration `056_word_pronunciation_cache.sql` — **chạy trước khi start BE**
+- [x] Prompt AI thêm `ipa`/`partOfSpeech`; `parseFromAi` đọc
+- [x] `WordPronunciationCache` + repo; `StoryGlossaryEnrichService` + worker; bỏ enrich đồng bộ
+- [ ] Manual: Lưu story → response ngay; vài giây sau reader có IPA/audio; lưu story 2 cùng từ → `cacheHits`
+- [x] Reader layout MONOLOGUE cho học sinh — `student/stories/MonologueReader.tsx`: ảnh scene sticky trên (tự đổi theo câu đang đọc), mỗi câu 1 dòng EN (Lexend) + VI, câu active thẻ xanh, từ active viền đậm; `StoryReaderPage` rẽ nhánh theo `storyFormat`, ẩn toggle Storybook/Classic, bật bản dịch mặc định, hiện `titleVi`
+
+---
+
 ## Quyết định kỹ thuật (đã chốt)
 
 | Chủ đề | Quyết định |
@@ -360,7 +457,7 @@ Catalog seed trong `036_tts_voice_catalog.sql` (Edge + ElevenLabs: Adam, Ed, Lya
 | Tokenizer | Exact `lower(trim) + strip edge punctuation` only |
 | Story vs Lesson | Module riêng `/student/stories` |
 | TTS | Python microservice; BE master `wordIndex` |
-| TTS strategy | ElevenLabs first → Edge fallback + log |
+| TTS strategy | **Edge TTS only** (no ElevenLabs for story audio) |
 | Voice catalog | DB `tts_voice_catalog`; AI không chọn `voice_id` |
 | Voice profile | JSON `{ provider, voiceId }` per profile key |
 | Audio storage | `C:/DucNguyen/course-english-storage` (local) |

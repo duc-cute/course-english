@@ -1,5 +1,8 @@
 package com.courseenglish.api.domain;
 
+import com.courseenglish.api.util.constant.StoryFormatEnum;
+import com.courseenglish.api.util.constant.StoryIllustrationStatusEnum;
+import com.courseenglish.api.util.constant.StoryVisualStyleEnum;
 import com.courseenglish.api.util.constant.StoryProcessingStatusEnum;
 import com.courseenglish.api.util.constant.StoryStatusEnum;
 import jakarta.persistence.Column;
@@ -65,6 +68,27 @@ public class Story extends BaseObject {
 
     @Column(name = "voice_profile_json", columnDefinition = "TEXT")
     private String voiceProfileJson;
+
+    @Column(name = "visual_profile_json", columnDefinition = "TEXT")
+    private String visualProfileJson;
+
+    @Column(name = "characters_json", columnDefinition = "TEXT")
+    private String charactersJson;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "illustration_status", nullable = false, length = 32)
+    private StoryIllustrationStatusEnum illustrationStatus = StoryIllustrationStatusEnum.NONE;
+
+    @Column(name = "illustration_last_error", columnDefinition = "TEXT")
+    private String illustrationLastError;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "story_format", nullable = false, length = 20)
+    private StoryFormatEnum storyFormat = StoryFormatEnum.STORYBOOK;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visual_style", nullable = false, length = 32)
+    private StoryVisualStyleEnum visualStyle = StoryVisualStyleEnum.PASTEL_STORYBOOK;
 
     @Column(name = "audio_last_error", columnDefinition = "TEXT")
     private String audioLastError;

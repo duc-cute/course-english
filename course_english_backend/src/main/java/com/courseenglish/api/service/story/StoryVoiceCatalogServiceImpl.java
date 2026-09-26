@@ -21,8 +21,10 @@ public class StoryVoiceCatalogServiceImpl implements StoryVoiceCatalogService {
     @Override
     public List<ResTtsVoiceCatalogDTO> listActiveVoices(String profileKey) {
         String normalized = profileKey == null ? "" : profileKey.trim().toUpperCase(Locale.ROOT);
+        // Story casting: Edge TTS only (no ElevenLabs).
         return ttsVoiceCatalogRepository.findByVoidedFalseAndActiveTrueOrderByProfileKeyAscPriorityAscDisplayNameAsc()
                 .stream()
+                .filter(v -> "edge".equalsIgnoreCase(v.getProvider()))
                 .filter(v -> normalized.isBlank()
                         || normalized.equalsIgnoreCase(v.getProfileKey())
                         || "ANY".equals(normalized))

@@ -49,12 +49,14 @@ Supported providers:
 Edge TTS
 Azure Speech
 Google TTS
-ElevenLabs
+ElevenLabs (optional — not used for Story TTS production; Edge only)
 OpenAI TTS
 Cartesia
 PlayHT
 F5-TTS (Local)
 CosyVoice (Local)
+
+**Story audio (course_english):** Spring Boot → reading_text uses **Edge TTS only** (no ElevenLabs-first / fallback).
 
 Future providers should be plug-and-play.
 
@@ -710,7 +712,7 @@ Then create interfaces.
 
 Then implement Edge TTS first.
 
-After Edge works perfectly, implement ElevenLabs.
+ElevenLabs provider code may exist for future use but **Story TTS does not call it** (Edge-only).
 
 The system must be production-ready and able to scale into an enterprise AI Speech Platform.
 
@@ -758,7 +760,7 @@ Milestone 6
 
 Milestone 7
 
-- ElevenLabs Provider
+- Optional premium providers (ElevenLabs, etc.) — **not wired for Story module**
 
 Milestone 8
 

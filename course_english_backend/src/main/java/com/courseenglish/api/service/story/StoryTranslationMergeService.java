@@ -76,6 +76,11 @@ public class StoryTranslationMergeService {
                 entry.setWordEn(wordEn.trim());
                 entry.setMeaningVi(meaningVi.trim());
                 entry.setPartOfSpeech(blankToNull(textOrBlank(item, "partOfSpeech")));
+                String ipa = textOrBlank(item, "ipa");
+                if (ipa.isBlank()) {
+                    ipa = textOrBlank(item, "phonetic");
+                }
+                entry.setPhonetic(normalizeIpa(ipa));
                 entry.setMeaningSource("story");
                 deduped.put(wordKey, entry);
             }
@@ -206,6 +211,21 @@ public class StoryTranslationMergeService {
             return "";
         }
         return root.get(field).asText("").trim();
+    }
+
+    /** AI đôi khi trả "/ˈpæspɔːrt/" hoặc "[...]" — bỏ ký tự bao để FE hiển thị thống nhất. */
+    static String normalizeIpa(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String s = raw.trim();
+        if (s.startsWith("/") && s.endsWith("/") && s.length() > 1) {
+            s = s.substring(1, s.length() - 1);
+        } else if (s.startsWith("[") && s.endsWith("]") && s.length() > 1) {
+            s = s.substring(1, s.length() - 1);
+        }
+        s = s.trim();
+        return s.isBlank() ? null : s;
     }
 
     private static String blankToNull(String value) {

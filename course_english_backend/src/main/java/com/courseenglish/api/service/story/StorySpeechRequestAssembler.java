@@ -23,10 +23,12 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Story TTS is Edge-only (no ElevenLabs).
+ */
 @Component
 public class StorySpeechRequestAssembler {
 
-    private static final String PROVIDER_ELEVENLABS = "elevenlabs";
     private static final String PROVIDER_EDGE = "edge";
 
     private static final List<String> PROFILE_PRIORITY = List.of(
@@ -49,30 +51,30 @@ public class StorySpeechRequestAssembler {
         this.objectMapper = objectMapper;
     }
 
-    /** Primary path: ElevenLabs first. */
+    /** Edge TTS only. */
     public SpeechGenerationRequest assemble(Story story, StoryTokensPayloadDTO tokensPayload) {
-        return assembleElevenLabs(story, tokensPayload);
+        return assembleEdge(story, tokensPayload);
     }
 
-    public SpeechGenerationRequest assembleElevenLabs(Story story, StoryTokensPayloadDTO tokensPayload) {
-        VoiceSelection voice = resolveVoiceForProvider(story, PROVIDER_ELEVENLABS);
+    public SpeechGenerationRequest assembleEdge(Story story, StoryTokensPayloadDTO tokensPayload) {
+        VoiceSelection voice = resolveEdgeVoice(story);
         return buildRequest(story, tokensPayload, voice);
     }
 
+    /** @deprecated Use {@link #assembleEdge}. */
     public SpeechGenerationRequest assembleEdgeFallback(Story story, StoryTokensPayloadDTO tokensPayload) {
-        VoiceSelection voice = resolveVoiceForProvider(story, PROVIDER_EDGE);
-        return buildRequest(story, tokensPayload, voice);
+        return assembleEdge(story, tokensPayload);
     }
 
     public String contentHash(Story story) {
-        VoiceSelection primary = resolveVoiceForProvider(story, PROVIDER_ELEVENLABS);
+        VoiceSelection primary = resolveEdgeVoice(story);
         String payload = String.join("|",
                 nullToEmpty(story.getContent()),
                 primary.voiceId(),
-                primary.provider(),
+                PROVIDER_EDGE,
                 speechProperties.getDefaultAlignmentProvider(),
                 speechProperties.getDefaultFormat(),
-                "elevenlabs-first");
+                "edge-only");
         return sha256Hex(payload);
     }
 
@@ -82,7 +84,7 @@ public class StorySpeechRequestAssembler {
                 .text(story.getContent())
                 .tokens(extractWordTokens(tokensPayload))
                 .sentences(mapSentenceRefs(tokensPayload))
-                .ttsProvider(voice.provider())
+                .ttsProvider(PROVIDER_EDGE)
                 .alignmentProvider(speechProperties.getDefaultAlignmentProvider())
                 .voice(voice.voiceId())
                 .speed(speechProperties.getDefaultSpeed())
@@ -116,51 +118,61 @@ public class StorySpeechRequestAssembler {
         return refs;
     }
 
-    private VoiceSelection resolveVoiceForProvider(Story story, String targetProvider) {
-        String normalizedProvider = targetProvider.toLowerCase(Locale.ROOT);
-        Optional<ProfileSelection> profileSelection = resolveProfileSelection(story);
-
-        if (profileSelection.isPresent()) {
-            ProfileSelection selection = profileSelection.get();
-            if (normalizedProvider.equals(selection.voice().provider())) {
-                return selection.voice();
-            }
+    /** Always resolve an Edge voice; map profile keys away from ElevenLabs if present in JSON. */
+    private VoiceSelection resolveEdgeVoice(Story story) {
+        Optional<String> profileKey = resolveProfileKey(story);
+        if (profileKey.isPresent()) {
             Optional<TtsVoiceCatalog> mapped = ttsVoiceCatalogRepository
                     .findFirstByProfileKeyAndProviderAndVoidedFalseAndActiveTrueOrderByPriorityAsc(
-                            selection.profileKey(), normalizedProvider);
+                            profileKey.get(), PROVIDER_EDGE);
             if (mapped.isPresent()) {
                 TtsVoiceCatalog voice = mapped.get();
-                return new VoiceSelection(voice.getProvider(), voice.getVoiceId());
+                return new VoiceSelection(PROVIDER_EDGE, voice.getVoiceId());
             }
         }
 
-        if (PROVIDER_ELEVENLABS.equals(normalizedProvider)) {
-            Optional<TtsVoiceCatalog> narrator = ttsVoiceCatalogRepository
-                    .findFirstByProfileKeyAndProviderAndVoidedFalseAndActiveTrueOrderByPriorityAsc(
-                            "NARRATOR", PROVIDER_ELEVENLABS);
-            if (narrator.isPresent()) {
-                TtsVoiceCatalog voice = narrator.get();
-                return new VoiceSelection(voice.getProvider(), voice.getVoiceId());
+        Optional<String> preferredVoiceId = resolvePreferredEdgeVoiceId(story);
+        if (preferredVoiceId.isPresent()) {
+            Optional<TtsVoiceCatalog> exact = ttsVoiceCatalogRepository
+                    .findFirstByProviderAndVoiceIdAndVoidedFalseAndActiveTrue(
+                            PROVIDER_EDGE, preferredVoiceId.get());
+            if (exact.isPresent()) {
+                return new VoiceSelection(PROVIDER_EDGE, exact.get().getVoiceId());
             }
         }
 
-        if (PROVIDER_EDGE.equals(normalizedProvider)) {
-            Optional<TtsVoiceCatalog> narrator = ttsVoiceCatalogRepository
-                    .findFirstByProfileKeyAndProviderAndVoidedFalseAndActiveTrueOrderByPriorityAsc(
-                            "NARRATOR", PROVIDER_EDGE);
-            if (narrator.isPresent()) {
-                TtsVoiceCatalog voice = narrator.get();
-                return new VoiceSelection(voice.getProvider(), voice.getVoiceId());
-            }
-            return new VoiceSelection(PROVIDER_EDGE, speechProperties.getDefaultVoice());
+        Optional<TtsVoiceCatalog> narrator = ttsVoiceCatalogRepository
+                .findFirstByProfileKeyAndProviderAndVoidedFalseAndActiveTrueOrderByPriorityAsc(
+                        "NARRATOR", PROVIDER_EDGE);
+        if (narrator.isPresent()) {
+            return new VoiceSelection(PROVIDER_EDGE, narrator.get().getVoiceId());
         }
-
-        return new VoiceSelection(
-                speechProperties.getDefaultTtsProvider(),
-                speechProperties.getDefaultVoice());
+        String fallback = speechProperties.getDefaultVoice();
+        if (fallback == null || fallback.isBlank()) {
+            fallback = "en-US-AriaNeural";
+        }
+        return new VoiceSelection(PROVIDER_EDGE, fallback);
     }
 
-    private Optional<ProfileSelection> resolveProfileSelection(Story story) {
+    private Optional<String> resolveProfileKey(Story story) {
+        if (story == null || story.getVoiceProfileJson() == null || story.getVoiceProfileJson().isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            JsonNode root = objectMapper.readTree(story.getVoiceProfileJson());
+            for (String key : PROFILE_PRIORITY) {
+                JsonNode node = root.get(key);
+                if (node != null && !node.isNull()) {
+                    return Optional.of(key);
+                }
+            }
+        } catch (Exception ignored) {
+            // fallback below
+        }
+        return Optional.empty();
+    }
+
+    private Optional<String> resolvePreferredEdgeVoiceId(Story story) {
         if (story == null || story.getVoiceProfileJson() == null || story.getVoiceProfileJson().isBlank()) {
             return Optional.empty();
         }
@@ -171,9 +183,26 @@ public class StorySpeechRequestAssembler {
                 if (node == null || node.isNull()) {
                     continue;
                 }
-                Optional<VoiceSelection> picked = parseVoiceSelectionNode(node);
-                if (picked.isPresent()) {
-                    return Optional.of(new ProfileSelection(profileKey, picked.get()));
+                if (node.isTextual()) {
+                    String id = node.asText("").trim();
+                    if (!id.isBlank() && looksLikeEdgeVoiceId(id)) {
+                        return Optional.of(id);
+                    }
+                    continue;
+                }
+                if (!node.isObject()) {
+                    continue;
+                }
+                String provider = textNode(node.get("provider")).toLowerCase(Locale.ROOT);
+                String voiceId = textNode(node.get("voiceId"));
+                if (voiceId.isBlank()) {
+                    continue;
+                }
+                if (provider.isBlank() || PROVIDER_EDGE.equals(provider)) {
+                    if (provider.isBlank() && !looksLikeEdgeVoiceId(voiceId)) {
+                        continue;
+                    }
+                    return Optional.of(voiceId);
                 }
             }
         } catch (Exception ignored) {
@@ -182,43 +211,8 @@ public class StorySpeechRequestAssembler {
         return Optional.empty();
     }
 
-    private Optional<VoiceSelection> parseVoiceSelectionNode(JsonNode node) {
-        if (node.isTextual()) {
-            return resolveFromVoiceIdOnly(node.asText(""));
-        }
-        if (!node.isObject()) {
-            return Optional.empty();
-        }
-
-        String provider = textNode(node.get("provider"));
-        String voiceId = textNode(node.get("voiceId"));
-        if (voiceId.isBlank()) {
-            return Optional.empty();
-        }
-        if (!provider.isBlank()) {
-            Optional<TtsVoiceCatalog> exact = ttsVoiceCatalogRepository
-                    .findFirstByProviderAndVoiceIdAndVoidedFalseAndActiveTrue(
-                            provider.trim().toLowerCase(Locale.ROOT), voiceId.trim());
-            if (exact.isPresent()) {
-                TtsVoiceCatalog voice = exact.get();
-                return Optional.of(new VoiceSelection(voice.getProvider(), voice.getVoiceId()));
-            }
-            return Optional.of(new VoiceSelection(provider.trim().toLowerCase(Locale.ROOT), voiceId.trim()));
-        }
-        return resolveFromVoiceIdOnly(voiceId.trim());
-    }
-
-    private Optional<VoiceSelection> resolveFromVoiceIdOnly(String voiceId) {
-        if (voiceId == null || voiceId.isBlank()) {
-            return Optional.empty();
-        }
-        List<TtsVoiceCatalog> candidates = ttsVoiceCatalogRepository
-                .findByVoiceIdAndVoidedFalseAndActiveTrueOrderByPriorityAsc(voiceId.trim());
-        if (!candidates.isEmpty()) {
-            TtsVoiceCatalog first = candidates.get(0);
-            return Optional.of(new VoiceSelection(first.getProvider(), first.getVoiceId()));
-        }
-        return Optional.of(new VoiceSelection(speechProperties.getDefaultTtsProvider(), voiceId.trim()));
+    private static boolean looksLikeEdgeVoiceId(String voiceId) {
+        return voiceId.contains("-") && voiceId.toLowerCase(Locale.ROOT).contains("neural");
     }
 
     private static String sha256Hex(String input) {
@@ -243,8 +237,5 @@ public class StorySpeechRequestAssembler {
     }
 
     private record VoiceSelection(String provider, String voiceId) {
-    }
-
-    private record ProfileSelection(String profileKey, VoiceSelection voice) {
     }
 }

@@ -27,4 +27,8 @@ public class ReqStoryDTO {
     private String translationsJson;
     /** JSON mapping profile -> selected voiceId. */
     private String voiceProfileJson;
+    /** STORYBOOK | MONOLOGUE — null giữ nguyên (create: STORYBOOK). */
+    private String storyFormat;
+    /** PASTEL_STORYBOOK | INK_SKETCH — null: mặc định theo storyFormat. */
+    private String visualStyle;
 }

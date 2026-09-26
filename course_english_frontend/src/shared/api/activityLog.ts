@@ -2,7 +2,7 @@ import api from "./axios";
 import type { ApiResponse } from "./types";
 
 export type ActivityLogSeverity = "ERROR" | "WARN" | "INFO";
-export type ActivityLogModule = "AI" | "API" | "SYSTEM";
+export type ActivityLogModule = "AI" | "STORY" | "API" | "SYSTEM";
 export type ActivityLogAction =
   | "AI_GEN_TASK_CREATED"
   | "AI_GEN_START"
@@ -18,7 +18,21 @@ export type ActivityLogAction =
   | "AI_OR_ERROR"
   | "AI_OR_TIMEOUT"
   | "AI_JSON_INVALID"
-  | "API_ERROR";
+  | "API_ERROR"
+  | "STORY_AUDIO_QUEUE"
+  | "STORY_AUDIO_START"
+  | "STORY_AUDIO_READY"
+  | "STORY_AUDIO_FAIL"
+  | "STORY_AUDIO_CACHE"
+  | "STORY_AI_GEN"
+  | "STORY_AI_GEN_FAIL"
+  | "STORY_SCENE_ANLZ"
+  | "STORY_IMG_QUEUE"
+  | "STORY_IMG_START"
+  | "STORY_IMG_READY"
+  | "STORY_IMG_PARTIAL"
+  | "STORY_IMG_FAIL"
+  | "STORY_IMG_REGEN";
 
 export type ActivityLogRecord = {
   id: string;

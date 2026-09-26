@@ -127,10 +127,11 @@ export function StudentStoryListPage() {
 
   const getDisplayDuration = (row: StoryRecord) => {
     if (row.processingStatus !== "AUDIO_READY") return "--:--";
-    const hash = row.title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const minutes = 3 + (hash % 7);
-    const seconds = hash % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    const seconds = Number(row.duration);
+    if (!Number.isFinite(seconds) || seconds <= 0) return "--:--";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
   const getDisplayViews = (row: StoryRecord) => {

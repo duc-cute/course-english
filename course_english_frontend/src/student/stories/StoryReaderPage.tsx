@@ -31,12 +31,16 @@ import { studentRoutePaths } from "../../shared/constants/paths";
 import { StoryReaderContent } from "./StoryReaderContent";
 import { StoryAudioPlayer } from "./StoryAudioPlayer";
 import { StoryWordPopup } from "./StoryWordPopup";
+import { StorybookReader } from "./StorybookReader";
+import { MonologueReader } from "./MonologueReader";
 import { findActiveSentenceIndex, findActiveWordIndex } from "./storyKaraoke";
 import { buildGlossaryMap, findSentenceBySelection, resolveWordLookupFromPayload } from "./storyReaderLookup";
 import StarsIcon from "@mui/icons-material/Stars";
 import { ThemeEngine } from "./theme/ThemeEngine";
 import { ProgressSky } from "./ProgressSky";
 import { ProgressMilestonesPanel } from "./ProgressMilestonesPanel";
+import { useFeatureFlags } from "../../shared/featureFlags/useFeatureFlags";
+import { getBrandName } from "../../shared/brand/brand";
 import "../../styles/student/story-reader.css";
 
 function findSentenceForWord(payload: StoryReaderPayload, wordIndex?: number): string {
@@ -55,6 +59,8 @@ const SHOW_READER_OPTIONS_TOOLBAR = false;
 export function StoryReaderPage() {
   const { storySlug } = useParams<{ storySlug: string }>();
   const navigate = useNavigate();
+  const { flags } = useFeatureFlags();
+  const brandName = (flags.brandName ?? "").trim() || getBrandName();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState<StoryReaderPayload | null>(null);
@@ -69,6 +75,7 @@ export function StoryReaderPage() {
   const [autoScrollOn, setAutoScrollOn] = useState(true);
   const [lineFocusOn, setLineFocusOn] = useState(false);
   const [translateOn, setTranslateOn] = useState(false);
+  const [readerMode, setReaderMode] = useState<"classic" | "storybook">("storybook");
 
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
@@ -100,6 +107,15 @@ export function StoryReaderPage() {
       setSelectedTheme((payload as any).theme);
     }
   }, [payload]);
+
+  const isMonologue = payload?.storyFormat === "MONOLOGUE";
+
+  useEffect(() => {
+    if (!payload) return;
+    setReaderMode("storybook");
+    // Truyện tự sự: bản dịch VI luôn hiện dưới từng dòng (UI kiểu song ngữ)
+    if (payload.storyFormat === "MONOLOGUE") setTranslateOn(true);
+  }, [payload?.id]);
 
   useEffect(() => {
     document.documentElement.classList.add("story-reader-immersive");
@@ -446,11 +462,11 @@ export function StoryReaderPage() {
           <Box className="brand-logo-area">
             <img
               src="/images/brand-logo.png?v=3"
-              alt="Nova English"
+              alt={brandName}
               style={{ width: "32px", height: "32px", objectFit: "cover", borderRadius: "8px" }}
             />
             <Box className="brand-logo-texts">
-              <span className="brand-logo-title">Nova English</span>
+              <span className="brand-logo-title">{brandName}</span>
               <span className="brand-logo-sub">Learning made easy</span>
             </Box>
           </Box>
@@ -537,12 +553,19 @@ export function StoryReaderPage() {
               currentParagraph={paragraphInfo.current}
               totalParagraphs={paragraphInfo.total}
               readingTimeMinutes={payload.readingTimeMinutes ?? 5}
+              autoScrollOn={autoScrollOn}
+              onToggleAutoScroll={() => setAutoScrollOn((v) => !v)}
             />
           </Box>
 
           <Box className="story-reader__center-body">
           <Box className="story-reader__glass-card story-reader__story-header-card">
-            <h1 className="story-reader__title">{payload.title}</h1>
+            {isMonologue ? null : (
+              <>
+                <h1 className="story-reader__title">{payload.title}</h1>
+                {payload.titleVi ? <p className="story-reader__title-vi">{payload.titleVi}</p> : null}
+              </>
+            )}
             <Box className="story-reader__meta">
               {payload.level ? (
                 <span className="story-reader__chip story-reader__chip--level">{payload.level}</span>
@@ -575,6 +598,24 @@ export function StoryReaderPage() {
           </Box>
 
           <Box className="story-reader__glass-card story-reader__story-body-card" style={contentStyle}>
+            {isMonologue ? null : (
+            <Box className="story-reader__mode-toggle">
+              <Button
+                size="small"
+                className={`story-reader__mode-btn ${readerMode === "storybook" ? "story-reader__mode-btn--active" : ""}`}
+                onClick={() => setReaderMode("storybook")}
+              >
+                Storybook
+              </Button>
+              <Button
+                size="small"
+                className={`story-reader__mode-btn ${readerMode === "classic" ? "story-reader__mode-btn--active" : ""}`}
+                onClick={() => setReaderMode("classic")}
+              >
+                Classic
+              </Button>
+            </Box>
+            )}
             {hasSentenceTranslations ? (
               <Box className="story-reader__body-toolbar">
                 <Button
@@ -587,23 +628,49 @@ export function StoryReaderPage() {
                 </Button>
                 {translateOn ? (
                   <span className="story-reader__translate-hint">
-                    Bản dịch tiếng Việt đầy đủ hiển thị bên dưới nội dung tiếng Anh
+                    Bản dịch tiếng Việt hiện ngay dưới từng câu đang đọc
                   </span>
                 ) : null}
               </Box>
             ) : null}
+            {isMonologue ? (
+              <MonologueReader
+                payload={payload}
+                activeWordIndex={activeWordIndex}
+                activeSentenceIndex={activeSentenceIndex}
+                highlightOn={highlightOn}
+                showTranslation={translateOn}
+                autoScrollOn={autoScrollOn}
+                onWordClick={handleWordClick}
+                clickedWordIndex={activeToken?.wordIndex}
+              />
+            ) : readerMode === "storybook" ? (
+              <StorybookReader
+                payload={payload}
+                activeWordIndex={activeWordIndex}
+                activeSentenceIndex={activeSentenceIndex}
+                highlightOn={highlightOn}
+                showTranslation={translateOn}
+                autoScrollOn={autoScrollOn}
+                onWordClick={handleWordClick}
+                clickedWordIndex={activeToken?.wordIndex}
+              />
+            ) : (
+              <>
             <StoryReaderContent
               tokens={payload.tokens ?? []}
               sentences={payload.sentences}
               activeWordIndex={activeWordIndex}
               activeSentenceIndex={activeSentenceIndex}
               highlightOn={highlightOn}
+              showTranslation={translateOn}
               onWordClick={handleWordClick}
               clickedWordIndex={activeToken?.wordIndex}
               onTextSelect={handleTextSelect}
               autoScrollOn={autoScrollOn}
             />
-            {translateOn && translationViLines.length > 0 ? (
+            {/* Khi showTranslation: VI đã nằm dưới từng block câu — không lặp full panel */}
+            {translateOn && !hasSentenceTranslations && translationViLines.length > 0 ? (
               <Box className="story-reader__full-translation">
                 <p className="story-reader__full-translation-label">Bản dịch tiếng Việt</p>
                 <Box className="story-reader__full-translation-body">
@@ -615,6 +682,8 @@ export function StoryReaderPage() {
                 </Box>
               </Box>
             ) : null}
+              </>
+            )}
           </Box>
 
           {SHOW_READER_OPTIONS_TOOLBAR ? (

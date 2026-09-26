@@ -34,6 +34,15 @@ export const ACTIVITY_LOG_ACTION_OPTIONS = [
   { value: "STORY_AUDIO_READY", name: "Story — audio sẵn sàng" },
   { value: "STORY_AUDIO_FAIL", name: "Story — sinh audio thất bại" },
   { value: "STORY_AUDIO_CACHE", name: "Story — audio cache hit" },
+  { value: "STORY_AI_GEN", name: "Story — AI sinh nội dung" },
+  { value: "STORY_AI_GEN_FAIL", name: "Story — AI sinh nội dung thất bại" },
+  { value: "STORY_SCENE_ANLZ", name: "Story — phân tích scenes" },
+  { value: "STORY_IMG_QUEUE", name: "Story — xếp hàng sinh ảnh" },
+  { value: "STORY_IMG_START", name: "Story — bắt đầu sinh ảnh" },
+  { value: "STORY_IMG_READY", name: "Story — ảnh sẵn sàng" },
+  { value: "STORY_IMG_PARTIAL", name: "Story — ảnh một phần" },
+  { value: "STORY_IMG_FAIL", name: "Story — sinh ảnh thất bại" },
+  { value: "STORY_IMG_REGEN", name: "Story — sinh lại ảnh scene" },
 ] as const;
 
 export function activityLogActionLabel(action?: string): string {
