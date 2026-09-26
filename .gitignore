@@ -10,3 +10,18 @@ bin/
 .env
 !**/.env.example
 .DS_Store
+
+
+# --- Local-only: personal / design / prototype (không commit) ---
+Design/
+mascot_mia/
+prototype/
+promt3.md
+/.cursor/
+*.code-workspace
+course_english_frontend/_dbg.cjs
+course_english_frontend/_shot.cjs
+/*.pdf
+/*.xlsx
+/*.doc
+/*.docx
