@@ -76,6 +76,13 @@ export const SYSTEM_CONFIG_KEY_OPTIONS: SystemConfigKeyMeta[] = [
     defaultNote: "Cho phép gửi email thông báo (true/1=bật)",
   },
   {
+    key: "BRAND_NAME",
+    label: "Tên thương hiệu",
+    type: "text",
+    defaultValue: "MT English",
+    defaultNote: "Tên thương hiệu hiển thị trên app, email và thông báo",
+  },
+  {
     key: "WORD_EXPORT_LOGO_URL",
     label: "Logo xuất Word bài tập",
     type: "image_url",

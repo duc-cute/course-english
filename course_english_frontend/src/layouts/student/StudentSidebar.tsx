@@ -18,6 +18,8 @@ import {
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { paths } from "../../shared/constants/paths";
+import { useFeatureFlags } from "../../shared/featureFlags/useFeatureFlags";
+import { getBrandName } from "../../shared/brand/brand";
 
 const DRAWER_WIDTH = 240;
 
@@ -34,6 +36,8 @@ type StudentSidebarProps = {
 export function StudentSidebar({ mobileOpen, onToggleSidebar }: StudentSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { flags } = useFeatureFlags();
+  const brandName = (flags.brandName ?? "").trim() || getBrandName();
 
   const navItems = useMemo(
     () => [
@@ -67,7 +71,7 @@ export function StudentSidebar({ mobileOpen, onToggleSidebar }: StudentSidebarPr
         <Stack direction="row" spacing={1.5} alignItems="center">
           <BrandLogo size="sm" />
           <Typography fontWeight={700} fontSize={15} sx={{ color: "var(--eng-on-surface)" }}>
-            Nova English
+            {brandName}
           </Typography>
         </Stack>
       </Box>

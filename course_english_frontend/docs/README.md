@@ -2,7 +2,7 @@
 
 > Cập nhật: **20/08/2026**  
 > LMS học tiếng Anh **Grade 1–9** · Lesson = **Learning Blocks** (Duolingo/Quizlet-style)  
-> Checklist chi tiết + tick tiến độ: **[REVIEW.html](./REVIEW.html)** (hoặc `/admin/review-doc` trong app)
+> Checklist chi tiết + tick tiến độ: **[REVIEW.html](../../REVIEW.html)** — gốc repo (hoặc `/admin/review-doc` trong app)
 
 ---
 
@@ -11,7 +11,7 @@
 | Thành phần | Stack | Port / URL |
 |------------|-------|------------|
 | Backend | Spring Boot, MySQL | `7070` → `/api/v1` |
-| Frontend | React 19, Vite, MUI admin | `5173` → `/student`, `/admin` |
+| Frontend | React 19, Vite, MUI admin | `5174` → `/student`, `/admin` |
 | TTS (Story) | Python FastAPI `reading_text/` | `8100` |
 
 **Vai trò:** Admin · Teacher · Student
@@ -142,6 +142,40 @@ Chi tiết: [`docs/STUDENT_VOCAB_LEARNING_PLAN.md`](../../docs/STUDENT_VOCAB_LEA
 
 ---
 
+## 6b. Gamification Core (S8b)
+
+| Chức năng | Trạng thái |
+|-----------|------------|
+| Activity events + idempotency (lesson read / exercise / vocab) | ✅ |
+| XP engine + anti-farm + daily caps + transactions | ✅ |
+| Level (seed 1–30) + streak (Asia/Ho_Chi_Minh) | ✅ |
+| Vocab word mastery cơ bản + masteryPercent | ✅ |
+| `GET /student/gamification/summary`, `/xp/recent`, `/mastery` | ✅ |
+| `POST /admin/gamification/recalculate/{userId}` | ✅ |
+| FE Home/Profile dùng BE summary | ✅ |
+| Achievements / Badges (S8c) | ✅ — xem §6c |
+| Coins / Quests / Leaderboard | ⏳ S8d–S8f |
+
+Migration: `047_gamification_core.sql` · Doc: [`docs/S8B_GAMIFICATION_CORE.md`](../../docs/S8B_GAMIFICATION_CORE.md)
+
+---
+
+## 6c. Achievements & Badges (S8c)
+
+| Chức năng | Trạng thái |
+|-----------|------------|
+| Catalog achievement + badge (seed 10, 1:1) | ✅ |
+| Progress + unlock idempotent + reward XP | ✅ |
+| Engine sau activity S8b + cuối recalculate | ✅ |
+| Notification `ACHIEVEMENT_UNLOCKED` | ✅ |
+| `GET /student/gamification/achievements`, `/badges` | ✅ |
+| FE Profile + Home preview từ BE (progress bar) | ✅ |
+| Coins / shop / quests / leaderboard | ⏳ S8d–S8f |
+
+Migration: `048_gamification_achievements.sql` · Doc: [`docs/S8C_ACHIEVEMENTS_BADGES.md`](../../docs/S8C_ACHIEVEMENTS_BADGES.md)
+
+---
+
 ## 7. AI Reading Studio (Story)
 
 | Phase | Chức năng | Trạng thái |
@@ -218,13 +252,13 @@ Route lab: `/admin/rabbitmq-lab` · Doc: [`docs/RABBITMQ_LAB.md`](../../docs/RAB
 | Nhóm | Tiến độ ~ | Ghi chú |
 |------|-----------|---------|
 | Shell + bottom nav | 85% | `StudentAppLayout` / `StudentPlayerLayout` |
-| Home bento + Continue | 90% | XP/streak FE-only |
+| Home bento + Continue | 95% | XP/streak/level từ BE; badges preview từ BE (S8c) |
 | Lesson Player | 85% | Vq theme, sync server |
 | Exercise | 92% | 10 loại câu + review words |
 | Từ vựng (S9) | 88% | Journey + Assigned + mixed practice |
 | Story + karaoke | 85% | Chờ E2E audio |
-| Profile (S8a) | — | Stats, badges, history (FE-only) |
-| Leaderboard | 5% | Placeholder — S8b BE |
+| Profile (S8a–S8c) | 90% | Stats + XP history + achievements/badges BE |
+| Leaderboard | 5% | Placeholder — S8f BE |
 
 Route gốc: `/student` · Demo: `hs01@demo.local` / `123456`
 
@@ -236,7 +270,7 @@ Route gốc: `/student` · Demo: `hs01@demo.local` / `123456`
 |--------|--------|
 | **Assignment** | Homework, due date, nộp bài, chấm GV |
 | **ExamPaper HS** | Làm đề có timer, gán lớp, 1 lần |
-| **Gamification BE** | XP/streak/badge/leaderboard lưu server (S8b) |
+| **Gamification S8d+** | Coins/Rewards, Quests, Class Leaderboard (S8f) |
 | **VIDEO/AUDIO** | Block editor + reader đầy đủ |
 | **Syllabus sidebar** | Unit → lessons trong Lesson Player |
 | **RabbitMQ + Redis** | Scale notification & cache |
@@ -265,7 +299,7 @@ Route gốc: `/student` · Demo: `hs01@demo.local` / `123456`
   /vocabulary-*, /vocabulary-journeys
   /stories, /innovation-hub, /ai-assistant
   /students-need-support, /schedule, /rabbitmq-lab
-  /review-doc                  ← REVIEW.html
+  /review-doc                  ← REVIEW.html (gốc repo, copy vào public/docs)
 ```
 
 ---
@@ -274,11 +308,14 @@ Route gốc: `/student` · Demo: `hs01@demo.local` / `123456`
 
 | File | Nội dung |
 |------|----------|
-| [REVIEW.html](./REVIEW.html) | Product review đầy đủ + checklist tick |
+| [REVIEW.html](../../REVIEW.html) | Product review đầy đủ + checklist tick (gốc repo; `_assemble_review.py` copy sang `public/docs/`) |
 | [../README.md](../README.md) | Chạy FE, build |
 | [../../README.md](../../README.md) | Chạy toàn repo, seed DB |
 | [LESSON_AUTHORING_PROGRESS.md](../../docs/LESSON_AUTHORING_PROGRESS.md) | 4 cách soạn lesson |
 | [STUDENT_VOCAB_LEARNING_PLAN.md](../../docs/STUDENT_VOCAB_LEARNING_PLAN.md) | Vocab Journey HS |
+| [S8B_GAMIFICATION_CORE.md](../../docs/S8B_GAMIFICATION_CORE.md) | XP / Streak / Level / Mastery BE |
+| [S8C_ACHIEVEMENTS_BADGES.md](../../docs/S8C_ACHIEVEMENTS_BADGES.md) | Achievements & Badges BE + FE |
+| [STUDENT_GAMIFICATION_SYSTEM_PLAN_EN.md](../../docs/STUDENT_GAMIFICATION_SYSTEM_PLAN_EN.md) | Full gamification architecture |
 | [INNOVATION_HUB_PROGRESS.md](../../docs/INNOVATION_HUB_PROGRESS.md) | Innovation Hub |
 | [STORY_READING_STUDIO_PLAN.md](../../docs/STORY_READING_STUDIO_PLAN.md) | AI Reading Studio |
 | [promt.md](../../promt.md) | Kiến trúc block đích |
@@ -295,6 +332,6 @@ cd course_english_backend && copy .env.example .env && .\gradlew.bat bootRun
 cd course_english_frontend && copy .env.example .env && npm install && npm run dev
 ```
 
-- App: http://localhost:5173  
+- App: http://localhost:5174  
 - API: http://localhost:7070/api/v1  
-- Review doc: http://localhost:5173/admin/review-doc
+- Review doc: http://localhost:5174/admin/review-doc

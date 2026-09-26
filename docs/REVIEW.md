@@ -2,9 +2,9 @@
 
 Tài liệu review đầy đủ (HTML, có mục lục & bảng ưu tiên):
 
-**[../course_english_frontend/public/docs/REVIEW.html](../course_english_frontend/public/docs/REVIEW.html)**
+**[../REVIEW.html](../REVIEW.html)** (gốc repo — bản copy cho app tại `course_english_frontend/public/docs/REVIEW.html`)
 
-Trong app (sau khi chạy FE): http://localhost:5173/admin/review-doc
+Trong app (sau khi chạy FE): http://localhost:5174/admin/review-doc
 
 ## Nội dung chính trong REVIEW.html
 

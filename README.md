@@ -64,7 +64,7 @@ npm install
 npm run dev
 ```
 
-- App: http://localhost:5173 → `/student`
+- App: http://localhost:5174 → `/student`
 - API: http://localhost:7070/api/v1 (FE: `VITE_API_URL=http://localhost:7070/api/v1`)
 
 **4. Seed / import bài tập**
@@ -109,7 +109,7 @@ Unit (Subject) → nhiều Lesson (vocab, grammar, …)
 ## Tài liệu
 
 - **[docs/README.md](./course_english_frontend/docs/README.md)** — **danh mục chức năng** (tóm tắt dễ đọc, cập nhật 20/08/2026)
-- **[REVIEW.html](./course_english_frontend/public/docs/REVIEW.html)** — product review + checklist tick (Admin → Review tài liệu)
+- **[REVIEW.html](./REVIEW.html)** — product review + checklist tick (gốc repo; bản copy cho app: `course_english_frontend/public/docs/REVIEW.html`, Admin → Review tài liệu)
 - **[LESSON_AUTHORING_PROGRESS.md](./docs/LESSON_AUTHORING_PROGRESS.md)** — 4 phương thức soạn lesson ✅
 - [STUDENT_VOCAB_LEARNING_PLAN.md](./docs/STUDENT_VOCAB_LEARNING_PLAN.md) — Vocab Journey HS
 - [INNOVATION_HUB_PROGRESS.md](./docs/INNOVATION_HUB_PROGRESS.md) — Innovation Hub

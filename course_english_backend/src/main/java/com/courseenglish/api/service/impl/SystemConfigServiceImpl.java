@@ -39,6 +39,8 @@ public class SystemConfigServiceImpl implements SystemConfigService {
     @Transactional
     public void initConfig() {
         List<SystemConfig> all = systemConfigRepository.findByVoidedFalseOrderByConfigKeyAsc();
+        migrateLegacyMailBrandName(all);
+        all = systemConfigRepository.findByVoidedFalseOrderByConfigKeyAsc();
         for (SystemConfigKeyEnum keyEnum : SystemConfigKeyEnum.values()) {
             ensureSeed(all, keyEnum);
         }
@@ -144,6 +146,7 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         dto.setStudentSelfRegistrationEnabled(AppConstants.studentSelfRegistrationEnabled);
         dto.setVocabularyPracticeMaxQuestions(AppConstants.vocabularyPracticeMaxQuestions);
         dto.setVocabularyPracticePassScore(AppConstants.vocabularyPracticePassScore);
+        dto.setBrandName(AppConstants.brandName != null ? AppConstants.brandName : "");
         dto.setWordExportLogoUrl(
                 AppConstants.wordExportLogoUrl != null ? AppConstants.wordExportLogoUrl : "");
         dto.setWordExportWatermarkText(
@@ -162,6 +165,30 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         entity.setConfigValue(keyEnum.getDefaultValue());
         entity.setNote(keyEnum.getDefaultNote());
         systemConfigRepository.save(entity);
+    }
+
+    /** Rename legacy MAIL_BRAND_NAME → BRAND_NAME (giữ nguyên giá trị đã cấu hình). */
+    private void migrateLegacyMailBrandName(List<SystemConfig> all) {
+        Optional<SystemConfig> legacy = all.stream()
+                .filter(item -> "MAIL_BRAND_NAME".equalsIgnoreCase(item.getConfigKey()))
+                .findFirst();
+        if (legacy.isEmpty()) {
+            return;
+        }
+        boolean brandExists = all.stream()
+                .anyMatch(item -> SystemConfigKeyEnum.BRAND_NAME.getKey().equalsIgnoreCase(item.getConfigKey()));
+        SystemConfig legacyRow = legacy.get();
+        if (!brandExists) {
+            legacyRow.setConfigKey(SystemConfigKeyEnum.BRAND_NAME.getKey());
+            legacyRow.setNote(SystemConfigKeyEnum.BRAND_NAME.getDefaultNote());
+            if ("Nova English".equalsIgnoreCase(trimToEmpty(legacyRow.getConfigValue()))) {
+                legacyRow.setConfigValue(SystemConfigKeyEnum.BRAND_NAME.getDefaultValue());
+            }
+            systemConfigRepository.save(legacyRow);
+            return;
+        }
+        legacyRow.setVoided(true);
+        systemConfigRepository.save(legacyRow);
     }
 
     private void loadIntoConstants(List<SystemConfig> all) {
@@ -184,10 +211,14 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         AppConstants.notificationEmailEnabled = readBoolean(
                 findValue(all, SystemConfigKeyEnum.NOTIFICATION_EMAIL_ENABLED.getKey()),
                 false);
-        AppConstants.mailBrandName = trimToEmpty(
-                findValue(all, SystemConfigKeyEnum.MAIL_BRAND_NAME.getKey()));
-        if (AppConstants.mailBrandName.isEmpty()) {
-            AppConstants.mailBrandName = SystemConfigKeyEnum.MAIL_BRAND_NAME.getDefaultValue();
+        AppConstants.brandName = trimToEmpty(
+                findValue(all, SystemConfigKeyEnum.BRAND_NAME.getKey()));
+        if (AppConstants.brandName.isEmpty()) {
+            // Legacy key trước khi rename MAIL_BRAND_NAME → BRAND_NAME
+            AppConstants.brandName = trimToEmpty(findValue(all, "MAIL_BRAND_NAME"));
+        }
+        if (AppConstants.brandName.isEmpty()) {
+            AppConstants.brandName = SystemConfigKeyEnum.BRAND_NAME.getDefaultValue();
         }
         AppConstants.wordExportLogoUrl = trimToEmpty(
                 findValue(all, SystemConfigKeyEnum.WORD_EXPORT_LOGO_URL.getKey()));
@@ -204,14 +235,26 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         AppConstants.aiVocabSetCoverImageEnabled = readBoolean(
                 findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_ENABLED.getKey()),
                 true);
-        AppConstants.aiVocabSetCoverImageModel = trimToEmpty(
+        String coverImageModel = trimToEmpty(
                 findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_MODEL.getKey()));
+        AppConstants.aiVocabSetCoverImageModel = coverImageModel.isBlank()
+                ? SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_MODEL.getDefaultValue()
+                : coverImageModel;
         AppConstants.aiVocabSetCoverImageTimeoutSec = readLong(
                 findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_TIMEOUT_SEC.getKey()),
-                90);
+                120);
         AppConstants.aiVocabSetCoverImageDailyLimit = readLong(
                 findValue(all, SystemConfigKeyEnum.AI_VOCAB_SET_COVER_IMAGE_DAILY_LIMIT.getKey()),
                 15);
+
+        String storyIllustrationModel = trimToEmpty(
+                findValue(all, SystemConfigKeyEnum.AI_STORY_ILLUSTRATION_MODEL.getKey()));
+        AppConstants.aiStoryIllustrationModel = storyIllustrationModel.isBlank()
+                ? SystemConfigKeyEnum.AI_STORY_ILLUSTRATION_MODEL.getDefaultValue()
+                : storyIllustrationModel;
+        AppConstants.aiStoryIllustrationTimeoutSec = readLong(
+                findValue(all, SystemConfigKeyEnum.AI_STORY_ILLUSTRATION_TIMEOUT_SEC.getKey()),
+                180);
     }
 
     private String findValue(List<SystemConfig> all, String key) {

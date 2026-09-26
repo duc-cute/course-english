@@ -19,8 +19,8 @@ public final class AppConstants {
     public static int vocabularyPracticePassScore = 80;
     public static boolean studentSelfRegistrationEnabled = true;
     public static boolean notificationEmailEnabled = false;
-    /** Tên thương hiệu hiển thị trong email và các thông báo liên quan. */
-    public static String mailBrandName = "Nova English";
+    /** Tên thương hiệu dùng chung trên app, email và thông báo. */
+    public static String brandName = "MT English";
     /** Public URL — logo header xuất Word bài tập */
     public static String wordExportLogoUrl = "";
     /** Watermark text trên file đề Word (có thể rỗng) */
@@ -31,7 +31,11 @@ public final class AppConstants {
     public static long aiVocabSetGenTimeoutSec = 120;
 
     public static boolean aiVocabSetCoverImageEnabled = true;
-    public static String aiVocabSetCoverImageModel = "black-forest-labs/flux.2-max";
-    public static long aiVocabSetCoverImageTimeoutSec = 90;
+    public static String aiVocabSetCoverImageModel = "black-forest-labs/flux.2-klein-4b";
+    public static long aiVocabSetCoverImageTimeoutSec = 120;
     public static long aiVocabSetCoverImageDailyLimit = 15;
+
+    /** Storybook scene / character sheet image generation */
+    public static String aiStoryIllustrationModel = "black-forest-labs/flux.2-klein-4b";
+    public static long aiStoryIllustrationTimeoutSec = 180;
 }

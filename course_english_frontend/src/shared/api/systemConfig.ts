@@ -29,6 +29,7 @@ export type FeatureFlags = {
   studentSelfRegistrationEnabled: boolean;
   vocabularyPracticeMaxQuestions: number;
   vocabularyPracticePassScore: number;
+  brandName?: string;
   wordExportLogoUrl?: string;
   wordExportWatermarkText?: string;
 };

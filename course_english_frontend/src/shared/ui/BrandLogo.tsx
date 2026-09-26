@@ -1,3 +1,5 @@
+import { getBrandName } from "../brand/brand";
+
 type BrandLogoSize = "xs" | "sm" | "md" | "lg";
 
 const SIZE_MAP: Record<BrandLogoSize, { box: number; radius: number }> = {
@@ -12,9 +14,10 @@ type BrandLogoProps = {
   className?: string;
 };
 
-/** Logo Course English — custom brand logo. */
+/** Logo thương hiệu — tên lấy từ system config BRAND_NAME. */
 export function BrandLogo({ size = "md", className }: BrandLogoProps) {
   const { box, radius } = SIZE_MAP[size];
+  const brandName = getBrandName();
 
   return (
     <span
@@ -29,7 +32,7 @@ export function BrandLogo({ size = "md", className }: BrandLogoProps) {
     >
       <img
         src="/images/brand-logo.png?v=3"
-        alt="Nova English"
+        alt={brandName}
         style={{
           width: "100%",
           height: "100%",
@@ -40,4 +43,3 @@ export function BrandLogo({ size = "md", className }: BrandLogoProps) {
     </span>
   );
 }
-

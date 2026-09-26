@@ -11,6 +11,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   studentSelfRegistrationEnabled: true,
   vocabularyPracticeMaxQuestions: 16,
   vocabularyPracticePassScore: 80,
+  brandName: "MT English",
   wordExportLogoUrl: "",
   wordExportWatermarkText: "",
 };
@@ -29,6 +30,7 @@ function normalizeFlags(data: Partial<FeatureFlags>): FeatureFlags {
     studentSelfRegistrationEnabled: data.studentSelfRegistrationEnabled !== false,
     vocabularyPracticeMaxQuestions: clampInt(data.vocabularyPracticeMaxQuestions, 16, 1, 40),
     vocabularyPracticePassScore: clampInt(data.vocabularyPracticePassScore, 80, 1, 100),
+    brandName: (data.brandName ?? DEFAULT_FLAGS.brandName ?? "MT English").trim() || "MT English",
     wordExportLogoUrl: (data.wordExportLogoUrl ?? "").trim(),
     wordExportWatermarkText: (data.wordExportWatermarkText ?? "").trim(),
   };

@@ -9,6 +9,7 @@ import com.courseenglish.api.service.impl.SessionReminderEmailServiceImpl;
 import com.courseenglish.api.service.mail.MailTemplateService;
 import com.courseenglish.api.service.mail.RenderedMailMessage;
 import com.courseenglish.api.util.AppConstants;
+import com.courseenglish.api.util.constant.SystemConfigKeyEnum;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -157,8 +158,8 @@ public class MailTemplateServiceImpl implements MailTemplateService {
     }
 
     private String getBrandName() {
-        String value = safeTrim(AppConstants.mailBrandName);
-        return value.isEmpty() ? "Nova English" : value;
+        String value = safeTrim(AppConstants.brandName);
+        return value.isEmpty() ? SystemConfigKeyEnum.BRAND_NAME.getDefaultValue() : value;
     }
 
     private String buildLessonUrl(String linkPath) {

@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { PNG } from "pngjs";
 
-const url = process.env.APP_URL ?? "http://127.0.0.1:5173/";
+const url = process.env.APP_URL ?? "http://127.0.0.1:5174/";
 const chromePath =
   process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const outDir = new URL("../verification/", import.meta.url);

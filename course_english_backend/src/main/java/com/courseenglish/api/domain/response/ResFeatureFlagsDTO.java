@@ -13,6 +13,8 @@ public class ResFeatureFlagsDTO {
     private boolean studentSelfRegistrationEnabled;
     private int vocabularyPracticeMaxQuestions;
     private int vocabularyPracticePassScore;
+    /** Tên thương hiệu hiển thị trên app / email */
+    private String brandName;
     /** URL logo header khi xuất Word (có thể rỗng) */
     private String wordExportLogoUrl;
     /** Watermark file đề Word (có thể rỗng) */

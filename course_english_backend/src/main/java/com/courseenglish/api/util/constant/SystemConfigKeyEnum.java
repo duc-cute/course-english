@@ -33,10 +33,10 @@ public enum SystemConfigKeyEnum {
             "NOTIFICATION_EMAIL_ENABLED",
             "false",
             "Gửi email cho HS khi GV publish bài học / gán đề thi (true/1=bật, cần cấu hình SMTP)"),
-    MAIL_BRAND_NAME(
-            "MAIL_BRAND_NAME",
-            "Nova English",
-            "Tên thương hiệu hiển thị trong email/thông báo (ví dụ: Nova English)"),
+    BRAND_NAME(
+            "BRAND_NAME",
+            "MT English",
+            "Tên thương hiệu hiển thị trên app, email và thông báo (ví dụ: MT English)"),
     WORD_EXPORT_LOGO_URL(
             "WORD_EXPORT_LOGO_URL",
             "",
@@ -64,8 +64,8 @@ public enum SystemConfigKeyEnum {
             "Bật sinh ảnh cover bộ từ khi generateCover=true (true/1=bật, false/0=tắt)"),
     AI_VOCAB_SET_COVER_IMAGE_MODEL(
             "AI_VOCAB_SET_COVER_IMAGE_MODEL",
-            "black-forest-labs/flux.2-max",
-            "Model sinh ảnh cover (image). Ví dụ: black-forest-labs/flux.2-max, black-forest-labs/flux.2-pro"),
+            "black-forest-labs/flux.2-klein-4b",
+            "Model sinh ảnh cover (image). Ví dụ: black-forest-labs/flux.2-klein-4b, black-forest-labs/flux.2-max"),
     AI_VOCAB_SET_COVER_IMAGE_TIMEOUT_SEC(
             "AI_VOCAB_SET_COVER_IMAGE_TIMEOUT_SEC",
             "90",
@@ -73,7 +73,15 @@ public enum SystemConfigKeyEnum {
     AI_VOCAB_SET_COVER_IMAGE_DAILY_LIMIT(
             "AI_VOCAB_SET_COVER_IMAGE_DAILY_LIMIT",
             "15",
-            "Giới hạn số ảnh cover/ngày (toàn hệ thống). 0 hoặc <0 = không giới hạn");
+            "Giới hạn số ảnh cover/ngày (toàn hệ thống). 0 hoặc <0 = không giới hạn"),
+    AI_STORY_ILLUSTRATION_MODEL(
+            "AI_STORY_ILLUSTRATION_MODEL",
+            "black-forest-labs/flux.2-klein-4b",
+            "Model sinh ảnh storybook scenes / character sheets"),
+    AI_STORY_ILLUSTRATION_TIMEOUT_SEC(
+            "AI_STORY_ILLUSTRATION_TIMEOUT_SEC",
+            "180",
+            "Timeout (giây) cho sinh ảnh storybook (có thể kèm reference)");
 
     private final String key;
     private final String defaultValue;
